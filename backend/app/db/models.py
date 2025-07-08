@@ -1,0 +1,57 @@
+
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Text
+from sqlalchemy.orm import relationship
+from sqlalchemy.ext.declarative import declarative_base
+from datetime import datetime
+
+Base = declarative_base()
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True)
+    password_hash = Column(String)
+    company_name = Column(String)
+    role = Column(String)  # "startup" or "gp"
+    is_verified = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_login = Column(DateTime, nullable=True)
+
+class PitchDeck(Base):
+    __tablename__ = "pitch_decks"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    file_name = Column(String)
+    s3_url = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    user = relationship("User")
+
+class Review(Base):
+    __tablename__ = "reviews"
+    id = Column(Integer, primary_key=True, index=True)
+    pitch_deck_id = Column(Integer, ForeignKey("pitch_decks.id"))
+    review_data = Column(Text)
+    s3_review_url = Column(String)
+    status = Column(String)  # "pending", "in_review", "completed"
+    created_at = Column(DateTime, default=datetime.utcnow)
+    pitch_deck = relationship("PitchDeck")
+
+class Question(Base):
+    __tablename__ = "questions"
+    id = Column(Integer, primary_key=True, index=True)
+    review_id = Column(Integer, ForeignKey("reviews.id"))
+    question_text = Column(Text)
+    asked_by = Column(Integer, ForeignKey("users.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    review = relationship("Review")
+    user = relationship("User")
+
+class Answer(Base):
+    __tablename__ = "answers"
+    id = Column(Integer, primary_key=True, index=True)
+    question_id = Column(Integer, ForeignKey("questions.id"))
+    answer_text = Column(Text)
+    answered_by = Column(Integer, ForeignKey("users.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    question = relationship("Question")
+    user = relationship("User")
