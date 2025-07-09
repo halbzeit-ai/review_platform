@@ -1,0 +1,10 @@
+.venv/
+.env
+node_modules/
+annotations/
+huggingface/
+image/
+video/
+models/
+audio/
+.DS_Store
