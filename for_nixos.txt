@@ -1,0 +1,14 @@
+nix-shell -p nodejs
+
+{ pkgs ? import <nixpkgs> {} }:
+
+pkgs.mkShell {
+  buildInputs = with pkgs; [
+    nodejs  # npm is included with nodejs
+    python3
+    python3Packages.pip
+    python3Packages.virtualenv  # if you need virtual environments
+  ];
+}
+
+as mentioned by claude
