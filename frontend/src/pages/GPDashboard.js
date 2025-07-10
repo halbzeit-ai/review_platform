@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button } from '@mui/material';
+import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress } from '@mui/material';
 import { getAllUsers } from '../services/api';
+import axios from 'axios';
 
 function GPDashboard() {
   const [users, setUsers] = useState([]);
+  const [pitchDecks, setPitchDecks] = useState([]);
+  const [loadingDecks, setLoadingDecks] = useState(true);
 
   const handleRoleChange = async (userEmail, newRole) => {
     try {
@@ -35,6 +38,22 @@ function GPDashboard() {
     }
   };
 
+  const fetchPitchDecks = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const response = await axios.get('http://0.0.0.0:5001/api/decks', {
+        headers: {
+          'Authorization': `Bearer ${user?.token}`
+        }
+      });
+      setPitchDecks(response.data.decks);
+    } catch (error) {
+      console.error('Error fetching pitch decks:', error);
+    } finally {
+      setLoadingDecks(false);
+    }
+  };
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -50,6 +69,7 @@ function GPDashboard() {
       }
     };
     fetchUsers();
+    fetchPitchDecks();
   }, []);
 
   return (
@@ -58,8 +78,35 @@ function GPDashboard() {
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>Pending Reviews</Typography>
-            {/* Implement review list */}
+            <Typography variant="h6" gutterBottom>All Pitch Decks</Typography>
+            {loadingDecks ? (
+              <CircularProgress />
+            ) : pitchDecks.length === 0 ? (
+              <Typography color="text.secondary">No pitch decks uploaded yet.</Typography>
+            ) : (
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>File Name</TableCell>
+                      <TableCell>Company</TableCell>
+                      <TableCell>Uploaded By</TableCell>
+                      <TableCell>Upload Date</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {pitchDecks.map((deck) => (
+                      <TableRow key={deck.id}>
+                        <TableCell>{deck.file_name}</TableCell>
+                        <TableCell>{deck.user?.company_name || 'N/A'}</TableCell>
+                        <TableCell>{deck.user?.email || 'N/A'}</TableCell>
+                        <TableCell>{new Date(deck.created_at).toLocaleDateString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
           </Paper>
         </Grid>
         <Grid item xs={12}>

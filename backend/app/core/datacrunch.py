@@ -1,0 +1,156 @@
+"""
+Datacrunch.io API client for volume and instance management
+"""
+import httpx
+import asyncio
+import json
+from typing import Optional, Dict, Any, List
+from ..core.config import settings
+import logging
+
+logger = logging.getLogger(__name__)
+
+class DatacrunchClient:
+    def __init__(self):
+        self.client_id = settings.DATACRUNCH_CLIENT_ID
+        self.client_secret = settings.DATACRUNCH_CLIENT_SECRET
+        self.api_base = settings.DATACRUNCH_API_BASE
+        self.access_token: Optional[str] = None
+        self.token_expires_at: Optional[float] = None
+    
+    async def get_access_token(self) -> str:
+        """Get or refresh access token"""
+        if not self.client_id or not self.client_secret:
+            raise ValueError("Datacrunch client ID and secret must be configured")
+        
+        # Check if token is still valid (with 5 minute buffer)
+        import time
+        if self.access_token and self.token_expires_at and time.time() < (self.token_expires_at - 300):
+            return self.access_token
+        
+        # Get new token
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{self.api_base}/oauth2/token",
+                data={
+                    "grant_type": "client_credentials",
+                    "client_id": self.client_id,
+                    "client_secret": self.client_secret
+                }
+            )
+            
+            if response.status_code != 200:
+                raise Exception(f"Failed to get access token: {response.text}")
+            
+            token_data = response.json()
+            self.access_token = token_data["access_token"]
+            self.token_expires_at = time.time() + token_data["expires_in"]
+            
+            return self.access_token
+    
+    async def _make_request(self, method: str, endpoint: str, **kwargs) -> Dict[Any, Any]:
+        """Make authenticated API request"""
+        token = await self.get_access_token()
+        
+        headers = kwargs.get("headers", {})
+        headers["Authorization"] = f"Bearer {token}"
+        headers["Content-Type"] = "application/json"
+        kwargs["headers"] = headers
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.request(method, f"{self.api_base}{endpoint}", **kwargs)
+            
+            if response.status_code not in [200, 201, 202]:
+                raise Exception(f"API request failed: {response.status_code} - {response.text}")
+            
+            return response.json()
+    
+    async def create_volume(self, name: str, size_gb: int, volume_type: str = "NVMe_Shared") -> Dict[Any, Any]:
+        """Create a new volume"""
+        data = {
+            "name": name,
+            "size": size_gb,
+            "volume_type": volume_type
+        }
+        
+        result = await self._make_request("POST", "/volumes", json=data)
+        logger.info(f"Created volume: {result}")
+        return result
+    
+    async def get_volumes(self) -> List[Dict[Any, Any]]:
+        """Get all volumes"""
+        result = await self._make_request("GET", "/volumes")
+        # API returns a list directly, not a dict with 'volumes' key
+        return result if isinstance(result, list) else result.get("volumes", [])
+    
+    async def get_volume(self, volume_id: str) -> Dict[Any, Any]:
+        """Get volume by ID"""
+        result = await self._make_request("GET", f"/volumes/{volume_id}")
+        return result
+    
+    async def delete_volume(self, volume_id: str) -> Dict[Any, Any]:
+        """Delete volume by ID"""
+        result = await self._make_request("DELETE", f"/volumes/{volume_id}")
+        return result
+    
+    async def deploy_instance(self, 
+                             hostname: str, 
+                             instance_type: str, 
+                             image: str = "ubuntu-22.04",
+                             description: str = "Review Platform Instance",
+                             ssh_key_ids: List[str] = None,
+                             existing_volume_ids: List[str] = None,
+                             startup_script: str = None) -> Dict[Any, Any]:
+        """Deploy instance with proper API parameters"""
+        data = {
+            "hostname": hostname,
+            "instance_type": instance_type,
+            "image": image,
+            "description": description,
+            "ssh_key_ids": ssh_key_ids or [],
+            "existing_volumes": existing_volume_ids or []
+        }
+        
+        if startup_script:
+            # For now, we'll use the basic parameters and add startup script later
+            pass
+        
+        result = await self._make_request("POST", "/instances", json=data)
+        logger.info(f"Deployed instance: {result}")
+        return result
+    
+    async def get_instances(self) -> List[Dict[Any, Any]]:
+        """Get all instances"""
+        result = await self._make_request("GET", "/instances")
+        return result if isinstance(result, list) else result.get("instances", [])
+    
+    async def get_instance(self, instance_id: str) -> Dict[Any, Any]:
+        """Get instance by ID"""
+        result = await self._make_request("GET", f"/instances/{instance_id}")
+        return result
+    
+    async def delete_instance(self, instance_id: str) -> Dict[Any, Any]:
+        """Delete instance by ID"""
+        result = await self._make_request("DELETE", f"/instances/{instance_id}")
+        return result
+    
+    async def wait_for_instance_running(self, instance_id: str, timeout: int = 300) -> bool:
+        """Wait for instance to be in running state"""
+        import time
+        start_time = time.time()
+        
+        while time.time() - start_time < timeout:
+            instance = await self.get_instance(instance_id)
+            status = instance.get("status", "").lower()
+            
+            if status == "running":
+                return True
+            elif status in ["error", "failed"]:
+                raise Exception(f"Instance {instance_id} failed to start")
+            
+            await asyncio.sleep(10)
+        
+        return False
+
+# Global client instance
+datacrunch_client = DatacrunchClient()

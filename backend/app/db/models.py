@@ -22,7 +22,9 @@ class PitchDeck(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     file_name = Column(String)
-    s3_url = Column(String)
+    file_path = Column(String)  # Relative path in shared volume
+    s3_url = Column(String)  # Legacy field, kept for compatibility
+    processing_status = Column(String, default="pending")  # pending, processing, completed, failed
     created_at = Column(DateTime, default=datetime.utcnow)
     user = relationship("User")
 

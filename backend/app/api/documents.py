@@ -1,17 +1,39 @@
 
-from fastapi import APIRouter, HTTPException, UploadFile, Depends
-from ..core.storage import get_s3_client
+from fastapi import APIRouter, HTTPException, UploadFile, Depends, BackgroundTasks
+from sqlalchemy.orm import Session
+from ..core.volume_storage import volume_storage
 from ..core.config import settings
-from ..db.models import User
+from ..db.models import User, PitchDeck
+from ..db.database import get_db
 from .auth import get_current_user
 import uuid
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/documents", tags=["documents"])
+
+async def trigger_gpu_processing(pitch_deck_id: int, file_path: str):
+    """Background task to trigger GPU processing"""
+    from ..services.gpu_processing import gpu_processing_service
+    
+    logger.info(f"GPU processing triggered for pitch deck {pitch_deck_id} at {file_path}")
+    
+    try:
+        success = await gpu_processing_service.trigger_processing(pitch_deck_id, file_path)
+        if success:
+            logger.info(f"GPU processing completed successfully for pitch deck {pitch_deck_id}")
+        else:
+            logger.error(f"GPU processing failed for pitch deck {pitch_deck_id}")
+    except Exception as e:
+        logger.error(f"Error in GPU processing: {str(e)}")
 
 @router.post("/upload")
 async def upload_document(
     file: UploadFile,
-    current_user: User = Depends(get_current_user)
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     if current_user.role != "startup":
         raise HTTPException(status_code=403, detail="Only startups can upload documents")
@@ -20,22 +42,94 @@ async def upload_document(
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
     
     try:
-        # Generate unique filename
-        file_id = str(uuid.uuid4())
-        filename = f"{current_user.company_name}/{file_id}/{file.filename}"
+        # Check if volume is mounted
+        if not volume_storage.is_volume_mounted():
+            raise HTTPException(status_code=503, detail="Storage volume is not available")
         
-        # Upload to DigitalOcean Spaces
-        s3_client = get_s3_client()
-        s3_client.upload_fileobj(
-            file.file,
-            settings.DO_SPACES_BUCKET,
-            filename,
-            ExtraArgs={'ACL': 'private', 'ContentType': 'application/pdf'}
+        # Save file to shared volume
+        file_path = volume_storage.save_upload(
+            file.file, 
+            file.filename, 
+            current_user.company_name
         )
+        
+        # Create PitchDeck record in database
+        pitch_deck = PitchDeck(
+            user_id=current_user.id,
+            file_name=file.filename,
+            file_path=file_path,
+            processing_status="pending"
+        )
+        db.add(pitch_deck)
+        db.commit()
+        db.refresh(pitch_deck)
+        
+        # Trigger GPU processing in background
+        background_tasks.add_task(trigger_gpu_processing, pitch_deck.id, file_path)
+        
+        logger.info(f"Document uploaded: {file.filename} for user {current_user.email}")
         
         return {
             "message": "Document uploaded successfully",
-            "filename": filename
+            "filename": file.filename,
+            "pitch_deck_id": pitch_deck.id,
+            "file_path": file_path,
+            "processing_status": "pending"
         }
     except Exception as e:
+        logger.error(f"Upload failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/processing-status/{pitch_deck_id}")
+async def get_processing_status(
+    pitch_deck_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get processing status for a pitch deck"""
+    pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == pitch_deck_id).first()
+    if not pitch_deck:
+        raise HTTPException(status_code=404, detail="Pitch deck not found")
+    
+    # Check if user owns this deck or is a GP
+    if pitch_deck.user_id != current_user.id and current_user.role != "gp":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    return {
+        "pitch_deck_id": pitch_deck_id,
+        "processing_status": pitch_deck.processing_status,
+        "file_name": pitch_deck.file_name,
+        "created_at": pitch_deck.created_at
+    }
+
+@router.get("/results/{pitch_deck_id}")
+async def get_processing_results(
+    pitch_deck_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get AI processing results for a pitch deck"""
+    pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == pitch_deck_id).first()
+    if not pitch_deck:
+        raise HTTPException(status_code=404, detail="Pitch deck not found")
+    
+    # Check if user owns this deck or is a GP
+    if pitch_deck.user_id != current_user.id and current_user.role != "gp":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    if pitch_deck.processing_status != "completed":
+        raise HTTPException(status_code=400, detail="Processing not completed yet")
+    
+    # Get results from volume storage
+    results_path = pitch_deck.file_path.replace('uploads/', 'results/').replace('.pdf', '_results.json')
+    results = volume_storage.get_results(results_path)
+    
+    if not results:
+        raise HTTPException(status_code=404, detail="Results not found")
+    
+    return {
+        "pitch_deck_id": pitch_deck_id,
+        "file_name": pitch_deck.file_name,
+        "processing_status": pitch_deck.processing_status,
+        "results": results
+    }

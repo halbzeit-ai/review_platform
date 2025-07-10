@@ -11,7 +11,7 @@ in pkgs.mkShell rec {
   nativeBuildInputs = with pkgs.buildPackages; [  
     nodejs
     python311Full 
-
+    sqlite
   ];
 
   shellHook = ''
