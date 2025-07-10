@@ -1,8 +1,8 @@
 * startups can register via email and need to confirm registration via a link in a confirmation email
 * they can then upload their pitch deck to the website, the pitch deck is a PDF file
-* the PDF file is stored in an S3 bucket that is already hosted on DigitalOcean
+* the PDF file will be stored in an S3 bucket that will hosted on Datacrunch.io
 * the new upload on S3 triggers a processing as defined in the next bullet point
-* an AI python script I already wrote is uploaded to a GPU droplet at DigitalOcean 
+* an AI python script from a project not included here may be uploaded is uploaded to a GPU instance at datacrunch.io 
 * this python script generates a review JSON file that is also stored in the S3 bucket
 * we have a postgres database that stores that login data, the link to the deck and link to the review 
 * once the review is generated GPs, i.e. human users and owners of the service are contacted via email 

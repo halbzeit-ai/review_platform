@@ -44,7 +44,7 @@ startup-review-platform/
 ### 2.2 Infrastructure Setup
 
 1. **CPU Droplet for Web Application**:
-   - Deploy a DigitalOcean droplet (4GB RAM, 2 vCPUs minimum)
+   - deploy server on the datacrunch.io 
    - Install Docker, Docker Compose
    - Set up Nginx as reverse proxy
    - Configure SSL with Let's Encrypt
@@ -70,6 +70,9 @@ startup-review-platform/
 
 1. **Core Features**:
    - JWT authentication with role-based access control
+   - Password hashing with bcrypt
+   - Email verification flow
+   - Rate limiting on login attempts
    - S3 integration for file uploads
    - Email service for notifications
    - Database ORM (SQLAlchemy)
@@ -94,7 +97,7 @@ startup-review-platform/
    - Queue management for processing jobs
    - Status tracking for jobs
 
-2. **GPU Droplet Management**:
+2. **GPU instance Management**:
    - Terraform wrapper for creating droplets
    - SSH utilities for remote command execution
    - Droplet monitoring and lifecycle management
@@ -110,6 +113,9 @@ startup-review-platform/
 
 1. **Authentication**:
    - Login/registration forms
+   - Password hashing with bcrypt
+   - Email verification flow
+   - Rate limiting on login attempts   
    - JWT token management
    - Protected routes
 
@@ -144,7 +150,7 @@ startup-review-platform/
 
 ## 5. Processing Implementation
 
-### 5.1 GPU Droplet Template
+### 5.1 GPU Instance Template
 
 1. **Base Configuration**:
    - Ubuntu 20.04 with CUDA support
