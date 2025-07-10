@@ -180,6 +180,28 @@ fi
 #    print_warning "Please mount your shared volume and run: mkdir -p $MOUNT_PATH/{uploads,results,temp}"
 #fi
 
+# Create systemd service file
+print_status "Creating systemd service..."
+cat > /etc/systemd/system/review-platform.service << 'EOF'
+[Unit]
+Description=Review Platform API
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/review-platform/backend
+Environment=PATH=/opt/review-platform/venv/bin
+ExecStart=/opt/review-platform/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Reload systemd daemon
+systemctl daemon-reload
+
 # Start services
 print_status "Starting services..."
 systemctl restart nginx
