@@ -77,6 +77,8 @@ fi
 
 # Install Node.js dependencies and build frontend
 print_status "Building frontend..."
+apt-get install -y nodejs npm
+
 cd ../frontend
 npm install
 npm run build
