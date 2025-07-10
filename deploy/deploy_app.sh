@@ -60,8 +60,8 @@ source venv/bin/activate
 
 # Install Python dependencies
 print_status "Installing Python dependencies..."
-cd backend
 pip install -r requirements.txt
+cd backend
 
 # Create environment file
 print_status "Setting up environment configuration..."
