@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress } from '@mui/material';
-import { getAllUsers } from '../services/api';
-import axios from 'axios';
+import { getAllUsers, getPitchDecks, updateUserRole } from '../services/api';
 
 function GPDashboard() {
   const [users, setUsers] = useState([]);
@@ -10,42 +9,20 @@ function GPDashboard() {
 
   const handleRoleChange = async (userEmail, newRole) => {
     try {
-      const token = JSON.parse(localStorage.getItem('user')).token;
-      const response = await fetch('http://0.0.0.0:5001/api/auth/update-role', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          user_email: userEmail,
-          new_role: newRole
-        })
-      });
-
-      if (response.ok) {
-        // Update local state to reflect the change
-        setUsers(users.map(user => 
-          user.email === userEmail ? { ...user, role: newRole } : user
-        ));
-      } else {
-        const error = await response.json();
-        alert(`Failed to update role: ${error.detail}`);
-      }
+      await updateUserRole(userEmail, newRole);
+      // Update local state to reflect the change
+      setUsers(users.map(user => 
+        user.email === userEmail ? { ...user, role: newRole } : user
+      ));
     } catch (error) {
       console.error('Error updating role:', error);
-      alert('Failed to update role. Please try again.');
+      alert(`Failed to update role: ${error.response?.data?.detail || 'Please try again.'}`);
     }
   };
 
   const fetchPitchDecks = async () => {
     try {
-      const user = JSON.parse(localStorage.getItem('user'));
-      const response = await axios.get('http://0.0.0.0:5001/api/decks', {
-        headers: {
-          'Authorization': `Bearer ${user?.token}`
-        }
-      });
+      const response = await getPitchDecks();
       setPitchDecks(response.data.decks);
     } catch (error) {
       console.error('Error fetching pitch decks:', error);

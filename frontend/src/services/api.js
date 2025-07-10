@@ -23,7 +23,7 @@ export const register = (email, password, companyName, role) =>
 export const uploadPitchDeck = (file) => {
   const formData = new FormData();
   formData.append('file', file);
-  return api.post('/decks', formData);
+  return api.post('/documents/upload', formData);
 };
 
 export const getReview = (id) =>
@@ -43,5 +43,10 @@ export const getAllUsers = () => {
     }
   });
 };
+
+export const getPitchDecks = () => api.get('/decks');
+
+export const updateUserRole = (userEmail, newRole) => 
+  api.post('/auth/update-role', { user_email: userEmail, new_role: newRole });
 
 export default api;

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Container, Paper, TextField, Button, Typography } from '@mui/material';
+import { login } from '../services/api';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -8,37 +9,24 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://0.0.0.0:5001/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password
-        })
-      });
+      const response = await login(email, password);
+      const data = response.data;
+      
+      // Store user data in localStorage
+      localStorage.clear();
+      // Store new user data
+      localStorage.setItem('user', JSON.stringify({
+        email: data.email,
+        role: data.role,
+        token: data.access_token,
+        companyName: data.company_name
+      }));
 
-      const data = await response.json();
-      if (response.ok) {
-        // Store user data in localStorage
-        localStorage.clear();
-        // Store new user data
-        localStorage.setItem('user', JSON.stringify({
-          email: data.email,
-          role: data.role,
-          token: data.access_token,
-          companyName: data.company_name
-        }));
-
-        // Redirect based on role
-        window.location.href = data.role === 'startup' ? '/dashboard/startup' : '/dashboard/gp';
-      } else {
-        alert(`Login failed: ${data.detail || 'Invalid credentials'}`);
-      }
+      // Redirect based on role
+      window.location.href = data.role === 'startup' ? '/dashboard/startup' : '/dashboard/gp';
     } catch (error) {
       console.error('Login error:', error);
-      alert(`Login failed: ${error.message}`);
+      alert(`Login failed: ${error.response?.data?.detail || 'Invalid credentials'}`);
     }
   };
 

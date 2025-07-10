@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Container, Paper, TextField, Button, Typography } from '@mui/material';
+import { register } from '../services/api';
 
 function Register() {
   const [email, setEmail] = useState('');
@@ -11,30 +12,15 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://0.0.0.0:5001/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          company_name: companyName,
-          role
-        })
-      });
+      const response = await register(email, password, companyName, role);
+      const data = response.data;
       
-      const data = await response.json();
-      if (response.ok) {
-        alert(`Registration successful!\nEmail: ${data.email}\nCompany: ${data.company_name}\nRole: ${data.role}`);
-        // Redirect to login page after successful registration
-        window.location.href = '/login';
-      } else {
-        alert(`Registration failed: ${data.detail || data.message || 'Unknown error'}`);
-      }
+      alert(`Registration successful!\nEmail: ${data.email}\nCompany: ${data.company_name}\nRole: ${data.role}`);
+      // Redirect to login page after successful registration
+      window.location.href = '/login';
     } catch (error) {
       console.error('Registration error:', error);
-      alert(`Registration failed: ${error.message}`);
+      alert(`Registration failed: ${error.response?.data?.detail || error.message || 'Unknown error'}`);
     }
   };
 

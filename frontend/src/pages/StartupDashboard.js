@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Paper, Typography, Button, Grid, Alert, CircularProgress, List, ListItem, ListItemText, Divider, Chip } from '@mui/material';
 import { Upload, CheckCircle, Pending, Error } from '@mui/icons-material';
-import axios from 'axios';
+import { uploadPitchDeck, getPitchDecks } from '../services/api';
 
 function StartupDashboard() {
   const [uploading, setUploading] = useState(false);
@@ -18,17 +18,7 @@ function StartupDashboard() {
     setUploadStatus(null);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const user = JSON.parse(localStorage.getItem('user'));
-      const response = await axios.post('http://0.0.0.0:5001/api/documents/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${user?.token}`
-        }
-      });
-
+      const response = await uploadPitchDeck(file);
       setUploadStatus({ type: 'success', message: 'Pitch deck uploaded successfully!' });
       // Refresh the pitch decks list
       fetchPitchDecks();
@@ -46,12 +36,7 @@ function StartupDashboard() {
 
   const fetchPitchDecks = async () => {
     try {
-      const user = JSON.parse(localStorage.getItem('user'));
-      const response = await axios.get('http://0.0.0.0:5001/api/decks', {
-        headers: {
-          'Authorization': `Bearer ${user?.token}`
-        }
-      });
+      const response = await getPitchDecks();
       setPitchDecks(response.data.decks);
     } catch (error) {
       console.error('Error fetching pitch decks:', error);
