@@ -91,6 +91,9 @@ cat > /etc/nginx/sites-available/review-platform << EOF
 server {
     listen 80;
     server_name $DOMAIN \$public_ipv4;
+    
+    # Increase max upload size for PDF files (50MB)
+    client_max_body_size 50M;
 
     # Frontend
     location / {
@@ -106,6 +109,11 @@ server {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
+        
+        # Increase timeouts for file uploads
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
     }
 
     # Static files
