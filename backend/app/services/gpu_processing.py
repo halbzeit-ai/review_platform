@@ -46,15 +46,15 @@ class GPUProcessingService:
             
             # Create GPU instance
             instance_name = f"gpu-processor-{pitch_deck_id}"
-            volume_id = settings.DATACRUNCH_VOLUME_ID
+            filesystem_id = settings.DATACRUNCH_SHARED_FILESYSTEM_ID
             
-            if not volume_id:
-                raise Exception("DATACRUNCH_VOLUME_ID not configured")
+            if not filesystem_id:
+                raise Exception("DATACRUNCH_SHARED_FILESYSTEM_ID not configured")
             
-            instance_data = await datacrunch_client.create_instance(
-                name=instance_name,
+            instance_data = await datacrunch_client.deploy_instance(
+                hostname=instance_name,
                 instance_type=self.gpu_instance_type,
-                volume_ids=[volume_id],
+                existing_volume_ids=[filesystem_id],
                 startup_script=startup_script
             )
             
@@ -93,12 +93,12 @@ class GPUProcessingService:
     
     def _create_startup_script(self, file_path: str) -> str:
         """Create startup script for GPU instance"""
-        mount_path = settings.SHARED_VOLUME_MOUNT_PATH
+        mount_path = settings.SHARED_FILESYSTEM_MOUNT_PATH
         
         script = f"""#!/bin/bash
-# Mount shared volume
+# Mount shared filesystem (auto-mounted on Datacrunch instances with shared filesystem)
 mkdir -p {mount_path}
-mount /dev/disk/by-id/virtio-* {mount_path}
+# Shared filesystem should be auto-mounted, but ensure directory exists
 
 # Install dependencies
 apt-get update

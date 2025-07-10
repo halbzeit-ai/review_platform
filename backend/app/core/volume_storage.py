@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class VolumeStorageService:
     def __init__(self):
-        self.mount_path = Path(settings.SHARED_VOLUME_MOUNT_PATH)
+        self.mount_path = Path(settings.SHARED_FILESYSTEM_MOUNT_PATH)
         self.uploads_dir = self.mount_path / "uploads"
         self.results_dir = self.mount_path / "results"
         self.temp_dir = self.mount_path / "temp"
@@ -27,17 +27,22 @@ class VolumeStorageService:
             directory.mkdir(parents=True, exist_ok=True)
             logger.info(f"Ensured directory exists: {directory}")
     
-    def is_volume_mounted(self) -> bool:
-        """Check if the shared volume is mounted"""
+    def is_filesystem_mounted(self) -> bool:
+        """Check if the shared filesystem is mounted"""
         return self.mount_path.exists() and self.mount_path.is_dir()
+    
+    # Keep old method name for compatibility
+    def is_volume_mounted(self) -> bool:
+        """Check if the shared filesystem is mounted (legacy method name)"""
+        return self.is_filesystem_mounted()
     
     def save_upload(self, file: BinaryIO, original_filename: str, company_name: str) -> str:
         """
-        Save uploaded file to shared volume
+        Save uploaded file to shared filesystem
         Returns: relative file path for database storage
         """
-        if not self.is_volume_mounted():
-            raise Exception("Shared volume is not mounted")
+        if not self.is_filesystem_mounted():
+            raise Exception("Shared filesystem is not mounted")
         
         # Generate unique filename structure
         file_id = str(uuid.uuid4())

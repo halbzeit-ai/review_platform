@@ -40,15 +40,15 @@ mkdir -p $APP_DIR
 cd $APP_DIR
 
 # Option 1: Clone from git (if you have a repo)
-if [ ! -z "$REPO_URL" ] && [ "$REPO_URL" != "https://github.com/your-username/review-platform.git" ]; then
-    print_status "Cloning repository..."
-    git clone $REPO_URL .
-else
-    print_warning "No git repository configured. Please upload your code manually to $APP_DIR"
-    print_warning "You can use: scp -r /path/to/review_platform/* root@YOUR_IP:$APP_DIR/"
-    echo "Press Enter when code is uploaded..."
-    read
-fi
+#if [ ! -z "$REPO_URL" ] && [ "$REPO_URL" != "https://github.com/your-username/review-platform.git" ]; then
+#    print_status "Cloning repository..."
+#    git clone $REPO_URL .
+#else
+#    print_warning "No git repository configured. Please upload your code manually to $APP_DIR"
+#    print_warning "You can use: scp -r /path/to/review_platform/* root@YOUR_IP:$APP_DIR/"
+#    echo "Press Enter when code is uploaded..."
+#    read
+#fi
 
 # Create Python virtual environment
 print_status "Setting up Python environment..."

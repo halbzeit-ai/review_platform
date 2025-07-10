@@ -21,20 +21,25 @@ async def create_web_server_instance():
     
     # Instance configuration  
     hostname = "review-platform-web-server"
-    instance_type = "b200100a-5b01-447d-a68e-0b694079a4fb"  # B200 GPU (for testing)
-    image = "77777777-4f48-4249-82b3-f199fb9b701b"  # Ubuntu 24.04 + CUDA 12.8 + Docker
+    instance_type = "ccc00000-a5d2-4972-ae4e-d429115d055b"  # CPU.4V.16G (AMD EPYC)
+    image = "77edfb23-bb0d-41cc-a191-dccae45d96fd"  # Ubuntu 24.04 (no CUDA/Docker)
     description = "Review Platform Web Server"
     startup_script = """#!/bin/bash
 # Update system
 apt-get update -y
 apt-get upgrade -y
 
-# Install Python 3.11 and pip
-apt-get install -y python3.11 python3.11-venv python3-pip git nginx
+# Install Python 3.11, Node.js, and required packages
+apt-get install -y python3.11 python3.11-venv python3-pip git nginx curl
 
 # Install Node.js for frontend
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 apt-get install -y nodejs
+
+# Install Docker (for database if needed)
+apt-get install -y docker.io
+systemctl enable docker
+systemctl start docker
 
 # Create app directory
 mkdir -p /opt/review-platform
@@ -60,11 +65,6 @@ EOF
 
 # Enable service (will start after deployment)
 systemctl enable review-platform
-
-# Install Docker for easy database management
-apt-get install -y docker.io
-systemctl enable docker
-systemctl start docker
 
 echo "Instance setup completed. Ready for application deployment."
 """

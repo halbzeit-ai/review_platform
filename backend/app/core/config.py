@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     DATACRUNCH_CLIENT_ID: str = ""
     DATACRUNCH_CLIENT_SECRET: str = ""
     DATACRUNCH_API_BASE: str = "https://api.datacrunch.io/v1"
-    DATACRUNCH_VOLUME_ID: Optional[str] = None
-    SHARED_VOLUME_MOUNT_PATH: str = "/mnt/shared"
+    DATACRUNCH_SHARED_FILESYSTEM_ID: Optional[str] = None
+    SHARED_FILESYSTEM_MOUNT_PATH: str = "/mnt/shared"
     
     # Legacy DigitalOcean (kept for compatibility)
     DO_SPACES_KEY: str = ""
