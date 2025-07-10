@@ -7,7 +7,7 @@ echo "🚀 Deploying Review Platform..."
 
 # Configuration
 APP_DIR="/opt/review-platform"
-REPO_URL="https://github.com/your-username/review-platform.git"  # Update with your repo
+REPO_URL="https://github.com/halbzeit-ai/review_platform.git"  # Update with your repo
 DOMAIN="your-domain.com"  # Update with your domain
 
 # Colors for output
@@ -52,7 +52,7 @@ fi
 
 # Create Python virtual environment
 print_status "Setting up Python environment..."
-python3.11 -m venv venv
+python3 -m venv venv
 source venv/bin/activate
 
 # Install Python dependencies
