@@ -14,6 +14,27 @@ function StartupDashboard() {
     const file = event.target.files[0];
     if (!file) return;
 
+    // Check file size (50MB limit)
+    const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+    if (file.size > maxSize) {
+      setUploadStatus({ 
+        type: 'error', 
+        message: `File too large. Maximum size allowed is 50MB. Your file is ${(file.size / (1024 * 1024)).toFixed(1)}MB.` 
+      });
+      event.target.value = '';
+      return;
+    }
+
+    // Check file type
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      setUploadStatus({ 
+        type: 'error', 
+        message: 'Only PDF files are allowed.' 
+      });
+      event.target.value = '';
+      return;
+    }
+
     setUploading(true);
     setUploadStatus(null);
 
@@ -23,9 +44,20 @@ function StartupDashboard() {
       // Refresh the pitch decks list
       fetchPitchDecks();
     } catch (error) {
+      let errorMessage = 'Upload failed. Please try again.';
+      
+      // Handle specific error cases
+      if (error.response?.status === 413) {
+        errorMessage = 'File too large. Maximum size allowed is 50MB.';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.detail || 'Invalid file format. Only PDF files are allowed.';
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      }
+      
       setUploadStatus({ 
         type: 'error', 
-        message: error.response?.data?.detail || 'Upload failed. Please try again.' 
+        message: errorMessage
       });
     } finally {
       setUploading(false);
@@ -81,6 +113,10 @@ function StartupDashboard() {
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>Upload Pitch Deck</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Upload your pitch deck as a PDF file. Maximum file size: 50MB.
+            </Typography>
             {uploadStatus && (
               <Alert severity={uploadStatus.type} sx={{ mb: 2 }}>
                 {uploadStatus.message}
