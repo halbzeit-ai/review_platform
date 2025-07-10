@@ -81,7 +81,8 @@ apt-get install -y nodejs npm
 
 cd ../frontend
 npm install
-npm run build
+# Set production environment and build
+NODE_ENV=production npm run build
 
 # Setup Nginx configuration
 print_status "Configuring Nginx..."
