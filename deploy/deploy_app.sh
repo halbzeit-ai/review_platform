@@ -51,6 +51,9 @@ cd $APP_DIR
 #fi
 
 # Create Python virtual environment
+apt install python3.12
+apt install python3.12-venv
+
 print_status "Setting up Python environment..."
 python3 -m venv venv
 source venv/bin/activate
