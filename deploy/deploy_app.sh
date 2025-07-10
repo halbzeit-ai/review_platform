@@ -136,18 +136,49 @@ Base.metadata.create_all(bind=engine)
 print('Database initialized successfully')
 "
 
-# Create shared volume directories
-print_status "Setting up shared volume directories..."
-MOUNT_PATH="/mnt/shared"
-if mountpoint -q $MOUNT_PATH; then
-    mkdir -p $MOUNT_PATH/{uploads,results,temp}
-    chown -R root:root $MOUNT_PATH
-    chmod -R 755 $MOUNT_PATH
-    print_status "Shared volume directories created"
+# Create shared filesystem directories
+print_status "Setting up shared filesystem..."
+
+# Mount NFS shared filesystem
+mkdir -p /mnt/shared
+
+# Check if already mounted
+if mountpoint -q /mnt/shared; then
+    print_status "Shared filesystem already mounted"
 else
-    print_warning "Shared volume not mounted at $MOUNT_PATH"
-    print_warning "Please mount your shared volume and run: mkdir -p $MOUNT_PATH/{uploads,results,temp}"
+    print_status "Mounting shared filesystem..."
+    mount -t nfs nfs.fin-01.datacrunch.io:/SFS-5gkKcxHe-6721608d /mnt/shared
+
+    # Add to fstab for automatic mounting at boot
+    if ! grep -q "nfs.fin-01.datacrunch.io:/SFS-5gkKcxHe-6721608d" /etc/fstab; then
+        echo "nfs.fin-01.datacrunch.io:/SFS-5gkKcxHe-6721608d /mnt/shared nfs defaults 0 0" >> /etc/fstab
+        print_status "Added NFS mount to fstab"
+    fi
 fi
+
+# Create required directories
+mkdir -p /mnt/shared/{uploads,results,temp}
+chown -R root:root /mnt/shared
+chmod -R 755 /mnt/shared
+
+# Test read/write access
+if echo "test" > /mnt/shared/test.txt && cat /mnt/shared/test.txt > /dev/null && rm /mnt/shared/test.txt; then
+    print_status "Shared filesystem is working correctly"
+else
+    print_error "Shared filesystem test failed"
+fi
+
+#print_status "Setting up shared volume directories..."
+#MOUNT_PATH="/mnt/shared"
+#if mountpoint -q $MOUNT_PATH; then
+#    mkdir -p $MOUNT_PATH/{uploads,results,temp}
+#    chown -R root:root $MOUNT_PATH
+#    chmod -R 755 $MOUNT_PATH
+#    print_status "Shared volume directories created"
+#else
+#    print_warning "Shared volume not mounted at $MOUNT_PATH"
+#    print_warning "Please mount your shared volume and run: mkdir -p $MOUNT_PATH/{uploads,results,temp}"
+#fi
 
 # Start services
 print_status "Starting services..."
