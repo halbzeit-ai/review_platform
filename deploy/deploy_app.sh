@@ -85,6 +85,7 @@ npm run build
 
 # Setup Nginx configuration
 print_status "Configuring Nginx..."
+apt-get install -y nginx
 cat > /etc/nginx/sites-available/review-platform << EOF
 server {
     listen 80;
