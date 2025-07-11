@@ -120,8 +120,9 @@ async def get_processing_results(
     if pitch_deck.processing_status != "completed":
         raise HTTPException(status_code=400, detail="Processing not completed yet")
     
-    # Get results from volume storage
-    results_path = pitch_deck.file_path.replace('uploads/', 'results/').replace('.pdf', '_results.json')
+    # Get results from volume storage - use flat filename format
+    flat_filename = pitch_deck.file_path.replace('/', '_').replace('.pdf', '_results.json')
+    results_path = f"results/{flat_filename}"
     results = volume_storage.get_results(results_path)
     
     if not results:

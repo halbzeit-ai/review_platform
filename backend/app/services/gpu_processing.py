@@ -77,8 +77,14 @@ class GPUProcessingService:
             processing_complete = await self._monitor_processing(file_path, instance_id)
             
             if processing_complete:
-                pitch_deck.processing_status = "completed"
-                logger.info(f"Processing completed for pitch deck {pitch_deck_id}")
+                # Verify results file exists before marking as completed
+                results_path = file_path.replace('/', '_').replace('.pdf', '_results.json')
+                if volume_storage.file_exists(f"results/{results_path}"):
+                    pitch_deck.processing_status = "completed"
+                    logger.info(f"Processing completed for pitch deck {pitch_deck_id}")
+                else:
+                    pitch_deck.processing_status = "failed"
+                    logger.error(f"Processing completed but results file missing for pitch deck {pitch_deck_id}")
             else:
                 pitch_deck.processing_status = "failed"
                 logger.error(f"Processing failed for pitch deck {pitch_deck_id}")
