@@ -63,7 +63,14 @@ class DatacrunchClient:
             if response.status_code not in [200, 201, 202]:
                 raise Exception(f"API request failed: {response.status_code} - {response.text}")
             
-            return response.json()
+            try:
+                return response.json()
+            except Exception as json_error:
+                logger.error(f"Datacrunch API returned invalid JSON for {method} {endpoint}")
+                logger.error(f"Response status: {response.status_code}")
+                logger.error(f"Response text: {response.text}")
+                logger.error(f"JSON parse error: {json_error}")
+                raise Exception(f"Datacrunch API returned invalid JSON: {json_error}")
     
     async def create_volume(self, name: str, size_gb: int, volume_type: str = "NVMe_Shared") -> Dict[Any, Any]:
         """Create a new volume"""
