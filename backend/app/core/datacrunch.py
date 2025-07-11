@@ -127,11 +127,17 @@ class DatacrunchClient:
             "image": image,
             "description": description,
             "ssh_key_ids": ssh_key_ids or [],
-            "existing_volumes": existing_volume_ids or []
+            "existing_volumes": existing_volume_ids or [],
+            # Try alternative parameter names for volumes
+            "volumes": existing_volume_ids or [],
+            "volume_ids": existing_volume_ids or []
         }
         
         if startup_script:
+            # Try different parameter names for startup script
             data["startup_script"] = startup_script
+            data["user_data"] = startup_script
+            data["cloud_init"] = startup_script
         
         result = await self._make_request("POST", "/instances", json=data)
         logger.info(f"Deployed instance: {result}")
