@@ -4,7 +4,7 @@
 set -e  # Exit on any error
 
 echo "🗂️ Setting up Shared Filesystem for Review Platform"
-echo "=" * 60
+echo "============================================================"
 
 # Configuration
 MOUNT_POINT="/mnt/shared"
@@ -28,8 +28,21 @@ fi
 
 # Step 1: Create mount point
 echo "📁 Step 1: Creating mount point..."
-mkdir -p "$MOUNT_POINT"
-echo "  ✅ Created $MOUNT_POINT"
+echo "  Current user: $(whoami)"
+echo "  Current permissions on /mnt: $(ls -ld /mnt 2>/dev/null || echo 'Cannot access /mnt')"
+
+if [ ! -d "$MOUNT_POINT" ]; then
+    echo "  Creating directory $MOUNT_POINT..."
+    mkdir -p "$MOUNT_POINT" || {
+        echo "  ❌ Failed to create $MOUNT_POINT"
+        echo "  Trying to create /mnt first..."
+        mkdir -p /mnt
+        mkdir -p "$MOUNT_POINT"
+    }
+    echo "  ✅ Created $MOUNT_POINT"
+else
+    echo "  ✅ $MOUNT_POINT already exists"
+fi
 
 # Step 2: Install NFS utilities if needed
 echo "📦 Step 2: Installing NFS utilities..."
