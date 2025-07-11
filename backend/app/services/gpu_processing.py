@@ -49,22 +49,31 @@ class GPUProcessingService:
             pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == pitch_deck_id).first()
             print(f"DEBUG: Database query completed for pitch deck {pitch_deck_id}")
             if not pitch_deck:
+                print(f"DEBUG: Pitch deck {pitch_deck_id} not found!")
                 logger.error(f"Pitch deck {pitch_deck_id} not found")
                 return False
             
+            print(f"DEBUG: Setting processing status to 'processing' for pitch deck {pitch_deck_id}")
             logger.info(f"Setting processing status to 'processing' for pitch deck {pitch_deck_id}")
             pitch_deck.processing_status = "processing"
+            print(f"DEBUG: About to commit database changes for pitch deck {pitch_deck_id}")
             db.commit()
+            print(f"DEBUG: Database commit completed for pitch deck {pitch_deck_id}")
             logger.info(f"Database updated for pitch deck {pitch_deck_id}")
             
+            print(f"DEBUG: Creating processing marker for pitch deck {pitch_deck_id}")
             # Create processing marker
             volume_storage.create_processing_marker(file_path)
+            print(f"DEBUG: Processing marker created for pitch deck {pitch_deck_id}")
             
+            print(f"DEBUG: Checking for existing results file for pitch deck {pitch_deck_id}")
             # Clean up any existing results file to prevent reading stale data
             results_path = file_path.replace('/', '_').replace('.pdf', '_results.json')
             if volume_storage.file_exists(f"results/{results_path}"):
+                print(f"DEBUG: Deleting existing results file for pitch deck {pitch_deck_id}")
                 volume_storage.delete_file(f"results/{results_path}")
                 logger.info(f"Cleaned up existing results file for pitch deck {pitch_deck_id}")
+            print(f"DEBUG: Results cleanup completed for pitch deck {pitch_deck_id}")
             
             # Create startup script for GPU instance
             logger.info(f"Creating startup script for pitch deck {pitch_deck_id}")
