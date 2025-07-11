@@ -134,10 +134,8 @@ class DatacrunchClient:
         #     data["shared_filesystems"] = existing_volume_ids
         
         if startup_script:
-            # Try different parameter names for startup script
-            data["startup_script"] = startup_script
+            # Use only user_data - most common cloud-init parameter
             data["user_data"] = startup_script
-            data["cloud_init"] = startup_script
         
         # Debug log the exact data being sent
         print(f"DEBUG: Sending instance creation data: {json.dumps(data, indent=2)}")
