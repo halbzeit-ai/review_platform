@@ -10,8 +10,33 @@ echo "============================================================"
 MOUNT_POINT="/mnt/shared"
 NFS_ENDPOINT="nfs.fin-01.datacrunch.io:/SFS-3H6ebwA1-b0cbae8b"
 FILESYSTEM_ID="a0a3a880-5dc3-4184-9e76-0279e22bae49"
-SERVICE_USER="ubuntu"
 ENV_FILE="/opt/review-platform/backend/.env"
+
+# Auto-detect service user by checking multiple sources
+SERVICE_USER="root"  # Default fallback
+
+# Method 1: Check who owns the project directory
+if [ -d "/opt/review-platform" ]; then
+    PROJECT_OWNER=$(stat -c '%U' /opt/review-platform)
+    echo "🔍 Project directory owner: $PROJECT_OWNER"
+fi
+
+# Method 2: Check systemd service configuration
+if [ -f "/etc/systemd/system/review-platform.service" ]; then
+    SYSTEMD_USER=$(grep "^User=" /etc/systemd/system/review-platform.service | cut -d= -f2 || echo "")
+    if [ -n "$SYSTEMD_USER" ]; then
+        echo "🔍 Systemd service user: $SYSTEMD_USER"
+        SERVICE_USER="$SYSTEMD_USER"
+    else
+        echo "🔍 Systemd service runs as root (no User= specified)"
+        SERVICE_USER="root"
+    fi
+else
+    echo "⚠️  Systemd service file not found, using root"
+    SERVICE_USER="root"
+fi
+
+echo "✅ Using service user: $SERVICE_USER"
 
 echo "📋 Configuration:"
 echo "  Mount Point: $MOUNT_POINT"
