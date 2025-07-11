@@ -55,7 +55,32 @@ fi
 echo "📁 Step 1: Creating mount point..."
 echo "  Current user: $(whoami)"
 echo "  Current permissions on /mnt: $(ls -ld /mnt 2>/dev/null || echo 'Cannot access /mnt')"
-echo "  Contents of /mnt: $(ls -la /mnt 2>/dev/null || echo 'Cannot list /mnt')"
+
+# Check for stale/broken mounts first
+echo "  Checking for stale mounts..."
+if ls -la /mnt 2>&1 | grep -q "d?????????"; then
+    echo "  ⚠️  Detected stale/broken mount at $MOUNT_POINT"
+    echo "  Attempting to force unmount..."
+    
+    # Try various unmount methods
+    umount "$MOUNT_POINT" 2>/dev/null || echo "    Standard unmount failed"
+    umount -f "$MOUNT_POINT" 2>/dev/null || echo "    Force unmount failed"
+    umount -l "$MOUNT_POINT" 2>/dev/null || echo "    Lazy unmount failed"
+    
+    # If all else fails, try to remove the mount point
+    echo "  Trying to remove stale mount point..."
+    rmdir "$MOUNT_POINT" 2>/dev/null || {
+        echo "  Using fusermount to clean up..."
+        fusermount -u "$MOUNT_POINT" 2>/dev/null || echo "    fusermount failed"
+    }
+    
+    echo "  Cleaning up mount point..."
+    rm -rf "$MOUNT_POINT" 2>/dev/null || echo "    Could not remove directory"
+    
+    echo "  ✅ Stale mount cleanup attempted"
+else
+    echo "  Contents of /mnt: $(ls -la /mnt 2>/dev/null || echo 'Cannot list /mnt')"
+fi
 
 # Check if there's an existing mount or filesystem issue
 echo "  Checking for existing mounts..."
