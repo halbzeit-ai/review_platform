@@ -97,7 +97,7 @@ class GPUProcessingService:
         """Create startup script for GPU instance"""
         mount_path = settings.SHARED_FILESYSTEM_MOUNT_PATH
         
-        script = f"""#!/bin/bash
+        script = """#!/bin/bash
 # Mount shared filesystem (auto-mounted on Datacrunch instances with shared filesystem)
 mkdir -p {mount_path}
 # Shared filesystem should be auto-mounted, but ensure directory exists
@@ -236,11 +236,15 @@ if __name__ == "__main__":
 EOF
 
 # Run processing
-python3 /root/process_pdf.py
+python3 /root/process_pdf.py {file_path}
 
 # Auto-shutdown after processing
 shutdown -h now
 """
+        # Replace placeholders
+        script = script.replace("{mount_path}", mount_path)
+        script = script.replace("{file_path}", file_path)
+        
         return script
     
     async def _monitor_processing(self, file_path: str, instance_id: str) -> bool:
