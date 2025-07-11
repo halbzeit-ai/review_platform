@@ -99,6 +99,9 @@ class GPUProcessingService:
             print(f"DEBUG: SSH keys obtained: {len(ssh_key_ids)} keys")
             
             print(f"DEBUG: About to call datacrunch_client.deploy_instance for pitch deck {pitch_deck_id}")
+            print(f"DEBUG: Instance config - hostname: {instance_name}, type: {self.gpu_instance_type}, image: {self.gpu_image}")
+            print(f"DEBUG: SSH keys: {ssh_key_ids}, filesystem: {filesystem_id}")
+            print(f"DEBUG: Startup script length: {len(startup_script)} characters")
             logger.info(f"Creating GPU instance {instance_name} for pitch deck {pitch_deck_id}")
             instance_data = await datacrunch_client.deploy_instance(
                 hostname=instance_name,
@@ -147,7 +150,10 @@ class GPUProcessingService:
         except Exception as e:
             print(f"DEBUG EXCEPTION in trigger_processing: {e}")
             print(f"DEBUG Exception type: {type(e)}")
+            import traceback
+            print(f"DEBUG Full traceback: {traceback.format_exc()}")
             logger.error(f"GPU processing failed for pitch deck {pitch_deck_id}: {str(e)}")
+            logger.error(f"Full error details: {traceback.format_exc()}")
             pitch_deck.processing_status = "failed"
             db.commit()
             volume_storage.remove_processing_marker(file_path)
