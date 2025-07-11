@@ -27,6 +27,7 @@ class GPUProcessingService:
         3. Monitor processing completion
         4. Clean up instance
         """
+        print(f"DEBUG: trigger_processing called for pitch_deck_id={pitch_deck_id}, file_path={file_path}")
         logger.info(f"ENTRY: trigger_processing called for pitch_deck_id={pitch_deck_id}, file_path={file_path}")
         
         try:
@@ -117,6 +118,8 @@ class GPUProcessingService:
             return processing_complete
             
         except Exception as e:
+            print(f"DEBUG EXCEPTION in trigger_processing: {e}")
+            print(f"DEBUG Exception type: {type(e)}")
             logger.error(f"GPU processing failed for pitch deck {pitch_deck_id}: {str(e)}")
             pitch_deck.processing_status = "failed"
             db.commit()
