@@ -166,13 +166,26 @@ class GPUProcessingService:
         mount_path = settings.SHARED_FILESYSTEM_MOUNT_PATH
         
         script = """#!/bin/bash
-# Mount shared filesystem (auto-mounted on Datacrunch instances with shared filesystem)
-mkdir -p {mount_path}
-# Shared filesystem should be auto-mounted, but ensure directory exists
+# DEBUG STARTUP SCRIPT - Track every step
+echo "STARTUP DEBUG: Script started at $(date)" > /tmp/startup-debug.log
+echo "STARTUP DEBUG: User: $(whoami)" >> /tmp/startup-debug.log
+echo "STARTUP DEBUG: Working dir: $(pwd)" >> /tmp/startup-debug.log
 
-# ULTRA MINIMAL TEST - Skip all installations, just test basic functionality
-echo "$(date): ULTRA MINIMAL TEST - Starting immediate processing..." >> /var/log/gpu-processing.log
-echo "$(date): Skipping all dependency installations for fastest test..." >> /var/log/gpu-processing.log
+# Mount shared filesystem (auto-mounted on Datacrunch instances with shared filesystem)
+echo "STARTUP DEBUG: Creating mount point..." >> /tmp/startup-debug.log
+mkdir -p {mount_path}
+echo "STARTUP DEBUG: Mount point created, checking..." >> /tmp/startup-debug.log
+if [ -d "{mount_path}" ]; then
+    echo "STARTUP DEBUG: Mount point exists" >> /tmp/startup-debug.log
+    ls -la {mount_path} >> /tmp/startup-debug.log 2>&1
+else
+    echo "STARTUP DEBUG: Mount point FAILED" >> /tmp/startup-debug.log
+fi
+
+# Create results and temp directories
+echo "STARTUP DEBUG: Creating directories..." >> /tmp/startup-debug.log
+mkdir -p {mount_path}/results {mount_path}/temp
+echo "STARTUP DEBUG: Directories created" >> /tmp/startup-debug.log
 
 # Upload GPU processing code
 cat > /root/upload_gpu_code.py << 'EOF'
@@ -195,6 +208,7 @@ EOF
 python3 /root/upload_gpu_code.py
 
 # Create ULTRA MINIMAL test processing script
+echo "STARTUP DEBUG: Creating Python script..." >> /tmp/startup-debug.log
 cat > /root/process_pdf.py << 'EOF'
 #!/usr/bin/env python3
 import sys
@@ -238,9 +252,21 @@ print("ULTRA MINIMAL TEST: Complete!")
 EOF
 
 # Run ultra minimal test immediately
-echo "$(date): Starting ultra minimal test..." >> /var/log/gpu-processing.log
-python3 /root/process_pdf.py {file_path} >> /var/log/gpu-processing.log 2>&1
-echo "$(date): Ultra minimal test completed" >> /var/log/gpu-processing.log
+echo "STARTUP DEBUG: Python script created, about to run..." >> /tmp/startup-debug.log
+echo "STARTUP DEBUG: Checking if script exists..." >> /tmp/startup-debug.log
+ls -la /root/process_pdf.py >> /tmp/startup-debug.log 2>&1
+
+echo "STARTUP DEBUG: Running Python script with file_path: {file_path}" >> /tmp/startup-debug.log
+python3 /root/process_pdf.py {file_path} >> /tmp/startup-debug.log 2>&1
+echo "STARTUP DEBUG: Python script completed, exit code: $?" >> /tmp/startup-debug.log
+
+echo "STARTUP DEBUG: Checking for results..." >> /tmp/startup-debug.log
+ls -la {mount_path}/results/ >> /tmp/startup-debug.log 2>&1
+ls -la {mount_path}/temp/ >> /tmp/startup-debug.log 2>&1
+
+echo "STARTUP DEBUG: About to shutdown..." >> /tmp/startup-debug.log
+# Copy debug log to shared filesystem before shutdown
+cp /tmp/startup-debug.log {mount_path}/startup-debug.log 2>/dev/null || echo "Could not copy debug log"
 
 # Auto-shutdown after processing
 shutdown -h now
