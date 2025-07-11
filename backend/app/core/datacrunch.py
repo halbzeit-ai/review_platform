@@ -129,18 +129,12 @@ class DatacrunchClient:
             "ssh_key_ids": ssh_key_ids or []
         }
         
-        # Try different approaches for volume attachment
+        # Try different approaches for volume attachment based on Datacrunch documentation
         if existing_volume_ids:
-            # Try attaching existing storage by ID (most likely correct)
-            data["storage"] = [
-                {
-                    "id": existing_volume_ids[0],
-                    "attach": True
-                }
-            ]
-            # Alternative: maybe it's just a simple list
-            data["attach_storage"] = existing_volume_ids
-            data["existing_storage"] = existing_volume_ids
+            # Try the format that matches manual web interface
+            data["shared_filesystems"] = existing_volume_ids
+            data["attach_shared_storage"] = existing_volume_ids[0]
+            data["shared_storage_id"] = existing_volume_ids[0]
         
         if startup_script:
             # Try different parameter names for startup script
