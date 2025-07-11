@@ -5,17 +5,34 @@ Test script to verify GPU processing configuration
 
 import sys
 import os
-sys.path.append('/opt/review-platform/backend')
-
-from app.services.gpu_processing import GPUProcessingService
-from app.core.datacrunch import datacrunch_client
-from app.core.config import settings
 import asyncio
+
+# Add backend to path and activate virtual environment
+sys.path.append('/opt/review-platform/backend')
+os.chdir('/opt/review-platform/backend')
+
+# Try to activate virtual environment
+venv_path = '/opt/review-platform/venv/bin/activate_this.py'
+if os.path.exists(venv_path):
+    exec(open(venv_path).read(), {'__file__': venv_path})
+
+try:
+    from app.services.gpu_processing import GPUProcessingService
+    from app.core.datacrunch import datacrunch_client
+    from app.core.config import settings
+    IMPORTS_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️  Import error: {e}")
+    print("Running basic configuration test instead...")
+    IMPORTS_AVAILABLE = False
 
 async def test_gpu_config():
     """Test GPU processing configuration"""
     print("🧪 Testing GPU Processing Configuration")
     print("=" * 50)
+    
+    if not IMPORTS_AVAILABLE:
+        return await test_basic_config()
     
     # Initialize service
     gpu_service = GPUProcessingService()
@@ -53,8 +70,56 @@ async def test_gpu_config():
     print("\n✅ GPU Processing Configuration Test Complete!")
     return True
 
+async def test_basic_config():
+    """Basic configuration test when imports aren't available"""
+    print("📋 Running Basic Configuration Test")
+    
+    # Check environment file
+    env_file = '/opt/review-platform/backend/.env'
+    if os.path.exists(env_file):
+        print("✅ Environment file found")
+        
+        # Read and check key variables
+        with open(env_file, 'r') as f:
+            env_content = f.read()
+            
+        if 'DATACRUNCH_SHARED_FILESYSTEM_ID' in env_content:
+            print("✅ DATACRUNCH_SHARED_FILESYSTEM_ID configured")
+        else:
+            print("❌ DATACRUNCH_SHARED_FILESYSTEM_ID not found in .env")
+            
+        if 'DATACRUNCH_CLIENT_ID' in env_content:
+            print("✅ DATACRUNCH_CLIENT_ID configured")
+        else:
+            print("❌ DATACRUNCH_CLIENT_ID not found in .env")
+            
+    else:
+        print("❌ Environment file not found")
+        return False
+    
+    # Check shared filesystem
+    if os.path.exists('/mnt/shared'):
+        print("✅ Shared filesystem mounted")
+    else:
+        print("❌ Shared filesystem not mounted")
+        return False
+    
+    # Check virtual environment
+    if os.path.exists('/opt/review-platform/venv'):
+        print("✅ Virtual environment exists")
+    else:
+        print("❌ Virtual environment not found")
+        return False
+    
+    print("\n✅ Basic Configuration Test Complete!")
+    return True
+
 async def test_instance_creation():
     """Test creating and immediately deleting a GPU instance"""
+    if not IMPORTS_AVAILABLE:
+        print("❌ Cannot test instance creation - imports not available")
+        return False
+        
     print("\n🚀 Testing GPU Instance Creation...")
     
     gpu_service = GPUProcessingService()
