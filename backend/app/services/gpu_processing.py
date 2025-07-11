@@ -31,17 +31,23 @@ class GPUProcessingService:
         logger.info(f"ENTRY: trigger_processing called for pitch_deck_id={pitch_deck_id}, file_path={file_path}")
         
         try:
+            print(f"DEBUG: Getting database session for pitch deck {pitch_deck_id}")
             logger.info(f"Getting database session for pitch deck {pitch_deck_id}")
             db = next(get_db())
+            print(f"DEBUG: Database session obtained for pitch deck {pitch_deck_id}")
             logger.info(f"Database session obtained for pitch deck {pitch_deck_id}")
         except Exception as e:
+            print(f"DEBUG: Failed to get database session: {e}")
             logger.error(f"Failed to get database session for pitch deck {pitch_deck_id}: {e}")
             return False
         
         try:
             # Update processing status
+            print(f"DEBUG: Starting GPU processing for pitch deck {pitch_deck_id}")
             logger.info(f"Starting GPU processing for pitch deck {pitch_deck_id}")
+            print(f"DEBUG: Querying database for pitch deck {pitch_deck_id}")
             pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == pitch_deck_id).first()
+            print(f"DEBUG: Database query completed for pitch deck {pitch_deck_id}")
             if not pitch_deck:
                 logger.error(f"Pitch deck {pitch_deck_id} not found")
                 return False
