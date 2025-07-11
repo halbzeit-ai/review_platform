@@ -211,7 +211,12 @@ else
 fi
 
 mkdir -p {mount_path}/results {mount_path}/temp
-echo '{{"nfs_test": true, "timestamp": "'$(date)'", "file_path": "{file_path}", "status": "success"}}' > {mount_path}/results/test_result.json
+
+# Create the correctly named results file that the monitor expects
+RESULTS_FILE_NAME=$(echo "{file_path}" | sed 's|/|_|g' | sed 's|\.pdf|_results.json|g')
+echo '{{"nfs_test": true, "timestamp": "'$(date)'", "file_path": "{file_path}", "status": "success"}}' > {mount_path}/results/$RESULTS_FILE_NAME
+
+# Also create the test completion marker
 touch {mount_path}/temp/processing_complete_test
 echo "PROCESSING: Files created, keeping instance alive for 2 minutes..."
 sleep 120
@@ -272,7 +277,11 @@ shutdown -h now
             await datacrunch_client.delete_instance(instance_id)
             logger.info(f"Cleaned up GPU instance {instance_id}")
         except Exception as e:
-            logger.error(f"Error cleaning up instance {instance_id}: {e}")
+            # Instance might have already shut down automatically
+            if "404" in str(e) or "not_found" in str(e):
+                logger.info(f"GPU instance {instance_id} already deleted (likely shut down automatically)")
+            else:
+                logger.error(f"Error cleaning up instance {instance_id}: {e}")
 
 # Global service instance
 gpu_processing_service = GPUProcessingService()
