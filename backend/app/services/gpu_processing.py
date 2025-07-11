@@ -209,7 +209,7 @@ except ImportError:
 
 def process_pdf_advanced(file_path):
     # Advanced processing using GPU processing modules
-    mount_path = os.environ.get('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/shared')
+    mount_path = os.environ.get('SHARED_FILESYSTEM_MOUNT_PATH', '{mount_path}')
     
     # Initialize processor
     processor = PDFProcessor(mount_path)
@@ -275,8 +275,9 @@ if __name__ == "__main__":
         else:
             results = process_pdf_fallback(file_path)
         
-        # Save results
-        results_file = full_path.replace('uploads/', 'results/').replace('.pdf', '_results.json')
+        # Save results - use flat filename format that matches backend expectation
+        flat_filename = file_path.replace('/', '_').replace('.pdf', '_results.json')
+        results_file = "{mount_path}/results/" + flat_filename
         results_dir = os.path.dirname(results_file)
         os.makedirs(results_dir, exist_ok=True)
         
@@ -285,8 +286,9 @@ if __name__ == "__main__":
         
         print(f"Results saved to: {results_file}")
         
-        # Create completion marker
-        completion_marker = "{mount_path}/temp/processing_complete_{file_path.replace('/', '_')}"
+        # Create completion marker  
+        flat_marker_name = file_path.replace('/', '_')
+        completion_marker = "{mount_path}/temp/processing_complete_" + flat_marker_name
         Path(completion_marker).touch()
         
     except Exception as e:
