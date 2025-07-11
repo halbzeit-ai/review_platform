@@ -112,6 +112,17 @@ class DatacrunchClient:
         result = await self._make_request("DELETE", f"/volumes/{volume_id}")
         return result
     
+    async def create_startup_script(self, name: str, script: str) -> Dict[Any, Any]:
+        """Create a startup script"""
+        data = {
+            "name": name,
+            "script": script
+        }
+        
+        result = await self._make_request("POST", "/startup-scripts", json=data)
+        logger.info(f"Created startup script: {result}")
+        return result
+    
     async def deploy_instance(self, 
                              hostname: str, 
                              instance_type: str, 
@@ -119,7 +130,7 @@ class DatacrunchClient:
                              description: str = "Review Platform Instance",
                              ssh_key_ids: List[str] = None,
                              existing_volume_ids: List[str] = None,
-                             startup_script: str = None) -> Dict[Any, Any]:
+                             startup_script_id: str = None) -> Dict[Any, Any]:
         """Deploy instance with proper API parameters"""
         data = {
             "hostname": hostname,
@@ -133,9 +144,8 @@ class DatacrunchClient:
         if existing_volume_ids:
             data["existing_volumes"] = existing_volume_ids
         
-        if startup_script:
-            # Use only user_data - most common cloud-init parameter
-            data["user_data"] = startup_script
+        if startup_script_id:
+            data["startup_script_id"] = startup_script_id
         
         # Debug log the exact data being sent
         print(f"DEBUG: Sending instance creation data: {json.dumps(data, indent=2)}")

@@ -78,10 +78,20 @@ class GPUProcessingService:
             # Create startup script for GPU instance
             print(f"DEBUG: Creating startup script for pitch deck {pitch_deck_id}")
             logger.info(f"Creating startup script for pitch deck {pitch_deck_id}")
-            startup_script = self._create_startup_script(file_path, pitch_deck_id)
-            print(f"DEBUG: Startup script created for pitch deck {pitch_deck_id}")
+            startup_script_content = self._create_startup_script(file_path, pitch_deck_id)
+            print(f"DEBUG: Startup script content created for pitch deck {pitch_deck_id}")
             
-            # Create GPU instance
+            # Step 1: Create startup script via API
+            script_name = f"gpu-processing-{pitch_deck_id}"
+            startup_script_data = await datacrunch_client.create_startup_script(
+                name=script_name,
+                script=startup_script_content
+            )
+            startup_script_id = startup_script_data["id"]
+            print(f"DEBUG: Startup script created with ID: {startup_script_id}")
+            logger.info(f"Created startup script {startup_script_id} for pitch deck {pitch_deck_id}")
+            
+            # Step 2: Create GPU instance with startup script ID
             instance_name = f"gpu-processor-{pitch_deck_id}"
             filesystem_id = settings.DATACRUNCH_SHARED_FILESYSTEM_ID
             
@@ -101,7 +111,7 @@ class GPUProcessingService:
             print(f"DEBUG: About to call datacrunch_client.deploy_instance for pitch deck {pitch_deck_id}")
             print(f"DEBUG: Instance config - hostname: {instance_name}, type: {self.gpu_instance_type}, image: {self.gpu_image}")
             print(f"DEBUG: SSH keys: {ssh_key_ids}, filesystem: {filesystem_id}")
-            print(f"DEBUG: Startup script length: {len(startup_script)} characters")
+            print(f"DEBUG: Startup script ID: {startup_script_id}")
             logger.info(f"Creating GPU instance {instance_name} for pitch deck {pitch_deck_id}")
             instance_data = await datacrunch_client.deploy_instance(
                 hostname=instance_name,
@@ -109,7 +119,7 @@ class GPUProcessingService:
                 image=self.gpu_image,
                 ssh_key_ids=ssh_key_ids,
                 existing_volume_ids=[filesystem_id],
-                startup_script=startup_script
+                startup_script_id=startup_script_id
             )
             print(f"DEBUG: datacrunch_client.deploy_instance returned for pitch deck {pitch_deck_id}")
             logger.info(f"GPU instance creation response received for pitch deck {pitch_deck_id}")
@@ -162,67 +172,53 @@ class GPUProcessingService:
             db.close()
     
     def _create_startup_script(self, file_path: str, pitch_deck_id: int = None) -> str:
-        """Create cloud-config user-data for GPU instance"""
+        """Create bash startup script for GPU instance"""
         mount_path = settings.SHARED_FILESYSTEM_MOUNT_PATH
-        hostname = f"gpu-processor-{pitch_deck_id}" if pitch_deck_id else "gpu-processor"
         
-        # Create cloud-config format that extends the default Datacrunch template
-        cloud_config = f"""#cloud-config
-user: root
-disable_root: false
-chpasswd: {{ expire: False }}
-hostname: {hostname}.datacrunch.io
+        script = f"""#!/bin/bash
+exec > /var/log/startup.log 2>&1
+echo "VOLUME MOUNT: Starting at $(date)"
+mkdir -p {mount_path}
+echo "VOLUME MOUNT: Checking for attached volumes..."
+lsblk
 
-write_files:
- - path: /tmp/startup_script.sh
-   content: |
-     #!/bin/bash
-     exec > /var/log/startup.log 2>&1
-     echo "VOLUME MOUNT: Starting at $(date)"
-     mkdir -p {mount_path}
-     echo "VOLUME MOUNT: Checking for attached volumes..."
-     lsblk
-     VOLUME_DEVICE=""
-     for device in /dev/sd* /dev/vd*; do
-       if [ -b "$device" ] && [ "$device" != "/dev/sda" ] && [ "$device" != "/dev/sda1" ] && [ "$device" != "/dev/vda" ] && [ "$device" != "/dev/vda1" ] && [ "$device" != "/dev/vda2" ] && [ "$device" != "/dev/vda3" ]; then
-         echo "VOLUME MOUNT: Found potential volume device: $device"
-         VOLUME_DEVICE="$device"
-         break
-       fi
-     done
-     if [ -n "$VOLUME_DEVICE" ]; then
-       echo "VOLUME MOUNT: Mounting volume $VOLUME_DEVICE to {mount_path}"
-       mount "$VOLUME_DEVICE" {mount_path}
-     fi
-     if ! mountpoint -q {mount_path}; then
-       echo "VOLUME MOUNT: Volume mount failed, trying NFS..."
-       apt-get update && apt-get install -y nfs-common
-       mount -t nfs -o nconnect=16 nfs.fin-01.datacrunch.io:/SFS-3H6ebwA1-b0cbae8b {mount_path}
-     fi
-     if mountpoint -q {mount_path}; then
-       echo "MOUNT SUCCESS: Shared filesystem mounted"
-       ls -la {mount_path}/
-     else
-       echo "MOUNT FAILED: All methods failed"
-       exit 1
-     fi
-     mkdir -p {mount_path}/results {mount_path}/temp
-     echo '{{"nfs_test": true, "timestamp": "'$(date)'", "file_path": "{file_path}", "status": "success"}}' > {mount_path}/results/test_result.json
-     touch {mount_path}/temp/processing_complete_test
-     echo "PROCESSING: Files created, keeping instance alive for 2 minutes..."
-     sleep 120
-     shutdown -h now
-   permissions: '0755'
+VOLUME_DEVICE=""
+for device in /dev/sd* /dev/vd*; do
+  if [ -b "$device" ] && [ "$device" != "/dev/sda" ] && [ "$device" != "/dev/sda1" ] && [ "$device" != "/dev/vda" ] && [ "$device" != "/dev/vda1" ] && [ "$device" != "/dev/vda2" ] && [ "$device" != "/dev/vda3" ]; then
+    echo "VOLUME MOUNT: Found potential volume device: $device"
+    VOLUME_DEVICE="$device"
+    break
+  fi
+done
 
-runcmd:
- - 'nvidia-smi --query-gpu=index --format=csv,noheader | xargs -L1 nvidia-smi -mig 0 -i || true'
- - '/tmp/startup_script.sh'
+if [ -n "$VOLUME_DEVICE" ]; then
+  echo "VOLUME MOUNT: Mounting volume $VOLUME_DEVICE to {mount_path}"
+  mount "$VOLUME_DEVICE" {mount_path}
+fi
 
-bootcmd:
-    - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
+if ! mountpoint -q {mount_path}; then
+  echo "VOLUME MOUNT: Volume mount failed, trying NFS..."
+  apt-get update && apt-get install -y nfs-common
+  mount -t nfs -o nconnect=16 nfs.fin-01.datacrunch.io:/SFS-3H6ebwA1-b0cbae8b {mount_path}
+fi
+
+if mountpoint -q {mount_path}; then
+  echo "MOUNT SUCCESS: Shared filesystem mounted"
+  ls -la {mount_path}/
+else
+  echo "MOUNT FAILED: All methods failed"
+  exit 1
+fi
+
+mkdir -p {mount_path}/results {mount_path}/temp
+echo '{{"nfs_test": true, "timestamp": "'$(date)'", "file_path": "{file_path}", "status": "success"}}' > {mount_path}/results/test_result.json
+touch {mount_path}/temp/processing_complete_test
+echo "PROCESSING: Files created, keeping instance alive for 2 minutes..."
+sleep 120
+shutdown -h now
 """
         
-        return cloud_config
+        return script
     
     async def _monitor_processing(self, file_path: str, instance_id: str) -> bool:
         """Monitor processing completion"""
