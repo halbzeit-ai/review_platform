@@ -58,7 +58,10 @@ class DatacrunchClient:
         kwargs["headers"] = headers
         
         async with httpx.AsyncClient() as client:
+            print(f"DEBUG DATACRUNCH: Making {method} request to {self.api_base}{endpoint}")
+            print(f"DEBUG DATACRUNCH: Request kwargs: {kwargs}")
             response = await client.request(method, f"{self.api_base}{endpoint}", **kwargs)
+            print(f"DEBUG DATACRUNCH: Response received: status {response.status_code}")
             
             if response.status_code not in [200, 201, 202]:
                 raise Exception(f"API request failed: {response.status_code} - {response.text}")
@@ -66,6 +69,10 @@ class DatacrunchClient:
             try:
                 return response.json()
             except Exception as json_error:
+                print(f"DEBUG DATACRUNCH: Invalid JSON for {method} {endpoint}")
+                print(f"DEBUG DATACRUNCH: Response status: {response.status_code}")
+                print(f"DEBUG DATACRUNCH: Response text: {response.text}")
+                print(f"DEBUG DATACRUNCH: JSON parse error: {json_error}")
                 logger.error(f"Datacrunch API returned invalid JSON for {method} {endpoint}")
                 logger.error(f"Response status: {response.status_code}")
                 logger.error(f"Response text: {response.text}")
