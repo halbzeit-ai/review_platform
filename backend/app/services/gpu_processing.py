@@ -27,7 +27,15 @@ class GPUProcessingService:
         3. Monitor processing completion
         4. Clean up instance
         """
-        db = next(get_db())
+        logger.info(f"ENTRY: trigger_processing called for pitch_deck_id={pitch_deck_id}, file_path={file_path}")
+        
+        try:
+            logger.info(f"Getting database session for pitch deck {pitch_deck_id}")
+            db = next(get_db())
+            logger.info(f"Database session obtained for pitch deck {pitch_deck_id}")
+        except Exception as e:
+            logger.error(f"Failed to get database session for pitch deck {pitch_deck_id}: {e}")
+            return False
         
         try:
             # Update processing status
