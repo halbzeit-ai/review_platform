@@ -175,22 +175,43 @@ hostname: {hostname}.datacrunch.io
 
 runcmd:
  - 'nvidia-smi --query-gpu=index --format=csv,noheader | xargs -L1 nvidia-smi -mig 0 -i || true'
- - 'exec > /var/log/startup.log 2>&1'
- - 'echo "VOLUME MOUNT: Starting at $(date)"'
- - 'mkdir -p {mount_path}'
- - 'echo "VOLUME MOUNT: Checking for attached volumes..."'
- - 'lsblk'
- - 'VOLUME_DEVICE=""'
- - 'for device in /dev/sd* /dev/vd*; do if [ -b "$device" ] && [ "$device" != "/dev/sda" ] && [ "$device" != "/dev/sda1" ] && [ "$device" != "/dev/vda" ] && [ "$device" != "/dev/vda1" ] && [ "$device" != "/dev/vda2" ] && [ "$device" != "/dev/vda3" ]; then echo "VOLUME MOUNT: Found potential volume device: $device"; VOLUME_DEVICE="$device"; break; fi; done'
- - 'if [ -n "$VOLUME_DEVICE" ]; then echo "VOLUME MOUNT: Mounting volume $VOLUME_DEVICE to {mount_path}"; mount "$VOLUME_DEVICE" {mount_path}; fi'
- - 'if ! mountpoint -q {mount_path}; then echo "VOLUME MOUNT: Volume mount failed, trying NFS..."; apt-get update && apt-get install -y nfs-common; mount -t nfs -o nconnect=16 nfs.fin-01.datacrunch.io:/SFS-3H6ebwA1-b0cbae8b {mount_path}; fi'
- - 'if mountpoint -q {mount_path}; then echo "MOUNT SUCCESS: Shared filesystem mounted"; ls -la {mount_path}/; else echo "MOUNT FAILED: All methods failed"; exit 1; fi'
- - 'mkdir -p {mount_path}/results {mount_path}/temp'
- - 'echo "{{\\"nfs_test\\": true, \\"timestamp\\": \\"$(date)\\", \\"file_path\\": \\"{file_path}\\", \\"status\\": \\"success\\"}}" > {mount_path}/results/test_result.json'
- - 'touch {mount_path}/temp/processing_complete_test'
- - 'echo "PROCESSING: Files created, keeping instance alive for 2 minutes..."'
- - 'sleep 120'
- - 'shutdown -h now'
+ - |
+   #!/bin/bash
+   exec > /var/log/startup.log 2>&1
+   echo "VOLUME MOUNT: Starting at $(date)"
+   mkdir -p {mount_path}
+   echo "VOLUME MOUNT: Checking for attached volumes..."
+   lsblk
+   VOLUME_DEVICE=""
+   for device in /dev/sd* /dev/vd*; do
+     if [ -b "$device" ] && [ "$device" != "/dev/sda" ] && [ "$device" != "/dev/sda1" ] && [ "$device" != "/dev/vda" ] && [ "$device" != "/dev/vda1" ] && [ "$device" != "/dev/vda2" ] && [ "$device" != "/dev/vda3" ]; then
+       echo "VOLUME MOUNT: Found potential volume device: $device"
+       VOLUME_DEVICE="$device"
+       break
+     fi
+   done
+   if [ -n "$VOLUME_DEVICE" ]; then
+     echo "VOLUME MOUNT: Mounting volume $VOLUME_DEVICE to {mount_path}"
+     mount "$VOLUME_DEVICE" {mount_path}
+   fi
+   if ! mountpoint -q {mount_path}; then
+     echo "VOLUME MOUNT: Volume mount failed, trying NFS..."
+     apt-get update && apt-get install -y nfs-common
+     mount -t nfs -o nconnect=16 nfs.fin-01.datacrunch.io:/SFS-3H6ebwA1-b0cbae8b {mount_path}
+   fi
+   if mountpoint -q {mount_path}; then
+     echo "MOUNT SUCCESS: Shared filesystem mounted"
+     ls -la {mount_path}/
+   else
+     echo "MOUNT FAILED: All methods failed"
+     exit 1
+   fi
+   mkdir -p {mount_path}/results {mount_path}/temp
+   echo '{{"nfs_test": true, "timestamp": "'$(date)'", "file_path": "{file_path}", "status": "success"}}' > {mount_path}/results/test_result.json
+   touch {mount_path}/temp/processing_complete_test
+   echo "PROCESSING: Files created, keeping instance alive for 2 minutes..."
+   sleep 120
+   shutdown -h now
 
 bootcmd:
     - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
