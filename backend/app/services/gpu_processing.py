@@ -179,7 +179,7 @@ mkdir -p {mount_path}
 
 # Mount shared filesystem via NFS (from Datacrunch dashboard)
 echo "NFS MOUNT: Mounting shared filesystem..."
-mount -t nfs -o nconnect=16 nfs.fin-01.datacrunch.io:/SFS-5gkKcxHe-6721608d {mount_path}
+mount -t nfs -o nconnect=16 nfs.fin-01.datacrunch.io:/SFS-3H6ebwA1-b0cbae8b {mount_path}
 
 # Verify mount worked
 if mountpoint -q {mount_path}; then
