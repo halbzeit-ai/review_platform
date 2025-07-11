@@ -26,7 +26,7 @@ async def trigger_gpu_processing(pitch_deck_id: int, file_path: str):
         if success:
             logger.info(f"GPU processing completed successfully for pitch deck {pitch_deck_id}")
         else:
-            logger.error(f"GPU processing failed for pitch deck {pitch_deck_id}")
+            logger.error(f"GPU processing RETURNED FALSE for pitch deck {pitch_deck_id}")
     except Exception as e:
         logger.error(f"BACKGROUND TASK EXCEPTION for pitch deck {pitch_deck_id}: {str(e)}")
         logger.error(f"Exception type: {type(e)}")
