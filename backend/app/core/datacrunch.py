@@ -131,8 +131,7 @@ class DatacrunchClient:
         }
         
         if startup_script:
-            # For now, we'll use the basic parameters and add startup script later
-            pass
+            data["startup_script"] = startup_script
         
         result = await self._make_request("POST", "/instances", json=data)
         logger.info(f"Deployed instance: {result}")
