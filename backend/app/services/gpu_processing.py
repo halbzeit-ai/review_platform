@@ -170,14 +170,9 @@ class GPUProcessingService:
 mkdir -p {mount_path}
 # Shared filesystem should be auto-mounted, but ensure directory exists
 
-# Install dependencies with logging
-echo "$(date): Starting apt-get update..." >> /var/log/gpu-processing.log
-apt-get update >> /var/log/gpu-processing.log 2>&1
-echo "$(date): Installing python3-pip..." >> /var/log/gpu-processing.log
-apt-get install -y python3-pip >> /var/log/gpu-processing.log 2>&1
-
-# Install minimal dependencies for faster testing - just test the basic workflow first
-echo "$(date): Creating basic test script without dependencies..." >> /var/log/gpu-processing.log
+# ULTRA MINIMAL TEST - Skip all installations, just test basic functionality
+echo "$(date): ULTRA MINIMAL TEST - Starting immediate processing..." >> /var/log/gpu-processing.log
+echo "$(date): Skipping all dependency installations for fastest test..." >> /var/log/gpu-processing.log
 
 # Upload GPU processing code
 cat > /root/upload_gpu_code.py << 'EOF'
@@ -199,168 +194,53 @@ EOF
 
 python3 /root/upload_gpu_code.py
 
-# Create super simple test processing script
+# Create ULTRA MINIMAL test processing script
 cat > /root/process_pdf.py << 'EOF'
+#!/usr/bin/env python3
 import sys
 import os
 import json
 from pathlib import Path
 import time
 
-print(f"MINIMAL TEST: Script started at {time.ctime()}")
-print(f"MINIMAL TEST: Python version: {sys.version}")
-print(f"MINIMAL TEST: Arguments: {sys.argv}")
+print("ULTRA MINIMAL TEST: Starting script")
+print(f"Args: {sys.argv}")
 
-# Just create a basic result without any complex processing
-GPU_PROCESSING_AVAILABLE = False
+# Skip all processing, just create result and marker immediately
+mount_path = "/mnt/shared"
+file_path = sys.argv[1] if len(sys.argv) > 1 else "test.pdf"
 
-def process_pdf_advanced(file_path):
-    # Advanced processing using GPU processing modules
-    mount_path = os.environ.get('SHARED_FILESYSTEM_MOUNT_PATH', '{mount_path}')
-    
-    # Initialize processor
-    processor = PDFProcessor(mount_path)
-    
-    # Process using advanced AI
-    results = processor.process_pdf(file_path)
-    
-    return results
+# Create basic result
+result = {
+    "ultra_minimal_test": True,
+    "timestamp": time.ctime(),
+    "file_path": file_path,
+    "status": "success"
+}
 
-def process_pdf_fallback(file_path):
-    # Minimal test processing
-    print(f"MINIMAL TEST: Processing {file_path}")
-    
-    # Very short processing time for testing
-    import time
-    time.sleep(5)
-    
-    # Create basic test results
-    results = {
-        "summary": "MINIMAL TEST: Basic processing completed",
-        "test_mode": True,
-        "file_path": file_path,
-        "processed_at": time.ctime(),
-        "status": "success"
-    }
-    
-    print(f"MINIMAL TEST: Results created")
-    return results
+# Save result
+flat_filename = file_path.replace('/', '_').replace('.pdf', '_results.json')
+results_file = f"{mount_path}/results/{flat_filename}"
+os.makedirs(os.path.dirname(results_file), exist_ok=True)
+with open(results_file, 'w') as f:
+    json.dump(result, f, indent=2)
 
-if __name__ == "__main__":
-    # Add extensive logging for debugging
-    mount_path = os.environ.get('SHARED_FILESYSTEM_MOUNT_PATH', '{mount_path}')
-    
-    print(f"DEBUG: Script started with args: {sys.argv}")
-    print(f"DEBUG: Mount path: {mount_path}")
-    print(f"DEBUG: Current working directory: {os.getcwd()}")
-    print(f"DEBUG: Files in /root: {os.listdir('/root')}")
-    
-    if len(sys.argv) != 2:
-        print("Usage: python process_pdf.py <file_path>")
-        sys.exit(1)
-    
-    file_path = sys.argv[1]
-    full_path = f"{mount_path}/" + file_path
-    
-    print(f"DEBUG: Looking for file at: {full_path}")
-    print(f"DEBUG: Mount path contents: {os.listdir(mount_path) if os.path.exists(mount_path) else 'mount path does not exist'}")
-    
-    if not os.path.exists(full_path):
-        print(f"ERROR: File {full_path} not found")
-        print(f"DEBUG: Available files in mount path:")
-        if os.path.exists(mount_path):
-            for root, dirs, files in os.walk(mount_path):
-                for file in files:
-                    print(f"  {os.path.join(root, file)}")
-        
-        # Create error result file for debugging
-        error_result = {
-            "error": "Input file not found",
-            "file_path": file_path,
-            "full_path": full_path,
-            "mount_path": mount_path,
-            "mount_exists": os.path.exists(mount_path),
-            "available_files": []
-        }
-        
-        if os.path.exists(mount_path):
-            for root, dirs, files in os.walk(mount_path):
-                for file in files:
-                    error_result["available_files"].append(os.path.join(root, file))
-        
-        # Save error result
-        flat_filename = file_path.replace('/', '_').replace('.pdf', '_results.json')
-        error_file = f"{mount_path}/results/{flat_filename}"
-        os.makedirs(os.path.dirname(error_file), exist_ok=True)
-        
-        with open(error_file, 'w') as f:
-            json.dump(error_result, f, indent=2)
-        
-        print(f"DEBUG: Error result saved to {error_file}")
-        sys.exit(1)
-    
-    try:
-        # Use advanced processing if available, otherwise fallback
-        if GPU_PROCESSING_AVAILABLE:
-            results = process_pdf_advanced(file_path)
-        else:
-            results = process_pdf_fallback(file_path)
-        
-        # Save results - use flat filename format that matches backend expectation
-        flat_filename = file_path.replace('/', '_').replace('.pdf', '_results.json')
-        results_file = "{mount_path}/results/" + flat_filename
-        results_dir = os.path.dirname(results_file)
-        os.makedirs(results_dir, exist_ok=True)
-        
-        with open(results_file, 'w') as f:
-            json.dump(results, f, indent=2)
-        
-        print(f"MINIMAL TEST: Results saved to: {results_file}")
-        
-        # Create completion marker  
-        flat_marker_name = file_path.replace('/', '_')
-        completion_marker = "{mount_path}/temp/processing_complete_" + flat_marker_name
-        Path(completion_marker).touch()
-        print(f"MINIMAL TEST: Completion marker created at {completion_marker}")
-        
-        print(f"MINIMAL TEST: Processing completed successfully!")
-        
-    except Exception as e:
-        print(f"ERROR processing PDF: {e}")
-        import traceback
-        print(f"DEBUG: Full traceback: {traceback.format_exc()}")
-        
-        # Create error result file
-        error_result = {
-            "error": str(e),
-            "traceback": traceback.format_exc(),
-            "file_path": file_path,
-            "full_path": full_path,
-            "processing_failed": True
-        }
-        
-        flat_filename = file_path.replace('/', '_').replace('.pdf', '_results.json')
-        error_file = f"{mount_path}/results/{flat_filename}"
-        os.makedirs(os.path.dirname(error_file), exist_ok=True)
-        
-        with open(error_file, 'w') as f:
-            json.dump(error_result, f, indent=2)
-        
-        print(f"DEBUG: Error result saved to {error_file}")
-        
-        # Still create completion marker so backend knows processing attempted
-        flat_marker_name = file_path.replace('/', '_')
-        completion_marker = f"{mount_path}/temp/processing_complete_{flat_marker_name}"
-        Path(completion_marker).touch()
-        print(f"DEBUG: Completion marker created at {completion_marker}")
-        
-        sys.exit(1)
+print(f"ULTRA MINIMAL: Result saved to {results_file}")
+
+# Create completion marker
+flat_marker = file_path.replace('/', '_')
+marker_file = f"{mount_path}/temp/processing_complete_{flat_marker}"
+os.makedirs(os.path.dirname(marker_file), exist_ok=True)
+Path(marker_file).touch()
+
+print(f"ULTRA MINIMAL: Completion marker created at {marker_file}")
+print("ULTRA MINIMAL TEST: Complete!")
 EOF
 
-# Run processing with logging
-echo "$(date): Starting PDF processing for {file_path}..." >> /var/log/gpu-processing.log
+# Run ultra minimal test immediately
+echo "$(date): Starting ultra minimal test..." >> /var/log/gpu-processing.log
 python3 /root/process_pdf.py {file_path} >> /var/log/gpu-processing.log 2>&1
-echo "$(date): PDF processing completed for {file_path}" >> /var/log/gpu-processing.log
+echo "$(date): Ultra minimal test completed" >> /var/log/gpu-processing.log
 
 # Auto-shutdown after processing
 shutdown -h now
