@@ -130,8 +130,16 @@ class VolumeStorageService:
             return None
         
         import json
-        with open(results_path, 'r') as f:
-            return json.load(f)
+        try:
+            with open(results_path, 'r') as f:
+                content = f.read()
+                logger.info(f"Results file content length: {len(content)} chars")
+                logger.debug(f"Results file content preview: {content[:200]}...")
+                return json.loads(content)
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON decode error in results file {results_path}: {e}")
+            logger.error(f"File content: {content}")
+            raise Exception(f"Invalid JSON in results file: {e}")
     
     def list_pending_uploads(self) -> list:
         """List files that need processing (no corresponding results)"""
