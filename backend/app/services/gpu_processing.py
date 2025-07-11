@@ -52,10 +52,16 @@ class GPUProcessingService:
             if not filesystem_id:
                 raise Exception("DATACRUNCH_SHARED_FILESYSTEM_ID not configured")
             
+            # Get SSH key IDs for instance
+            ssh_key_ids = []
+            if settings.DATACRUNCH_SSH_KEY_IDS:
+                ssh_key_ids = [key.strip() for key in settings.DATACRUNCH_SSH_KEY_IDS.split(",") if key.strip()]
+            
             instance_data = await datacrunch_client.deploy_instance(
                 hostname=instance_name,
                 instance_type=self.gpu_instance_type,
                 image=self.gpu_image,
+                ssh_key_ids=ssh_key_ids,
                 existing_volume_ids=[filesystem_id],
                 startup_script=startup_script
             )
