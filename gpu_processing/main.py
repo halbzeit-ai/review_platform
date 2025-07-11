@@ -110,9 +110,9 @@ class PDFProcessor:
     
     def save_results(self, results: Dict[str, Any], file_path: str) -> str:
         """Save processing results to shared filesystem"""
-        # Convert uploads path to results path
-        results_file = file_path.replace('uploads/', 'results/').replace('.pdf', '_results.json')
-        results_path = os.path.join(self.mount_path, results_file)
+        # Create flat filename that matches backend expectation
+        flat_filename = file_path.replace('/', '_').replace('.pdf', '_results.json')
+        results_path = os.path.join(self.mount_path, 'results', flat_filename)
         
         # Ensure results directory exists
         results_dir = os.path.dirname(results_path)
@@ -123,7 +123,7 @@ class PDFProcessor:
             json.dump(results, f, indent=2)
         
         logger.info(f"Results saved to: {results_path}")
-        return results_file
+        return f"results/{flat_filename}"
     
     def create_completion_marker(self, file_path: str) -> None:
         """Create completion marker for backend monitoring"""
