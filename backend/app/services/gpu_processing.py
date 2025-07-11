@@ -78,7 +78,7 @@ class GPUProcessingService:
             # Create startup script for GPU instance
             print(f"DEBUG: Creating startup script for pitch deck {pitch_deck_id}")
             logger.info(f"Creating startup script for pitch deck {pitch_deck_id}")
-            startup_script = self._create_startup_script(file_path)
+            startup_script = self._create_startup_script(file_path, pitch_deck_id)
             print(f"DEBUG: Startup script created for pitch deck {pitch_deck_id}")
             
             # Create GPU instance
@@ -161,96 +161,42 @@ class GPUProcessingService:
         finally:
             db.close()
     
-    def _create_startup_script(self, file_path: str) -> str:
-        """Create startup script for GPU instance"""
+    def _create_startup_script(self, file_path: str, pitch_deck_id: int = None) -> str:
+        """Create cloud-config user-data for GPU instance"""
         mount_path = settings.SHARED_FILESYSTEM_MOUNT_PATH
+        hostname = f"gpu-processor-{pitch_deck_id}" if pitch_deck_id else "gpu-processor"
         
-        script = """#!/bin/bash
-# Startup script with volume attachment handling
-exec > /var/log/startup.log 2>&1
+        # Create cloud-config format that extends the default Datacrunch template
+        cloud_config = f"""#cloud-config
+user: root
+disable_root: false
+chpasswd: {{ expire: False }}
+hostname: {hostname}.datacrunch.io
 
-echo "VOLUME MOUNT: Starting at $(date)"
+runcmd:
+ - 'nvidia-smi --query-gpu=index --format=csv,noheader | xargs -L1 nvidia-smi -mig 0 -i || true'
+ - 'exec > /var/log/startup.log 2>&1'
+ - 'echo "VOLUME MOUNT: Starting at $(date)"'
+ - 'mkdir -p {mount_path}'
+ - 'echo "VOLUME MOUNT: Checking for attached volumes..."'
+ - 'lsblk'
+ - 'VOLUME_DEVICE=""'
+ - 'for device in /dev/sd* /dev/vd*; do if [ -b "$device" ] && [ "$device" != "/dev/sda" ] && [ "$device" != "/dev/sda1" ] && [ "$device" != "/dev/vda" ] && [ "$device" != "/dev/vda1" ] && [ "$device" != "/dev/vda2" ] && [ "$device" != "/dev/vda3" ]; then echo "VOLUME MOUNT: Found potential volume device: $device"; VOLUME_DEVICE="$device"; break; fi; done'
+ - 'if [ -n "$VOLUME_DEVICE" ]; then echo "VOLUME MOUNT: Mounting volume $VOLUME_DEVICE to {mount_path}"; mount "$VOLUME_DEVICE" {mount_path}; fi'
+ - 'if ! mountpoint -q {mount_path}; then echo "VOLUME MOUNT: Volume mount failed, trying NFS..."; apt-get update && apt-get install -y nfs-common; mount -t nfs -o nconnect=16 nfs.fin-01.datacrunch.io:/SFS-3H6ebwA1-b0cbae8b {mount_path}; fi'
+ - 'if mountpoint -q {mount_path}; then echo "MOUNT SUCCESS: Shared filesystem mounted"; ls -la {mount_path}/; else echo "MOUNT FAILED: All methods failed"; exit 1; fi'
+ - 'mkdir -p {mount_path}/results {mount_path}/temp'
+ - 'echo "{{\\"nfs_test\\": true, \\"timestamp\\": \\"$(date)\\", \\"file_path\\": \\"{file_path}\\", \\"status\\": \\"success\\"}}" > {mount_path}/results/test_result.json'
+ - 'touch {mount_path}/temp/processing_complete_test'
+ - 'echo "PROCESSING: Files created, keeping instance alive for 2 minutes..."'
+ - 'sleep 120'
+ - 'shutdown -h now'
 
-# Create mount point
-mkdir -p {mount_path}
-
-# Check for attached volumes first
-echo "VOLUME MOUNT: Checking for attached volumes..."
-lsblk
-
-# Look for the attached volume (usually /dev/sdb for additional volumes)
-VOLUME_DEVICE=""
-for device in /dev/sd*; do
-    if [ -b "$device" ] && [ "$device" != "/dev/sda" ] && [ "$device" != "/dev/sda1" ]; then
-        echo "VOLUME MOUNT: Found potential volume device: $device"
-        VOLUME_DEVICE="$device"
-        break
-    fi
-done
-
-if [ -n "$VOLUME_DEVICE" ]; then
-    echo "VOLUME MOUNT: Mounting volume $VOLUME_DEVICE to {mount_path}"
-    mount "$VOLUME_DEVICE" {mount_path}
-    
-    # Verify mount worked
-    if mountpoint -q {mount_path}; then
-        echo "VOLUME MOUNT: Success! Volume mounted"
-        ls -la {mount_path}/
-    else
-        echo "VOLUME MOUNT: Failed to mount volume, trying NFS fallback..."
-        # Fallback to NFS if volume mount fails
-        apt-get update && apt-get install -y nfs-common
-        mount -t nfs -o nconnect=16 nfs.fin-01.datacrunch.io:/SFS-3H6ebwA1-b0cbae8b {mount_path}
-        
-        if mountpoint -q {mount_path}; then
-            echo "NFS FALLBACK: Success! NFS mounted"
-            ls -la {mount_path}/
-        else
-            echo "MOUNT FAILED: Both volume and NFS mount failed"
-            exit 1
-        fi
-    fi
-else
-    echo "VOLUME MOUNT: No volume device found, using NFS..."
-    # Install NFS utilities and mount via NFS
-    apt-get update && apt-get install -y nfs-common
-    mount -t nfs -o nconnect=16 nfs.fin-01.datacrunch.io:/SFS-3H6ebwA1-b0cbae8b {mount_path}
-    
-    if mountpoint -q {mount_path}; then
-        echo "NFS MOUNT: Success! NFS mounted"
-        ls -la {mount_path}/
-    else
-        echo "NFS MOUNT: Failed to mount shared filesystem"
-        exit 1
-    fi
-fi
-
-# Create directories
-mkdir -p {mount_path}/results {mount_path}/temp
-
-# Create result file directly with bash (no Python dependencies)
-cat > {mount_path}/results/test_result.json << 'EOL'
-{{
-  "nfs_test": true,
-  "timestamp": "$(date)",
-  "file_path": "{file_path}",
-  "status": "success"
-}}
-EOL
-
-# Create completion marker
-touch {mount_path}/temp/processing_complete_test
-
-echo "NFS MOUNT: Files created, shutting down..."
-# Keep running for 2 minutes so we can SSH in and verify
-sleep 120
-shutdown -h now
+bootcmd:
+    - echo 'APT::Periodic::Enable "0";' > /etc/apt/apt.conf.d/10cloudinit-disable
 """
-        # Replace placeholders
-        script = script.replace("{mount_path}", mount_path)
-        script = script.replace("{file_path}", file_path)
         
-        return script
+        return cloud_config
     
     async def _monitor_processing(self, file_path: str, instance_id: str) -> bool:
         """Monitor processing completion"""
