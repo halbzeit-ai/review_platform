@@ -149,7 +149,7 @@ except ImportError:
     GPU_PROCESSING_AVAILABLE = False
 
 def process_pdf_advanced(file_path):
-    """Advanced processing using GPU processing modules"""
+    # Advanced processing using GPU processing modules
     mount_path = os.environ.get('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/shared')
     
     # Initialize processor
@@ -161,15 +161,15 @@ def process_pdf_advanced(file_path):
     return results
 
 def process_pdf_fallback(file_path):
-    """Fallback processing if GPU modules not available"""
-    print(f"Processing PDF with fallback method: {{file_path}}")
+    # Fallback processing if GPU modules not available
+    print(f"Processing PDF with fallback method: {file_path}")
     
     # Simulate processing time
     import time
     time.sleep(30)
     
     # Create structured results
-    results = {{
+    results = {
         "summary": "This is a placeholder summary of the pitch deck",
         "key_points": [
             "Strong market opportunity",
@@ -182,18 +182,18 @@ def process_pdf_fallback(file_path):
             "Develop partnerships",
             "Expand market reach"
         ],
-        "analysis": {{
+        "analysis": {
             "market_size": "Large addressable market with growth potential",
             "team_strength": "Experienced founders with relevant background",
             "business_model": "Clear revenue streams and monetization strategy",
             "traction": "Early signs of market validation",
             "risks": "Competitive landscape and execution challenges"
-        }},
+        },
         "sections_analyzed": ["Executive Summary", "Market Analysis", "Business Model"],
         "confidence_score": 0.75,
         "processing_time": 30.0,
         "model_version": "fallback-v1.0"
-    }}
+    }
     
     return results
 
@@ -206,7 +206,7 @@ if __name__ == "__main__":
     full_path = "{mount_path}/" + file_path
     
     if not os.path.exists(full_path):
-        print(f"Error: File {{full_path}} not found")
+        print(f"Error: File {full_path} not found")
         sys.exit(1)
     
     try:
@@ -224,14 +224,14 @@ if __name__ == "__main__":
         with open(results_file, 'w') as f:
             json.dump(results, f, indent=2)
         
-        print(f"Results saved to: {{results_file}}")
+        print(f"Results saved to: {results_file}")
         
         # Create completion marker
         completion_marker = "{mount_path}/temp/processing_complete_{file_path.replace('/', '_')}"
         Path(completion_marker).touch()
         
     except Exception as e:
-        print(f"Error processing PDF: {{e}}")
+        print(f"Error processing PDF: {e}")
         sys.exit(1)
 EOF
 
