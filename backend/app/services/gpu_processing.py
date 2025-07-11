@@ -170,12 +170,8 @@ apt-get update >> /var/log/gpu-processing.log 2>&1
 echo "$(date): Installing python3-pip..." >> /var/log/gpu-processing.log
 apt-get install -y python3-pip >> /var/log/gpu-processing.log 2>&1
 
-# Install minimal dependencies for faster testing
-echo "$(date): Installing minimal Python packages..." >> /var/log/gpu-processing.log
-pip3 install pypdf2 pdfplumber pymupdf >> /var/log/gpu-processing.log 2>&1
-
-# Skip heavy PyTorch for now to test workflow
-echo "$(date): Skipping PyTorch installation for faster testing..." >> /var/log/gpu-processing.log
+# Install minimal dependencies for faster testing - just test the basic workflow first
+echo "$(date): Creating basic test script without dependencies..." >> /var/log/gpu-processing.log
 
 # Upload GPU processing code
 cat > /root/upload_gpu_code.py << 'EOF'
@@ -197,23 +193,20 @@ EOF
 
 python3 /root/upload_gpu_code.py
 
-# Create fallback processing script if GPU code not available
+# Create super simple test processing script
 cat > /root/process_pdf.py << 'EOF'
 import sys
 import os
 import json
 from pathlib import Path
+import time
 
-# Try to import GPU processing modules
-try:
-    sys.path.append('/root/gpu_processing')
-    from main import PDFProcessor
-    from utils.pdf_extractor import PDFExtractor
-    from utils.ai_analyzer import AIAnalyzer
-    GPU_PROCESSING_AVAILABLE = True
-except ImportError:
-    print("GPU processing modules not available, using fallback")
-    GPU_PROCESSING_AVAILABLE = False
+print(f"MINIMAL TEST: Script started at {time.ctime()}")
+print(f"MINIMAL TEST: Python version: {sys.version}")
+print(f"MINIMAL TEST: Arguments: {sys.argv}")
+
+# Just create a basic result without any complex processing
+GPU_PROCESSING_AVAILABLE = False
 
 def process_pdf_advanced(file_path):
     # Advanced processing using GPU processing modules
@@ -228,40 +221,23 @@ def process_pdf_advanced(file_path):
     return results
 
 def process_pdf_fallback(file_path):
-    # Fallback processing if GPU modules not available
-    print(f"Processing PDF with fallback method: {file_path}")
+    # Minimal test processing
+    print(f"MINIMAL TEST: Processing {file_path}")
     
-    # Simulate processing time
+    # Very short processing time for testing
     import time
-    time.sleep(30)
+    time.sleep(5)
     
-    # Create structured results
+    # Create basic test results
     results = {
-        "summary": "This is a placeholder summary of the pitch deck",
-        "key_points": [
-            "Strong market opportunity",
-            "Experienced team",
-            "Clear business model"
-        ],
-        "score": 8.5,
-        "recommendations": [
-            "Focus on customer acquisition",
-            "Develop partnerships",
-            "Expand market reach"
-        ],
-        "analysis": {
-            "market_size": "Large addressable market with growth potential",
-            "team_strength": "Experienced founders with relevant background",
-            "business_model": "Clear revenue streams and monetization strategy",
-            "traction": "Early signs of market validation",
-            "risks": "Competitive landscape and execution challenges"
-        },
-        "sections_analyzed": ["Executive Summary", "Market Analysis", "Business Model"],
-        "confidence_score": 0.75,
-        "processing_time": 30.0,
-        "model_version": "fallback-v1.0"
+        "summary": "MINIMAL TEST: Basic processing completed",
+        "test_mode": True,
+        "file_path": file_path,
+        "processed_at": time.ctime(),
+        "status": "success"
     }
     
+    print(f"MINIMAL TEST: Results created")
     return results
 
 if __name__ == "__main__":
@@ -333,12 +309,15 @@ if __name__ == "__main__":
         with open(results_file, 'w') as f:
             json.dump(results, f, indent=2)
         
-        print(f"Results saved to: {results_file}")
+        print(f"MINIMAL TEST: Results saved to: {results_file}")
         
         # Create completion marker  
         flat_marker_name = file_path.replace('/', '_')
         completion_marker = "{mount_path}/temp/processing_complete_" + flat_marker_name
         Path(completion_marker).touch()
+        print(f"MINIMAL TEST: Completion marker created at {completion_marker}")
+        
+        print(f"MINIMAL TEST: Processing completed successfully!")
         
     except Exception as e:
         print(f"ERROR processing PDF: {e}")
