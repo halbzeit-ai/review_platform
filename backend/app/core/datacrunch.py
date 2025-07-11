@@ -126,18 +126,28 @@ class DatacrunchClient:
             "instance_type": instance_type,
             "image": image,
             "description": description,
-            "ssh_key_ids": ssh_key_ids or [],
-            "existing_volumes": existing_volume_ids or [],
-            # Try alternative parameter names for volumes
-            "volumes": existing_volume_ids or [],
-            "volume_ids": existing_volume_ids or []
+            "ssh_key_ids": ssh_key_ids or []
         }
+        
+        # Try different approaches for volume attachment
+        if existing_volume_ids:
+            # Try various parameter formats that might work
+            data["existing_volumes"] = existing_volume_ids
+            data["volumes"] = existing_volume_ids  
+            data["volume_ids"] = existing_volume_ids
+            data["shared_filesystems"] = existing_volume_ids
+            data["filesystem_ids"] = existing_volume_ids
+            # Try object format
+            data["volumes"] = [{"id": vid} for vid in existing_volume_ids]
         
         if startup_script:
             # Try different parameter names for startup script
             data["startup_script"] = startup_script
             data["user_data"] = startup_script
             data["cloud_init"] = startup_script
+        
+        # Debug log the exact data being sent
+        print(f"DEBUG: Sending instance creation data: {json.dumps(data, indent=2)}")
         
         result = await self._make_request("POST", "/instances", json=data)
         logger.info(f"Deployed instance: {result}")
