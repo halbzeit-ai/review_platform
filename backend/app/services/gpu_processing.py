@@ -115,10 +115,13 @@ class GPUProcessingService:
             logger.info(f"Created GPU instance {instance_id} for pitch deck {pitch_deck_id}")
             
             # Wait for instance to be running
+            logger.info(f"Waiting for GPU instance {instance_id} to start...")
             if not await datacrunch_client.wait_for_instance_running(instance_id, timeout=300):
                 raise Exception("GPU instance failed to start within timeout")
             
-            # Monitor processing completion
+            logger.info(f"GPU instance {instance_id} is running, starting processing monitor...")
+            
+            # Monitor processing completion with detailed logging
             processing_complete = await self._monitor_processing(file_path, instance_id)
             
             if processing_complete:
@@ -161,13 +164,18 @@ class GPUProcessingService:
 mkdir -p {mount_path}
 # Shared filesystem should be auto-mounted, but ensure directory exists
 
-# Install dependencies
-apt-get update
-apt-get install -y python3-pip
+# Install dependencies with logging
+echo "$(date): Starting apt-get update..." >> /var/log/gpu-processing.log
+apt-get update >> /var/log/gpu-processing.log 2>&1
+echo "$(date): Installing python3-pip..." >> /var/log/gpu-processing.log
+apt-get install -y python3-pip >> /var/log/gpu-processing.log 2>&1
 
-# Install your AI processing dependencies
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-pip3 install transformers pypdf2 opencv-python pdfplumber pymupdf
+# Install minimal dependencies for faster testing
+echo "$(date): Installing minimal Python packages..." >> /var/log/gpu-processing.log
+pip3 install pypdf2 pdfplumber pymupdf >> /var/log/gpu-processing.log 2>&1
+
+# Skip heavy PyTorch for now to test workflow
+echo "$(date): Skipping PyTorch installation for faster testing..." >> /var/log/gpu-processing.log
 
 # Upload GPU processing code
 cat > /root/upload_gpu_code.py << 'EOF'
@@ -296,8 +304,10 @@ if __name__ == "__main__":
         sys.exit(1)
 EOF
 
-# Run processing
-python3 /root/process_pdf.py {file_path}
+# Run processing with logging
+echo "$(date): Starting PDF processing for {file_path}..." >> /var/log/gpu-processing.log
+python3 /root/process_pdf.py {file_path} >> /var/log/gpu-processing.log 2>&1
+echo "$(date): PDF processing completed for {file_path}" >> /var/log/gpu-processing.log
 
 # Auto-shutdown after processing
 shutdown -h now
@@ -312,24 +322,42 @@ shutdown -h now
         """Monitor processing completion"""
         completion_marker = f"temp/processing_complete_{file_path.replace('/', '_')}"
         
+        logger.info(f"Monitoring processing for {file_path}, looking for marker: {completion_marker}")
+        
         # Wait for completion marker or timeout
         for i in range(self.processing_timeout):
             if volume_storage.file_exists(completion_marker):
+                logger.info(f"Processing completion marker found after {i} seconds")
                 # Clean up completion marker
                 volume_storage.delete_file(completion_marker)
                 return True
             
+            # Log progress every 30 seconds
+            if i % 30 == 0 and i > 0:
+                logger.info(f"Still waiting for processing completion... {i}/{self.processing_timeout} seconds elapsed")
+                
+                # Check if any results file exists yet
+                results_path = file_path.replace('/', '_').replace('.pdf', '_results.json')
+                if volume_storage.file_exists(f"results/{results_path}"):
+                    logger.info(f"Results file already exists at results/{results_path}")
+                else:
+                    logger.info(f"No results file yet at results/{results_path}")
+            
             # Check if instance is still running
             try:
                 instance = await datacrunch_client.get_instance(instance_id)
-                if instance.get("status", "").lower() in ["stopped", "error", "failed"]:
-                    logger.warning(f"Instance {instance_id} stopped unexpectedly")
+                status = instance.get("status", "").lower()
+                if status in ["stopped", "error", "failed"]:
+                    logger.warning(f"Instance {instance_id} stopped unexpectedly with status: {status}")
                     break
+                elif i % 60 == 0 and i > 0:
+                    logger.info(f"Instance {instance_id} status: {status}")
             except Exception as e:
                 logger.warning(f"Error checking instance status: {e}")
             
             await asyncio.sleep(1)
         
+        logger.warning(f"Processing timeout reached after {self.processing_timeout} seconds")
         return False
     
     async def _cleanup_instance(self, instance_id: str):
