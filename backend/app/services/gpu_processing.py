@@ -166,28 +166,63 @@ class GPUProcessingService:
         mount_path = settings.SHARED_FILESYSTEM_MOUNT_PATH
         
         script = """#!/bin/bash
-# Startup script with NFS mounting of shared filesystem
+# Startup script with volume attachment handling
 exec > /var/log/startup.log 2>&1
 
-echo "NFS MOUNT: Starting at $(date)"
-
-# Install NFS utilities if needed
-apt-get update && apt-get install -y nfs-common
+echo "VOLUME MOUNT: Starting at $(date)"
 
 # Create mount point
 mkdir -p {mount_path}
 
-# Mount shared filesystem via NFS (from Datacrunch dashboard)
-echo "NFS MOUNT: Mounting shared filesystem..."
-mount -t nfs -o nconnect=16 nfs.fin-01.datacrunch.io:/SFS-3H6ebwA1-b0cbae8b {mount_path}
+# Check for attached volumes first
+echo "VOLUME MOUNT: Checking for attached volumes..."
+lsblk
 
-# Verify mount worked
-if mountpoint -q {mount_path}; then
-    echo "NFS MOUNT: Success! Shared filesystem mounted"
-    ls -la {mount_path}/
+# Look for the attached volume (usually /dev/sdb for additional volumes)
+VOLUME_DEVICE=""
+for device in /dev/sd*; do
+    if [ -b "$device" ] && [ "$device" != "/dev/sda" ] && [ "$device" != "/dev/sda1" ]; then
+        echo "VOLUME MOUNT: Found potential volume device: $device"
+        VOLUME_DEVICE="$device"
+        break
+    fi
+done
+
+if [ -n "$VOLUME_DEVICE" ]; then
+    echo "VOLUME MOUNT: Mounting volume $VOLUME_DEVICE to {mount_path}"
+    mount "$VOLUME_DEVICE" {mount_path}
+    
+    # Verify mount worked
+    if mountpoint -q {mount_path}; then
+        echo "VOLUME MOUNT: Success! Volume mounted"
+        ls -la {mount_path}/
+    else
+        echo "VOLUME MOUNT: Failed to mount volume, trying NFS fallback..."
+        # Fallback to NFS if volume mount fails
+        apt-get update && apt-get install -y nfs-common
+        mount -t nfs -o nconnect=16 nfs.fin-01.datacrunch.io:/SFS-3H6ebwA1-b0cbae8b {mount_path}
+        
+        if mountpoint -q {mount_path}; then
+            echo "NFS FALLBACK: Success! NFS mounted"
+            ls -la {mount_path}/
+        else
+            echo "MOUNT FAILED: Both volume and NFS mount failed"
+            exit 1
+        fi
+    fi
 else
-    echo "NFS MOUNT: Failed to mount shared filesystem"
-    exit 1
+    echo "VOLUME MOUNT: No volume device found, using NFS..."
+    # Install NFS utilities and mount via NFS
+    apt-get update && apt-get install -y nfs-common
+    mount -t nfs -o nconnect=16 nfs.fin-01.datacrunch.io:/SFS-3H6ebwA1-b0cbae8b {mount_path}
+    
+    if mountpoint -q {mount_path}; then
+        echo "NFS MOUNT: Success! NFS mounted"
+        ls -la {mount_path}/
+    else
+        echo "NFS MOUNT: Failed to mount shared filesystem"
+        exit 1
+    fi
 fi
 
 # Create directories
