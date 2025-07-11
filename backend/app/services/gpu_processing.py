@@ -42,6 +42,12 @@ class GPUProcessingService:
             # Create processing marker
             volume_storage.create_processing_marker(file_path)
             
+            # Clean up any existing results file to prevent reading stale data
+            results_path = file_path.replace('/', '_').replace('.pdf', '_results.json')
+            if volume_storage.file_exists(f"results/{results_path}"):
+                volume_storage.delete_file(f"results/{results_path}")
+                logger.info(f"Cleaned up existing results file for pitch deck {pitch_deck_id}")
+            
             # Create startup script for GPU instance
             startup_script = self._create_startup_script(file_path)
             

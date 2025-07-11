@@ -127,18 +127,26 @@ class VolumeStorageService:
         """Get processing results"""
         results_path = self.get_file_path(relative_results_path)
         if not results_path.exists():
+            logger.info(f"Results file does not exist: {results_path}")
             return None
         
         import json
         try:
             with open(results_path, 'r') as f:
                 content = f.read()
+                logger.info(f"Reading results file: {results_path}")
                 logger.info(f"Results file content length: {len(content)} chars")
                 logger.debug(f"Results file content preview: {content[:200]}...")
                 return json.loads(content)
         except json.JSONDecodeError as e:
             logger.error(f"JSON decode error in results file {results_path}: {e}")
             logger.error(f"File content: {content}")
+            # Clean up the invalid file to prevent future errors
+            try:
+                results_path.unlink()
+                logger.info(f"Removed invalid results file: {results_path}")
+            except:
+                pass
             raise Exception(f"Invalid JSON in results file: {e}")
     
     def list_pending_uploads(self) -> list:
