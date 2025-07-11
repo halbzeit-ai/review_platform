@@ -55,16 +55,36 @@ fi
 echo "📁 Step 1: Creating mount point..."
 echo "  Current user: $(whoami)"
 echo "  Current permissions on /mnt: $(ls -ld /mnt 2>/dev/null || echo 'Cannot access /mnt')"
+echo "  Contents of /mnt: $(ls -la /mnt 2>/dev/null || echo 'Cannot list /mnt')"
+
+# Check if there's an existing mount or filesystem issue
+echo "  Checking for existing mounts..."
+mount | grep "/mnt" || echo "  No existing mounts in /mnt"
 
 if [ ! -d "$MOUNT_POINT" ]; then
     echo "  Creating directory $MOUNT_POINT..."
-    mkdir -p "$MOUNT_POINT" || {
-        echo "  ❌ Failed to create $MOUNT_POINT"
-        echo "  Trying to create /mnt first..."
-        mkdir -p /mnt
-        mkdir -p "$MOUNT_POINT"
-    }
-    echo "  ✅ Created $MOUNT_POINT"
+    
+    # Try different approaches
+    if mkdir -p "$MOUNT_POINT" 2>/dev/null; then
+        echo "  ✅ Created $MOUNT_POINT successfully"
+    else
+        echo "  ❌ mkdir failed, trying alternative approach..."
+        
+        # Check if something is already mounted there
+        if mount | grep -q "$MOUNT_POINT"; then
+            echo "  ⚠️  Something is already mounted at $MOUNT_POINT"
+            umount "$MOUNT_POINT" 2>/dev/null || echo "  Could not unmount"
+        fi
+        
+        # Try creating with different permissions
+        echo "  Trying to create with explicit permissions..."
+        install -d -m 755 "$MOUNT_POINT" 2>/dev/null || {
+            echo "  ❌ All methods failed. Manual intervention needed."
+            echo "  Please run: rm -rf $MOUNT_POINT && mkdir -p $MOUNT_POINT"
+            exit 1
+        }
+        echo "  ✅ Created $MOUNT_POINT with install command"
+    fi
 else
     echo "  ✅ $MOUNT_POINT already exists"
 fi
