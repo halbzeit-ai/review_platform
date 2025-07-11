@@ -265,15 +265,56 @@ def process_pdf_fallback(file_path):
     return results
 
 if __name__ == "__main__":
+    # Add extensive logging for debugging
+    mount_path = os.environ.get('SHARED_FILESYSTEM_MOUNT_PATH', '{mount_path}')
+    
+    print(f"DEBUG: Script started with args: {sys.argv}")
+    print(f"DEBUG: Mount path: {mount_path}")
+    print(f"DEBUG: Current working directory: {os.getcwd()}")
+    print(f"DEBUG: Files in /root: {os.listdir('/root')}")
+    
     if len(sys.argv) != 2:
         print("Usage: python process_pdf.py <file_path>")
         sys.exit(1)
     
     file_path = sys.argv[1]
-    full_path = "{mount_path}/" + file_path
+    full_path = f"{mount_path}/" + file_path
+    
+    print(f"DEBUG: Looking for file at: {full_path}")
+    print(f"DEBUG: Mount path contents: {os.listdir(mount_path) if os.path.exists(mount_path) else 'mount path does not exist'}")
     
     if not os.path.exists(full_path):
-        print(f"Error: File {full_path} not found")
+        print(f"ERROR: File {full_path} not found")
+        print(f"DEBUG: Available files in mount path:")
+        if os.path.exists(mount_path):
+            for root, dirs, files in os.walk(mount_path):
+                for file in files:
+                    print(f"  {os.path.join(root, file)}")
+        
+        # Create error result file for debugging
+        error_result = {
+            "error": "Input file not found",
+            "file_path": file_path,
+            "full_path": full_path,
+            "mount_path": mount_path,
+            "mount_exists": os.path.exists(mount_path),
+            "available_files": []
+        }
+        
+        if os.path.exists(mount_path):
+            for root, dirs, files in os.walk(mount_path):
+                for file in files:
+                    error_result["available_files"].append(os.path.join(root, file))
+        
+        # Save error result
+        flat_filename = file_path.replace('/', '_').replace('.pdf', '_results.json')
+        error_file = f"{mount_path}/results/{flat_filename}"
+        os.makedirs(os.path.dirname(error_file), exist_ok=True)
+        
+        with open(error_file, 'w') as f:
+            json.dump(error_result, f, indent=2)
+        
+        print(f"DEBUG: Error result saved to {error_file}")
         sys.exit(1)
     
     try:
@@ -300,7 +341,34 @@ if __name__ == "__main__":
         Path(completion_marker).touch()
         
     except Exception as e:
-        print(f"Error processing PDF: {e}")
+        print(f"ERROR processing PDF: {e}")
+        import traceback
+        print(f"DEBUG: Full traceback: {traceback.format_exc()}")
+        
+        # Create error result file
+        error_result = {
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+            "file_path": file_path,
+            "full_path": full_path,
+            "processing_failed": True
+        }
+        
+        flat_filename = file_path.replace('/', '_').replace('.pdf', '_results.json')
+        error_file = f"{mount_path}/results/{flat_filename}"
+        os.makedirs(os.path.dirname(error_file), exist_ok=True)
+        
+        with open(error_file, 'w') as f:
+            json.dump(error_result, f, indent=2)
+        
+        print(f"DEBUG: Error result saved to {error_file}")
+        
+        # Still create completion marker so backend knows processing attempted
+        flat_marker_name = file_path.replace('/', '_')
+        completion_marker = f"{mount_path}/temp/processing_complete_{flat_marker_name}"
+        Path(completion_marker).touch()
+        print(f"DEBUG: Completion marker created at {completion_marker}")
+        
         sys.exit(1)
 EOF
 
@@ -343,7 +411,7 @@ shutdown -h now
                 else:
                     logger.info(f"No results file yet at results/{results_path}")
             
-            # Check if instance is still running
+            # Check if instance is still running (handle API outages gracefully)
             try:
                 instance = await datacrunch_client.get_instance(instance_id)
                 status = instance.get("status", "").lower()
@@ -353,7 +421,10 @@ shutdown -h now
                 elif i % 60 == 0 and i > 0:
                     logger.info(f"Instance {instance_id} status: {status}")
             except Exception as e:
-                logger.warning(f"Error checking instance status: {e}")
+                if "502" in str(e) or "Bad gateway" in str(e):
+                    logger.info(f"Datacrunch API temporarily unavailable (502), continuing to monitor for results...")
+                else:
+                    logger.warning(f"Error checking instance status: {e}")
             
             await asyncio.sleep(1)
         
