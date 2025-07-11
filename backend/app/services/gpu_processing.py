@@ -166,109 +166,26 @@ class GPUProcessingService:
         mount_path = settings.SHARED_FILESYSTEM_MOUNT_PATH
         
         script = """#!/bin/bash
-# DEBUG STARTUP SCRIPT - Track every step
-echo "STARTUP DEBUG: Script started at $(date)" > /tmp/startup-debug.log
-echo "STARTUP DEBUG: User: $(whoami)" >> /tmp/startup-debug.log
-echo "STARTUP DEBUG: Working dir: $(pwd)" >> /tmp/startup-debug.log
+# Extremely simple startup script - just create result and shutdown
+exec > /var/log/startup.log 2>&1
 
-# Mount shared filesystem (auto-mounted on Datacrunch instances with shared filesystem)
-echo "STARTUP DEBUG: Creating mount point..." >> /tmp/startup-debug.log
-mkdir -p {mount_path}
-echo "STARTUP DEBUG: Mount point created, checking..." >> /tmp/startup-debug.log
-if [ -d "{mount_path}" ]; then
-    echo "STARTUP DEBUG: Mount point exists" >> /tmp/startup-debug.log
-    ls -la {mount_path} >> /tmp/startup-debug.log 2>&1
-else
-    echo "STARTUP DEBUG: Mount point FAILED" >> /tmp/startup-debug.log
-fi
-
-# Create results and temp directories
-echo "STARTUP DEBUG: Creating directories..." >> /tmp/startup-debug.log
+echo "SIMPLE: Starting at $(date)"
 mkdir -p {mount_path}/results {mount_path}/temp
-echo "STARTUP DEBUG: Directories created" >> /tmp/startup-debug.log
 
-# Upload GPU processing code
-cat > /root/upload_gpu_code.py << 'EOF'
-import os
-import shutil
-
-# Create gpu_processing directory
-os.makedirs('/root/gpu_processing', exist_ok=True)
-
-# Copy GPU processing files from shared filesystem
-shared_path = "{mount_path}/gpu_processing"
-if os.path.exists(shared_path):
-    shutil.copytree(shared_path, '/root/gpu_processing', dirs_exist_ok=True)
-    print("GPU processing code copied from shared filesystem")
-else:
-    print("Warning: GPU processing code not found in shared filesystem")
-
-EOF
-
-python3 /root/upload_gpu_code.py
-
-# Create ULTRA MINIMAL test processing script
-echo "STARTUP DEBUG: Creating Python script..." >> /tmp/startup-debug.log
-cat > /root/process_pdf.py << 'EOF'
-#!/usr/bin/env python3
-import sys
-import os
-import json
-from pathlib import Path
-import time
-
-print("ULTRA MINIMAL TEST: Starting script")
-print(f"Args: {sys.argv}")
-
-# Skip all processing, just create result and marker immediately
-mount_path = "/mnt/shared"
-file_path = sys.argv[1] if len(sys.argv) > 1 else "test.pdf"
-
-# Create basic result
-result = {
-    "ultra_minimal_test": True,
-    "timestamp": time.ctime(),
-    "file_path": file_path,
-    "status": "success"
-}
-
-# Save result
-flat_filename = file_path.replace('/', '_').replace('.pdf', '_results.json')
-results_file = f"{mount_path}/results/{flat_filename}"
-os.makedirs(os.path.dirname(results_file), exist_ok=True)
-with open(results_file, 'w') as f:
-    json.dump(result, f, indent=2)
-
-print(f"ULTRA MINIMAL: Result saved to {results_file}")
+# Create result file directly with bash (no Python dependencies)
+cat > {mount_path}/results/test_result.json << 'EOL'
+{{
+  "simple_test": true,
+  "timestamp": "$(date)",
+  "file_path": "{file_path}",
+  "status": "success"
+}}
+EOL
 
 # Create completion marker
-flat_marker = file_path.replace('/', '_')
-marker_file = f"{mount_path}/temp/processing_complete_{flat_marker}"
-os.makedirs(os.path.dirname(marker_file), exist_ok=True)
-Path(marker_file).touch()
+touch {mount_path}/temp/processing_complete_test
 
-print(f"ULTRA MINIMAL: Completion marker created at {marker_file}")
-print("ULTRA MINIMAL TEST: Complete!")
-EOF
-
-# Run ultra minimal test immediately
-echo "STARTUP DEBUG: Python script created, about to run..." >> /tmp/startup-debug.log
-echo "STARTUP DEBUG: Checking if script exists..." >> /tmp/startup-debug.log
-ls -la /root/process_pdf.py >> /tmp/startup-debug.log 2>&1
-
-echo "STARTUP DEBUG: Running Python script with file_path: {file_path}" >> /tmp/startup-debug.log
-python3 /root/process_pdf.py {file_path} >> /tmp/startup-debug.log 2>&1
-echo "STARTUP DEBUG: Python script completed, exit code: $?" >> /tmp/startup-debug.log
-
-echo "STARTUP DEBUG: Checking for results..." >> /tmp/startup-debug.log
-ls -la {mount_path}/results/ >> /tmp/startup-debug.log 2>&1
-ls -la {mount_path}/temp/ >> /tmp/startup-debug.log 2>&1
-
-echo "STARTUP DEBUG: About to shutdown..." >> /tmp/startup-debug.log
-# Copy debug log to shared filesystem before shutdown
-cp /tmp/startup-debug.log {mount_path}/startup-debug.log 2>/dev/null || echo "Could not copy debug log"
-
-# Auto-shutdown after processing
+echo "SIMPLE: Files created, shutting down..."
 shutdown -h now
 """
         # Replace placeholders
@@ -279,14 +196,15 @@ shutdown -h now
     
     async def _monitor_processing(self, file_path: str, instance_id: str) -> bool:
         """Monitor processing completion"""
-        completion_marker = f"temp/processing_complete_{file_path.replace('/', '_')}"
+        # Look for the simple test completion marker
+        completion_marker = "temp/processing_complete_test"
         
-        logger.info(f"Monitoring processing for {file_path}, looking for marker: {completion_marker}")
+        logger.info(f"Monitoring simple test processing, looking for marker: {completion_marker}")
         
         # Wait for completion marker or timeout
         for i in range(self.processing_timeout):
             if volume_storage.file_exists(completion_marker):
-                logger.info(f"Processing completion marker found after {i} seconds")
+                logger.info(f"Simple test completion marker found after {i} seconds")
                 # Clean up completion marker
                 volume_storage.delete_file(completion_marker)
                 return True
