@@ -1,0 +1,37 @@
+#!/bin/bash
+# Test script to trigger GPU processing on production server
+
+echo "🧪 Testing GPU Processing with NFS mounting approach"
+echo "=" * 50
+
+echo "📋 Instructions for production server:"
+echo "1. Copy this test to production server"
+echo "2. Run the test command below"
+echo ""
+
+echo "🚀 Commands to run on production server:"
+echo ""
+echo "# Navigate to production directory"
+echo "cd /opt/review-platform"
+echo ""
+echo "# Test GPU processing (creates test instance)"
+echo "python3 -c \""
+echo "import asyncio"
+echo "import sys"
+echo "sys.path.append('/opt/review-platform/backend')"
+echo ""
+echo "from backend.app.services.gpu_processing import gpu_processing_service"
+echo ""
+echo "async def test():"
+echo "    print('🚀 Starting GPU processing test...')"
+echo "    result = await gpu_processing_service.trigger_processing("
+echo "        pitch_deck_id=999,"
+echo "        file_path='uploads/test_deck.pdf'"
+echo "    )"
+echo "    print(f'✅ Result: {result}')"
+echo ""
+echo "asyncio.run(test())"
+echo "\""
+echo ""
+echo "# Monitor logs in another terminal"
+echo "sudo journalctl -f -u review-platform"
