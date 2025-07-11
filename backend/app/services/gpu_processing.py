@@ -31,13 +31,16 @@ class GPUProcessingService:
         
         try:
             # Update processing status
+            logger.info(f"Starting GPU processing for pitch deck {pitch_deck_id}")
             pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == pitch_deck_id).first()
             if not pitch_deck:
                 logger.error(f"Pitch deck {pitch_deck_id} not found")
                 return False
             
+            logger.info(f"Setting processing status to 'processing' for pitch deck {pitch_deck_id}")
             pitch_deck.processing_status = "processing"
             db.commit()
+            logger.info(f"Database updated for pitch deck {pitch_deck_id}")
             
             # Create processing marker
             volume_storage.create_processing_marker(file_path)
@@ -49,6 +52,7 @@ class GPUProcessingService:
                 logger.info(f"Cleaned up existing results file for pitch deck {pitch_deck_id}")
             
             # Create startup script for GPU instance
+            logger.info(f"Creating startup script for pitch deck {pitch_deck_id}")
             startup_script = self._create_startup_script(file_path)
             
             # Create GPU instance
@@ -63,6 +67,7 @@ class GPUProcessingService:
             if settings.DATACRUNCH_SSH_KEY_IDS:
                 ssh_key_ids = [key.strip() for key in settings.DATACRUNCH_SSH_KEY_IDS.split(",") if key.strip()]
             
+            logger.info(f"Creating GPU instance {instance_name} for pitch deck {pitch_deck_id}")
             instance_data = await datacrunch_client.deploy_instance(
                 hostname=instance_name,
                 instance_type=self.gpu_instance_type,
@@ -71,6 +76,7 @@ class GPUProcessingService:
                 existing_volume_ids=[filesystem_id],
                 startup_script=startup_script
             )
+            logger.info(f"GPU instance creation response received for pitch deck {pitch_deck_id}")
             
             instance_id = instance_data["id"]
             logger.info(f"Created GPU instance {instance_id} for pitch deck {pitch_deck_id}")
