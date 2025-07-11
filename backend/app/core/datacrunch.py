@@ -129,9 +129,9 @@ class DatacrunchClient:
             "ssh_key_ids": ssh_key_ids or []
         }
         
-        # Skip volume attachment - use NFS mounting in startup script instead
-        # if existing_volume_ids:
-        #     data["shared_filesystems"] = existing_volume_ids
+        # Use correct API parameter for attaching existing volumes (including shared filesystems)
+        if existing_volume_ids:
+            data["existing_volumes"] = existing_volume_ids
         
         if startup_script:
             # Use only user_data - most common cloud-init parameter
