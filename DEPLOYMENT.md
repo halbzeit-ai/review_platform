@@ -1,172 +1,210 @@
-# Deployment Guide - Datacrunch.io
+# Deployment Guide
 
-This guide walks you through deploying the Review Platform to Datacrunch.io.
+Production-ready deployment guide for the Review Platform to Datacrunch.io infrastructure.
 
 ## Prerequisites
 
-1. Datacrunch.io account with API credentials
-2. SSH key added to your Datacrunch account
-3. Local environment with Python 3.11+
+- Datacrunch.io account with API credentials
+- SSH access to instance
+- Local environment with Python 3.11+ and Node.js
 
-## Step 1: Configure API Credentials
+## Current Production Configuration
 
-Create a `.env` file in the backend directory:
+**Instance Details (Working):**
+- IP: `65.108.32.168`
+- Instance ID: `ca4223cd-a931-4989-8956-82356bf703dc`
+- Shared Filesystem ID: `7cc261b3-b9ad-45be-8633-9f09c56a26c3`
+- NFS Mount: `nfs.fin-01.datacrunch.io:/SFS-5gkKcxHe-6721608d`
 
+## Quick Deploy to Existing Instance
+
+### 1. Upload Code
 ```bash
-cp backend/.env.example backend/.env
+# From local machine
+scp -r /home/ramin/halbzeit-ai/review_platform/* root@65.108.32.168:/opt/review-platform/
 ```
 
-Add your Datacrunch credentials:
-```
-DATACRUNCH_CLIENT_ID=your_client_id
-DATACRUNCH_CLIENT_SECRET=your_client_secret
-```
-
-## Step 2: Create Instance and Volume
-
-Run the setup script:
-
+### 2. Deploy Application
 ```bash
-cd deploy
-python3 instance_setup.py
-```
+# SSH to instance
+ssh root@65.108.32.168
 
-This will:
-- ✅ Create an x86 web server instance 
-- ✅ Create a shared NVMe volume
-- ✅ Configure basic server setup
-- 💾 Save instance details to `instance_config.txt`
-
-## Step 3: Deploy Application
-
-### Option A: Manual Upload
-```bash
-# Get instance IP from instance_config.txt
-scp -r ../review_platform/* root@YOUR_INSTANCE_IP:/opt/review-platform/
-ssh root@YOUR_INSTANCE_IP
+# Run deployment script
 cd /opt/review-platform
 chmod +x deploy/deploy_app.sh
 ./deploy/deploy_app.sh
 ```
 
-### Option B: Git Repository (Recommended)
-1. Push your code to a Git repository
-2. Update `REPO_URL` in `deploy_app.sh`
-3. SSH to instance and run:
+### 3. Configure Environment
 ```bash
-curl -L https://raw.githubusercontent.com/your-repo/review-platform/main/deploy/deploy_app.sh | bash
+# Edit configuration
+nano /opt/review-platform/backend/.env
+
+# Required settings:
+DATACRUNCH_CLIENT_ID=WGR1owy5MQJpDZDAJ9ahU
+DATACRUNCH_CLIENT_SECRET=wFPRRj1GGnn4KI0oQ8Ysa1HGoDCwlwyH3MOrfQUv1y
+DATACRUNCH_SHARED_FILESYSTEM_ID=7cc261b3-b9ad-45be-8633-9f09c56a26c3
+SHARED_FILESYSTEM_MOUNT_PATH=/mnt/shared
+SECRET_KEY=generate_a_secure_random_key
+
+# Generate secure secret key
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
-## Step 4: Mount Shared Volume
-
-SSH to your instance:
+### 4. Set up Shared Filesystem
 ```bash
-ssh root@YOUR_INSTANCE_IP
-```
+# Check NFS mount
+mount | grep nfs
+df -h | grep nfs
 
-Mount the shared volume:
-```bash
-# Find your volume device
-lsblk
-
-# Mount the volume (replace with your device)
-mkdir -p /mnt/shared
-mount /dev/disk/by-id/virtio-YOUR_VOLUME_ID /mnt/shared
+# Create symlink to standard path
+ln -sf /actual/nfs/mount/path /mnt/shared
 
 # Create required directories
 mkdir -p /mnt/shared/{uploads,results,temp}
+chmod -R 755 /mnt/shared
 
-# Add to fstab for auto-mount
-echo "/dev/disk/by-id/virtio-YOUR_VOLUME_ID /mnt/shared ext4 defaults 0 2" >> /etc/fstab
+# Test filesystem access
+echo "test" > /mnt/shared/test.txt && cat /mnt/shared/test.txt && rm /mnt/shared/test.txt
 ```
 
-## Step 5: Configure Environment
-
-Edit the environment file:
+### 5. Start Services
 ```bash
-nano /opt/review-platform/backend/.env
-```
-
-Required settings:
-```
-DATACRUNCH_CLIENT_ID=your_client_id
-DATACRUNCH_CLIENT_SECRET=your_client_secret
-DATACRUNCH_VOLUME_ID=your_volume_id
-SHARED_VOLUME_MOUNT_PATH=/mnt/shared
-SECRET_KEY=generate_a_secure_random_key
-```
-
-## Step 6: Start Services
-
-```bash
+# Restart services
 systemctl restart review-platform
 systemctl restart nginx
-systemctl status review-platform
-```
 
-## Step 7: Test the Application
-
-Visit your application:
-- `http://YOUR_INSTANCE_IP`
-- Register as a startup user
-- Upload a test PDF
-- Check processing status
-
-## Monitoring
-
-### View Logs
-```bash
-# API logs
-journalctl -f -u review-platform
-
-# Nginx logs
-tail -f /var/log/nginx/access.log
-tail -f /var/log/nginx/error.log
-```
-
-### Check Services
-```bash
+# Verify status
 systemctl status review-platform
 systemctl status nginx
 ```
 
-### Volume Status
+### 6. Test Application
+Visit: **http://65.108.32.168**
+1. Register as startup user
+2. Upload test PDF (up to 50MB)
+3. Check processing status
+
+## Fresh Instance Setup
+
+### 1. Configure API Credentials
 ```bash
-df -h /mnt/shared
-ls -la /mnt/shared/
+# Create environment file
+cp backend/.env.example backend/.env
+
+# Add credentials
+DATACRUNCH_CLIENT_ID=your_client_id
+DATACRUNCH_CLIENT_SECRET=your_client_secret
 ```
 
-## Troubleshooting
-
-### Service Won't Start
+### 2. Create Infrastructure
 ```bash
-# Check detailed logs
-journalctl -u review-platform --no-pager -l
+# Run setup script
+cd deploy
+python3 instance_setup.py
 
-# Check configuration
-cd /opt/review-platform/backend
-source ../venv/bin/activate
-python -c "from app.core.config import settings; print('Config loaded')"
+# This creates:
+# - x86 web server instance
+# - Shared NVMe volume
+# - Basic server configuration
+# - Saves details to instance_config.txt
 ```
 
-### Volume Issues
+### 3. Mount Shared Volume
 ```bash
-# Check if volume is mounted
-mountpoint /mnt/shared
+# SSH to new instance
+ssh root@YOUR_INSTANCE_IP
 
-# Check available disks
+# Find volume device
 lsblk
 
-# Manual mount
+# Mount volume
+mkdir -p /mnt/shared
 mount /dev/disk/by-id/virtio-YOUR_VOLUME_ID /mnt/shared
+
+# Create directories
+mkdir -p /mnt/shared/{uploads,results,temp}
+
+# Auto-mount on boot
+echo "/dev/disk/by-id/virtio-YOUR_VOLUME_ID /mnt/shared ext4 defaults 0 2" >> /etc/fstab
 ```
 
-### API Connection Issues
+## Production Architecture
+
+### Service Configuration
+- **Backend API**: Port 8000 (systemd service: `review-platform`)
+- **Nginx Proxy**: Port 80 (frontend + `/api` routing)
+- **Database**: SQLite with proper schema
+- **File Storage**: NFS shared filesystem
+
+### Key Features Working
+- ✅ User registration/login (startup/GP roles)
+- ✅ PDF upload validation (50MB limit)
+- ✅ Dashboard navigation
+- ✅ Centralized API communication
+- ✅ Proper error handling
+
+### Nginx Configuration
+```nginx
+# Key settings for file uploads
+client_max_body_size 50M;
+proxy_connect_timeout 600s;
+proxy_send_timeout 600s;
+proxy_read_timeout 600s;
+```
+
+## Monitoring & Troubleshooting
+
+### Check Service Status
 ```bash
+# View service status
+systemctl status review-platform nginx
+
+# Real-time logs
+journalctl -f -u review-platform
+tail -f /var/log/nginx/access.log
+tail -f /var/log/nginx/error.log
+```
+
+### Database Issues
+```bash
+# Check database schema
+cd /opt/review-platform/backend
+python3 -c "
+from app.db.database import engine
+from sqlalchemy import inspect
+inspector = inspect(engine)
+print('Tables:', inspector.get_table_names())
+"
+
+# Run migration if needed
+python3 migrate_db.py
+```
+
+### Filesystem Issues
+```bash
+# Check mount status
+mountpoint /mnt/shared
+df -h /mnt/shared
+
+# Test application filesystem access
+cd /opt/review-platform/backend
+python3 -c "
+from app.core.volume_storage import volume_storage
+print(f'Filesystem mounted: {volume_storage.is_filesystem_mounted()}')
+print(f'Mount path: {volume_storage.mount_path}')
+"
+```
+
+### API Connection Test
+```bash
+# Test backend API
+curl http://localhost:8000/api/
+curl http://YOUR_INSTANCE_IP/api/
+
 # Test Datacrunch API
 cd /opt/review-platform/backend
-source ../venv/bin/activate
-python -c "
+python3 -c "
 import asyncio
 from app.core.datacrunch import datacrunch_client
 async def test():
@@ -176,18 +214,93 @@ asyncio.run(test())
 "
 ```
 
-## Security Notes
+## Deployment Scripts
+
+### Quick Fix Scripts
+```bash
+# Database schema fix
+./scripts/fix_database.sh
+
+# Upload size limit fix
+./scripts/fix_upload_size.sh
+
+# Initial server setup
+./scripts/remote_setup.sh
+
+# Sync GPU processing code
+./scripts/sync_gpu_code.sh
+
+# Full service restart
+systemctl restart review-platform nginx
+```
+
+### Code Updates
+```bash
+# Update deployed code
+cd /opt/review-platform
+git pull origin main
+cd frontend && NODE_ENV=production npm run build
+systemctl restart review-platform
+```
+
+## Cost Optimization
+
+### Instance Costs
+- **CPU.4V.16G**: ~€0.50-1.00/hour (€360-720/month 24/7)
+- **Shared Filesystem**: ~€10-20/month for 50-100GB
+- **GPU Processing**: ~€4/hour × 2 minutes = ~€0.13 per PDF
+
+### Optimization Tips
+- Stop instance when not in use
+- Use on-demand GPU instances only for processing
+- Monitor usage with Datacrunch dashboard
+- Regular database cleanup
+
+**Estimated cost for 10 PDFs/day: €35-50/month**
+
+## Security Best Practices
 
 - ✅ Change default SECRET_KEY
-- ✅ Configure firewall if needed
+- ✅ Configure firewall rules
 - ✅ Keep API credentials secure
-- ✅ Monitor costs and usage
 - ✅ Regular backups of database
+- ✅ Monitor access logs
+- ✅ SSL certificate for production domain
 
-## Cost Monitoring
+## Next Steps
 
-- **Instance**: ~$0.10/hour for 2xCPU.4GB
-- **Volume**: ~$20/month for 100GB NVMe_Shared  
-- **GPU**: Only when processing (~$1/hour × 2 minutes = ~$0.03 per PDF)
+1. **AI Processing**: Configure GPU workflow
+2. **Email Notifications**: Set up SMTP service
+3. **Domain Setup**: Configure custom domain + SSL
+4. **Monitoring**: Set up alerts and usage tracking
+5. **Backup Strategy**: Automated database backups
 
-Total estimated cost for 10 PDFs/day: ~$95/month
+## Troubleshooting Common Issues
+
+### "No such column: pitch_decks.file_path"
+```bash
+cd /opt/review-platform
+./scripts/fix_database.sh
+```
+
+### "413 Request Entity Too Large"
+```bash
+cd /opt/review-platform
+./scripts/fix_upload_size.sh
+```
+
+### "502 Bad Gateway"
+```bash
+# Check backend service
+systemctl status review-platform
+journalctl -u review-platform --no-pager -l
+```
+
+### Frontend API Connection Issues
+```bash
+# Verify API base URL configuration
+cd /opt/review-platform/frontend/src
+grep -r "baseURL\|0.0.0.0" .
+```
+
+This deployment guide represents production-tested best practices from successful deployments.
