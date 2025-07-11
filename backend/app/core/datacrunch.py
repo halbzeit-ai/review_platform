@@ -119,7 +119,7 @@ class DatacrunchClient:
             "script": script
         }
         
-        result = await self._make_request("POST", "/v1/scripts", json=data)
+        result = await self._make_request("POST", "/scripts", json=data)
         logger.info(f"Created startup script: {result}")
         return result
     
