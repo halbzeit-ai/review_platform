@@ -129,10 +129,9 @@ class DatacrunchClient:
             "ssh_key_ids": ssh_key_ids or []
         }
         
-        # Temporarily skip volume attachment due to "volume limit exceeded" error
-        # Will use NFS mounting in startup script instead
-        # if existing_volume_ids:
-        #     data["existing_volumes"] = existing_volume_ids
+        # Re-enabled volume attachment after support increased limits
+        if existing_volume_ids:
+            data["existing_volumes"] = existing_volume_ids
         
         if startup_script:
             # Use only user_data - most common cloud-init parameter
