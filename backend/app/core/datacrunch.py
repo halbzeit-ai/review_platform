@@ -69,14 +69,12 @@ class DatacrunchClient:
             try:
                 return response.json()
             except Exception as json_error:
-                # Handle special case where Datacrunch returns plain UUID for instance creation
-                if endpoint == "/instances" and method == "POST":
-                    response_text = response.text.strip()
-                    # Check if it looks like a UUID
-                    import re
-                    if re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', response_text):
-                        print(f"DEBUG DATACRUNCH: Plain UUID response handled")
-                        return {"id": response_text}
+                # Handle special case where Datacrunch returns plain UUID
+                response_text = response.text.strip()
+                import re
+                if re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', response_text):
+                    print(f"DEBUG DATACRUNCH: Plain UUID response handled for {method} {endpoint}")
+                    return {"id": response_text}
                 
                 logger.error(f"Datacrunch API returned invalid JSON for {method} {endpoint}")
                 logger.error(f"Response status: {response.status_code}")
