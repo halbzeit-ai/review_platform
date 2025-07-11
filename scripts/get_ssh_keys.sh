@@ -17,9 +17,26 @@ from app.core.datacrunch import datacrunch_client
 
 async def get_ssh_keys():
     try:
-        # Get SSH keys from Datacrunch API
-        # Note: This endpoint might need to be adjusted based on Datacrunch API
-        ssh_keys = await datacrunch_client._make_request('GET', '/ssh-keys')
+        # Try different possible SSH key endpoints
+        possible_endpoints = ['/ssh-keys', '/keys', '/sshkeys', '/user/ssh-keys', '/account/ssh-keys']
+        
+        ssh_keys = None
+        working_endpoint = None
+        
+        for endpoint in possible_endpoints:
+            try:
+                print(f'Trying endpoint: {endpoint}')
+                ssh_keys = await datacrunch_client._make_request('GET', endpoint)
+                working_endpoint = endpoint
+                break
+            except Exception as e:
+                print(f'  Failed: {e}')
+                continue
+        
+        if not ssh_keys:
+            print('❌ Could not find SSH keys endpoint')
+            print('💡 Checking Datacrunch API documentation...')
+            return
         
         if ssh_keys:
             print('✅ SSH Keys found in your Datacrunch account:')
