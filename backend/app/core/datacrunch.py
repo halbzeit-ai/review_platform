@@ -58,10 +58,10 @@ class DatacrunchClient:
         kwargs["headers"] = headers
         
         async with httpx.AsyncClient() as client:
-            print(f"DEBUG DATACRUNCH: Making {method} request to {self.api_base}{endpoint}")
-            print(f"DEBUG DATACRUNCH: Request kwargs: {kwargs}")
+            print(f"DEBUG DATACRUNCH: {method} {endpoint}")
             response = await client.request(method, f"{self.api_base}{endpoint}", **kwargs)
-            print(f"DEBUG DATACRUNCH: Response received: status {response.status_code}")
+            if response.status_code not in [200, 201, 202]:
+                print(f"DEBUG DATACRUNCH: Error {response.status_code}: {response.text[:100]}...")
             
             if response.status_code not in [200, 201, 202]:
                 raise Exception(f"API request failed: {response.status_code} - {response.text}")
@@ -69,18 +69,13 @@ class DatacrunchClient:
             try:
                 return response.json()
             except Exception as json_error:
-                print(f"DEBUG DATACRUNCH: Invalid JSON for {method} {endpoint}")
-                print(f"DEBUG DATACRUNCH: Response status: {response.status_code}")
-                print(f"DEBUG DATACRUNCH: Response text: {response.text}")
-                print(f"DEBUG DATACRUNCH: JSON parse error: {json_error}")
-                
                 # Handle special case where Datacrunch returns plain UUID for instance creation
                 if endpoint == "/instances" and method == "POST":
                     response_text = response.text.strip()
                     # Check if it looks like a UUID
                     import re
                     if re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', response_text):
-                        print(f"DEBUG DATACRUNCH: Treating as plain UUID response")
+                        print(f"DEBUG DATACRUNCH: Plain UUID response handled")
                         return {"id": response_text}
                 
                 logger.error(f"Datacrunch API returned invalid JSON for {method} {endpoint}")
