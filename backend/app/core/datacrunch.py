@@ -131,14 +131,16 @@ class DatacrunchClient:
         
         # Try different approaches for volume attachment
         if existing_volume_ids:
-            # Try various parameter formats that might work
-            data["existing_volumes"] = existing_volume_ids
-            data["volumes"] = existing_volume_ids  
-            data["volume_ids"] = existing_volume_ids
-            data["shared_filesystems"] = existing_volume_ids
-            data["filesystem_ids"] = existing_volume_ids
-            # Try object format
-            data["volumes"] = [{"id": vid} for vid in existing_volume_ids]
+            # Try attaching existing storage by ID (most likely correct)
+            data["storage"] = [
+                {
+                    "id": existing_volume_ids[0],
+                    "attach": True
+                }
+            ]
+            # Alternative: maybe it's just a simple list
+            data["attach_storage"] = existing_volume_ids
+            data["existing_storage"] = existing_volume_ids
         
         if startup_script:
             # Try different parameter names for startup script
