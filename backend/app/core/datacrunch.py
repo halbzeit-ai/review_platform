@@ -129,9 +129,9 @@ class DatacrunchClient:
             "ssh_key_ids": ssh_key_ids or []
         }
         
-        # Use only the working shared filesystem parameter (avoid volume limit)
-        if existing_volume_ids:
-            data["shared_filesystems"] = existing_volume_ids
+        # Skip volume attachment - use NFS mounting in startup script instead
+        # if existing_volume_ids:
+        #     data["shared_filesystems"] = existing_volume_ids
         
         if startup_script:
             # Try different parameter names for startup script

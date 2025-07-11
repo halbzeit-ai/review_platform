@@ -166,16 +166,37 @@ class GPUProcessingService:
         mount_path = settings.SHARED_FILESYSTEM_MOUNT_PATH
         
         script = """#!/bin/bash
-# Extremely simple startup script - just create result and shutdown
+# Startup script with NFS mounting of shared filesystem
 exec > /var/log/startup.log 2>&1
 
-echo "SIMPLE: Starting at $(date)"
+echo "NFS MOUNT: Starting at $(date)"
+
+# Install NFS utilities if needed
+apt-get update && apt-get install -y nfs-common
+
+# Create mount point
+mkdir -p {mount_path}
+
+# Mount shared filesystem via NFS (from Datacrunch dashboard)
+echo "NFS MOUNT: Mounting shared filesystem..."
+mount -t nfs -o nconnect=16 nfs.fin-01.datacrunch.io:/SFS-5gkKcxHe-6721608d {mount_path}
+
+# Verify mount worked
+if mountpoint -q {mount_path}; then
+    echo "NFS MOUNT: Success! Shared filesystem mounted"
+    ls -la {mount_path}/
+else
+    echo "NFS MOUNT: Failed to mount shared filesystem"
+    exit 1
+fi
+
+# Create directories
 mkdir -p {mount_path}/results {mount_path}/temp
 
 # Create result file directly with bash (no Python dependencies)
 cat > {mount_path}/results/test_result.json << 'EOL'
 {{
-  "simple_test": true,
+  "nfs_test": true,
   "timestamp": "$(date)",
   "file_path": "{file_path}",
   "status": "success"
@@ -185,7 +206,9 @@ EOL
 # Create completion marker
 touch {mount_path}/temp/processing_complete_test
 
-echo "SIMPLE: Files created, shutting down..."
+echo "NFS MOUNT: Files created, shutting down..."
+# Keep running for 2 minutes so we can SSH in and verify
+sleep 120
 shutdown -h now
 """
         # Replace placeholders
