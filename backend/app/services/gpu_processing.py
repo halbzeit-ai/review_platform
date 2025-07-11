@@ -17,7 +17,7 @@ class GPUProcessingService:
     def __init__(self):
         self.gpu_instance_type = "1RTX6000ADA.10V"  # Correct GPU instance type from screenshot
         self.processing_timeout = 600  # 10 minutes timeout
-        self.gpu_image = "OS-5nHPrwne"  # Correct OS image from screenshot
+        self.gpu_image = "ubuntu-22.04"  # Standard Ubuntu image for GPU instances
     
     async def trigger_processing(self, pitch_deck_id: int, file_path: str) -> bool:
         """
