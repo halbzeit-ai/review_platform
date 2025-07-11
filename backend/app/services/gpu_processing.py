@@ -15,8 +15,9 @@ logger = logging.getLogger(__name__)
 
 class GPUProcessingService:
     def __init__(self):
-        self.gpu_instance_type = "1xA100.40GB"  # Default GPU instance type
+        self.gpu_instance_type = "1RTX6000ADA.10V"  # Correct GPU instance type from screenshot
         self.processing_timeout = 600  # 10 minutes timeout
+        self.gpu_image = "OS-5nHPrwne"  # Correct OS image from screenshot
     
     async def trigger_processing(self, pitch_deck_id: int, file_path: str) -> bool:
         """
@@ -54,6 +55,7 @@ class GPUProcessingService:
             instance_data = await datacrunch_client.deploy_instance(
                 hostname=instance_name,
                 instance_type=self.gpu_instance_type,
+                image=self.gpu_image,
                 existing_volume_ids=[filesystem_id],
                 startup_script=startup_script
             )
@@ -105,8 +107,8 @@ apt-get update
 apt-get install -y python3-pip
 
 # Install your AI processing dependencies
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-pip3 install transformers pypdf2 opencv-python
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+pip3 install transformers pypdf2 opencv-python pdfplumber pymupdf
 
 # Upload GPU processing code
 cat > /root/upload_gpu_code.py << 'EOF'
