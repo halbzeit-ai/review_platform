@@ -1,0 +1,8 @@
+apt install fish
+apt install nvtop
+apt install pip
+apt-get install poppler-utils
+
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull gemma3:12b
+ollama pull phi4:latest
