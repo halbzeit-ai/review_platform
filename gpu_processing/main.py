@@ -14,6 +14,9 @@ from pathlib import Path
 from typing import Dict, Any, List
 import logging
 
+# Import the new AI analyzer
+from utils.pitch_deck_analyzer import PitchDeckAnalyzer
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -26,7 +29,9 @@ class PDFProcessor:
     
     def __init__(self, mount_path: str = "/mnt/shared"):
         self.mount_path = mount_path
+        self.analyzer = PitchDeckAnalyzer()
         logger.info(f"Initialized PDF processor with mount path: {mount_path}")
+        logger.info("AI analyzer initialized successfully")
     
     def process_pdf(self, file_path: str) -> Dict[str, Any]:
         """
@@ -45,8 +50,8 @@ class PDFProcessor:
             raise FileNotFoundError(f"PDF file not found: {full_path}")
         
         try:
-            # TODO: Replace with actual AI processing logic
-            results = self._placeholder_processing(full_path)
+            # Use real AI processing instead of placeholder
+            results = self._ai_processing(full_path)
             logger.info("PDF processing completed successfully")
             return results
             
@@ -54,59 +59,107 @@ class PDFProcessor:
             logger.error(f"Error processing PDF: {e}")
             raise
     
-    def _placeholder_processing(self, file_path: str) -> Dict[str, Any]:
+    def _ai_processing(self, file_path: str) -> Dict[str, Any]:
         """
-        Placeholder processing logic - replace with actual AI implementation
+        Real AI processing using the PitchDeckAnalyzer
         
-        This should be replaced with:
-        1. PDF content extraction (text, images, structure)
-        2. AI model inference for content analysis
-        3. Review generation based on AI analysis
-        4. Scoring and recommendation algorithms
+        Performs comprehensive analysis including:
+        1. Visual analysis of PDF pages using vision models
+        2. Detailed analysis across 7 VC evaluation areas
+        3. Numerical scoring (0-7) for each area
+        4. Scientific hypothesis extraction
+        5. Company offering summarization
         """
-        logger.info("Running placeholder AI processing...")
+        logger.info("Running real AI processing...")
         
-        # Simulate processing time
-        time.sleep(30)  # Simulate 30 seconds of processing
+        try:
+            # Use the AI analyzer to process the PDF
+            results = self.analyzer.analyze_pdf(file_path)
+            
+            # Transform results to include additional fields for backward compatibility
+            enhanced_results = self._enhance_results_format(results)
+            
+            logger.info("AI processing completed successfully")
+            return enhanced_results
+            
+        except Exception as e:
+            logger.error(f"AI processing failed: {e}")
+            # Fallback to basic error structure
+            return {
+                "error": f"AI processing failed: {str(e)}",
+                "company_offering": "Error during processing",
+                "report_chapters": {},
+                "report_scores": {},
+                "scientific_hypotheses": "Error during processing",
+                "processing_metadata": {
+                    "processing_time": 0.0,
+                    "error": True
+                }
+            }
+    
+    def _enhance_results_format(self, ai_results: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Enhance AI results with additional fields for compatibility
         
-        # Create structured results
-        results = {
-            "summary": "This is a placeholder summary of the pitch deck",
-            "key_points": [
-                "Strong market opportunity",
-                "Experienced team", 
-                "Clear business model",
-                "Innovative technology approach",
-                "Scalable revenue model"
-            ],
-            "score": 8.5,
-            "recommendations": [
-                "Focus on customer acquisition",
-                "Develop strategic partnerships",
-                "Expand market reach",
-                "Strengthen competitive positioning"
-            ],
+        Adds summary fields and recommendations based on the detailed analysis
+        """
+        # Calculate overall score from individual area scores
+        scores = ai_results.get("report_scores", {})
+        if scores:
+            overall_score = sum(scores.values()) / len(scores)
+        else:
+            overall_score = 0.0
+        
+        # Generate key points from the analysis chapters
+        key_points = []
+        chapters = ai_results.get("report_chapters", {})
+        for area, analysis in chapters.items():
+            if analysis and len(analysis) > 10:  # Non-empty analysis
+                # Extract first sentence as key point
+                first_sentence = analysis.split('.')[0]
+                if first_sentence:
+                    key_points.append(f"{area.title()}: {first_sentence}")
+        
+        # Generate recommendations based on low-scoring areas
+        recommendations = []
+        for area, score in scores.items():
+            if score < 4:  # Areas that need improvement
+                recommendations.append(f"Strengthen {area.replace('_', ' ')} section with more detailed information")
+        
+        if not recommendations:
+            recommendations = ["Continue developing strong areas identified in the analysis"]
+        
+        # Enhanced results combining AI analysis with compatibility fields
+        enhanced_results = {
+            # Core AI analysis results (your structure)
+            "company_offering": ai_results.get("company_offering", ""),
+            "report_chapters": ai_results.get("report_chapters", {}),
+            "report_scores": ai_results.get("report_scores", {}),
+            "scientific_hypotheses": ai_results.get("scientific_hypotheses", ""),
+            
+            # Additional compatibility fields
+            "summary": ai_results.get("company_offering", "Comprehensive pitch deck analysis completed"),
+            "score": round(overall_score, 1),
+            "key_points": key_points[:5],  # Limit to top 5
+            "recommendations": recommendations[:4],  # Limit to top 4
+            
+            # Analysis breakdown for compatibility
             "analysis": {
-                "market_size": "Large addressable market with growth potential",
-                "team_strength": "Experienced founders with relevant background",
-                "business_model": "Clear revenue streams and monetization strategy",
-                "traction": "Early signs of market validation",
-                "risks": "Competitive landscape and execution challenges"
+                "problem_analysis": chapters.get("problem", "")[:200],
+                "solution_analysis": chapters.get("solution", "")[:200], 
+                "market_fit": chapters.get("product market fit", "")[:200],
+                "business_model": chapters.get("monetisation", "")[:200],
+                "team_analysis": chapters.get("organisation", "")[:200]
             },
-            "sections_analyzed": [
-                "Executive Summary",
-                "Market Analysis", 
-                "Product Description",
-                "Business Model",
-                "Financial Projections",
-                "Team Overview"
-            ],
-            "confidence_score": 0.85,
-            "processing_time": 30.0,
-            "model_version": "placeholder-v1.0"
+            
+            # Metadata
+            "processing_metadata": ai_results.get("processing_metadata", {}),
+            "confidence_score": min(overall_score / 7.0, 1.0),  # Normalize to 0-1
+            "sections_analyzed": list(chapters.keys()),
+            "model_version": "ai-v1.0"
         }
         
-        return results
+        return enhanced_results
     
     def save_results(self, results: Dict[str, Any], file_path: str) -> str:
         """Save processing results to shared filesystem"""

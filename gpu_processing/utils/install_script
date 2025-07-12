@@ -1,8 +1,34 @@
-apt install fish
-apt install nvtop
-apt install pip
-apt-get install poppler-utils
+#!/bin/bash
+# GPU Instance Setup Script for AI Processing
+set -e
 
+echo "=== Setting up AI Processing Environment ==="
+
+# System packages
+apt update
+apt install -y fish nvtop python3-pip poppler-utils
+
+# Python dependencies for AI processing
+pip3 install Pillow pdf2image ollama tqdm
+
+# Install Ollama for local AI models
+echo "Installing Ollama..."
 curl -fsSL https://ollama.com/install.sh | sh
+
+# Start Ollama service
+systemctl enable ollama
+systemctl start ollama
+
+# Wait for service to start
+sleep 10
+
+# Pull required AI models
+echo "Pulling AI models..."
 ollama pull gemma3:12b
 ollama pull phi4:latest
+
+# Verify installation
+echo "Verifying installation..."
+ollama list
+
+echo "=== AI Environment Setup Complete ==="
