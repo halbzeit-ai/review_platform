@@ -60,6 +60,7 @@ class SimpleDatacrunchClient:
         if self.access_token:
             return self.access_token
         
+        # Use form data format exactly like the working backend
         data = urlencode({
             'grant_type': 'client_credentials',
             'client_id': self.client_id,
@@ -70,12 +71,27 @@ class SimpleDatacrunchClient:
         req.add_header('Content-Type', 'application/x-www-form-urlencoded')
         
         try:
+            print(f"Requesting token from: {self.api_base}/oauth2/token")
+            print(f"With client_id: {self.client_id[:8]}...")
+            
             with urlopen(req) as response:
-                token_data = json.loads(response.read().decode('utf-8'))
+                response_text = response.read().decode('utf-8')
+                print(f"Token response: {response_text[:100]}...")
+                
+                token_data = json.loads(response_text)
                 self.access_token = token_data['access_token']
+                print(f"✓ Token obtained: {self.access_token[:20]}...")
                 return self.access_token
+                
         except HTTPError as e:
-            print(f"Error getting access token: {e}")
+            error_body = e.read().decode('utf-8') if hasattr(e, 'read') else str(e)
+            print(f"HTTP Error {e.code}: {error_body}")
+            print(f"Request URL: {self.api_base}/oauth2/token")
+            print(f"Client ID length: {len(self.client_id)}")
+            print(f"Client Secret length: {len(self.client_secret)}")
+            sys.exit(1)
+        except Exception as e:
+            print(f"Unexpected error getting access token: {e}")
             sys.exit(1)
     
     def _make_request(self, method, endpoint, data=None):
