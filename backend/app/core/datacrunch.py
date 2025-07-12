@@ -57,7 +57,12 @@ class DatacrunchClient:
         headers["Content-Type"] = "application/json"
         kwargs["headers"] = headers
         
-        async with httpx.AsyncClient() as client:
+        # Use longer timeout for instance creation operations
+        timeout = 60.0  # 60 seconds for API calls
+        if endpoint == "/instances" and method == "POST":
+            timeout = 120.0  # 2 minutes for instance creation
+        
+        async with httpx.AsyncClient(timeout=timeout) as client:
             print(f"DEBUG DATACRUNCH: {method} {endpoint}")
             response = await client.request(method, f"{self.api_base}{endpoint}", **kwargs)
             if response.status_code not in [200, 201, 202]:
