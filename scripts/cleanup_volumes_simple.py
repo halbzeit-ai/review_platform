@@ -35,6 +35,8 @@ class SimpleDatacrunchClient:
                 line = line.strip()
                 if '=' in line and not line.startswith('#'):
                     key, value = line.split('=', 1)
+                    # Remove quotes if present
+                    value = value.strip('"\'')
                     if key == 'DATACRUNCH_CLIENT_ID':
                         self.client_id = value
                     elif key == 'DATACRUNCH_CLIENT_SECRET':
@@ -48,6 +50,10 @@ class SimpleDatacrunchClient:
             print(f"CLIENT_SECRET: {'✓' if self.client_secret else '✗'}")
             print(f"SHARED_FILESYSTEM_ID: {'✓' if self.shared_filesystem_id else '✗'}")
             sys.exit(1)
+        
+        # Debug: show partial values to verify loading
+        print(f"Loaded CLIENT_ID: {self.client_id[:8]}..." if self.client_id else "No CLIENT_ID")
+        print(f"Loaded CLIENT_SECRET: {self.client_secret[:8]}..." if self.client_secret else "No CLIENT_SECRET")
     
     def get_access_token(self):
         """Get access token using client credentials"""
