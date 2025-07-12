@@ -172,6 +172,54 @@ class DatacrunchClient:
         result = await self._make_request("DELETE", f"/instances/{instance_id}")
         return result
     
+    async def attach_volume(self, volume_id: str, instance_id: str) -> Dict[Any, Any]:
+        """Attach volume to instance"""
+        data = {"instance_id": instance_id}
+        result = await self._make_request("POST", f"/volumes/{volume_id}/attach", json=data)
+        logger.info(f"Attached volume {volume_id} to instance {instance_id}")
+        return result
+    
+    async def detach_volume(self, volume_id: str) -> Dict[Any, Any]:
+        """Detach volume from instance"""
+        result = await self._make_request("POST", f"/volumes/{volume_id}/detach")
+        logger.info(f"Detached volume {volume_id}")
+        return result
+    
+    async def get_instance_volumes(self, instance_id: str) -> List[Dict[Any, Any]]:
+        """Get volumes attached to an instance"""
+        instance = await self.get_instance(instance_id)
+        return instance.get("volumes", [])
+    
+    async def cleanup_orphaned_volume_attachments(self, volume_id: str) -> int:
+        """
+        Clean up orphaned volume attachments by detaching from non-existent instances
+        Returns number of attachments cleaned up
+        """
+        cleaned_count = 0
+        try:
+            volume = await self.get_volume(volume_id)
+            attached_instances = volume.get("attached_instances", [])
+            
+            for instance_id in attached_instances:
+                try:
+                    # Try to get the instance
+                    await self.get_instance(instance_id)
+                    logger.info(f"Instance {instance_id} exists, volume attachment is valid")
+                except Exception as e:
+                    if "404" in str(e) or "not_found" in str(e):
+                        # Instance doesn't exist, detach the volume
+                        logger.info(f"Cleaning up orphaned attachment: volume {volume_id} from non-existent instance {instance_id}")
+                        await self.detach_volume(volume_id)
+                        cleaned_count += 1
+                    else:
+                        logger.warning(f"Error checking instance {instance_id}: {e}")
+            
+            return cleaned_count
+            
+        except Exception as e:
+            logger.error(f"Error cleaning up orphaned attachments for volume {volume_id}: {e}")
+            return 0
+    
     async def wait_for_instance_running(self, instance_id: str, timeout: int = 300) -> bool:
         """Wait for instance to be in running state"""
         import time

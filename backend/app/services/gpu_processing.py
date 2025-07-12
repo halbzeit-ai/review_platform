@@ -150,7 +150,7 @@ class GPUProcessingService:
                 pitch_deck.processing_status = "failed"
                 logger.error(f"Processing failed for pitch deck {pitch_deck_id}")
             
-            # Clean up
+            # Clean up instance and volumes
             await self._cleanup_instance(instance_id)
             volume_storage.remove_processing_marker(file_path)
             
@@ -324,10 +324,26 @@ shutdown -h now
         return False
     
     async def _cleanup_instance(self, instance_id: str):
-        """Clean up GPU instance"""
+        """Clean up GPU instance and detach volumes"""
         try:
+            # First, detach all volumes to prevent quota issues
+            logger.info(f"Detaching volumes from instance {instance_id}")
+            
+            try:
+                volumes = await datacrunch_client.get_instance_volumes(instance_id)
+                for volume in volumes:
+                    volume_id = volume.get("id")
+                    if volume_id:
+                        logger.info(f"Detaching volume {volume_id} from instance {instance_id}")
+                        await datacrunch_client.detach_volume(volume_id)
+            except Exception as volume_error:
+                logger.warning(f"Error detaching volumes from instance {instance_id}: {volume_error}")
+                # Continue with instance deletion even if volume detachment fails
+            
+            # Then delete the instance
             await datacrunch_client.delete_instance(instance_id)
             logger.info(f"Cleaned up GPU instance {instance_id}")
+            
         except Exception as e:
             # Instance might have already shut down automatically
             if "404" in str(e) or "not_found" in str(e):
