@@ -177,7 +177,7 @@ class GPUProcessingService:
         
         script = f"""#!/bin/bash
 exec > /var/log/startup.log 2>&1
-echo "VOLUME MOUNT: Starting at $(date)"
+echo "AI PROCESSING: Starting at $(date)"
 mkdir -p {mount_path}
 echo "VOLUME MOUNT: Checking for attached volumes..."
 lsblk
@@ -212,14 +212,63 @@ fi
 
 mkdir -p {mount_path}/results {mount_path}/temp
 
-# Create the correctly named results file that the monitor expects
-RESULTS_FILE_NAME=$(echo "{file_path}" | sed 's|/|_|g' | sed 's|\.pdf|_results.json|g')
-echo '{{"nfs_test": true, "timestamp": "'$(date)'", "file_path": "{file_path}", "status": "success"}}' > {mount_path}/results/$RESULTS_FILE_NAME
+# Setup AI environment
+echo "AI SETUP: Installing AI dependencies..."
+apt update
+apt install -y python3-pip poppler-utils
+pip3 install Pillow pdf2image ollama tqdm
 
-# Also create the test completion marker
-touch {mount_path}/temp/processing_complete_test
-echo "PROCESSING: Files created, keeping instance alive for 2 minutes..."
-sleep 120
+# Install and setup Ollama
+echo "AI SETUP: Installing Ollama..."
+curl -fsSL https://ollama.com/install.sh | sh
+systemctl enable ollama
+systemctl start ollama
+sleep 10
+
+# Pull AI models
+echo "AI SETUP: Pulling AI models..."
+ollama pull gemma3:12b
+ollama pull phi4:latest
+
+# Verify installation
+echo "AI SETUP: Verifying installation..."
+ollama list
+
+# Clone or sync GPU processing code
+echo "AI PROCESSING: Setting up processing code..."
+cd /tmp
+git clone https://github.com/your-repo/review_platform.git || echo "Using local code"
+
+# Copy AI processing code to working directory
+mkdir -p /tmp/gpu_processing
+if [ -d "/tmp/review_platform/gpu_processing" ]; then
+  cp -r /tmp/review_platform/gpu_processing/* /tmp/gpu_processing/
+else
+  # Fallback: copy from mounted volume if available
+  if [ -d "{mount_path}/gpu_processing_code" ]; then
+    cp -r {mount_path}/gpu_processing_code/* /tmp/gpu_processing/
+  else
+    echo "ERROR: No processing code found"
+    exit 1
+  fi
+fi
+
+cd /tmp/gpu_processing
+
+# Set environment variables
+export SHARED_FILESYSTEM_MOUNT_PATH="{mount_path}"
+
+# Run AI processing
+echo "AI PROCESSING: Starting analysis for {file_path}..."
+python3 main.py "{file_path}"
+
+if [ $? -eq 0 ]; then
+  echo "AI PROCESSING: Completed successfully"
+else
+  echo "AI PROCESSING: Failed with error code $?"
+fi
+
+echo "AI PROCESSING: Shutting down at $(date)"
 shutdown -h now
 """
         
@@ -227,22 +276,24 @@ shutdown -h now
     
     async def _monitor_processing(self, file_path: str, instance_id: str) -> bool:
         """Monitor processing completion"""
-        # Look for the simple test completion marker
-        completion_marker = "temp/processing_complete_test"
+        # Look for real AI processing completion marker
+        marker_name = f"processing_complete_{file_path.replace('/', '_')}"
+        completion_marker = f"temp/{marker_name}"
         
-        logger.info(f"Monitoring simple test processing, looking for marker: {completion_marker}")
+        logger.info(f"Monitoring AI processing, looking for marker: {completion_marker}")
         
-        # Wait for completion marker or timeout
-        for i in range(self.processing_timeout):
+        # Wait for completion marker or timeout (increase timeout for AI processing)
+        ai_timeout = 1200  # 20 minutes for AI processing
+        for i in range(ai_timeout):
             if volume_storage.file_exists(completion_marker):
-                logger.info(f"Simple test completion marker found after {i} seconds")
+                logger.info(f"AI processing completion marker found after {i} seconds")
                 # Clean up completion marker
                 volume_storage.delete_file(completion_marker)
                 return True
             
             # Log progress every 30 seconds
             if i % 30 == 0 and i > 0:
-                logger.info(f"Still waiting for processing completion... {i}/{self.processing_timeout} seconds elapsed")
+                logger.info(f"Still waiting for AI processing completion... {i}/{ai_timeout} seconds elapsed")
                 
                 # Check if any results file exists yet
                 results_path = file_path.replace('/', '_').replace('.pdf', '_results.json')
@@ -268,7 +319,7 @@ shutdown -h now
             
             await asyncio.sleep(1)
         
-        logger.warning(f"Processing timeout reached after {self.processing_timeout} seconds")
+        logger.warning(f"AI processing timeout reached after {ai_timeout} seconds")
         return False
     
     async def _cleanup_instance(self, instance_id: str):
