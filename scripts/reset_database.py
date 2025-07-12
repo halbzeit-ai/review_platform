@@ -2,17 +2,12 @@
 """
 Database reset script - completely wipes and recreates the database
 WARNING: This will delete ALL data!
+Uses only standard library - no virtual environment required
 """
 import os
 import sys
 import sqlite3
-from sqlalchemy import create_engine
-
-# Add backend to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'backend'))
-
-from app.db.models import Base
-from app.core.config import settings
+import time
 
 def reset_database():
     """Completely reset the database - delete all tables and data"""
@@ -54,10 +49,82 @@ def reset_database():
     else:
         print(f"\n📝 No existing database found at {db_path}")
     
-    # Create new database with all tables
+    # Create new database with all tables using raw SQL
     print("\n🔨 Creating new database with schema...")
-    engine = create_engine(settings.DATABASE_URL)
-    Base.metadata.create_all(bind=engine)
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    
+    # Create Users table with email verification fields
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email VARCHAR UNIQUE NOT NULL,
+            password_hash VARCHAR NOT NULL,
+            company_name VARCHAR,
+            role VARCHAR,
+            is_verified BOOLEAN DEFAULT 0,
+            verification_token VARCHAR,
+            verification_token_expires DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            last_login DATETIME
+        )
+    """)
+    
+    # Create PitchDecks table with all current fields
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS pitch_decks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            file_name VARCHAR,
+            file_path VARCHAR,
+            s3_url VARCHAR,
+            processing_status VARCHAR DEFAULT 'pending',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    """)
+    
+    # Create Reviews table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pitch_deck_id INTEGER NOT NULL,
+            review_data TEXT,
+            s3_review_url VARCHAR,
+            status VARCHAR,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (pitch_deck_id) REFERENCES pitch_decks (id)
+        )
+    """)
+    
+    # Create Questions table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS questions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            review_id INTEGER NOT NULL,
+            question_text TEXT,
+            asked_by INTEGER NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (review_id) REFERENCES reviews (id),
+            FOREIGN KEY (asked_by) REFERENCES users (id)
+        )
+    """)
+    
+    # Create Answers table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS answers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question_id INTEGER NOT NULL,
+            answer_text TEXT,
+            answered_by INTEGER NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (question_id) REFERENCES questions (id),
+            FOREIGN KEY (answered_by) REFERENCES users (id)
+        )
+    """)
+    
+    conn.commit()
+    conn.close()
     print("✅ New database created with all tables")
     
     # Verify database structure

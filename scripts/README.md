@@ -19,6 +19,7 @@ cd /opt/review-platform
 **Use case:** Clean slate for testing, removes all users/data  
 **Safety:** Creates automatic backup before deletion  
 **Warning:** Requires typing 'DELETE' to confirm - destructive operation  
+**Requirements:** ✅ No virtual environment needed (uses standard library only)  
 
 ```bash
 ./scripts/reset_database.py
@@ -29,7 +30,7 @@ cd /opt/review-platform
 ### `cleanup_volumes_simple.py` 🧹
 **Purpose:** Clean up orphaned volume attachments using standard library only  
 **Use case:** Fix "Volume limit exceeded" errors by detaching volumes from deleted instances  
-**Features:** No virtual environment required, bypasses Cloudflare protection  
+**Requirements:** ✅ No virtual environment needed, bypasses Cloudflare protection  
 
 ```bash
 ./scripts/cleanup_volumes_simple.py
@@ -39,6 +40,7 @@ cd /opt/review-platform
 **Purpose:** Comprehensive analysis of all volumes in Datacrunch account  
 **Use case:** Troubleshoot quota issues, identify orphaned attachments  
 **Output:** Detailed report of volume usage and attachment status  
+**Requirements:** ✅ No virtual environment needed (uses standard library only)  
 
 ```bash
 ./scripts/check_all_volumes.py
@@ -47,7 +49,7 @@ cd /opt/review-platform
 ### `cleanup_orphaned_volumes.py` 🔧
 **Purpose:** Clean up orphaned attachments using backend API client  
 **Use case:** Production cleanup with full application context  
-**Requirements:** Virtual environment and backend imports  
+**Requirements:** ⚠️ Requires virtual environment and backend imports  
 
 ```bash
 ./scripts/cleanup_orphaned_volumes.py
@@ -59,6 +61,7 @@ cd /opt/review-platform
 **Purpose:** Test GPU processing configuration and API connectivity  
 **Use case:** Verify Datacrunch API, shared filesystem, and instance creation  
 **Features:** Configuration validation, optional instance creation test  
+**Requirements:** ⚠️ Requires virtual environment and backend imports  
 
 ```bash
 ./scripts/test_gpu_processing.py
