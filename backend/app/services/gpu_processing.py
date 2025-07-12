@@ -225,6 +225,9 @@ systemctl enable ollama
 systemctl start ollama
 sleep 10
 
+# Set HOME environment for Ollama
+export HOME=/root
+
 # Pull AI models
 echo "AI SETUP: Pulling AI models..."
 ollama pull gemma3:12b
@@ -232,6 +235,7 @@ ollama pull phi4:latest
 
 # Verify installation
 echo "AI SETUP: Verifying installation..."
+export HOME=/root
 ollama list
 
 # Use AI processing code from shared filesystem
