@@ -2,17 +2,33 @@
 """
 Clean up orphaned volume attachments from Datacrunch
 This script will detach volumes from instances that no longer exist
+
+Usage:
+  # From the project root directory
+  python3 -m scripts.cleanup_orphaned_volumes
+  
+  # Or with virtual environment
+  venv/bin/python3 scripts/cleanup_orphaned_volumes.py
 """
 
 import asyncio
 import sys
 import os
 
-# Add the backend directory to the path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'backend'))
+# Add the backend directory to the path for imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+backend_dir = os.path.join(current_dir, '..', 'backend')
+sys.path.insert(0, backend_dir)
 
-from app.core.datacrunch import datacrunch_client
-from app.core.config import settings
+try:
+    from app.core.datacrunch import datacrunch_client
+    from app.core.config import settings
+except ImportError as e:
+    print(f"Import error: {e}")
+    print("Please run this script from the project root with the virtual environment activated:")
+    print("  cd /opt/review-platform")
+    print("  venv/bin/python3 scripts/cleanup_orphaned_volumes.py")
+    sys.exit(1)
 
 async def cleanup_orphaned_attachments():
     """Clean up all orphaned volume attachments"""
