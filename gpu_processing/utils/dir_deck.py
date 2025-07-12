@@ -66,6 +66,10 @@ if cloud_data == "cloud":
     # DigitalOcean Spaces credentials - load from environment
     SPACES_ACCESS_KEY = os.getenv("DO_SPACES_KEY")
     SPACES_SECRET_KEY = os.getenv("DO_SPACES_SECRET")
+    
+    if not SPACES_ACCESS_KEY or not SPACES_SECRET_KEY:
+        print("Warning: DigitalOcean Spaces credentials not configured. Cloud storage disabled.")
+        cloud_data = "local"  # Force local mode if no credentials
     SPACES_BUCKET = "nector-reloaded"
     SPACES_REGION = "fra1"
     SPACES_ENDPOINT = "https://nector-reloaded.fra1.digitaloceanspaces.com"

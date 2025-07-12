@@ -143,10 +143,8 @@ class DatacrunchClient:
             "ssh_key_ids": ssh_key_ids or []
         }
         
-        # Temporarily disable volume attachment to test quota issue  
-        # if existing_volume_ids:
-        #     data["existing_volumes"] = existing_volume_ids
-        print(f"DEBUG: Temporarily creating instance WITHOUT shared volume attachment")
+        if existing_volume_ids:
+            data["existing_volumes"] = existing_volume_ids
         
         if startup_script_id:
             data["startup_script_id"] = startup_script_id
