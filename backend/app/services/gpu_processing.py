@@ -234,23 +234,20 @@ ollama pull phi4:latest
 echo "AI SETUP: Verifying installation..."
 ollama list
 
-# Clone or sync GPU processing code
+# Use AI processing code from shared filesystem
 echo "AI PROCESSING: Setting up processing code..."
-cd /tmp
-git clone https://github.com/your-repo/review_platform.git || echo "Using local code"
-
-# Copy AI processing code to working directory
 mkdir -p /tmp/gpu_processing
-if [ -d "/tmp/review_platform/gpu_processing" ]; then
-  cp -r /tmp/review_platform/gpu_processing/* /tmp/gpu_processing/
+
+# Copy from mounted volume (already deployed there)
+if [ -d "{mount_path}/gpu_processing_code" ]; then
+  echo "AI PROCESSING: Copying code from shared filesystem..."
+  cp -r {mount_path}/gpu_processing_code/* /tmp/gpu_processing/
+  echo "AI PROCESSING: Code copied successfully"
+  ls -la /tmp/gpu_processing/
 else
-  # Fallback: copy from mounted volume if available
-  if [ -d "{mount_path}/gpu_processing_code" ]; then
-    cp -r {mount_path}/gpu_processing_code/* /tmp/gpu_processing/
-  else
-    echo "ERROR: No processing code found"
-    exit 1
-  fi
+  echo "ERROR: No processing code found at {mount_path}/gpu_processing_code"
+  ls -la {mount_path}/
+  exit 1
 fi
 
 cd /tmp/gpu_processing
