@@ -69,6 +69,12 @@ class SimpleDatacrunchClient:
         
         req = Request(f"{self.api_base}/oauth2/token", data=data, method='POST')
         req.add_header('Content-Type', 'application/x-www-form-urlencoded')
+        # Add browser-like headers to bypass Cloudflare
+        req.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
+        req.add_header('Accept', 'application/json, text/plain, */*')
+        req.add_header('Accept-Language', 'en-US,en;q=0.9')
+        req.add_header('Origin', 'https://datacrunch.io')
+        req.add_header('Referer', 'https://datacrunch.io/')
         
         try:
             print(f"Requesting token from: {self.api_base}/oauth2/token")
@@ -107,6 +113,9 @@ class SimpleDatacrunchClient:
         req = Request(url, data=req_data, method=method)
         req.add_header('Authorization', f'Bearer {token}')
         req.add_header('Content-Type', 'application/json')
+        # Add browser-like headers to bypass Cloudflare
+        req.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
+        req.add_header('Accept', 'application/json, text/plain, */*')
         
         try:
             with urlopen(req) as response:
