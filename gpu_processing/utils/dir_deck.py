@@ -63,9 +63,9 @@ if cloud_data == "cloud":
     cloud_pdfs = "pitchdecks"
     cloud_jsons = "analyses"
 
-    # DigitalOcean Spaces credentials
-    SPACES_ACCESS_KEY = "DO00F6MT2G7PTLX4XERQ"
-    SPACES_SECRET_KEY = "bRLmXDJq9SWzgxmxuP8rUYO+ZGP88gWdYPiEVFoggaU"
+    # DigitalOcean Spaces credentials - load from environment
+    SPACES_ACCESS_KEY = os.getenv("DO_SPACES_KEY")
+    SPACES_SECRET_KEY = os.getenv("DO_SPACES_SECRET")
     SPACES_BUCKET = "nector-reloaded"
     SPACES_REGION = "fra1"
     SPACES_ENDPOINT = "https://nector-reloaded.fra1.digitaloceanspaces.com"
