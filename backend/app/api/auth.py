@@ -1,11 +1,13 @@
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from ..db.database import get_db
 from ..db.models import User
+from ..services.email_service import email_service
+from ..services.token_service import token_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -47,20 +49,35 @@ async def register(data: RegisterData, db: Session = Depends(get_db)):
     )
     
     try:
+        # Generate verification token
+        verification_token, expires_at = token_service.generate_verification_token()
+        token_hash = token_service.hash_token(verification_token)
+        
+        # Store hashed token in user record
+        new_user.verification_token = token_hash
+        new_user.verification_token_expires = expires_at
+        
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
         
-        # TODO: Send verification email
+        # Send verification email
+        email_sent = email_service.send_verification_email(data.email, verification_token)
+        
+        if not email_sent:
+            # If email fails, we still keep the user but warn them
+            print(f"Warning: Verification email failed to send to {data.email}")
+        
         print(f"User registered successfully: {data.email}")
         
         return JSONResponse(
             status_code=200,
             content={
-                "message": "Registration successful. Please check your email for verification.",
+                "message": "Registration successful! Please check your email to verify your account before logging in.",
                 "email": data.email,
                 "company_name": data.company_name,
-                "role": assigned_role
+                "role": assigned_role,
+                "email_sent": email_sent
             }
         )
     except Exception as e:
@@ -78,6 +95,13 @@ async def login(data: LoginData, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == data.email).first()
     if not user or not pwd_context.verify(data.password, user.password_hash):
         raise HTTPException(status_code=400, detail="Invalid email or password")
+    
+    # Check if email is verified
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=403, 
+            detail="Please verify your email address before logging in. Check your inbox for the verification email."
+        )
     
     # Create access token
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -153,10 +177,85 @@ async def update_role(data: UpdateRoleData, current_user: User = Depends(get_cur
         }
     )
 
+@router.get("/verify-email")
+async def verify_email(token: str = Query(...), db: Session = Depends(get_db)):
+    """Verify email address using the token from verification email"""
+    if not token:
+        raise HTTPException(status_code=400, detail="Verification token is required")
+    
+    # Hash the provided token to compare with stored hash
+    token_hash = token_service.hash_token(token)
+    
+    # Find user with this verification token
+    user = db.query(User).filter(User.verification_token == token_hash).first()
+    
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification token")
+    
+    # Check if token has expired
+    if token_service.is_token_expired(user.verification_token_expires):
+        raise HTTPException(status_code=400, detail="Verification token has expired. Please register again.")
+    
+    # Verify the user
+    user.is_verified = True
+    user.verification_token = None  # Clear the token
+    user.verification_token_expires = None
+    db.commit()
+    
+    # Send welcome email
+    email_service.send_welcome_email(user.email, user.company_name)
+    
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": "Email verified successfully! You can now log in to your account.",
+            "email": user.email,
+            "verified": True
+        }
+    )
+
+class ResendVerificationData(BaseModel):
+    email: str
+
+@router.post("/resend-verification")
+async def resend_verification(data: ResendVerificationData, db: Session = Depends(get_db)):
+    """Resend verification email"""
+    user = db.query(User).filter(User.email == data.email).first()
+    
+    if not user:
+        # Don't reveal if email exists or not for security
+        return JSONResponse(
+            status_code=200,
+            content={"message": "If an account with this email exists, a verification email has been sent."}
+        )
+    
+    if user.is_verified:
+        raise HTTPException(status_code=400, detail="Email is already verified")
+    
+    # Generate new verification token
+    verification_token, expires_at = token_service.generate_verification_token()
+    token_hash = token_service.hash_token(verification_token)
+    
+    # Update user with new token
+    user.verification_token = token_hash
+    user.verification_token_expires = expires_at
+    db.commit()
+    
+    # Send verification email
+    email_sent = email_service.send_verification_email(data.email, verification_token)
+    
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": "If an account with this email exists, a verification email has been sent.",
+            "email_sent": email_sent
+        }
+    )
+
 @router.get("/users")
 async def get_all_users(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.role != "gp":
         raise HTTPException(status_code=403, detail="Only GPs can view all users")
     
     users = db.query(User).all()
-    return [{"email": user.email, "company_name": user.company_name, "role": user.role, "created_at": user.created_at, "last_login": user.last_login} for user in users]
+    return [{"email": user.email, "company_name": user.company_name, "role": user.role, "created_at": user.created_at, "last_login": user.last_login, "is_verified": user.is_verified} for user in users]

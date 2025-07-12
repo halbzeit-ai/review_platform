@@ -14,6 +14,8 @@ class User(Base):
     company_name = Column(String)
     role = Column(String)  # "startup" or "gp"
     is_verified = Column(Boolean, default=False)
+    verification_token = Column(String, nullable=True, index=True)
+    verification_token_expires = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login = Column(DateTime, nullable=True)
 

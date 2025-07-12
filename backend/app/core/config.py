@@ -17,6 +17,15 @@ class Settings(BaseSettings):
     DATACRUNCH_SSH_KEY_IDS: str = ""  # Comma-separated SSH key IDs for GPU instances
     SHARED_FILESYSTEM_MOUNT_PATH: str = "/mnt/shared"
 
+    # Email Configuration (Hetzner)
+    SMTP_SERVER: str = "mail.halbzeit.ai"
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = "registration@halbzeit.ai"
+    SMTP_PASSWORD: str = ""
+    FROM_EMAIL: str = "registration@halbzeit.ai"
+    FROM_NAME: str = "HALBZEIT AI Review Platform"
+    FRONTEND_URL: str = "http://localhost:3000"  # Update for production
+
     class Config:
         env_file = ".env"
 
