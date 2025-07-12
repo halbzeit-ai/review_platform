@@ -39,6 +39,7 @@ function VerifyEmail() {
             setVerificationStatus('success');
             setMessage(response.data.message);
         } catch (error) {
+            console.error('Verification error:', error);
             setVerificationStatus('error');
             setMessage(error.response?.data?.detail || 'Email verification failed');
         }
