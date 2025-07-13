@@ -81,7 +81,16 @@
       "actions": {
         "changeRole": "Change Role",
         "suspend": "Suspend",
-        "activate": "Activate"
+        "activate": "Activate",
+        "delete": "Delete"
+      },
+      "deleteConfirm": {
+        "title": "Delete User?",
+        "message": "Are you sure you want to permanently delete user {email}? This action cannot be undone.",
+        "confirmButton": "Yes, Delete",
+        "cancelButton": "Cancel",
+        "success": "User deleted successfully",
+        "error": "Error deleting user"
       }
     }
   }

@@ -81,7 +81,16 @@
       "actions": {
         "changeRole": "Rolle ändern",
         "suspend": "Sperren",
-        "activate": "Aktivieren"
+        "activate": "Aktivieren",
+        "delete": "Löschen"
+      },
+      "deleteConfirm": {
+        "title": "Benutzer löschen?",
+        "message": "Sind Sie sicher, dass Sie den Benutzer {email} dauerhaft löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+        "confirmButton": "Ja, löschen",
+        "cancelButton": "Abbrechen",
+        "success": "Benutzer erfolgreich gelöscht",
+        "error": "Fehler beim Löschen des Benutzers"
       }
     }
   }

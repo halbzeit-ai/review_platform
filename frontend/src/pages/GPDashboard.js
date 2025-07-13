@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress } from '@mui/material';
+import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, IconButton, Box, Snackbar, Alert } from '@mui/material';
+import { Delete as DeleteIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { getAllUsers, getPitchDecks, updateUserRole } from '../services/api';
+import { getAllUsers, getPitchDecks, updateUserRole, deleteUser } from '../services/api';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 function GPDashboard() {
   const { t } = useTranslation('dashboard');
   const [users, setUsers] = useState([]);
   const [pitchDecks, setPitchDecks] = useState([]);
   const [loadingDecks, setLoadingDecks] = useState(true);
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, user: null });
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const handleRoleChange = async (userEmail, newRole) => {
     try {
@@ -19,6 +23,38 @@ function GPDashboard() {
     } catch (error) {
       console.error('Error updating role:', error);
       alert(`${t('gp.usersSection.actions.changeRole')} ${t('common:messages.error')}: ${error.response?.data?.detail || t('common:messages.connectionError')}`);
+    }
+  };
+
+  const handleDeleteUser = (user) => {
+    setDeleteDialog({ open: true, user });
+  };
+
+  const confirmDeleteUser = async () => {
+    const userToDelete = deleteDialog.user;
+    if (!userToDelete) return;
+
+    try {
+      await deleteUser(userToDelete.email);
+      
+      // Remove user from local state
+      setUsers(users.filter(user => user.email !== userToDelete.email));
+      
+      // Show success message
+      setSnackbar({
+        open: true,
+        message: t('gp.usersSection.deleteConfirm.success'),
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.detail || t('gp.usersSection.deleteConfirm.error'),
+        severity: 'error'
+      });
+    } finally {
+      setDeleteDialog({ open: false, user: null });
     }
   };
 
@@ -99,6 +135,7 @@ function GPDashboard() {
                     <TableCell>{t('gp.usersSection.columns.company')}</TableCell>
                     <TableCell>{t('gp.usersSection.columns.role')}</TableCell>
                     <TableCell>{t('gp.usersSection.columns.lastLogin')}</TableCell>
+                    <TableCell>{t('gp.usersSection.columns.actions')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -116,6 +153,18 @@ function GPDashboard() {
                         </Button>
                       </TableCell>
                       <TableCell>{user.last_login ? new Date(user.last_login).toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }) : t('common:messages.never')}</TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <IconButton
+                            color="error"
+                            size="small"
+                            onClick={() => handleDeleteUser(user)}
+                            title={t('gp.usersSection.actions.delete')}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Box>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -124,6 +173,34 @@ function GPDashboard() {
           </Paper>
         </Grid>
       </Grid>
+
+      {/* Delete User Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteDialog.open}
+        onClose={() => setDeleteDialog({ open: false, user: null })}
+        onConfirm={confirmDeleteUser}
+        title={t('gp.usersSection.deleteConfirm.title')}
+        message={t('gp.usersSection.deleteConfirm.message').replace('{email}', deleteDialog.user?.email || '')}
+        confirmText={t('gp.usersSection.deleteConfirm.confirmButton')}
+        cancelText={t('gp.usersSection.deleteConfirm.cancelButton')}
+        severity="error"
+      />
+
+      {/* Success/Error Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

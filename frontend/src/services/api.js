@@ -55,4 +55,7 @@ export const getLanguagePreference = () =>
 export const updateLanguagePreference = (language) =>
   api.post('/auth/language-preference', { preferred_language: language });
 
+export const deleteUser = (userEmail) =>
+  api.delete(`/auth/delete-user?user_email=${encodeURIComponent(userEmail)}`);
+
 export default api;

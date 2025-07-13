@@ -222,6 +222,38 @@ async def update_language_preference(
         }
     )
 
+@router.delete("/delete-user")
+async def delete_user(
+    user_email: str = Query(..., description="Email of user to delete"),
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """Delete a user account (GP only)"""
+    # Verify the requester is a GP
+    if current_user.role != "gp":
+        raise HTTPException(status_code=403, detail="Only GPs can delete users")
+    
+    # Prevent self-deletion
+    if current_user.email == user_email:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    
+    # Find the user to delete
+    user_to_delete = db.query(User).filter(User.email == user_email).first()
+    if not user_to_delete:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Delete the user
+    db.delete(user_to_delete)
+    db.commit()
+    
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": "User deleted successfully",
+            "deleted_email": user_email
+        }
+    )
+
 @router.get("/verify-email")
 async def verify_email(token: str = Query(...), db: Session = Depends(get_db)):
     """Verify email address using the token from verification email"""
