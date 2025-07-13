@@ -43,7 +43,7 @@ function VerifyEmail() {
         } catch (error) {
             console.error('Verification error:', error);
             setVerificationStatus('error');
-            setMessage(error.response?.data?.detail || t('verification.errors.invalidToken'));
+            setMessage(t('verification.errors.invalidToken'));
         }
     };
 
@@ -62,7 +62,7 @@ function VerifyEmail() {
             });
             setResendMessage(t('verification.resendSuccess'));
         } catch (error) {
-            setResendMessage(error.response?.data?.detail || t('verification.errors.resendFailed'));
+            setResendMessage(t('verification.errors.resendFailed'));
         }
 
         setResendLoading(false);
