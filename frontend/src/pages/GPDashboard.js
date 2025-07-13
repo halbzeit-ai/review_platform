@@ -30,6 +30,17 @@ function GPDashboard() {
     setDeleteDialog({ open: true, user });
   };
 
+  const refreshUsers = async () => {
+    try {
+      const response = await getAllUsers();
+      if (response.data) {
+        setUsers(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to refresh users:', error);
+    }
+  };
+
   const confirmDeleteUser = async () => {
     const userToDelete = deleteDialog.user;
     if (!userToDelete) return;
@@ -37,22 +48,34 @@ function GPDashboard() {
     try {
       await deleteUser(userToDelete.email);
       
-      // Remove user from local state
-      setUsers(users.filter(user => user.email !== userToDelete.email));
-      
       // Show success message
       setSnackbar({
         open: true,
         message: t('gp.usersSection.deleteConfirm.success'),
         severity: 'success'
       });
+      
+      // Refresh the user list to ensure UI is in sync
+      await refreshUsers();
     } catch (error) {
       console.error('Error deleting user:', error);
+      console.error('Full error response:', error.response);
+      
+      let errorMessage = t('gp.usersSection.deleteConfirm.error');
+      if (error.response?.status === 404) {
+        errorMessage = `${t('gp.usersSection.deleteConfirm.error')}: ${error.response.data.detail}`;
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      }
+      
       setSnackbar({
         open: true,
-        message: error.response?.data?.detail || t('gp.usersSection.deleteConfirm.error'),
+        message: errorMessage,
         severity: 'error'
       });
+      
+      // Always refresh the user list after error to ensure UI consistency
+      await refreshUsers();
     } finally {
       setDeleteDialog({ open: false, user: null });
     }
