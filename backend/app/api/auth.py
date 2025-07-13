@@ -238,9 +238,15 @@ async def delete_user(
         raise HTTPException(status_code=400, detail="Cannot delete your own account")
     
     # Find the user to delete
+    print(f"[DEBUG] Attempting to delete user with email: '{user_email}'")
     user_to_delete = db.query(User).filter(User.email == user_email).first()
+    
+    # Debug: List all users in database for comparison
+    all_users = db.query(User).all()
+    print(f"[DEBUG] All users in database: {[u.email for u in all_users]}")
+    
     if not user_to_delete:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail=f"User not found: {user_email}")
     
     # Delete the user
     db.delete(user_to_delete)
