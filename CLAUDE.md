@@ -177,12 +177,15 @@ sudo journalctl -f -u review-platform
 sudo systemctl restart nginx
 ```
 
-**Code Updates:**
+**Code Updates (CRITICAL - Always rebuild frontend!):**
 ```bash
 cd /opt/review-platform
 git pull origin main
-cd frontend && NODE_ENV=production npm run build
+cd frontend && NODE_ENV=production npm run build  # ⚠️ NEVER FORGET THIS STEP!
 ```
+
+**⚠️ DEPLOYMENT REMINDER:**
+After any `git pull` in production, you MUST rebuild the frontend! The React app needs to be recompiled to include new components like VerifyEmail page.
 
 **Troubleshooting Scripts:**
 ```bash

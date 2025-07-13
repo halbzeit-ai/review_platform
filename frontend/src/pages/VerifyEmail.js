@@ -11,11 +11,13 @@ import {
 } from '@mui/material';
 import { CheckCircle, Error, Email } from '@mui/icons-material';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../services/api';
 
 function VerifyEmail() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const { t } = useTranslation('auth');
     const [verificationStatus, setVerificationStatus] = useState('loading'); // loading, success, error
     const [message, setMessage] = useState('');
     const [resendEmail, setResendEmail] = useState('');
@@ -29,7 +31,7 @@ function VerifyEmail() {
             verifyEmailToken(token);
         } else {
             setVerificationStatus('error');
-            setMessage('No verification token provided');
+            setMessage(t('verification.errors.noToken'));
         }
     }, [searchParams]);
 
@@ -41,13 +43,13 @@ function VerifyEmail() {
         } catch (error) {
             console.error('Verification error:', error);
             setVerificationStatus('error');
-            setMessage(error.response?.data?.detail || 'Email verification failed');
+            setMessage(error.response?.data?.detail || t('verification.errors.invalidToken'));
         }
     };
 
     const handleResendVerification = async () => {
         if (!resendEmail) {
-            setResendMessage('Please enter your email address');
+            setResendMessage(t('common:forms.required'));
             return;
         }
 
@@ -60,7 +62,7 @@ function VerifyEmail() {
             });
             setResendMessage(response.data.message);
         } catch (error) {
-            setResendMessage(error.response?.data?.detail || 'Failed to resend verification email');
+            setResendMessage(error.response?.data?.detail || t('verification.errors.resendFailed'));
         }
 
         setResendLoading(false);
@@ -72,7 +74,7 @@ function VerifyEmail() {
                 return (
                     <Box sx={{ textAlign: 'center', py: 4 }}>
                         <CircularProgress size={60} sx={{ mb: 2 }} />
-                        <Typography variant="h6">Verifying your email...</Typography>
+                        <Typography variant="h6">{t('verification.verifying')}</Typography>
                     </Box>
                 );
 
@@ -81,17 +83,17 @@ function VerifyEmail() {
                     <Box sx={{ textAlign: 'center', py: 4 }}>
                         <CheckCircle sx={{ fontSize: 60, color: 'success.main', mb: 2 }} />
                         <Typography variant="h5" gutterBottom>
-                            Email Verified Successfully!
+                            {t('verification.success')}
                         </Typography>
                         <Typography variant="body1" sx={{ mb: 3 }}>
-                            {message}
+                            {message || t('verification.successMessage')}
                         </Typography>
                         <Button 
                             variant="contained" 
                             size="large"
                             onClick={() => navigate('/login')}
                         >
-                            Go to Login
+                            {t('verification.goToLogin')}
                         </Button>
                     </Box>
                 );
@@ -101,7 +103,7 @@ function VerifyEmail() {
                     <Box sx={{ textAlign: 'center', py: 4 }}>
                         <Error sx={{ fontSize: 60, color: 'error.main', mb: 2 }} />
                         <Typography variant="h5" gutterBottom>
-                            Email Verification Failed
+                            {t('verification.failed')}
                         </Typography>
                         <Typography variant="body1" sx={{ mb: 3 }}>
                             {message}
@@ -110,11 +112,11 @@ function VerifyEmail() {
                         {/* Resend verification section */}
                         <Paper sx={{ p: 3, mt: 3, backgroundColor: 'grey.50' }}>
                             <Typography variant="h6" gutterBottom>
-                                Need a new verification email?
+                                {t('verification.resendTitle')}
                             </Typography>
                             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mt: 2 }}>
                                 <TextField
-                                    label="Email Address"
+                                    label={t('common:forms.email')}
                                     variant="outlined"
                                     value={resendEmail}
                                     onChange={(e) => setResendEmail(e.target.value)}
@@ -127,7 +129,7 @@ function VerifyEmail() {
                                     disabled={resendLoading}
                                     startIcon={resendLoading ? <CircularProgress size={20} /> : <Email />}
                                 >
-                                    {resendLoading ? 'Sending...' : 'Resend'}
+                                    {resendLoading ? t('verification.resendLoading') : t('verification.resendButton')}
                                 </Button>
                             </Box>
                             {resendMessage && (
@@ -142,7 +144,7 @@ function VerifyEmail() {
                                 variant="outlined" 
                                 onClick={() => navigate('/login')}
                             >
-                                Back to Login
+                                {t('verification.backToLogin')}
                             </Button>
                         </Box>
                     </Box>
@@ -158,10 +160,10 @@ function VerifyEmail() {
             <Paper elevation={3} sx={{ p: 4 }}>
                 <Box sx={{ textAlign: 'center', mb: 3 }}>
                     <Typography variant="h4" component="h1" gutterBottom>
-                        Email Verification
+                        {t('verification.title')}
                     </Typography>
                     <Typography variant="subtitle1" color="text.secondary">
-                        HALBZEIT AI Review Platform
+                        {t('verification.subtitle')}
                     </Typography>
                 </Box>
                 

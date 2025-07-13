@@ -28,6 +28,10 @@ class RegisterData(BaseModel):
     password: str
     company_name: str
     role: str
+    preferred_language: str = "de"
+
+class LanguagePreferenceData(BaseModel):
+    preferred_language: str
 
 @router.post("/register")
 async def register(data: RegisterData, db: Session = Depends(get_db)):
@@ -39,12 +43,17 @@ async def register(data: RegisterData, db: Session = Depends(get_db)):
     # Determine role - first user is GP, others are startup by default
     assigned_role = "gp" if is_first_user(db) else "startup"
     
+    # Validate language preference
+    if data.preferred_language not in ["de", "en"]:
+        data.preferred_language = "de"  # Default to German
+    
     # Create new user
     new_user = User(
         email=data.email,
         password_hash=pwd_context.hash(data.password),
         company_name=data.company_name,
         role=assigned_role,  # This will now correctly use 'gp' for first user
+        preferred_language=data.preferred_language,
         is_verified=False  # Will be set to True after email verification
     )
     
@@ -121,6 +130,7 @@ async def login(data: LoginData, db: Session = Depends(get_db)):
             "email": user.email,
             "role": user.role,
             "company_name": user.company_name,
+            "preferred_language": user.preferred_language or "de",
             "access_token": access_token,
             "token_type": "Bearer"
         }
@@ -174,6 +184,41 @@ async def update_role(data: UpdateRoleData, current_user: User = Depends(get_cur
             "message": f"Role updated successfully to {data.new_role}",
             "email": data.user_email,
             "new_role": data.new_role
+        }
+    )
+
+@router.get("/language-preference")
+async def get_language_preference(current_user: User = Depends(get_current_user)):
+    """Get current user's language preference"""
+    return JSONResponse(
+        status_code=200,
+        content={
+            "preferred_language": current_user.preferred_language or "de",
+            "email": current_user.email
+        }
+    )
+
+@router.post("/language-preference")
+async def update_language_preference(
+    data: LanguagePreferenceData, 
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """Update current user's language preference"""
+    # Validate language preference
+    if data.preferred_language not in ["de", "en"]:
+        raise HTTPException(status_code=400, detail="Invalid language. Must be 'de' or 'en'")
+    
+    # Update user's language preference
+    current_user.preferred_language = data.preferred_language
+    db.commit()
+    
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": "Language preference updated successfully",
+            "preferred_language": data.preferred_language,
+            "email": current_user.email
         }
     )
 

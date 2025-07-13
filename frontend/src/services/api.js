@@ -49,4 +49,10 @@ export const getPitchDecks = () => api.get('/decks');
 export const updateUserRole = (userEmail, newRole) => 
   api.post('/auth/update-role', { user_email: userEmail, new_role: newRole });
 
+export const getLanguagePreference = () =>
+  api.get('/auth/language-preference');
+
+export const updateLanguagePreference = (language) =>
+  api.post('/auth/language-preference', { preferred_language: language });
+
 export default api;

@@ -1,66 +1,116 @@
 import React, { useState } from 'react';
-import { Container, Paper, TextField, Button, Typography } from '@mui/material';
+import { Container, Paper, TextField, Button, Typography, Box, Link, Alert } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { login } from '../services/api';
+import i18n from '../i18n';
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { t } = useTranslation('auth');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
+
     try {
       const response = await login(email, password);
       const data = response.data;
       
       // Store user data in localStorage
       localStorage.clear();
-      // Store new user data
       localStorage.setItem('user', JSON.stringify({
         email: data.email,
         role: data.role,
         token: data.access_token,
-        companyName: data.company_name
+        companyName: data.company_name,
+        preferred_language: data.preferred_language || 'de'
       }));
+
+      // Set i18n language to user's preference
+      if (data.preferred_language) {
+        i18n.changeLanguage(data.preferred_language);
+        localStorage.setItem('language', data.preferred_language);
+      }
 
       // Redirect based on role
       window.location.href = data.role === 'startup' ? '/dashboard/startup' : '/dashboard/gp';
     } catch (error) {
       console.error('Login error:', error);
-      alert(`Login failed: ${error.response?.data?.detail || 'Invalid credentials'}`);
+      setError(error.response?.data?.detail || t('login.errors.loginFailed'));
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Container maxWidth="sm">
-      <Paper sx={{ p: 3, mt: 4 }}>
-        <Typography variant="h5" gutterBottom>Login</Typography>
+    <Container maxWidth="sm" sx={{ mt: 8 }}>
+      <Paper elevation={3} sx={{ p: 4 }}>
+        <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Typography variant="h4" component="h1" gutterBottom>
+            {t('login.title')}
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            {t('login.subtitle')}
+          </Typography>
+        </Box>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit}>
           <TextField
             fullWidth
             margin="normal"
-            label="Email"
+            label={t('login.emailLabel')}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={loading}
           />
           <TextField
             fullWidth
             margin="normal"
-            label="Password"
+            label={t('login.passwordLabel')}
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
+            disabled={loading}
           />
           <Button
             fullWidth
             variant="contained"
             color="primary"
             type="submit"
-            sx={{ mt: 2 }}
+            sx={{ mt: 3, mb: 2 }}
+            disabled={loading}
           >
-            Login
+            {loading ? t('common:buttons.loading') : t('login.loginButton')}
           </Button>
         </form>
+
+        <Box sx={{ textAlign: 'center', mt: 2 }}>
+          <Typography variant="body2">
+            {t('login.noAccount')}{' '}
+            <Link
+              component="button"
+              variant="body2"
+              onClick={() => navigate('/register')}
+            >
+              {t('login.registerLink')}
+            </Link>
+          </Typography>
+        </Box>
       </Paper>
     </Container>
   );

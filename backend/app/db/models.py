@@ -13,6 +13,7 @@ class User(Base):
     password_hash = Column(String)
     company_name = Column(String)
     role = Column(String)  # "startup" or "gp"
+    preferred_language = Column(String, default="de")  # "de" or "en", German default
     is_verified = Column(Boolean, default=False)
     verification_token = Column(String, nullable=True, index=True)
     verification_token_expires = Column(DateTime, nullable=True)

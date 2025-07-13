@@ -1,0 +1,87 @@
+{
+  "startup": {
+    "title": "Startup Dashboard",
+    "welcome": "Willkommen",
+    "uploadSection": {
+      "title": "Pitch Deck hochladen",
+      "description": "Laden Sie Ihr Pitch Deck hoch, um eine KI-gestützte Bewertung zu erhalten",
+      "dropzone": "PDF hier ablegen oder klicken zum Auswählen",
+      "maxSize": "Maximale Dateigröße: 50MB",
+      "allowedTypes": "Nur PDF-Dateien erlaubt",
+      "uploading": "Datei wird hochgeladen...",
+      "success": "Datei erfolgreich hochgeladen!",
+      "errors": {
+        "fileTooLarge": "Datei zu groß. Maximum: 50MB",
+        "invalidType": "Ungültiger Dateityp. Nur PDF erlaubt",
+        "uploadFailed": "Upload fehlgeschlagen",
+        "networkError": "Netzwerkfehler beim Upload"
+      }
+    },
+    "decksSection": {
+      "title": "Ihre Pitch Decks",
+      "noDecks": "Noch keine Pitch Decks hochgeladen",
+      "columns": {
+        "filename": "Dateiname",
+        "uploadDate": "Upload-Datum",
+        "status": "Status",
+        "actions": "Aktionen"
+      },
+      "status": {
+        "uploaded": "Hochgeladen",
+        "processing": "Wird verarbeitet",
+        "reviewed": "Bewertet",
+        "failed": "Fehlgeschlagen"
+      },
+      "actions": {
+        "view": "Ansehen",
+        "download": "Herunterladen",
+        "delete": "Löschen"
+      }
+    }
+  },
+  "gp": {
+    "title": "General Partner Dashboard",
+    "welcome": "Willkommen",
+    "reviewsSection": {
+      "title": "Bewertungen verwalten",
+      "description": "Überprüfen und bearbeiten Sie KI-generierte Bewertungen",
+      "noReviews": "Keine Bewertungen verfügbar",
+      "columns": {
+        "company": "Unternehmen",
+        "deck": "Pitch Deck",
+        "date": "Datum",
+        "status": "Status",
+        "actions": "Aktionen"
+      },
+      "status": {
+        "pending": "Ausstehend",
+        "inReview": "In Bearbeitung",
+        "completed": "Abgeschlossen",
+        "approved": "Genehmigt"
+      },
+      "actions": {
+        "review": "Bewerten",
+        "edit": "Bearbeiten",
+        "approve": "Genehmigen",
+        "reject": "Ablehnen"
+      }
+    },
+    "usersSection": {
+      "title": "Benutzer verwalten",
+      "description": "Verwalten Sie Benutzerrollen und -berechtigungen",
+      "noUsers": "Keine Benutzer gefunden",
+      "columns": {
+        "email": "E-Mail",
+        "company": "Unternehmen",
+        "role": "Rolle",
+        "verified": "Verifiziert",
+        "actions": "Aktionen"
+      },
+      "actions": {
+        "changeRole": "Rolle ändern",
+        "suspend": "Sperren",
+        "activate": "Aktivieren"
+      }
+    }
+  }
+}

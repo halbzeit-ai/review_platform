@@ -2,9 +2,12 @@
 import React from 'react';
 import { AppBar, Toolbar, Typography, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from './LanguageSwitcher';
 
 function Navigation() {
   const navigate = useNavigate();
+  const { t } = useTranslation('common');
   const user = JSON.parse(localStorage.getItem('user') || 'null');
   const isLoggedIn = !!user;
 
@@ -12,18 +15,25 @@ function Navigation() {
     <AppBar position="static">
       <Toolbar>
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
-          Startup Review Platform
+          HALBZEIT AI Review Platform
         </Typography>
+        <LanguageSwitcher />
         {!isLoggedIn ? (
           <>
-            <Button color="inherit" onClick={() => navigate('/login')}>Login</Button>
-            <Button color="inherit" onClick={() => navigate('/register')}>Register</Button>
+            <Button color="inherit" onClick={() => navigate('/login')}>
+              {t('navigation.login')}
+            </Button>
+            <Button color="inherit" onClick={() => navigate('/register')}>
+              {t('navigation.register')}
+            </Button>
           </>
         ) : (
           <Button color="inherit" onClick={() => {
             localStorage.removeItem('user');
             window.location.href = '/login';
-          }}>Logout</Button>
+          }}>
+            {t('navigation.logout')}
+          </Button>
         )}
       </Toolbar>
     </AppBar>

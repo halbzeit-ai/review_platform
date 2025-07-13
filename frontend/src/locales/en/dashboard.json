@@ -1,0 +1,87 @@
+{
+  "startup": {
+    "title": "Startup Dashboard",
+    "welcome": "Welcome",
+    "uploadSection": {
+      "title": "Upload Pitch Deck",
+      "description": "Upload your pitch deck to receive an AI-powered review",
+      "dropzone": "Drop PDF here or click to select",
+      "maxSize": "Maximum file size: 50MB",
+      "allowedTypes": "Only PDF files allowed",
+      "uploading": "Uploading file...",
+      "success": "File uploaded successfully!",
+      "errors": {
+        "fileTooLarge": "File too large. Maximum: 50MB",
+        "invalidType": "Invalid file type. Only PDF allowed",
+        "uploadFailed": "Upload failed",
+        "networkError": "Network error during upload"
+      }
+    },
+    "decksSection": {
+      "title": "Your Pitch Decks",
+      "noDecks": "No pitch decks uploaded yet",
+      "columns": {
+        "filename": "Filename",
+        "uploadDate": "Upload Date",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "uploaded": "Uploaded",
+        "processing": "Processing",
+        "reviewed": "Reviewed",
+        "failed": "Failed"
+      },
+      "actions": {
+        "view": "View",
+        "download": "Download",
+        "delete": "Delete"
+      }
+    }
+  },
+  "gp": {
+    "title": "General Partner Dashboard",
+    "welcome": "Welcome",
+    "reviewsSection": {
+      "title": "Manage Reviews",
+      "description": "Review and edit AI-generated assessments",
+      "noReviews": "No reviews available",
+      "columns": {
+        "company": "Company",
+        "deck": "Pitch Deck",
+        "date": "Date",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "pending": "Pending",
+        "inReview": "In Review",
+        "completed": "Completed",
+        "approved": "Approved"
+      },
+      "actions": {
+        "review": "Review",
+        "edit": "Edit",
+        "approve": "Approve",
+        "reject": "Reject"
+      }
+    },
+    "usersSection": {
+      "title": "Manage Users",
+      "description": "Manage user roles and permissions",
+      "noUsers": "No users found",
+      "columns": {
+        "email": "Email",
+        "company": "Company",
+        "role": "Role",
+        "verified": "Verified",
+        "actions": "Actions"
+      },
+      "actions": {
+        "changeRole": "Change Role",
+        "suspend": "Suspend",
+        "activate": "Activate"
+      }
+    }
+  }
+}
