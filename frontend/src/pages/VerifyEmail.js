@@ -60,7 +60,7 @@ function VerifyEmail() {
             const response = await api.post('/auth/resend-verification', {
                 email: resendEmail
             });
-            setResendMessage(response.data.message);
+            setResendMessage(t('verification.resendSuccess'));
         } catch (error) {
             setResendMessage(error.response?.data?.detail || t('verification.errors.resendFailed'));
         }
@@ -86,7 +86,7 @@ function VerifyEmail() {
                             {t('verification.success')}
                         </Typography>
                         <Typography variant="body1" sx={{ mb: 3 }}>
-                            {message || t('verification.successMessage')}
+                            {t('verification.successMessage')}
                         </Typography>
                         <Button 
                             variant="contained" 
