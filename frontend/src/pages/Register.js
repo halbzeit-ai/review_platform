@@ -2,9 +2,11 @@
 import React, { useState } from 'react';
 import { Container, Paper, TextField, Button, Typography, Box, Alert } from '@mui/material';
 import { Email, CheckCircle } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { register } from '../services/api';
 
 function Register() {
+  const { t } = useTranslation('auth');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [companyName, setCompanyName] = useState('');
@@ -25,7 +27,7 @@ function Register() {
       setRegistrationComplete(true);
     } catch (error) {
       console.error('Registration error:', error);
-      alert(`Registration failed: ${error.response?.data?.detail || error.message || 'Unknown error'}`);
+      alert(`${t('register.errors.registrationFailed')}: ${error.response?.data?.detail || error.message || t('common:messages.connectionError')}`);
     }
     
     setLoading(false);
@@ -37,31 +39,30 @@ function Register() {
         <Paper sx={{ p: 4, mt: 4, textAlign: 'center' }}>
           <CheckCircle sx={{ fontSize: 60, color: 'success.main', mb: 2 }} />
           <Typography variant="h5" gutterBottom>
-            Registration Successful!
+            {t('register.success')}
           </Typography>
           
           <Alert severity="info" sx={{ mb: 3, textAlign: 'left' }}>
             <Typography variant="body1" gutterBottom>
-              <strong>Please check your email to verify your account</strong>
+              <strong>{t('register.emailSent')}</strong>
             </Typography>
             <Typography variant="body2">
-              We've sent a verification email to <strong>{registrationData?.email}</strong>
+              {t('register.emailSentTo')} <strong>{registrationData?.email}</strong>
             </Typography>
           </Alert>
 
           <Box sx={{ mb: 3 }}>
             <Typography variant="body1" gutterBottom>
-              <strong>Account Details:</strong>
+              <strong>{t('register.accountDetails')}</strong>
             </Typography>
-            <Typography variant="body2">Email: {registrationData?.email}</Typography>
-            <Typography variant="body2">Company: {registrationData?.company_name}</Typography>
-            <Typography variant="body2">Role: {registrationData?.role}</Typography>
+            <Typography variant="body2">{t('register.emailLabel')} {registrationData?.email}</Typography>
+            <Typography variant="body2">{t('register.companyLabel')} {registrationData?.company_name}</Typography>
+            <Typography variant="body2">{t('register.roleLabel')} {registrationData?.role}</Typography>
           </Box>
 
           <Alert severity="warning" sx={{ mb: 3 }}>
             <Typography variant="body2">
-              You must verify your email before you can log in. 
-              The verification link will expire in 24 hours.
+              {t('register.verificationReminder')}
             </Typography>
           </Alert>
 
@@ -71,7 +72,7 @@ function Register() {
             onClick={() => window.location.href = '/login'}
             sx={{ mt: 2 }}
           >
-            Go to Login
+            {t('verification.goToLogin')}
           </Button>
         </Paper>
       </Container>
@@ -79,18 +80,22 @@ function Register() {
   }
 
   return (
-    <Container maxWidth="sm">
-      <Paper sx={{ p: 3, mt: 4 }}>
-        <Typography variant="h5" gutterBottom>Register</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Create your HALBZEIT AI account. You'll need to verify your email before you can log in.
-        </Typography>
+    <Container maxWidth="sm" sx={{ mt: 8 }}>
+      <Paper elevation={3} sx={{ p: 4 }}>
+        <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Typography variant="h4" component="h1" gutterBottom>
+            {t('register.title')}
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            {t('register.subtitle')}
+          </Typography>
+        </Box>
         
         <form onSubmit={handleSubmit}>
           <TextField
             fullWidth
             margin="normal"
-            label="Email"
+            label={t('register.emailLabel')}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -100,7 +105,7 @@ function Register() {
           <TextField
             fullWidth
             margin="normal"
-            label="Password"
+            label={t('register.passwordLabel')}
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -110,7 +115,7 @@ function Register() {
           <TextField
             fullWidth
             margin="normal"
-            label="Company Name"
+            label={t('register.companyNameLabel')}
             value={companyName}
             onChange={(e) => setCompanyName(e.target.value)}
             required
@@ -121,12 +126,24 @@ function Register() {
             variant="contained"
             color="primary"
             type="submit"
-            sx={{ mt: 2 }}
+            sx={{ mt: 3, mb: 2 }}
             disabled={loading}
           >
-            {loading ? 'Creating Account...' : 'Register'}
+            {loading ? t('common:buttons.loading') : t('register.registerButton')}
           </Button>
         </form>
+
+        <Box sx={{ textAlign: 'center', mt: 2 }}>
+          <Typography variant="body2">
+            {t('register.hasAccount')}{' '}
+            <Button
+              variant="text"
+              onClick={() => window.location.href = '/login'}
+            >
+              {t('register.loginLink')}
+            </Button>
+          </Typography>
+        </Box>
       </Paper>
     </Container>
   );
