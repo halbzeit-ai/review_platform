@@ -41,7 +41,8 @@
     "info": "Information",
     "confirmDelete": "Sind Sie sicher, dass Sie diesen Eintrag löschen möchten?",
     "noData": "Keine Daten verfügbar",
-    "connectionError": "Verbindungsfehler"
+    "connectionError": "Verbindungsfehler",
+    "never": "Nie"
   },
   "language": {
     "current": "Deutsch",

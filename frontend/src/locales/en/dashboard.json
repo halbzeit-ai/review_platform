@@ -75,6 +75,7 @@
         "company": "Company",
         "role": "Role",
         "verified": "Verified",
+        "lastLogin": "Last Login",
         "actions": "Actions"
       },
       "actions": {

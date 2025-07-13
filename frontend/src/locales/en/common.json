@@ -41,7 +41,8 @@
     "info": "Information",
     "confirmDelete": "Are you sure you want to delete this item?",
     "noData": "No data available",
-    "connectionError": "Connection error"
+    "connectionError": "Connection error",
+    "never": "Never"
   },
   "language": {
     "current": "English",

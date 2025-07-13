@@ -75,6 +75,7 @@
         "company": "Unternehmen",
         "role": "Rolle",
         "verified": "Verifiziert",
+        "lastLogin": "Letzte Anmeldung",
         "actions": "Aktionen"
       },
       "actions": {

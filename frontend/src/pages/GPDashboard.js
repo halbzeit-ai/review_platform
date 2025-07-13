@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { getAllUsers, getPitchDecks, updateUserRole } from '../services/api';
 
 function GPDashboard() {
+  const { t } = useTranslation('dashboard');
   const [users, setUsers] = useState([]);
   const [pitchDecks, setPitchDecks] = useState([]);
   const [loadingDecks, setLoadingDecks] = useState(true);
@@ -16,7 +18,7 @@ function GPDashboard() {
       ));
     } catch (error) {
       console.error('Error updating role:', error);
-      alert(`Failed to update role: ${error.response?.data?.detail || 'Please try again.'}`);
+      alert(`${t('gp.usersSection.actions.changeRole')} ${t('common:messages.error')}: ${error.response?.data?.detail || t('common:messages.connectionError')}`);
     }
   };
 
@@ -42,7 +44,7 @@ function GPDashboard() {
         }
       } catch (error) {
         console.error('Failed to fetch users:', error);
-        alert('Failed to load users. Please ensure you have GP permissions.');
+        alert(t('common:messages.connectionError'));
       }
     };
     fetchUsers();
@@ -51,24 +53,24 @@ function GPDashboard() {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>GP Dashboard</Typography>
+      <Typography variant="h4" gutterBottom>{t('gp.title')}</Typography>
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>All Pitch Decks</Typography>
+            <Typography variant="h6" gutterBottom>{t('gp.reviewsSection.title')}</Typography>
             {loadingDecks ? (
               <CircularProgress />
             ) : pitchDecks.length === 0 ? (
-              <Typography color="text.secondary">No pitch decks uploaded yet.</Typography>
+              <Typography color="text.secondary">{t('gp.reviewsSection.noReviews')}</Typography>
             ) : (
               <TableContainer>
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell>File Name</TableCell>
-                      <TableCell>Company</TableCell>
-                      <TableCell>Uploaded By</TableCell>
-                      <TableCell>Upload Date</TableCell>
+                      <TableCell>{t('gp.reviewsSection.columns.deck')}</TableCell>
+                      <TableCell>{t('gp.reviewsSection.columns.company')}</TableCell>
+                      <TableCell>{t('common:forms.email')}</TableCell>
+                      <TableCell>{t('gp.reviewsSection.columns.date')}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -88,15 +90,15 @@ function GPDashboard() {
         </Grid>
         <Grid item xs={12}>
           <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>User Management</Typography>
+            <Typography variant="h6" gutterBottom>{t('gp.usersSection.title')}</Typography>
             <TableContainer>
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Email</TableCell>
-                    <TableCell>Company</TableCell>
-                    <TableCell>Role</TableCell>
-                    <TableCell>Last Login</TableCell>
+                    <TableCell>{t('gp.usersSection.columns.email')}</TableCell>
+                    <TableCell>{t('gp.usersSection.columns.company')}</TableCell>
+                    <TableCell>{t('gp.usersSection.columns.role')}</TableCell>
+                    <TableCell>{t('gp.usersSection.columns.lastLogin')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -110,10 +112,10 @@ function GPDashboard() {
                           size="small"
                           onClick={() => handleRoleChange(user.email, user.role === 'startup' ? 'gp' : 'startup')}
                         >
-                          {user.role} (click to change)
+                          {user.role.toUpperCase()} ({t('gp.usersSection.actions.changeRole')})
                         </Button>
                       </TableCell>
-                      <TableCell>{user.last_login ? new Date(user.last_login).toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }) : 'Never'}</TableCell>
+                      <TableCell>{user.last_login ? new Date(user.last_login).toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }) : t('common:messages.never')}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
