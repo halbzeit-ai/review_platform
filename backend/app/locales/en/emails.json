@@ -1,0 +1,31 @@
+{
+  "verification": {
+    "subject": "Verify your HALBZEIT AI account",
+    "welcome": "Welcome to HALBZEIT AI!",
+    "thank_you": "Thank you for registering with our startup review platform. To complete your registration and start using your account, please verify your email address.",
+    "button_text": "Verify Email Address",
+    "important": "Important:",
+    "expiry": "This verification link will expire in 24 hours. If you don't verify within this time, you'll need to register again.",
+    "fallback": "If the button above doesn't work, you can copy and paste this link into your browser:",
+    "ignore": "If you didn't create an account with us, please ignore this email.",
+    "footer": "This email was sent by HALBZEIT AI Review Platform",
+    "support": "If you have any questions, please contact our support team.",
+    "text_welcome": "Welcome to HALBZEIT AI!",
+    "text_thank_you": "Thank you for registering with our startup review platform. To complete your registration, please verify your email address by clicking the link below:",
+    "text_expiry": "This verification link will expire in 24 hours.",
+    "text_ignore": "If you didn't create an account with us, please ignore this email.",
+    "text_regards": "Best regards,\nHALBZEIT AI Team"
+  },
+  "welcome": {
+    "subject": "Welcome to HALBZEIT AI - Your account is ready!",
+    "title": "🎉 Welcome to HALBZEIT AI, {company_name}!",
+    "verified": "Your email has been successfully verified and your account is now active. You can start using our AI-powered startup review platform immediately.",
+    "features_title": "What you can do now:",
+    "feature_upload": "📄 Upload your pitch deck for AI analysis",
+    "feature_review": "🤖 Get detailed VC-style reviews powered by AI",
+    "feature_qa": "💬 Engage in Q&A with General Partners",
+    "feature_track": "📊 Track your review progress",
+    "login_button": "Login to Your Account",
+    "excited": "We're excited to help you get valuable feedback on your startup!"
+  }
+}

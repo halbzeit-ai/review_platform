@@ -1,0 +1,31 @@
+{
+  "verification": {
+    "subject": "Verifizieren Sie Ihr HALBZEIT AI Konto",
+    "welcome": "Willkommen bei HALBZEIT AI!",
+    "thank_you": "Vielen Dank für Ihre Registrierung bei unserer Startup-Review-Plattform. Um Ihre Registrierung abzuschließen und Ihr Konto zu nutzen, bestätigen Sie bitte Ihre E-Mail-Adresse.",
+    "button_text": "E-Mail-Adresse verifizieren",
+    "important": "Wichtig:",
+    "expiry": "Dieser Verifizierungslink läuft in 24 Stunden ab. Wenn Sie nicht innerhalb dieser Zeit verifizieren, müssen Sie sich erneut registrieren.",
+    "fallback": "Wenn die Schaltfläche oben nicht funktioniert, können Sie diesen Link kopieren und in Ihren Browser einfügen:",
+    "ignore": "Wenn Sie kein Konto bei uns erstellt haben, ignorieren Sie diese E-Mail bitte.",
+    "footer": "Diese E-Mail wurde von HALBZEIT AI Review Platform gesendet",
+    "support": "Wenn Sie Fragen haben, wenden Sie sich bitte an unser Support-Team.",
+    "text_welcome": "Willkommen bei HALBZEIT AI!",
+    "text_thank_you": "Vielen Dank für Ihre Registrierung bei unserer Startup-Review-Plattform. Um Ihre Registrierung abzuschließen, bestätigen Sie bitte Ihre E-Mail-Adresse, indem Sie auf den folgenden Link klicken:",
+    "text_expiry": "Dieser Verifizierungslink läuft in 24 Stunden ab.",
+    "text_ignore": "Wenn Sie kein Konto bei uns erstellt haben, ignorieren Sie diese E-Mail bitte.",
+    "text_regards": "Mit freundlichen Grüßen,\nHALBZEIT AI Team"
+  },
+  "welcome": {
+    "subject": "Willkommen bei HALBZEIT AI - Ihr Konto ist bereit!",
+    "title": "🎉 Willkommen bei HALBZEIT AI, {company_name}!",
+    "verified": "Ihre E-Mail wurde erfolgreich verifiziert und Ihr Konto ist nun aktiv. Sie können unsere KI-gestützte Startup-Review-Plattform sofort nutzen.",
+    "features_title": "Was Sie jetzt tun können:",
+    "feature_upload": "📄 Laden Sie Ihr Pitch Deck für KI-Analyse hoch",
+    "feature_review": "🤖 Erhalten Sie detaillierte VC-Style-Reviews powered by KI",
+    "feature_qa": "💬 Führen Sie Q&A mit General Partners",
+    "feature_track": "📊 Verfolgen Sie Ihren Review-Fortschritt",
+    "login_button": "Bei Ihrem Konto anmelden",
+    "excited": "Wir freuen uns darauf, Ihnen wertvolles Feedback zu Ihrem Startup zu geben!"
+  }
+}

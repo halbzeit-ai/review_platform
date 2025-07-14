@@ -8,6 +8,7 @@ from email.utils import formataddr
 import logging
 from typing import Optional
 from ..core.config import settings
+from .i18n_service import i18n_service
 
 logger = logging.getLogger(__name__)
 
@@ -55,29 +56,17 @@ class EmailService:
         """Send email verification email"""
         verification_url = f"{settings.FRONTEND_URL}/verify-email?token={verification_token}"
         
-        # Language-specific content
-        if language == "de":
-            subject = "Verifizieren Sie Ihr HALBZEIT AI Konto"
-            welcome_text = "Willkommen bei HALBZEIT AI!"
-            thank_you_text = "Vielen Dank für Ihre Registrierung bei unserer Startup-Review-Plattform. Um Ihre Registrierung abzuschließen und Ihr Konto zu nutzen, bestätigen Sie bitte Ihre E-Mail-Adresse."
-            button_text = "E-Mail-Adresse verifizieren"
-            important_text = "Wichtig:"
-            expiry_text = "Dieser Verifizierungslink läuft in 24 Stunden ab. Wenn Sie nicht innerhalb dieser Zeit verifizieren, müssen Sie sich erneut registrieren."
-            fallback_text = "Wenn die Schaltfläche oben nicht funktioniert, können Sie diesen Link kopieren und in Ihren Browser einfügen:"
-            ignore_text = "Wenn Sie kein Konto bei uns erstellt haben, ignorieren Sie diese E-Mail bitte."
-            footer_text = "Diese E-Mail wurde von HALBZEIT AI Review Platform gesendet"
-            support_text = "Wenn Sie Fragen haben, wenden Sie sich bitte an unser Support-Team."
-        else:
-            subject = "Verify your HALBZEIT AI account"
-            welcome_text = "Welcome to HALBZEIT AI!"
-            thank_you_text = "Thank you for registering with our startup review platform. To complete your registration and start using your account, please verify your email address."
-            button_text = "Verify Email Address"
-            important_text = "Important:"
-            expiry_text = "This verification link will expire in 24 hours. If you don't verify within this time, you'll need to register again."
-            fallback_text = "If the button above doesn't work, you can copy and paste this link into your browser:"
-            ignore_text = "If you didn't create an account with us, please ignore this email."
-            footer_text = "This email was sent by HALBZEIT AI Review Platform"
-            support_text = "If you have any questions, please contact our support team."
+        # Get translations using I18n service
+        subject = i18n_service.t("emails.verification.subject", language)
+        welcome_text = i18n_service.t("emails.verification.welcome", language)
+        thank_you_text = i18n_service.t("emails.verification.thank_you", language)
+        button_text = i18n_service.t("emails.verification.button_text", language)
+        important_text = i18n_service.t("emails.verification.important", language)
+        expiry_text = i18n_service.t("emails.verification.expiry", language)
+        fallback_text = i18n_service.t("emails.verification.fallback", language)
+        ignore_text = i18n_service.t("emails.verification.ignore", language)
+        footer_text = i18n_service.t("emails.verification.footer", language)
+        support_text = i18n_service.t("emails.verification.support", language)
         
         # HTML email template
         html_body = f"""
@@ -171,35 +160,24 @@ class EmailService:
         """
         
         # Text version for email clients that don't support HTML
-        if language == "de":
-            text_body = f"""
-        Willkommen bei HALBZEIT AI!
+        text_welcome = i18n_service.t("emails.verification.text_welcome", language)
+        text_thank_you = i18n_service.t("emails.verification.text_thank_you", language)
+        text_expiry = i18n_service.t("emails.verification.text_expiry", language)
+        text_ignore = i18n_service.t("emails.verification.text_ignore", language)
+        text_regards = i18n_service.t("emails.verification.text_regards", language)
         
-        Vielen Dank für Ihre Registrierung bei unserer Startup-Review-Plattform. Um Ihre Registrierung abzuschließen, bestätigen Sie bitte Ihre E-Mail-Adresse, indem Sie auf den folgenden Link klicken:
+        text_body = f"""
+        {text_welcome}
         
-        {verification_url}
-        
-        Dieser Verifizierungslink läuft in 24 Stunden ab.
-        
-        Wenn Sie kein Konto bei uns erstellt haben, ignorieren Sie diese E-Mail bitte.
-        
-        Mit freundlichen Grüßen,
-        HALBZEIT AI Team
-        """
-        else:
-            text_body = f"""
-        Welcome to HALBZEIT AI!
-        
-        Thank you for registering with our startup review platform. To complete your registration, please verify your email address by clicking the link below:
+        {text_thank_you}
         
         {verification_url}
         
-        This verification link will expire in 24 hours.
+        {text_expiry}
         
-        If you didn't create an account with us, please ignore this email.
+        {text_ignore}
         
-        Best regards,
-        HALBZEIT AI Team
+        {text_regards}
         """
         
         return self.send_email(email, subject, html_body, text_body)
@@ -207,29 +185,17 @@ class EmailService:
     def send_welcome_email(self, email: str, company_name: str, language: str = "en") -> bool:
         """Send welcome email after successful verification"""
         
-        # Language-specific content
-        if language == "de":
-            subject = "Willkommen bei HALBZEIT AI - Ihr Konto ist bereit!"
-            welcome_title = f"🎉 Willkommen bei HALBZEIT AI, {company_name}!"
-            verified_text = "Ihre E-Mail wurde erfolgreich verifiziert und Ihr Konto ist nun aktiv. Sie können unsere KI-gestützte Startup-Review-Plattform sofort nutzen."
-            features_title = "Was Sie jetzt tun können:"
-            upload_text = "📄 Laden Sie Ihr Pitch Deck für KI-Analyse hoch"
-            review_text = "🤖 Erhalten Sie detaillierte VC-Style-Reviews powered by KI"
-            qa_text = "💬 Führen Sie Q&A mit General Partners"
-            track_text = "📊 Verfolgen Sie Ihren Review-Fortschritt"
-            login_button = "Bei Ihrem Konto anmelden"
-            excited_text = "Wir freuen uns darauf, Ihnen wertvolles Feedback zu Ihrem Startup zu geben!"
-        else:
-            subject = "Welcome to HALBZEIT AI - Your account is ready!"
-            welcome_title = f"🎉 Welcome to HALBZEIT AI, {company_name}!"
-            verified_text = "Your email has been successfully verified and your account is now active. You can start using our AI-powered startup review platform immediately."
-            features_title = "What you can do now:"
-            upload_text = "📄 Upload your pitch deck for AI analysis"
-            review_text = "🤖 Get detailed VC-style reviews powered by AI"
-            qa_text = "💬 Engage in Q&A with General Partners"
-            track_text = "📊 Track your review progress"
-            login_button = "Login to Your Account"
-            excited_text = "We're excited to help you get valuable feedback on your startup!"
+        # Get translations using I18n service
+        subject = i18n_service.t("emails.welcome.subject", language)
+        welcome_title = i18n_service.t("emails.welcome.title", language, company_name=company_name)
+        verified_text = i18n_service.t("emails.welcome.verified", language)
+        features_title = i18n_service.t("emails.welcome.features_title", language)
+        upload_text = i18n_service.t("emails.welcome.feature_upload", language)
+        review_text = i18n_service.t("emails.welcome.feature_review", language)
+        qa_text = i18n_service.t("emails.welcome.feature_qa", language)
+        track_text = i18n_service.t("emails.welcome.feature_track", language)
+        login_button = i18n_service.t("emails.welcome.login_button", language)
+        excited_text = i18n_service.t("emails.welcome.excited", language)
         
         html_body = f"""
         <!DOCTYPE html>
