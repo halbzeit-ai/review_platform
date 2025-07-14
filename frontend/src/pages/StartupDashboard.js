@@ -2,9 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Paper, Typography, Button, Grid, Alert, CircularProgress, List, ListItem, ListItemText, Divider, Chip } from '@mui/material';
 import { Upload, CheckCircle, Pending, Error } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 import { uploadPitchDeck, getPitchDecks } from '../services/api';
 
 function StartupDashboard() {
+  const { t } = useTranslation('dashboard');
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
   const [pitchDecks, setPitchDecks] = useState([]);
@@ -19,7 +21,7 @@ function StartupDashboard() {
     if (file.size > maxSize) {
       setUploadStatus({ 
         type: 'error', 
-        message: `File too large. Maximum size allowed is 50MB. Your file is ${(file.size / (1024 * 1024)).toFixed(1)}MB.` 
+        message: `${t('startup.uploadSection.errors.fileTooLarge')}. ${t('startup.uploadSection.maxSize')}. Your file is ${(file.size / (1024 * 1024)).toFixed(1)}MB.` 
       });
       event.target.value = '';
       return;
@@ -29,7 +31,7 @@ function StartupDashboard() {
     if (!file.name.toLowerCase().endsWith('.pdf')) {
       setUploadStatus({ 
         type: 'error', 
-        message: 'Only PDF files are allowed.' 
+        message: t('startup.uploadSection.errors.invalidType') 
       });
       event.target.value = '';
       return;
@@ -40,17 +42,17 @@ function StartupDashboard() {
 
     try {
       const response = await uploadPitchDeck(file);
-      setUploadStatus({ type: 'success', message: 'Pitch deck uploaded successfully!' });
+      setUploadStatus({ type: 'success', message: t('startup.uploadSection.success') });
       // Refresh the pitch decks list
       fetchPitchDecks();
     } catch (error) {
-      let errorMessage = 'Upload failed. Please try again.';
+      let errorMessage = t('startup.uploadSection.errors.uploadFailed');
       
       // Handle specific error cases
       if (error.response?.status === 413) {
-        errorMessage = 'File too large. Maximum size allowed is 50MB.';
+        errorMessage = t('startup.uploadSection.errors.fileTooLarge');
       } else if (error.response?.status === 400) {
-        errorMessage = error.response.data?.detail || 'Invalid file format. Only PDF files are allowed.';
+        errorMessage = error.response.data?.detail || t('startup.uploadSection.errors.invalidType');
       } else if (error.response?.data?.detail) {
         errorMessage = error.response.data.detail;
       }
@@ -80,6 +82,7 @@ function StartupDashboard() {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'completed':
+      case 'reviewed':
         return <CheckCircle color="success" />;
       case 'processing':
         return <CircularProgress size={20} />;
@@ -93,6 +96,7 @@ function StartupDashboard() {
   const getStatusColor = (status) => {
     switch (status) {
       case 'completed':
+      case 'reviewed':
         return 'success';
       case 'processing':
         return 'primary';
@@ -103,19 +107,35 @@ function StartupDashboard() {
     }
   };
 
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'completed':
+      case 'reviewed':
+        return t('startup.decksSection.status.reviewed');
+      case 'processing':
+        return t('startup.decksSection.status.processing');
+      case 'failed':
+        return t('startup.decksSection.status.failed');
+      case 'uploaded':
+        return t('startup.decksSection.status.uploaded');
+      default:
+        return t('startup.decksSection.status.uploaded');
+    }
+  };
+
   useEffect(() => {
     fetchPitchDecks();
   }, []);
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>Dashboard</Typography>
+      <Typography variant="h4" gutterBottom>{t('startup.title')}</Typography>
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>Upload Pitch Deck</Typography>
+            <Typography variant="h6" gutterBottom>{t('startup.uploadSection.title')}</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Upload your pitch deck as a PDF file. Maximum file size: 50MB.
+              {t('startup.uploadSection.description')}. {t('startup.uploadSection.maxSize')}.
             </Typography>
             {uploadStatus && (
               <Alert severity={uploadStatus.type} sx={{ mb: 2 }}>
@@ -137,7 +157,7 @@ function StartupDashboard() {
                 startIcon={uploading ? <CircularProgress size={20} /> : <Upload />}
                 disabled={uploading}
               >
-                {uploading ? 'Uploading...' : 'Upload Pitch Deck'}
+                {uploading ? t('startup.uploadSection.uploading') : t('startup.uploadSection.title')}
               </Button>
             </label>
           </Paper>
@@ -145,11 +165,11 @@ function StartupDashboard() {
         
         <Grid item xs={12}>
           <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>Your Uploaded Pitch Decks</Typography>
+            <Typography variant="h6" gutterBottom>{t('startup.decksSection.title')}</Typography>
             {loading ? (
               <CircularProgress />
             ) : pitchDecks.length === 0 ? (
-              <Typography color="text.secondary">No pitch decks uploaded yet.</Typography>
+              <Typography color="text.secondary">{t('startup.decksSection.noDecks')}.</Typography>
             ) : (
               <List>
                 {pitchDecks.map((deck, index) => (
@@ -161,13 +181,13 @@ function StartupDashboard() {
                             {deck.file_name}
                             <Chip
                               icon={getStatusIcon(deck.processing_status)}
-                              label={deck.processing_status || 'pending'}
+                              label={getStatusLabel(deck.processing_status)}
                               color={getStatusColor(deck.processing_status)}
                               size="small"
                             />
                           </div>
                         }
-                        secondary={`Uploaded on ${new Date(deck.created_at).toLocaleDateString()}`}
+                        secondary={`${t('startup.decksSection.columns.uploadDate')}: ${new Date(deck.created_at).toLocaleDateString()}`}
                       />
                     </ListItem>
                     {index < pitchDecks.length - 1 && <Divider />}
