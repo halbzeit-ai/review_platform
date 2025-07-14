@@ -7,11 +7,13 @@ import React from 'react';
 import { render } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { MemoryRouter } from 'react-router-dom';
-import { I18nextProvider } from 'react-i18next';
-import i18n from '../i18n';
 
-// Create a theme for testing
-const theme = createTheme();
+// Create a simple theme for testing
+const theme = createTheme({
+  palette: {
+    mode: 'light',
+  },
+});
 
 /**
  * Custom render function that includes common providers
@@ -40,9 +42,7 @@ export const renderWithProviders = (
   const Wrapper = ({ children }) => (
     <MemoryRouter {...routerProps}>
       <ThemeProvider theme={theme}>
-        <I18nextProvider i18n={i18n}>
-          {children}
-        </I18nextProvider>
+        {children}
       </ThemeProvider>
     </MemoryRouter>
   );
@@ -159,36 +159,6 @@ export const mockLocalStorage = {
   clear: () => {
     localStorage.clear();
   },
-};
-
-/**
- * Helper function to wait for async operations
- */
-export const waitFor = (callback, timeout = 1000) => {
-  return new Promise((resolve, reject) => {
-    const startTime = Date.now();
-    
-    const check = () => {
-      try {
-        const result = callback();
-        if (result) {
-          resolve(result);
-        } else if (Date.now() - startTime > timeout) {
-          reject(new Error('Timeout waiting for condition'));
-        } else {
-          setTimeout(check, 50);
-        }
-      } catch (error) {
-        if (Date.now() - startTime > timeout) {
-          reject(error);
-        } else {
-          setTimeout(check, 50);
-        }
-      }
-    };
-    
-    check();
-  });
 };
 
 // Re-export everything from RTL

@@ -166,9 +166,11 @@ describe('Dashboard Flow Integration', () => {
       renderWithProviders(<App />, { route: '/dashboard/gp' });
 
       await waitFor(() => {
-        const changeRoleButtons = screen.getAllByText(/change role/i);
-        await user.click(changeRoleButtons[0]);
+        expect(screen.getAllByText(/change role/i)).toHaveLength(1);
       });
+      
+      const changeRoleButtons = screen.getAllByText(/change role/i);
+      await user.click(changeRoleButtons[0]);
 
       // Should show role selection dialog
       expect(screen.getByText(/select new role/i)).toBeInTheDocument();

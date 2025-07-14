@@ -8,7 +8,13 @@ import LanguageSwitcher from './LanguageSwitcher';
 function Navigation() {
   const navigate = useNavigate();
   const { t } = useTranslation('common');
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  let user = null;
+  try {
+    user = JSON.parse(localStorage.getItem('user') || 'null');
+  } catch (error) {
+    // Handle corrupted localStorage data
+    localStorage.removeItem('user');
+  }
   const isLoggedIn = !!user;
 
   return (
