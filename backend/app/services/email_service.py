@@ -51,16 +51,38 @@ class EmailService:
             logger.error(f"Failed to send email to {to_email}: {str(e)}")
             return False
 
-    def send_verification_email(self, email: str, verification_token: str) -> bool:
+    def send_verification_email(self, email: str, verification_token: str, language: str = "en") -> bool:
         """Send email verification email"""
         verification_url = f"{settings.FRONTEND_URL}/verify-email?token={verification_token}"
         
-        subject = "Verify your HALBZEIT AI account"
+        # Language-specific content
+        if language == "de":
+            subject = "Verifizieren Sie Ihr HALBZEIT AI Konto"
+            welcome_text = "Willkommen bei HALBZEIT AI!"
+            thank_you_text = "Vielen Dank für Ihre Registrierung bei unserer Startup-Review-Plattform. Um Ihre Registrierung abzuschließen und Ihr Konto zu nutzen, bestätigen Sie bitte Ihre E-Mail-Adresse."
+            button_text = "E-Mail-Adresse verifizieren"
+            important_text = "Wichtig:"
+            expiry_text = "Dieser Verifizierungslink läuft in 24 Stunden ab. Wenn Sie nicht innerhalb dieser Zeit verifizieren, müssen Sie sich erneut registrieren."
+            fallback_text = "Wenn die Schaltfläche oben nicht funktioniert, können Sie diesen Link kopieren und in Ihren Browser einfügen:"
+            ignore_text = "Wenn Sie kein Konto bei uns erstellt haben, ignorieren Sie diese E-Mail bitte."
+            footer_text = "Diese E-Mail wurde von HALBZEIT AI Review Platform gesendet"
+            support_text = "Wenn Sie Fragen haben, wenden Sie sich bitte an unser Support-Team."
+        else:
+            subject = "Verify your HALBZEIT AI account"
+            welcome_text = "Welcome to HALBZEIT AI!"
+            thank_you_text = "Thank you for registering with our startup review platform. To complete your registration and start using your account, please verify your email address."
+            button_text = "Verify Email Address"
+            important_text = "Important:"
+            expiry_text = "This verification link will expire in 24 hours. If you don't verify within this time, you'll need to register again."
+            fallback_text = "If the button above doesn't work, you can copy and paste this link into your browser:"
+            ignore_text = "If you didn't create an account with us, please ignore this email."
+            footer_text = "This email was sent by HALBZEIT AI Review Platform"
+            support_text = "If you have any questions, please contact our support team."
         
         # HTML email template
         html_body = f"""
         <!DOCTYPE html>
-        <html lang="en">
+        <html lang="{language}">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -120,36 +142,52 @@ class EmailService:
             </div>
             
             <div class="content">
-                <h2>Welcome to HALBZEIT AI!</h2>
+                <h2>{welcome_text}</h2>
                 
-                <p>Thank you for registering with our startup review platform. To complete your registration and start using your account, please verify your email address.</p>
+                <p>{thank_you_text}</p>
                 
                 <p style="text-align: center;">
-                    <a href="{verification_url}" class="button">Verify Email Address</a>
+                    <a href="{verification_url}" class="button">{button_text}</a>
                 </p>
                 
                 <div class="warning">
-                    <strong>Important:</strong> This verification link will expire in 24 hours. If you don't verify within this time, you'll need to register again.
+                    <strong>{important_text}</strong> {expiry_text}
                 </div>
                 
-                <p>If the button above doesn't work, you can copy and paste this link into your browser:</p>
+                <p>{fallback_text}</p>
                 <p style="word-break: break-all; background-color: #f8f9fa; padding: 10px; border-radius: 4px;">
                     {verification_url}
                 </p>
                 
-                <p>If you didn't create an account with us, please ignore this email.</p>
+                <p>{ignore_text}</p>
             </div>
             
             <div class="footer">
-                <p>This email was sent by HALBZEIT AI Review Platform</p>
-                <p>If you have any questions, please contact our support team.</p>
+                <p>{footer_text}</p>
+                <p>{support_text}</p>
             </div>
         </body>
         </html>
         """
         
         # Text version for email clients that don't support HTML
-        text_body = f"""
+        if language == "de":
+            text_body = f"""
+        Willkommen bei HALBZEIT AI!
+        
+        Vielen Dank für Ihre Registrierung bei unserer Startup-Review-Plattform. Um Ihre Registrierung abzuschließen, bestätigen Sie bitte Ihre E-Mail-Adresse, indem Sie auf den folgenden Link klicken:
+        
+        {verification_url}
+        
+        Dieser Verifizierungslink läuft in 24 Stunden ab.
+        
+        Wenn Sie kein Konto bei uns erstellt haben, ignorieren Sie diese E-Mail bitte.
+        
+        Mit freundlichen Grüßen,
+        HALBZEIT AI Team
+        """
+        else:
+            text_body = f"""
         Welcome to HALBZEIT AI!
         
         Thank you for registering with our startup review platform. To complete your registration, please verify your email address by clicking the link below:
@@ -166,13 +204,36 @@ class EmailService:
         
         return self.send_email(email, subject, html_body, text_body)
 
-    def send_welcome_email(self, email: str, company_name: str) -> bool:
+    def send_welcome_email(self, email: str, company_name: str, language: str = "en") -> bool:
         """Send welcome email after successful verification"""
-        subject = "Welcome to HALBZEIT AI - Your account is ready!"
+        
+        # Language-specific content
+        if language == "de":
+            subject = "Willkommen bei HALBZEIT AI - Ihr Konto ist bereit!"
+            welcome_title = f"🎉 Willkommen bei HALBZEIT AI, {company_name}!"
+            verified_text = "Ihre E-Mail wurde erfolgreich verifiziert und Ihr Konto ist nun aktiv. Sie können unsere KI-gestützte Startup-Review-Plattform sofort nutzen."
+            features_title = "Was Sie jetzt tun können:"
+            upload_text = "📄 Laden Sie Ihr Pitch Deck für KI-Analyse hoch"
+            review_text = "🤖 Erhalten Sie detaillierte VC-Style-Reviews powered by KI"
+            qa_text = "💬 Führen Sie Q&A mit General Partners"
+            track_text = "📊 Verfolgen Sie Ihren Review-Fortschritt"
+            login_button = "Bei Ihrem Konto anmelden"
+            excited_text = "Wir freuen uns darauf, Ihnen wertvolles Feedback zu Ihrem Startup zu geben!"
+        else:
+            subject = "Welcome to HALBZEIT AI - Your account is ready!"
+            welcome_title = f"🎉 Welcome to HALBZEIT AI, {company_name}!"
+            verified_text = "Your email has been successfully verified and your account is now active. You can start using our AI-powered startup review platform immediately."
+            features_title = "What you can do now:"
+            upload_text = "📄 Upload your pitch deck for AI analysis"
+            review_text = "🤖 Get detailed VC-style reviews powered by AI"
+            qa_text = "💬 Engage in Q&A with General Partners"
+            track_text = "📊 Track your review progress"
+            login_button = "Login to Your Account"
+            excited_text = "We're excited to help you get valuable feedback on your startup!"
         
         html_body = f"""
         <!DOCTYPE html>
-        <html lang="en">
+        <html lang="{language}">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -228,23 +289,23 @@ class EmailService:
             </div>
             
             <div class="content">
-                <h2>🎉 Welcome to HALBZEIT AI, {company_name}!</h2>
+                <h2>{welcome_title}</h2>
                 
-                <p>Your email has been successfully verified and your account is now active. You can start using our AI-powered startup review platform immediately.</p>
+                <p>{verified_text}</p>
                 
                 <div class="features">
-                    <h3>What you can do now:</h3>
-                    <div class="feature-item">📄 Upload your pitch deck for AI analysis</div>
-                    <div class="feature-item">🤖 Get detailed VC-style reviews powered by AI</div>
-                    <div class="feature-item">💬 Engage in Q&A with General Partners</div>
-                    <div class="feature-item">📊 Track your review progress</div>
+                    <h3>{features_title}</h3>
+                    <div class="feature-item">{upload_text}</div>
+                    <div class="feature-item">{review_text}</div>
+                    <div class="feature-item">{qa_text}</div>
+                    <div class="feature-item">{track_text}</div>
                 </div>
                 
                 <p style="text-align: center;">
-                    <a href="{settings.FRONTEND_URL}/login" class="button">Login to Your Account</a>
+                    <a href="{settings.FRONTEND_URL}/login" class="button">{login_button}</a>
                 </p>
                 
-                <p>We're excited to help you get valuable feedback on your startup!</p>
+                <p>{excited_text}</p>
             </div>
         </body>
         </html>

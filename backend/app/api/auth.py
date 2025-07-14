@@ -71,7 +71,7 @@ async def register(data: RegisterData, db: Session = Depends(get_db)):
         db.refresh(new_user)
         
         # Send verification email
-        email_sent = email_service.send_verification_email(data.email, verification_token)
+        email_sent = email_service.send_verification_email(data.email, verification_token, data.preferred_language)
         
         if not email_sent:
             # If email fails, we still keep the user but warn them
@@ -286,7 +286,7 @@ async def verify_email(token: str = Query(...), db: Session = Depends(get_db)):
     db.commit()
     
     # Send welcome email
-    email_service.send_welcome_email(user.email, user.company_name)
+    email_service.send_welcome_email(user.email, user.company_name, user.preferred_language or "de")
     
     return JSONResponse(
         status_code=200,
