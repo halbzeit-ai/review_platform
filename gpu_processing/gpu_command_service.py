@@ -18,7 +18,7 @@ from typing import Dict, Any
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -47,9 +47,11 @@ class GPUCommandService:
         while True:
             try:
                 # Check for new command files
+                logger.debug("Checking for pending commands...")
                 await self.process_pending_commands()
                 
                 # Update status
+                logger.debug("Updating status...")
                 await self.update_status()
                 
                 # Wait before next check
@@ -63,10 +65,12 @@ class GPUCommandService:
         """Process any pending command files"""
         try:
             if not os.path.exists(self.commands_path):
+                logger.warning(f"Commands path does not exist: {self.commands_path}")
                 return
             
             # Get all command files
             command_files = [f for f in os.listdir(self.commands_path) if f.endswith('.json')]
+            logger.info(f"Found {len(command_files)} command files: {command_files}")
             
             for command_file in command_files:
                 command_path = os.path.join(self.commands_path, command_file)
