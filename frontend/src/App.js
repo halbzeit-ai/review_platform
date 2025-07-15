@@ -10,6 +10,7 @@ import VerifyEmail from './pages/VerifyEmail';
 import StartupDashboard from './pages/StartupDashboard';
 import GPDashboard from './pages/GPDashboard';
 import Review from './pages/Review';
+import ResultsPage from './pages/ResultsPage';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/dashboard/startup" element={<StartupDashboard />} />
           <Route path="/dashboard/gp" element={<GPDashboard />} />
           <Route path="/review/:id" element={<Review />} />
+          <Route path="/results/:pitchDeckId" element={<ResultsPage />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

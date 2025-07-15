@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { Container, Paper, Typography, Button, Grid, Alert, CircularProgress, List, ListItem, ListItemText, Divider, Chip, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Box } from '@mui/material';
-import { Upload, CheckCircle, Pending, Error, Visibility, Close } from '@mui/icons-material';
+import { Container, Paper, Typography, Button, Grid, Alert, CircularProgress, List, ListItem, ListItemText, Divider, Chip, Box } from '@mui/material';
+import { Upload, CheckCircle, Pending, Error, Visibility } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { uploadPitchDeck, getPitchDecks } from '../services/api';
-import ReviewResults from '../components/ReviewResults';
 
 function StartupDashboard() {
   const { t } = useTranslation('dashboard');
@@ -12,8 +11,6 @@ function StartupDashboard() {
   const [uploadStatus, setUploadStatus] = useState(null);
   const [pitchDecks, setPitchDecks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDeckId, setSelectedDeckId] = useState(null);
-  const [showResults, setShowResults] = useState(false);
 
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
@@ -129,14 +126,9 @@ function StartupDashboard() {
   };
 
   const handleViewResults = (deckId) => {
-    setSelectedDeckId(deckId);
-    setShowResults(true);
+    navigate(`/results/${deckId}`);
   };
 
-  const handleCloseResults = () => {
-    setShowResults(false);
-    setSelectedDeckId(null);
-  };
 
   useEffect(() => {
     fetchPitchDecks();
@@ -231,34 +223,6 @@ function StartupDashboard() {
           </Paper>
         </Grid>
       </Grid>
-
-      {/* Results Dialog */}
-      <Dialog
-        open={showResults}
-        onClose={handleCloseResults}
-        maxWidth="lg"
-        fullWidth
-        PaperProps={{
-          sx: { minHeight: '80vh' }
-        }}
-      >
-        <DialogTitle>
-          <Box display="flex" alignItems="center" justifyContent="space-between">
-            <Typography variant="h6">{t('startup.decksSection.reviewResults')}</Typography>
-            <IconButton onClick={handleCloseResults}>
-              <Close />
-            </IconButton>
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          {selectedDeckId && (
-            <ReviewResults
-              pitchDeckId={selectedDeckId}
-              onClose={handleCloseResults}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </Container>
   );
 }
