@@ -138,6 +138,13 @@ function StartupDashboard() {
 
   useEffect(() => {
     fetchPitchDecks();
+    
+    // Poll for deck status updates every 10 seconds
+    const interval = setInterval(() => {
+      fetchPitchDecks();
+    }, 10000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   return (
