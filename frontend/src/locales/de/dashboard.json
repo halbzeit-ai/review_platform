@@ -36,7 +36,9 @@
         "view": "Ansehen",
         "download": "Herunterladen",
         "delete": "Löschen"
-      }
+      },
+      "viewResults": "Ergebnisse ansehen",
+      "reviewResults": "Review-Ergebnisse"
     }
   },
   "gp": {

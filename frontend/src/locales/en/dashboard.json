@@ -36,7 +36,9 @@
         "view": "View",
         "download": "Download",
         "delete": "Delete"
-      }
+      },
+      "viewResults": "View Results",
+      "reviewResults": "Review Results"
     }
   },
   "gp": {

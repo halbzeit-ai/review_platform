@@ -1,0 +1,30 @@
+{
+  "processing": {
+    "analyzing": "Analysiere dein Pitch Deck...",
+    "loading": "Lade Ergebnisse...",
+    "pleaseWait": "Dies kann einige Minuten dauern. Bitte warten."
+  },
+  "results": {
+    "title": "KI-Review Ergebnisse",
+    "analysisComplete": "Analyse erfolgreich abgeschlossen",
+    "overallScore": "Gesamtbewertung",
+    "detailedAnalysis": "Detaillierte Analyse",
+    "analysisDetails": "Analyse-Details",
+    "scientificHypotheses": "Wissenschaftliche Hypothesen",
+    "keyPoints": "Wichtige Punkte",
+    "recommendations": "Empfehlungen",
+    "processedBy": "Verarbeitet von",
+    "confidence": "Vertrauen",
+    "noResults": "Keine Ergebnisse verfügbar",
+    "noAnalysisAvailable": "Keine Analyse für diesen Bereich verfügbar"
+  },
+  "areas": {
+    "problem": "Problem-Analyse",
+    "solution": "Lösung",
+    "product_market_fit": "Produkt-Markt-Passung",
+    "monetisation": "Monetarisierung",
+    "organisation": "Team & Organisation",
+    "competition": "Konkurrenz",
+    "execution": "Umsetzung"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "processing": {
+    "analyzing": "Analyzing your pitch deck...",
+    "loading": "Loading results...",
+    "pleaseWait": "This may take a few minutes. Please wait."
+  },
+  "results": {
+    "title": "AI Review Results",
+    "analysisComplete": "Analysis completed successfully",
+    "overallScore": "Overall Score",
+    "detailedAnalysis": "Detailed Analysis",
+    "analysisDetails": "Analysis Details",
+    "scientificHypotheses": "Scientific Hypotheses",
+    "keyPoints": "Key Points",
+    "recommendations": "Recommendations",
+    "processedBy": "Processed by",
+    "confidence": "Confidence",
+    "noResults": "No results available",
+    "noAnalysisAvailable": "No analysis available for this section"
+  },
+  "areas": {
+    "problem": "Problem Analysis",
+    "solution": "Solution",
+    "product_market_fit": "Product Market Fit",
+    "monetisation": "Monetization",
+    "organisation": "Team & Organization",
+    "competition": "Competition",
+    "execution": "Execution"
+  }
+}
