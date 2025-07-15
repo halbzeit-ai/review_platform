@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional, Dict
-import requests
+import asyncio
 import json
 import logging
 import os
@@ -10,6 +10,7 @@ import os
 from ..db.models import User, ModelConfig
 from ..db.database import get_db
 from .auth import get_current_user
+from ..services.gpu_communication import gpu_service
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +27,9 @@ class ModelConfigResponse(BaseModel):
 class AvailableModelsResponse(BaseModel):
     models: List[dict]
 
-# Ollama API base URL (assuming it's running on the GPU instance)
-OLLAMA_API_BASE = "http://127.0.0.1:11434/api"
+# GPU instance communication - we need to implement this properly
+# For now, we'll return mock data until GPU communication is implemented
+OLLAMA_API_BASE = "http://127.0.0.1:11434/api"  # This won't work from production server
 
 @router.get("/models", response_model=ModelConfigResponse)
 async def get_models(
@@ -41,22 +43,17 @@ async def get_models(
         raise HTTPException(status_code=403, detail="Only GPs can access model configuration")
     
     try:
-        # Get installed models from Ollama
-        response = requests.get(f"{OLLAMA_API_BASE}/tags", timeout=10)
-        if response.status_code != 200:
-            raise HTTPException(status_code=500, detail="Failed to fetch models from Ollama")
-        
-        ollama_data = response.json()
+        # Get installed models from GPU instance via shared filesystem
+        gpu_models = await gpu_service.get_installed_models()
         models = []
         
-        if "models" in ollama_data:
-            for model in ollama_data["models"]:
-                models.append({
-                    "name": model.get("name", "Unknown"),
-                    "size": model.get("size", 0),
-                    "modified_at": model.get("modified_at", ""),
-                    "digest": model.get("digest", "")
-                })
+        for model in gpu_models:
+            models.append({
+                "name": model.name,
+                "size": model.size,
+                "modified_at": model.modified_at,
+                "digest": model.digest
+            })
         
         # Get active models by type from database
         active_model_configs = db.query(ModelConfig).filter(
@@ -72,12 +69,13 @@ async def get_models(
             active_models=active_models
         )
         
-    except requests.RequestException as e:
-        logger.error(f"Error connecting to Ollama API: {e}")
-        raise HTTPException(status_code=500, detail="Failed to connect to Ollama API")
     except Exception as e:
-        logger.error(f"Error fetching models: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch models")
+        logger.error(f"Error communicating with GPU instance: {e}")
+        # Return empty response when GPU is not available
+        return ModelConfigResponse(
+            models=[],
+            active_models={}
+        )
 
 @router.get("/available-models", response_model=AvailableModelsResponse)
 async def get_available_models(
@@ -138,22 +136,12 @@ async def set_active_model(
         raise HTTPException(status_code=403, detail="Only GPs can access model configuration")
     
     try:
-        # Verify the model exists in Ollama
-        response = requests.get(f"{OLLAMA_API_BASE}/tags", timeout=10)
-        if response.status_code != 200:
-            raise HTTPException(status_code=500, detail="Failed to verify model existence")
-        
-        ollama_data = response.json()
-        model_exists = False
-        
-        if "models" in ollama_data:
-            for model in ollama_data["models"]:
-                if model.get("name") == request.model_name:
-                    model_exists = True
-                    break
+        # Verify the model exists on GPU instance
+        gpu_models = await gpu_service.get_installed_models()
+        model_exists = any(model.name == request.model_name for model in gpu_models)
         
         if not model_exists:
-            raise HTTPException(status_code=404, detail="Model not found in Ollama")
+            raise HTTPException(status_code=404, detail="Model not found on GPU instance")
         
         # Deactivate all current active models of the same type
         db.query(ModelConfig).filter(
@@ -178,11 +166,8 @@ async def set_active_model(
         
         db.commit()
         
-        return {"message": f"Successfully set {request.model_name} as active model"}
+        return {"message": f"Successfully set {request.model_name} as active {request.model_type} model"}
         
-    except requests.RequestException as e:
-        logger.error(f"Error connecting to Ollama API: {e}")
-        raise HTTPException(status_code=500, detail="Failed to connect to Ollama API")
     except Exception as e:
         logger.error(f"Error setting active model: {e}")
         raise HTTPException(status_code=500, detail="Failed to set active model")
@@ -199,23 +184,14 @@ async def pull_model(
         raise HTTPException(status_code=403, detail="Only GPs can access model configuration")
     
     try:
-        # Start pulling the model
-        pull_data = {"name": request.model_name}
+        # Send pull command to GPU instance
+        success = await gpu_service.pull_model(request.model_name)
         
-        response = requests.post(
-            f"{OLLAMA_API_BASE}/pull",
-            json=pull_data,
-            timeout=30  # Pulling can take time, but we'll start it async
-        )
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to send pull command to GPU instance")
         
-        if response.status_code != 200:
-            raise HTTPException(status_code=500, detail="Failed to start model pull")
+        return {"message": f"Started pulling model {request.model_name} on GPU instance"}
         
-        return {"message": f"Started pulling model {request.model_name}"}
-        
-    except requests.RequestException as e:
-        logger.error(f"Error connecting to Ollama API: {e}")
-        raise HTTPException(status_code=500, detail="Failed to connect to Ollama API")
     except Exception as e:
         logger.error(f"Error pulling model: {e}")
         raise HTTPException(status_code=500, detail="Failed to pull model")
@@ -233,30 +209,21 @@ async def delete_model(
         raise HTTPException(status_code=403, detail="Only GPs can access model configuration")
     
     try:
-        # Delete the model from Ollama
-        delete_data = {"name": request.model_name}
+        # Send delete command to GPU instance
+        success = await gpu_service.delete_model(request.model_name)
         
-        response = requests.delete(
-            f"{OLLAMA_API_BASE}/delete",
-            json=delete_data,
-            timeout=10
-        )
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to send delete command to GPU instance")
         
-        if response.status_code != 200:
-            raise HTTPException(status_code=500, detail="Failed to delete model")
-        
-        # Remove from database if it was the active model
+        # Remove from database if it was an active model
         db.query(ModelConfig).filter(
             ModelConfig.model_name == request.model_name
         ).delete()
         
         db.commit()
         
-        return {"message": f"Successfully deleted model {request.model_name}"}
+        return {"message": f"Successfully deleted model {request.model_name} from GPU instance"}
         
-    except requests.RequestException as e:
-        logger.error(f"Error connecting to Ollama API: {e}")
-        raise HTTPException(status_code=500, detail="Failed to connect to Ollama API")
     except Exception as e:
         logger.error(f"Error deleting model: {e}")
         raise HTTPException(status_code=500, detail="Failed to delete model")

@@ -1,0 +1,20 @@
+[Unit]
+Description=GPU Command Service - Monitor shared filesystem for model management commands
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/mnt/shared
+ExecStart=/usr/bin/python3 /opt/gpu_processing/gpu_command_service.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Environment variables
+Environment=PYTHONPATH=/opt/gpu_processing
+Environment=OLLAMA_HOST=127.0.0.1:11434
+
+[Install]
+WantedBy=multi-user.target

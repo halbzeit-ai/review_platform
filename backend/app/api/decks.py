@@ -30,10 +30,16 @@ def get_decks(db: Session = Depends(get_db), current_user: User = Depends(get_cu
             "user_id": deck.user_id
         }
         if current_user.role == "gp":
-            deck_data["user"] = {
-                "email": deck.user.email,
-                "company_name": deck.user.company_name
-            }
+            if deck.user:
+                deck_data["user"] = {
+                    "email": deck.user.email,
+                    "company_name": deck.user.company_name
+                }
+            else:
+                deck_data["user"] = {
+                    "email": "Unknown",
+                    "company_name": "Unknown"
+                }
         result.append(deck_data)
     
     return {"decks": result}
