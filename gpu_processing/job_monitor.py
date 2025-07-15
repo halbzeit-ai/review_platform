@@ -91,7 +91,7 @@ class GPUJobMonitor:
             # Process the PDF
             results = processor.process_pdf(file_path)
             
-            # Save results
+            # Save results with job_id format for backend
             results_file = os.path.join(self.results_path, f"{job_id}_results.json")
             with open(results_file, 'w') as f:
                 json.dump(results, f, indent=2)
