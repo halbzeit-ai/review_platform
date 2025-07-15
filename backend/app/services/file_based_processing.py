@@ -81,7 +81,7 @@ class FileBasedGPUProcessingService:
             self._update_processing_status(pitch_deck_id, "failed", {"error": str(e)})
             raise
             
-    async def _wait_for_completion(self, job_id: str, pitch_deck_id: int, timeout: int = 600) -> Dict[str, Any]:
+    async def _wait_for_completion(self, job_id: str, pitch_deck_id: int, timeout: int = 900) -> Dict[str, Any]:
         """Wait for GPU processing to complete by monitoring result files"""
         
         result_file = os.path.join(self.results_path, f"{job_id}_results.json")
