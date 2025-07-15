@@ -42,9 +42,18 @@ const ReviewResults = ({ pitchDeckId, onClose }) => {
 
   const checkProcessingStatus = async () => {
     try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+      
+      if (!token) {
+        setError('Not authenticated');
+        setLoading(false);
+        return;
+      }
+      
       const response = await fetch(`/api/documents/processing-status/${pitchDeckId}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -72,9 +81,18 @@ const ReviewResults = ({ pitchDeckId, onClose }) => {
 
   const fetchResults = async () => {
     try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+      
+      if (!token) {
+        setError('Not authenticated');
+        setLoading(false);
+        return;
+      }
+      
       const response = await fetch(`/api/documents/results/${pitchDeckId}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
 
