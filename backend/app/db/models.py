@@ -28,6 +28,7 @@ class PitchDeck(Base):
     file_path = Column(String)  # Relative path in shared volume
     s3_url = Column(String)  # Legacy field, kept for compatibility
     processing_status = Column(String, default="pending")  # pending, processing, completed, failed
+    ai_analysis_results = Column(Text, nullable=True)  # JSON string of AI analysis results
     created_at = Column(DateTime, default=datetime.utcnow)
     user = relationship("User")
 
