@@ -65,7 +65,13 @@ const ReviewResults = ({ pitchDeckId, onClose }) => {
       setProcessingStatus(data.processing_status);
 
       if (data.processing_status === 'completed') {
-        await fetchResults();
+        try {
+          await fetchResults();
+        } catch (err) {
+          console.log('Results not ready yet, will retry in 5 seconds');
+          // Results might not be ready yet, continue polling
+          setTimeout(checkProcessingStatus, 5000);
+        }
       } else if (data.processing_status === 'failed') {
         setError('Processing failed. Please try again.');
         setLoading(false);
