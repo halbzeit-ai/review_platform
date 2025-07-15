@@ -88,14 +88,28 @@ class FileBasedGPUProcessingService:
         start_time = time.time()
         
         logger.info(f"Waiting for result file: {result_file}")
+        logger.info(f"Results directory: {self.results_path}")
         
+        check_count = 0
         while time.time() - start_time < timeout:
+            check_count += 1
+            elapsed = time.time() - start_time
+            
+            # List all files in results directory every 10 checks for debugging
+            if check_count % 10 == 0:
+                try:
+                    files = os.listdir(self.results_path)
+                    result_files = [f for f in files if f.endswith('_results.json')]
+                    logger.info(f"Check #{check_count} ({elapsed:.1f}s): Found {len(result_files)} result files: {result_files}")
+                except Exception as e:
+                    logger.error(f"Error listing results directory: {e}")
+            
             if os.path.exists(result_file):
                 try:
                     with open(result_file, 'r') as f:
                         results = json.load(f)
                     
-                    logger.info(f"Found results for job {job_id}")
+                    logger.info(f"Found results for job {job_id} after {elapsed:.1f}s")
                     return results
                     
                 except Exception as e:
@@ -114,6 +128,14 @@ class FileBasedGPUProcessingService:
             # Wait and check again
             await asyncio.sleep(5)
             
+        # Final check - list all files before giving up
+        try:
+            files = os.listdir(self.results_path)
+            result_files = [f for f in files if f.endswith('_results.json')]
+            logger.error(f"Timeout after {timeout}s. Final check - result files: {result_files}")
+        except Exception as e:
+            logger.error(f"Error in final check: {e}")
+            
         raise Exception(f"Processing timeout after {timeout} seconds")
         
     def _update_processing_status(self, pitch_deck_id: int, status: str, results: Optional[Dict[str, Any]] = None):
@@ -125,22 +147,33 @@ class FileBasedGPUProcessingService:
             pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == pitch_deck_id).first()
             if not pitch_deck:
                 logger.error(f"Pitch deck {pitch_deck_id} not found in database")
+                db.close()
                 return
+            
+            logger.info(f"Updating pitch deck {pitch_deck_id}: {pitch_deck.processing_status} -> {status}")
             
             # Update status
             pitch_deck.processing_status = status
             
             # Update results if provided
             if results:
-                pitch_deck.ai_analysis_results = json.dumps(results)
+                results_json = json.dumps(results)
+                pitch_deck.ai_analysis_results = results_json
+                logger.info(f"Added results to pitch deck {pitch_deck_id} ({len(results_json)} chars)")
             
             db.commit()
             db.close()
             
-            logger.info(f"Updated pitch deck {pitch_deck_id} status to: {status}")
+            logger.info(f"✅ Successfully updated pitch deck {pitch_deck_id} status to: {status}")
             
         except Exception as e:
-            logger.error(f"Failed to update database for pitch deck {pitch_deck_id}: {e}")
+            logger.error(f"❌ Failed to update database for pitch deck {pitch_deck_id}: {e}")
+            import traceback
+            logger.error(f"Full traceback: {traceback.format_exc()}")
+            try:
+                db.close()
+            except:
+                pass
             
     async def get_processing_status(self, pitch_deck_id: int) -> Dict[str, Any]:
         """Get current processing status for a pitch deck"""
