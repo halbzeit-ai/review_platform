@@ -1,0 +1,15 @@
+[Unit]
+Description=GPU Job Monitor for AI Processing
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/mnt/shared/gpu_processing
+ExecStart=/usr/bin/python3 /mnt/shared/gpu_processing/job_monitor.py
+Restart=always
+RestartSec=10
+Environment=SHARED_FILESYSTEM_MOUNT_PATH=/mnt/shared
+
+[Install]
+WantedBy=multi-user.target
