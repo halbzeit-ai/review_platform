@@ -126,13 +126,19 @@ async def get_processing_results(
         raise HTTPException(status_code=400, detail="Processing not completed yet")
     
     # Get results from database first
-    if pitch_deck.ai_analysis_results:
+    logger.info(f"Checking pitch deck {pitch_deck_id} for stored results")
+    logger.info(f"Pitch deck attributes: {dir(pitch_deck)}")
+    
+    # Check if the column exists
+    if hasattr(pitch_deck, 'ai_analysis_results') and pitch_deck.ai_analysis_results:
         try:
             results = json.loads(pitch_deck.ai_analysis_results)
+            logger.info(f"Found stored results for pitch deck {pitch_deck_id}")
         except json.JSONDecodeError:
             logger.error(f"Failed to parse stored results for pitch deck {pitch_deck_id}")
             results = None
     else:
+        logger.info(f"No stored results found for pitch deck {pitch_deck_id}")
         results = None
     
     # If no results in database, try to find and load from file system
