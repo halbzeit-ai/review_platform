@@ -19,6 +19,12 @@ ssh root@$GPU_IP << 'EOF'
 # Install Python dependencies
 pip3 install pdf2image torch torchvision requests pillow
 
+# Mount shared filesystem if not already mounted
+mkdir -p /mnt/shared
+if ! mountpoint -q /mnt/shared; then
+    mount -t nfs nfs.fin-01.datacrunch.io:/SFS-3H6ebwA1-b0cbae8b /mnt/shared
+fi
+
 # Copy processing code to shared filesystem
 cp -r /tmp/gpu_processing /mnt/shared/
 

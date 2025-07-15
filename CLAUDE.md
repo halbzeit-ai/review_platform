@@ -136,7 +136,8 @@ Key principles:
 **Infrastructure:** Datacrunch.io CPU.4V.16G instance (Ubuntu 24.04)
 **Deployment Path:** `/opt/review-platform/`
 **Shared Storage:** NFS mounted at `/mnt/shared` 
-- Endpoint: `nfs.fin-01.datacrunch.io:/SFS-5gkKcxHe-6721608d`
+- Endpoint: `nfs.fin-01.datacrunch.io:/SFS-3H6ebwA1-b0cbae8b`
+- Mount Command: `mount -t nfs nfs.fin-01.datacrunch.io:/SFS-3H6ebwA1-b0cbae8b /mnt/shared`
 - Structure: `{uploads,results,temp}/`
 
 **Services Running:**

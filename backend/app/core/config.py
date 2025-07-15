@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     DATACRUNCH_CLIENT_ID: str = ""
     DATACRUNCH_CLIENT_SECRET: str = ""
     DATACRUNCH_API_BASE: str = "https://api.datacrunch.io/v1"
-    DATACRUNCH_SHARED_FILESYSTEM_ID: Optional[str] = None
+    DATACRUNCH_SHARED_FILESYSTEM_ID: Optional[str] = "SFS-3H6ebwA1-b0cbae8b"
     DATACRUNCH_SSH_KEY_IDS: str = ""  # Comma-separated SSH key IDs for GPU instances
     SHARED_FILESYSTEM_MOUNT_PATH: str = "/mnt/shared"
     
