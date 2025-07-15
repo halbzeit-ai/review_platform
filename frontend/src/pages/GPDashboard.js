@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, IconButton, Box, Snackbar, Alert } from '@mui/material';
-import { Delete as DeleteIcon } from '@mui/icons-material';
+import { Delete as DeleteIcon, Settings } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { getAllUsers, getPitchDecks, updateUserRole, deleteUser } from '../services/api';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 function GPDashboard() {
   const { t } = useTranslation('dashboard');
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [pitchDecks, setPitchDecks] = useState([]);
   const [loadingDecks, setLoadingDecks] = useState(true);
@@ -112,7 +114,16 @@ function GPDashboard() {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>{t('gp.title')}</Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h4">{t('gp.title')}</Typography>
+        <Button
+          variant="outlined"
+          startIcon={<Settings />}
+          onClick={() => navigate('/config')}
+        >
+          Model Configuration
+        </Button>
+      </Box>
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Paper sx={{ p: 3 }}>

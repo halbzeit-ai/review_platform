@@ -52,6 +52,14 @@ class Question(Base):
     review = relationship("Review")
     user = relationship("User")
 
+class ModelConfig(Base):
+    __tablename__ = "model_configs"
+    id = Column(Integer, primary_key=True, index=True)
+    model_name = Column(String, unique=True, index=True)
+    is_active = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 class Answer(Base):
     __tablename__ = "answers"
     id = Column(Integer, primary_key=True, index=True)

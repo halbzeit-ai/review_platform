@@ -7,6 +7,7 @@ from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 import json
 import re
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,34 @@ class AIAnalyzer:
     def __init__(self, config: Dict[str, Any] = None):
         self.config = config or {}
         self.model_loaded = False
-        logger.info("AI Analyzer initialized")
+        
+        # Get active model from configuration or use defaults
+        self.active_model = self.get_active_model()
+        logger.info(f"AI Analyzer initialized with model: {self.active_model}")
+    
+    def get_active_model(self) -> str:
+        """Get the active model from backend configuration or use default"""
+        try:
+            import requests
+            import sqlite3
+            
+            # Try to get active model from backend database
+            db_path = "/opt/review-platform/backend/sql_app.db"
+            if os.path.exists(db_path):
+                conn = sqlite3.connect(db_path)
+                cursor = conn.cursor()
+                cursor.execute("SELECT model_name FROM model_configs WHERE is_active = 1 LIMIT 1")
+                result = cursor.fetchone()
+                conn.close()
+                
+                if result:
+                    return result[0]
+            
+        except Exception as e:
+            logger.warning(f"Could not get active model from configuration: {e}")
+        
+        # Fallback to default model
+        return "gemma3:12b"
     
     def analyze_content(self, content: Dict[str, Any]) -> AnalysisResult:
         """

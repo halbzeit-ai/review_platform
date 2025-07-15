@@ -11,6 +11,7 @@ import StartupDashboard from './pages/StartupDashboard';
 import GPDashboard from './pages/GPDashboard';
 import Review from './pages/Review';
 import ResultsPage from './pages/ResultsPage';
+import ConfigPage from './pages/ConfigPage';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
           <Route path="/dashboard/gp" element={<GPDashboard />} />
           <Route path="/review/:id" element={<Review />} />
           <Route path="/results/:pitchDeckId" element={<ResultsPage />} />
+          <Route path="/config" element={<ConfigPage />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>
