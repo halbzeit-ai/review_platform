@@ -3,10 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { Container, Paper, Typography, Button, Grid, Alert, CircularProgress, List, ListItem, ListItemText, Divider, Chip, Box } from '@mui/material';
 import { Upload, CheckCircle, Pending, Error, Visibility } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { uploadPitchDeck, getPitchDecks } from '../services/api';
 
 function StartupDashboard() {
   const { t } = useTranslation('dashboard');
+  const navigate = useNavigate();
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
   const [pitchDecks, setPitchDecks] = useState([]);
