@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
 import requests
 import json
 import logging
@@ -17,10 +17,11 @@ router = APIRouter(prefix="/config", tags=["config"])
 
 class ModelConfigRequest(BaseModel):
     model_name: str
+    model_type: str  # 'vision', 'text', 'scoring', 'science'
 
 class ModelConfigResponse(BaseModel):
     models: List[dict]
-    active_model: Optional[str]
+    active_models: Dict[str, Optional[str]]  # model_type -> model_name
 
 class AvailableModelsResponse(BaseModel):
     models: List[dict]
@@ -57,16 +58,18 @@ async def get_models(
                     "digest": model.get("digest", "")
                 })
         
-        # Get active model from database
-        active_model_config = db.query(ModelConfig).filter(
+        # Get active models by type from database
+        active_model_configs = db.query(ModelConfig).filter(
             ModelConfig.is_active == True
-        ).first()
+        ).all()
         
-        active_model = active_model_config.model_name if active_model_config else None
+        active_models = {}
+        for config in active_model_configs:
+            active_models[config.model_type] = config.model_name
         
         return ModelConfigResponse(
             models=models,
-            active_model=active_model
+            active_models=active_models
         )
         
     except requests.RequestException as e:
@@ -152,12 +155,15 @@ async def set_active_model(
         if not model_exists:
             raise HTTPException(status_code=404, detail="Model not found in Ollama")
         
-        # Deactivate all current active models
-        db.query(ModelConfig).update({"is_active": False})
+        # Deactivate all current active models of the same type
+        db.query(ModelConfig).filter(
+            ModelConfig.model_type == request.model_type
+        ).update({"is_active": False})
         
         # Set the new active model
         existing_config = db.query(ModelConfig).filter(
-            ModelConfig.model_name == request.model_name
+            ModelConfig.model_name == request.model_name,
+            ModelConfig.model_type == request.model_type
         ).first()
         
         if existing_config:
@@ -165,6 +171,7 @@ async def set_active_model(
         else:
             new_config = ModelConfig(
                 model_name=request.model_name,
+                model_type=request.model_type,
                 is_active=True
             )
             db.add(new_config)

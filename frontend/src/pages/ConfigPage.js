@@ -28,7 +28,9 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   IconButton,
-  Divider
+  Divider,
+  Tabs,
+  Tab
 } from '@mui/material';
 import {
   Settings,
@@ -39,9 +41,20 @@ import {
   Add,
   CheckCircle,
   Error,
-  Refresh
+  Refresh,
+  Visibility,
+  TextFields,
+  Assessment,
+  Science
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
+
+const MODEL_TYPES = [
+  { key: 'vision', label: 'Vision Analysis', icon: <Visibility />, description: 'Models for analyzing PDF images and extracting visual content' },
+  { key: 'text', label: 'Text Generation', icon: <TextFields />, description: 'Models for generating detailed analysis reports' },
+  { key: 'scoring', label: 'Scoring', icon: <Assessment />, description: 'Models for scoring and evaluating content' },
+  { key: 'science', label: 'Scientific Analysis', icon: <Science />, description: 'Models for analyzing scientific hypotheses and health-related content' }
+];
 
 const ConfigPage = () => {
   const navigate = useNavigate();
@@ -49,12 +62,14 @@ const ConfigPage = () => {
   const [loading, setLoading] = useState(true);
   const [models, setModels] = useState([]);
   const [availableModels, setAvailableModels] = useState([]);
-  const [activeModel, setActiveModel] = useState(null);
+  const [activeModels, setActiveModels] = useState({});
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [pullDialog, setPullDialog] = useState(false);
   const [newModelName, setNewModelName] = useState('');
+  const [selectedModelType, setSelectedModelType] = useState('vision');
   const [pulling, setPulling] = useState(false);
+  const [currentTab, setCurrentTab] = useState(0);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user'));
@@ -84,7 +99,7 @@ const ConfigPage = () => {
 
       const data = await response.json();
       setModels(data.models || []);
-      setActiveModel(data.active_model);
+      setActiveModels(data.active_models || {});
       setLoading(false);
     } catch (err) {
       setError('Failed to fetch models');
@@ -114,7 +129,7 @@ const ConfigPage = () => {
     }
   };
 
-  const handleSetActiveModel = async (modelName) => {
+  const handleSetActiveModel = async (modelName, modelType) => {
     try {
       const user = JSON.parse(localStorage.getItem('user'));
       const token = user?.token;
@@ -125,15 +140,21 @@ const ConfigPage = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ model_name: modelName })
+        body: JSON.stringify({ 
+          model_name: modelName,
+          model_type: modelType
+        })
       });
 
       if (!response.ok) {
         throw new Error('Failed to set active model');
       }
 
-      setActiveModel(modelName);
-      setSuccess(`Successfully set ${modelName} as active model`);
+      setActiveModels(prev => ({
+        ...prev,
+        [modelType]: modelName
+      }));
+      setSuccess(`Successfully set ${modelName} as active ${modelType} model`);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError('Failed to set active model');
@@ -155,7 +176,10 @@ const ConfigPage = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ model_name: newModelName.trim() })
+        body: JSON.stringify({ 
+          model_name: newModelName.trim(),
+          model_type: selectedModelType
+        })
       });
 
       if (!response.ok) {
@@ -192,7 +216,10 @@ const ConfigPage = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ model_name: modelName })
+        body: JSON.stringify({ 
+          model_name: modelName,
+          model_type: selectedModelType
+        })
       });
 
       if (!response.ok) {
@@ -213,6 +240,8 @@ const ConfigPage = () => {
     if (size > 1000000) return `${(size / 1000000).toFixed(1)}MB`;
     return `${size} bytes`;
   };
+
+  const getCurrentModelType = () => MODEL_TYPES[currentTab];
 
   if (loading) {
     return (
@@ -251,7 +280,7 @@ const ConfigPage = () => {
               AI Model Configuration
             </Typography>
             <Typography variant="subtitle1" color="text.secondary">
-              Manage the AI models used for pitch deck analysis
+              Configure different AI models for each analysis task
             </Typography>
           </Box>
           <Settings fontSize="large" color="primary" />
@@ -269,20 +298,40 @@ const ConfigPage = () => {
           </Alert>
         )}
 
-        {/* Active Model */}
-        <Card variant="outlined" sx={{ mb: 3, bgcolor: 'success.50' }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom color="success.main">
-              Active Model
-            </Typography>
-            <Box display="flex" alignItems="center" gap={2}>
-              <CheckCircle color="success" />
-              <Typography variant="h6">
-                {activeModel || 'No active model set'}
-              </Typography>
-            </Box>
-          </CardContent>
-        </Card>
+        {/* Active Models Overview */}
+        <Typography variant="h6" gutterBottom>
+          Active Models by Type
+        </Typography>
+        <Grid container spacing={2} sx={{ mb: 3 }}>
+          {MODEL_TYPES.map((modelType) => (
+            <Grid item xs={12} md={6} lg={3} key={modelType.key}>
+              <Card variant="outlined" sx={{ 
+                bgcolor: activeModels[modelType.key] ? 'success.50' : 'grey.50',
+                borderColor: activeModels[modelType.key] ? 'success.main' : 'grey.300'
+              }}>
+                <CardContent>
+                  <Box display="flex" alignItems="center" gap={1} mb={1}>
+                    {modelType.icon}
+                    <Typography variant="subtitle2" fontWeight="bold">
+                      {modelType.label}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    {activeModels[modelType.key] || 'No model selected'}
+                  </Typography>
+                  {activeModels[modelType.key] && (
+                    <Chip 
+                      label="Active" 
+                      color="success" 
+                      size="small"
+                      icon={<CheckCircle />}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
 
         {/* Actions */}
         <Box display="flex" gap={2} mb={3}>
@@ -306,9 +355,38 @@ const ConfigPage = () => {
         </Box>
       </Paper>
 
-      {/* Available Models */}
+      {/* Model Type Tabs */}
       <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
-        <Typography variant="h5" gutterBottom>
+        <Tabs 
+          value={currentTab} 
+          onChange={(e, newValue) => setCurrentTab(newValue)}
+          sx={{ mb: 3 }}
+        >
+          {MODEL_TYPES.map((modelType, index) => (
+            <Tab 
+              key={modelType.key}
+              label={modelType.label}
+              icon={modelType.icon}
+              iconPosition="start"
+            />
+          ))}
+        </Tabs>
+
+        {/* Current Model Type Description */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            {getCurrentModelType().label} Models
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {getCurrentModelType().description}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Currently active: <strong>{activeModels[getCurrentModelType().key] || 'None'}</strong>
+          </Typography>
+        </Box>
+        
+        {/* Available Models */}
+        <Typography variant="h6" gutterBottom>
           Installed Models
         </Typography>
         
@@ -325,7 +403,7 @@ const ConfigPage = () => {
                     primary={
                       <Box display="flex" alignItems="center" gap={2}>
                         <Typography variant="h6">{model.name}</Typography>
-                        {model.name === activeModel && (
+                        {model.name === activeModels[getCurrentModelType().key] && (
                           <Chip 
                             label="Active" 
                             color="success" 
@@ -348,13 +426,13 @@ const ConfigPage = () => {
                   />
                   <ListItemSecondaryAction>
                     <Box display="flex" gap={1}>
-                      {model.name !== activeModel && (
+                      {model.name !== activeModels[getCurrentModelType().key] && (
                         <Button
                           variant="outlined"
                           size="small"
-                          onClick={() => handleSetActiveModel(model.name)}
+                          onClick={() => handleSetActiveModel(model.name, getCurrentModelType().key)}
                         >
-                          Set Active
+                          Set as {getCurrentModelType().label}
                         </Button>
                       )}
                       <IconButton
@@ -435,7 +513,25 @@ const ConfigPage = () => {
             onChange={(e) => setNewModelName(e.target.value)}
             placeholder="e.g., llama3.1, gemma2, phi3"
             helperText="Enter the name of the model you want to pull from Ollama"
+            sx={{ mb: 2 }}
           />
+          <FormControl fullWidth variant="outlined">
+            <InputLabel>Model Type</InputLabel>
+            <Select
+              value={selectedModelType}
+              onChange={(e) => setSelectedModelType(e.target.value)}
+              label="Model Type"
+            >
+              {MODEL_TYPES.map((type) => (
+                <MenuItem key={type.key} value={type.key}>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    {type.icon}
+                    {type.label}
+                  </Box>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setPullDialog(false)}>Cancel</Button>

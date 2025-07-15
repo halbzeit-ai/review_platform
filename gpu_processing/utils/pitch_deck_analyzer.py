@@ -40,12 +40,11 @@ class PitchDeckAnalyzer:
     """Simplified pitch deck analyzer for single-file processing"""
     
     def __init__(self):
-        # Model configuration - get active model from backend configuration
-        active_model = self.get_active_model()
-        self.llm_model = active_model  # Vision model for image analysis
-        self.report_model = active_model  # Text generation model
-        self.score_model = active_model  # Scoring model
-        self.science_model = active_model  # Scientific hypothesis model
+        # Model configuration - get each model type separately
+        self.llm_model = self.get_model_by_type("vision") or "gemma3:12b"  # Vision model for image analysis
+        self.report_model = self.get_model_by_type("text") or "gemma3:12b"  # Text generation model
+        self.score_model = self.get_model_by_type("scoring") or "phi4:latest"  # Scoring model
+        self.science_model = self.get_model_by_type("science") or "phi4:latest"  # Scientific hypothesis model
         
         # Analysis results storage
         self.visual_analysis_results = []
@@ -57,8 +56,8 @@ class PitchDeckAnalyzer:
         # Initialize prompts
         self._setup_prompts()
     
-    def get_active_model(self) -> str:
-        """Get the active model from backend configuration or use default"""
+    def get_model_by_type(self, model_type: str) -> str:
+        """Get the active model for a specific type from backend configuration"""
         try:
             import sqlite3
             
@@ -67,21 +66,19 @@ class PitchDeckAnalyzer:
             if os.path.exists(db_path):
                 conn = sqlite3.connect(db_path)
                 cursor = conn.cursor()
-                cursor.execute("SELECT model_name FROM model_configs WHERE is_active = 1 LIMIT 1")
+                cursor.execute("SELECT model_name FROM model_configs WHERE model_type = ? AND is_active = 1 LIMIT 1", (model_type,))
                 result = cursor.fetchone()
                 conn.close()
                 
                 if result:
-                    logger.info(f"Using configured active model: {result[0]}")
+                    logger.info(f"Using configured {model_type} model: {result[0]}")
                     return result[0]
             
         except Exception as e:
-            logger.warning(f"Could not get active model from configuration: {e}")
+            logger.warning(f"Could not get {model_type} model from configuration: {e}")
         
-        # Fallback to default model
-        default_model = "gemma3:12b"
-        logger.info(f"Using default model: {default_model}")
-        return default_model
+        # Return None to use fallback in __init__
+        return None
     
     def _setup_prompts(self):
         """Initialize all analysis prompts"""
