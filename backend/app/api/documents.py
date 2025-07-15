@@ -125,13 +125,45 @@ async def get_processing_results(
     if pitch_deck.processing_status != "completed":
         raise HTTPException(status_code=400, detail="Processing not completed yet")
     
-    # Get results from volume storage - use flat filename format
-    flat_filename = pitch_deck.file_path.replace('/', '_').replace('.pdf', '_results.json')
-    results_path = f"results/{flat_filename}"
-    results = volume_storage.get_results(results_path)
+    # Get results from database first
+    if pitch_deck.ai_analysis_results:
+        try:
+            results = json.loads(pitch_deck.ai_analysis_results)
+        except json.JSONDecodeError:
+            logger.error(f"Failed to parse stored results for pitch deck {pitch_deck_id}")
+            results = None
+    else:
+        results = None
     
+    # If no results in database, try to find and load from file system
     if not results:
-        raise HTTPException(status_code=404, detail="Results not found")
+        logger.info(f"No results in database for pitch deck {pitch_deck_id}, checking file system")
+        
+        # Find the result file using job format: job_{pitch_deck_id}_*_results.json
+        results_dir = "/mnt/shared/results"
+        pattern = f"{results_dir}/job_{pitch_deck_id}_*_results.json"
+        result_files = glob.glob(pattern)
+        
+        if result_files:
+            # Use the most recent result file
+            result_file = max(result_files, key=os.path.getctime)
+            logger.info(f"Found result file: {result_file}")
+            
+            try:
+                with open(result_file, 'r') as f:
+                    results = json.load(f)
+                
+                # Store results in database for future use
+                pitch_deck.ai_analysis_results = json.dumps(results)
+                db.commit()
+                logger.info(f"Loaded and stored results for pitch deck {pitch_deck_id}")
+                
+            except Exception as e:
+                logger.error(f"Error reading result file {result_file}: {e}")
+                raise HTTPException(status_code=500, detail=f"Error reading results: {str(e)}")
+        else:
+            logger.error(f"No result files found for pitch deck {pitch_deck_id}")
+            raise HTTPException(status_code=404, detail="Results not found")
     
     return {
         "pitch_deck_id": pitch_deck_id,
