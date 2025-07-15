@@ -39,16 +39,16 @@ def check_user_auth():
     
     # Check specific user
     email = "ramin@assadollahi.de"
-    cursor.execute("SELECT id, email, role, hashed_password, is_verified FROM users WHERE email = ?", (email,))
+    cursor.execute("SELECT id, email, role, password_hash, is_verified FROM users WHERE email = ?", (email,))
     user = cursor.fetchone()
     
     if user:
-        user_id, email, role, hashed_password, is_verified = user
+        user_id, email, role, password_hash, is_verified = user
         print(f"\nUser details for {email}:")
         print(f"  ID: {user_id}")
         print(f"  Role: {role}")
         print(f"  Verified: {is_verified}")
-        print(f"  Password hash: {hashed_password[:50]}...")
+        print(f"  Password hash: {password_hash[:50]}...")
         
         if not is_verified:
             print("  ⚠️  User is not verified! This might be the issue.")
@@ -87,7 +87,7 @@ def reset_password(email, new_password):
         
         # Update password and verify user
         cursor.execute(
-            "UPDATE users SET hashed_password = ?, is_verified = 1 WHERE email = ?",
+            "UPDATE users SET password_hash = ?, is_verified = 1 WHERE email = ?",
             (hashed_password, email)
         )
         
