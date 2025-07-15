@@ -14,19 +14,16 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/documents", tags=["documents"])
 
 async def trigger_gpu_processing(pitch_deck_id: int, file_path: str):
-    """Background task to trigger GPU processing"""
-    from ..services.gpu_processing import gpu_processing_service
+    """Background task to trigger direct GPU processing"""
+    from ..services.direct_gpu_processing import direct_gpu_service
     
-    logger.info(f"BACKGROUND TASK START: GPU processing triggered for pitch deck {pitch_deck_id} at {file_path}")
+    logger.info(f"BACKGROUND TASK START: Direct GPU processing triggered for pitch deck {pitch_deck_id} at {file_path}")
     
     try:
-        logger.info(f"Calling gpu_processing_service.trigger_processing for pitch deck {pitch_deck_id}")
-        success = await gpu_processing_service.trigger_processing(pitch_deck_id, file_path)
-        logger.info(f"gpu_processing_service.trigger_processing returned {success} for pitch deck {pitch_deck_id}")
-        if success:
-            logger.info(f"GPU processing completed successfully for pitch deck {pitch_deck_id}")
-        else:
-            logger.error(f"GPU processing RETURNED FALSE for pitch deck {pitch_deck_id}")
+        logger.info(f"Calling direct_gpu_service.process_pdf_direct for pitch deck {pitch_deck_id}")
+        results = await direct_gpu_service.process_pdf_direct(pitch_deck_id, file_path)
+        logger.info(f"Direct GPU processing completed successfully for pitch deck {pitch_deck_id}")
+        logger.info(f"Results summary: {results.get('summary', 'No summary available')}")
     except Exception as e:
         logger.error(f"BACKGROUND TASK EXCEPTION for pitch deck {pitch_deck_id}: {str(e)}")
         logger.error(f"Exception type: {type(e)}")

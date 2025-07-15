@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     DATACRUNCH_SHARED_FILESYSTEM_ID: Optional[str] = None
     DATACRUNCH_SSH_KEY_IDS: str = ""  # Comma-separated SSH key IDs for GPU instances
     SHARED_FILESYSTEM_MOUNT_PATH: str = "/mnt/shared"
+    
+    # Direct GPU Processing Configuration
+    GPU_INSTANCE_HOST: str = ""  # IP address of your persistent GPU instance
+    GPU_INSTANCE_USER: str = "root"
+    GPU_INSTANCE_SSH_KEY_PATH: str = ""  # Path to SSH private key for GPU instance
 
     # Email Configuration (Hetzner)
     SMTP_SERVER: str = "mail.halbzeit.ai"
