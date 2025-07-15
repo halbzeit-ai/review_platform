@@ -77,6 +77,7 @@ class GPUCommandService:
                 
                 # Skip if already processed
                 if command_file in self.processed_commands:
+                    logger.debug(f"Skipping already processed command: {command_file}")
                     continue
                 
                 try:
@@ -148,11 +149,20 @@ class GPUCommandService:
             
             models = []
             for model in models_response.get('models', []):
+                # Convert datetime objects to ISO strings if needed
+                modified_at = model.get('modified_at', '')
+                if hasattr(modified_at, 'isoformat'):
+                    modified_at = modified_at.isoformat()
+                elif modified_at is None:
+                    modified_at = ''
+                else:
+                    modified_at = str(modified_at)
+                
                 models.append({
-                    "name": model.get('name', ''),
-                    "size": model.get('size', 0),
-                    "modified_at": model.get('modified_at', ''),
-                    "digest": model.get('digest', '')
+                    "name": str(model.get('name', '')),
+                    "size": int(model.get('size', 0)),
+                    "modified_at": modified_at,
+                    "digest": str(model.get('digest', ''))
                 })
             
             return {
@@ -249,8 +259,21 @@ class GPUCommandService:
             
             response_file = f"{self.status_path}/{command_id}_response.json"
             
+            # Ensure response is JSON serializable
+            try:
+                json_str = json.dumps(response, indent=2, default=str)
+            except (TypeError, ValueError) as e:
+                logger.error(f"JSON serialization error for command {command_id}: {e}")
+                # Write error response instead
+                error_response = {
+                    "success": False,
+                    "error": f"JSON serialization failed: {str(e)}",
+                    "timestamp": datetime.now().isoformat()
+                }
+                json_str = json.dumps(error_response, indent=2)
+            
             with open(response_file, 'w') as f:
-                json.dump(response, f, indent=2)
+                f.write(json_str)
             
             logger.info(f"Wrote response for command {command_id}")
         
