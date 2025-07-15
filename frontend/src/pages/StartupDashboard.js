@@ -73,7 +73,9 @@ function StartupDashboard() {
 
   const fetchPitchDecks = async () => {
     try {
+      console.log('Fetching pitch decks...');
       const response = await getPitchDecks();
+      console.log('Pitch decks response:', response.data.decks);
       setPitchDecks(response.data.decks);
     } catch (error) {
       console.error('Error fetching pitch decks:', error);
