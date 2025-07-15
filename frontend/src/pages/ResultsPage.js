@@ -19,7 +19,10 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
-  IconButton
+  IconButton,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails
 } from '@mui/material';
 import {
   ArrowBack,
@@ -30,7 +33,8 @@ import {
   Group,
   Science,
   Lightbulb,
-  Home
+  Home,
+  ExpandMore
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 
@@ -38,6 +42,49 @@ const ResultsPage = () => {
   const { pitchDeckId } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation('review');
+
+  // Helper function to format text content
+  const formatText = (text) => {
+    if (!text) return '';
+    
+    // Split into paragraphs
+    const paragraphs = text.split('\n\n');
+    
+    return paragraphs.map((paragraph, index) => {
+      // Handle bold text (**text**)
+      const formattedParagraph = paragraph.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      
+      // Handle bullet points
+      if (paragraph.trim().startsWith('*') || paragraph.trim().startsWith('-')) {
+        const items = paragraph.split('\n').filter(line => line.trim().startsWith('*') || line.trim().startsWith('-'));
+        return (
+          <List key={index} dense sx={{ my: 1 }}>
+            {items.map((item, itemIndex) => (
+              <ListItem key={itemIndex} sx={{ py: 0.5 }}>
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  <CheckCircle color="success" fontSize="small" />
+                </ListItemIcon>
+                <ListItemText 
+                  primary={
+                    <span dangerouslySetInnerHTML={{ 
+                      __html: item.replace(/^[\*\-]\s*/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+                    }} />
+                  } 
+                />
+              </ListItem>
+            ))}
+          </List>
+        );
+      }
+      
+      // Regular paragraph
+      return (
+        <Typography key={index} variant="body1" paragraph>
+          <span dangerouslySetInnerHTML={{ __html: formattedParagraph }} />
+        </Typography>
+      );
+    });
+  };
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -229,9 +276,9 @@ const ResultsPage = () => {
             <Typography variant="h6" gutterBottom color="primary">
               Company Overview
             </Typography>
-            <Typography variant="body1" paragraph>
-              {results.company_offering || 'No company summary available'}
-            </Typography>
+            <Box sx={{ mb: 2 }}>
+              {formatText(results.company_offering || 'No company summary available')}
+            </Box>
             {results.key_points && results.key_points.length > 0 && (
               <Box>
                 <Typography variant="subtitle2" gutterBottom>
@@ -243,7 +290,7 @@ const ResultsPage = () => {
                       <ListItemIcon sx={{ minWidth: 32 }}>
                         <CheckCircle color="success" fontSize="small" />
                       </ListItemIcon>
-                      <ListItemText primary={point} />
+                      <ListItemText primary={formatText(point)} />
                     </ListItem>
                   ))}
                 </List>
@@ -318,19 +365,28 @@ const ResultsPage = () => {
               {t('results.analysisDetails')}
             </Typography>
             {Object.entries(results.report_chapters).map(([area, analysis]) => (
-              <Card key={area} variant="outlined" sx={{ mb: 3 }}>
-                <CardContent>
-                  <Box display="flex" alignItems="center" gap={2} mb={2}>
+              <Accordion key={area} sx={{ mb: 1 }}>
+                <AccordionSummary expandIcon={<ExpandMore />}>
+                  <Box display="flex" alignItems="center" gap={2}>
                     {getScoreIcon(area)}
                     <Typography variant="h6" fontWeight="bold">
                       {t(`areas.${area}`, area.replace('_', ' '))}
                     </Typography>
+                    {results.report_scores && results.report_scores[area] && (
+                      <Chip
+                        label={`${results.report_scores[area]}/7`}
+                        color={getScoreColor(results.report_scores[area])}
+                        size="small"
+                      />
+                    )}
                   </Box>
-                  <Typography variant="body1" paragraph>
-                    {analysis || t('results.noAnalysisAvailable')}
-                  </Typography>
-                </CardContent>
-              </Card>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Box sx={{ pt: 1 }}>
+                    {formatText(analysis || t('results.noAnalysisAvailable'))}
+                  </Box>
+                </AccordionDetails>
+              </Accordion>
             ))}
           </Box>
         )}
@@ -349,9 +405,9 @@ const ResultsPage = () => {
               <Typography variant="h6" gutterBottom>
                 {t('results.scientificHypotheses')}
               </Typography>
-              <Typography variant="body1">
-                {results.scientific_hypotheses}
-              </Typography>
+              <Box>
+                {formatText(results.scientific_hypotheses)}
+              </Box>
             </CardContent>
           </Card>
         )}
@@ -369,7 +425,7 @@ const ResultsPage = () => {
                     <ListItemIcon>
                       <Lightbulb color="warning" />
                     </ListItemIcon>
-                    <ListItemText primary={rec} />
+                    <ListItemText primary={formatText(rec)} />
                   </ListItem>
                 ))}
               </List>
