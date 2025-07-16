@@ -42,6 +42,7 @@ class ProjectUpload(BaseModel):
     file_size: int
     upload_date: str
     file_type: str
+    pages: Optional[int] = None
 
 class ProjectUploadsResponse(BaseModel):
     company_id: str
@@ -284,16 +285,32 @@ async def get_project_uploads(
             filename = os.path.basename(file_path)
             file_size = 0
             file_type = "PDF"
+            pages = None
             
             if os.path.exists(full_path):
                 file_size = os.path.getsize(full_path)
+            
+            # Try to get page count from analysis results
+            if results_file_path:
+                try:
+                    results_full_path = os.path.join("/mnt/shared", results_file_path)
+                    if os.path.exists(results_full_path):
+                        with open(results_full_path, 'r') as f:
+                            results_data = json.load(f)
+                            # Try to get page count from visual analysis results
+                            visual_results = results_data.get("visual_analysis_results", [])
+                            if visual_results:
+                                pages = len(visual_results)
+                except Exception as e:
+                    logger.warning(f"Could not extract page count from results file: {e}")
             
             uploads.append(ProjectUpload(
                 filename=filename,
                 file_path=file_path,
                 file_size=file_size,
                 upload_date=created_at,
-                file_type=file_type
+                file_type=file_type,
+                pages=pages
             ))
         
         return ProjectUploadsResponse(

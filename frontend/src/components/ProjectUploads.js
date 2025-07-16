@@ -3,10 +3,6 @@ import {
   Box,
   Typography,
   Paper,
-  Grid,
-  Card,
-  CardContent,
-  CardActions,
   Button,
   Alert,
   CircularProgress,
@@ -161,70 +157,54 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
     }
   };
 
-  const UploadCard = ({ upload }) => (
-    <Card 
+  const UploadRow = ({ upload }) => (
+    <Paper 
       sx={{ 
+        p: 2, 
+        mb: 1,
         cursor: 'pointer',
-        transition: 'all 0.2s',
         '&:hover': { 
-          transform: 'translateY(-2px)',
-          boxShadow: 3 
+          backgroundColor: 'action.hover'
         }
       }}
       onClick={() => handleViewDetails(upload)}
     >
-      <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
           {getFileIcon(upload.file_type)}
           <Box sx={{ ml: 2, flex: 1 }}>
-            <Typography variant="h6" noWrap>
+            <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
               {upload.filename}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {formatFileSize(upload.file_size)}
+              {formatFileSize(upload.file_size)} • {upload.pages ? `${upload.pages} pages` : 'Processing...'} • {new Date(upload.upload_date).toLocaleString()}
             </Typography>
           </Box>
         </Box>
         
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-          <Chip 
-            label={upload.file_type.toUpperCase()} 
-            variant="outlined"
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <IconButton
             size="small"
-          />
-          <Chip 
-            label={new Date(upload.upload_date).toLocaleDateString()} 
-            variant="outlined"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewDetails(upload);
+            }}
+          >
+            <InfoIcon />
+          </IconButton>
+          <IconButton
             size="small"
-            color="primary"
-          />
+            onClick={(e) => {
+              e.stopPropagation();
+              // TODO: Implement download functionality
+            }}
+            disabled
+          >
+            <DownloadIcon />
+          </IconButton>
         </Box>
-      </CardContent>
-      
-      <CardActions>
-        <Button
-          size="small"
-          startIcon={<InfoIcon />}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleViewDetails(upload);
-          }}
-        >
-          Details
-        </Button>
-        <Button
-          size="small"
-          startIcon={<DownloadIcon />}
-          onClick={(e) => {
-            e.stopPropagation();
-            // TODO: Implement download functionality
-          }}
-          disabled
-        >
-          Download
-        </Button>
-      </CardActions>
-    </Card>
+      </Box>
+    </Paper>
   );
 
   const DetailsDialog = () => (
@@ -374,13 +354,11 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
         </Typography>
       </Alert>
       
-      <Grid container spacing={3}>
+      <Box>
         {uploads.map((upload, index) => (
-          <Grid item xs={12} md={6} lg={4} key={index}>
-            <UploadCard upload={upload} />
-          </Grid>
+          <UploadRow key={index} upload={upload} />
         ))}
-      </Grid>
+      </Box>
       
       {uploads.length === 0 && !loading && (
         <Paper sx={{ p: 4, textAlign: 'center', mt: 3 }}>
