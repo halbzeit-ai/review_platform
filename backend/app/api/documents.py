@@ -102,7 +102,7 @@ async def upload_document(
             user_id=current_user.id,
             file_name=file.filename,
             file_path=file_path,
-            processing_status="pending"
+            processing_status="processing"  # Start with processing for better UX
         )
         db.add(pitch_deck)
         db.commit()
@@ -118,7 +118,7 @@ async def upload_document(
             "filename": file.filename,
             "pitch_deck_id": pitch_deck.id,
             "file_path": file_path,
-            "processing_status": "pending"
+            "processing_status": "processing"  # Return processing status immediately
         }
     except Exception as e:
         logger.error(f"Upload failed: {str(e)}")

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Container, Paper, Typography, Button, Grid, Alert, CircularProgress, List, ListItem, ListItemText, Divider, Chip, Box } from '@mui/material';
-import { Upload, CheckCircle, Pending, Error, Visibility } from '@mui/icons-material';
+import { Upload, CheckCircle, Pending, Error, Visibility, Schedule } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { uploadPitchDeck, getPitchDecks } from '../services/api';
@@ -45,7 +45,20 @@ function StartupDashboard() {
     try {
       const response = await uploadPitchDeck(file);
       setUploadStatus({ type: 'success', message: t('startup.uploadSection.success') });
-      // Refresh the pitch decks list
+      
+      // Immediately add the deck to the list for better UX
+      if (response.data && response.data.pitch_deck_id) {
+        const newDeck = {
+          id: response.data.pitch_deck_id,
+          file_name: response.data.filename,
+          processing_status: response.data.processing_status || 'processing',
+          created_at: new Date().toISOString(),
+          user_id: null // Will be filled by next fetch
+        };
+        setPitchDecks(prev => [newDeck, ...prev]);
+      }
+      
+      // Also refresh the pitch decks list
       fetchPitchDecks();
     } catch (error) {
       let errorMessage = t('startup.uploadSection.errors.uploadFailed');
@@ -87,13 +100,15 @@ function StartupDashboard() {
     switch (status) {
       case 'completed':
       case 'reviewed':
-        return <CheckCircle color="success" />;
+        return <CheckCircle />;
       case 'processing':
-        return <CircularProgress size={20} />;
+        return <CircularProgress size={16} />;
       case 'failed':
-        return <Error color="error" />;
+        return <Error />;
+      case 'pending':
+        return <Schedule />;
       default:
-        return <Pending color="action" />;
+        return <Pending />;
     }
   };
 
@@ -106,6 +121,8 @@ function StartupDashboard() {
         return 'primary';
       case 'failed':
         return 'error';
+      case 'pending':
+        return 'warning';
       default:
         return 'default';
     }
@@ -115,15 +132,17 @@ function StartupDashboard() {
     switch (status) {
       case 'completed':
       case 'reviewed':
-        return t('startup.decksSection.status.reviewed');
+        return 'Bewertet';
       case 'processing':
-        return t('startup.decksSection.status.processing');
+        return 'Wird analysiert...';
       case 'failed':
-        return t('startup.decksSection.status.failed');
+        return 'Fehlgeschlagen';
+      case 'pending':
+        return 'Warte auf Verarbeitung';
       case 'uploaded':
-        return t('startup.decksSection.status.uploaded');
+        return 'Hochgeladen';
       default:
-        return t('startup.decksSection.status.uploaded');
+        return 'Hochgeladen';
     }
   };
 
@@ -135,13 +154,18 @@ function StartupDashboard() {
   useEffect(() => {
     fetchPitchDecks();
     
-    // Poll for deck status updates every 10 seconds
+    // Adaptive polling - faster when processing, slower when idle
     const interval = setInterval(() => {
       fetchPitchDecks();
-    }, 10000);
+    }, hasProcessingDecks ? 2000 : 10000); // 2s when processing, 10s when idle
     
     return () => clearInterval(interval);
-  }, []);
+  }, [hasProcessingDecks]);
+
+  // Check if there are any decks currently processing
+  const hasProcessingDecks = pitchDecks.some(deck => 
+    deck.processing_status === 'processing' || deck.processing_status === 'pending'
+  );
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4 }}>
