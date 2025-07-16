@@ -19,24 +19,58 @@ router = APIRouter(prefix="/documents", tags=["documents"])
 async def trigger_gpu_processing(pitch_deck_id: int, file_path: str):
     """Background task to trigger HTTP-based GPU processing"""
     from ..services.gpu_http_client import gpu_http_client
+    from ..db.database import SessionLocal
     
     logger.info(f"BACKGROUND TASK START: HTTP-based GPU processing triggered for pitch deck {pitch_deck_id} at {file_path}")
     
+    # Create database session for background task
+    db = SessionLocal()
     try:
+        # Update status to processing
+        pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == pitch_deck_id).first()
+        if pitch_deck:
+            pitch_deck.processing_status = "processing"
+            db.commit()
+            logger.info(f"Updated pitch deck {pitch_deck_id} status to 'processing'")
+        
         logger.info(f"Calling gpu_http_client.process_pdf for pitch deck {pitch_deck_id}")
         results = gpu_http_client.process_pdf(pitch_deck_id, file_path)
         
         if results.get("success"):
             logger.info(f"HTTP-based GPU processing completed successfully for pitch deck {pitch_deck_id}")
             logger.info(f"Results file: {results.get('results_file')}")
+            
+            # Update status to completed
+            if pitch_deck:
+                pitch_deck.processing_status = "completed"
+                db.commit()
+                logger.info(f"Updated pitch deck {pitch_deck_id} status to 'completed'")
         else:
             logger.error(f"HTTP-based GPU processing failed for pitch deck {pitch_deck_id}: {results.get('error')}")
+            
+            # Update status to failed
+            if pitch_deck:
+                pitch_deck.processing_status = "failed"
+                db.commit()
+                logger.info(f"Updated pitch deck {pitch_deck_id} status to 'failed'")
             
     except Exception as e:
         logger.error(f"BACKGROUND TASK EXCEPTION for pitch deck {pitch_deck_id}: {str(e)}")
         logger.error(f"Exception type: {type(e)}")
         import traceback
         logger.error(f"Full traceback: {traceback.format_exc()}")
+        
+        # Update status to failed on exception
+        try:
+            pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == pitch_deck_id).first()
+            if pitch_deck:
+                pitch_deck.processing_status = "failed"
+                db.commit()
+                logger.info(f"Updated pitch deck {pitch_deck_id} status to 'failed' due to exception")
+        except Exception as db_error:
+            logger.error(f"Failed to update database status: {db_error}")
+    finally:
+        db.close()
 
 @router.post("/upload")
 async def upload_document(
