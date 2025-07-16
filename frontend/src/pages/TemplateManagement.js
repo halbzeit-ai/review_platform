@@ -138,8 +138,9 @@ const TemplateManagement = () => {
   const loadSectorTemplates = async (sector) => {
     try {
       setSelectedSector(sector);
-      const templatesData = await getSectorTemplates(sector.id);
-      setTemplates(templatesData);
+      const templatesResponse = await getSectorTemplates(sector.id);
+      const templatesData = templatesResponse.data || templatesResponse;
+      setTemplates(Array.isArray(templatesData) ? templatesData : []);
       
       // Update breadcrumbs
       setBreadcrumbs([
@@ -149,7 +150,9 @@ const TemplateManagement = () => {
         { label: sector.display_name, path: null }
       ]);
     } catch (err) {
-      setError(err.message);
+      console.error('Error loading sector templates:', err);
+      setError(err.response?.data?.detail || err.message || 'Failed to load templates');
+      setTemplates([]);
     }
   };
 
