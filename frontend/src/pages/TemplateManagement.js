@@ -159,11 +159,13 @@ const TemplateManagement = () => {
   const loadTemplateDetails = async (template) => {
     try {
       setSelectedTemplate(template);
-      const details = await getTemplateDetails(template.id);
+      const detailsResponse = await getTemplateDetails(template.id);
+      const details = detailsResponse.data || detailsResponse;
       setTemplateDetails(details);
       setTemplateDialogOpen(true);
     } catch (err) {
-      setError(err.message);
+      console.error('Error loading template details:', err);
+      setError(err.response?.data?.detail || err.message || 'Failed to load template details');
     }
   };
 
@@ -334,14 +336,14 @@ const TemplateManagement = () => {
       </DialogTitle>
       
       <DialogContent>
-        {templateDetails && (
+        {templateDetails && templateDetails.template && (
           <Box>
             <Typography variant="body2" sx={{ mb: 3 }}>
-              {templateDetails.template.description}
+              {templateDetails.template.description || 'No description available'}
             </Typography>
             
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
-              {templateDetails.template.specialized_analysis.map((analysis, index) => (
+              {(templateDetails.template.specialized_analysis || []).map((analysis, index) => (
                 <Chip 
                   key={index} 
                   label={analysis.replace('_', ' ')} 
@@ -352,10 +354,15 @@ const TemplateManagement = () => {
             </Box>
             
             <Typography variant="h6" sx={{ mb: 2 }}>
-              Analysis Chapters ({templateDetails.chapters.length})
+              Analysis Chapters ({templateDetails.chapters ? templateDetails.chapters.length : 0})
             </Typography>
             
-            {templateDetails.chapters.map((chapter, index) => (
+            {(!templateDetails.chapters || templateDetails.chapters.length === 0) ? (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                No chapters configured for this template. This template needs to be set up with analysis chapters and questions.
+              </Alert>
+            ) : (
+              (templateDetails.chapters || []).map((chapter, index) => (
               <Accordion key={chapter.id} sx={{ mb: 1 }}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                   <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
@@ -410,7 +417,7 @@ const TemplateManagement = () => {
                   </List>
                 </AccordionDetails>
               </Accordion>
-            ))}
+            )))}
           </Box>
         )}
       </DialogContent>
