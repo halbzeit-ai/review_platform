@@ -80,11 +80,38 @@ class PitchDeckAnalyzer:
         # Return None to use fallback in __init__
         return None
     
+    def get_pipeline_prompt(self, stage_name: str) -> str:
+        """Get configurable prompt for a specific pipeline stage"""
+        try:
+            import sqlite3
+            
+            # Try to get prompt from backend database
+            db_path = "/opt/review-platform/backend/sql_app.db"
+            if os.path.exists(db_path):
+                conn = sqlite3.connect(db_path)
+                cursor = conn.cursor()
+                cursor.execute("SELECT prompt_text FROM pipeline_prompts WHERE stage_name = ? AND is_active = 1 LIMIT 1", (stage_name,))
+                result = cursor.fetchone()
+                conn.close()
+                
+                if result:
+                    logger.info(f"Using configured prompt for {stage_name}: {result[0][:50]}...")
+                    return result[0]
+            
+        except Exception as e:
+            logger.warning(f"Could not get {stage_name} prompt from configuration: {e}")
+        
+        # Return None to use fallback in _setup_prompts
+        return None
+    
     def _setup_prompts(self):
         """Initialize all analysis prompts"""
+        # Get configurable prompts from database
+        image_prompt = self.get_pipeline_prompt("image_analysis") or "Describe this image and make sure to include anything notable about it (include text you see in the image):"
+        
         self.prompts = {
-            # Image analysis
-            "describe_image": "Describe this image and make sure to include anything notable about it (include text you see in the image):",
+            # Image analysis (configurable)
+            "describe_image": image_prompt,
             
             # Role and task definitions
             "role": "You are an analyst working at a Venture Capital company. Here is the descriptions of a startup's pitchdeck.",

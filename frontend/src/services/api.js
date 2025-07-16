@@ -77,4 +77,20 @@ export const getMyCustomizations = () =>
 export const getPerformanceMetrics = () =>
   api.get('/healthcare-templates/performance-metrics');
 
+// Pipeline Configuration API
+export const getPipelinePrompts = () =>
+  api.get('/pipeline/prompts');
+
+export const getPipelinePromptByStage = (stageName) =>
+  api.get(`/pipeline/prompts/${stageName}`);
+
+export const updatePipelinePrompt = (stageName, promptText) =>
+  api.put(`/pipeline/prompts/${stageName}`, { prompt_text: promptText });
+
+export const resetPipelinePrompt = (stageName) =>
+  api.post(`/pipeline/prompts/${stageName}/reset`);
+
+export const getPipelineStages = () =>
+  api.get('/pipeline/stages');
+
 export default api;

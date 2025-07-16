@@ -91,12 +91,13 @@ class HealthcareTemplateAnalyzer:
                 conn = sqlite3.connect(self.backend_db_path)
                 cursor = conn.cursor()
                 cursor.execute(
-                    "SELECT prompt_text FROM pipeline_prompts WHERE stage_name = 'image_analysis' AND enabled = 1 LIMIT 1"
+                    "SELECT prompt_text FROM pipeline_prompts WHERE stage_name = 'image_analysis' AND is_active = 1 LIMIT 1"
                 )
                 result = cursor.fetchone()
                 conn.close()
                 
                 if result:
+                    logger.info(f"Using configured image analysis prompt: {result[0][:50]}...")
                     return result[0]
         except Exception as e:
             logger.warning(f"Could not get image analysis prompt: {e}")

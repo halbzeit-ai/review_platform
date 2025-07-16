@@ -55,7 +55,12 @@ import {
   getTemplateDetails,
   getPerformanceMetrics,
   customizeTemplate,
-  getMyCustomizations 
+  getMyCustomizations,
+  getPipelinePrompts,
+  getPipelinePromptByStage,
+  updatePipelinePrompt,
+  resetPipelinePrompt,
+  getPipelineStages
 } from '../services/api';
 
 const TemplateManagement = () => {
@@ -72,6 +77,13 @@ const TemplateManagement = () => {
   const [customizations, setCustomizations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Pipeline configuration state
+  const [pipelinePrompts, setPipelinePrompts] = useState({});
+  const [selectedPromptStage, setSelectedPromptStage] = useState('image_analysis');
+  const [promptText, setPromptText] = useState('');
+  const [promptLoading, setPromptLoading] = useState(false);
+  const [promptError, setPromptError] = useState(null);
   
   // Dialog states
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
@@ -102,20 +114,28 @@ const TemplateManagement = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      const [sectorsResponse, metricsResponse, customizationsResponse] = await Promise.all([
+      const [sectorsResponse, metricsResponse, customizationsResponse, pipelineResponse] = await Promise.all([
         getHealthcareSectors(),
         getPerformanceMetrics(),
-        getMyCustomizations()
+        getMyCustomizations(),
+        getPipelinePrompts()
       ]);
       
       // Extract data from API responses
       const sectorsData = sectorsResponse.data || sectorsResponse;
       const metricsData = metricsResponse.data || metricsResponse;
       const customizationsData = customizationsResponse.data || customizationsResponse;
+      const pipelineData = pipelineResponse.data || pipelineResponse;
       
       setSectors(Array.isArray(sectorsData) ? sectorsData : []);
       setPerformanceMetrics(metricsData);
       setCustomizations(Array.isArray(customizationsData) ? customizationsData : []);
+      setPipelinePrompts(pipelineData.prompts || {});
+      
+      // Set initial prompt text for image_analysis
+      if (pipelineData.prompts && pipelineData.prompts.image_analysis) {
+        setPromptText(pipelineData.prompts.image_analysis);
+      }
       
       // Load templates for first sector by default
       if (sectorsData && sectorsData.length > 0) {
@@ -185,6 +205,76 @@ const TemplateManagement = () => {
       setCustomizeDialogOpen(false);
     } catch (err) {
       setError(err.message);
+    }
+  };
+
+  // Pipeline prompt management functions
+  const handlePromptStageChange = async (stageName) => {
+    try {
+      setSelectedPromptStage(stageName);
+      setPromptLoading(true);
+      setPromptError(null);
+      
+      const response = await getPipelinePromptByStage(stageName);
+      const promptData = response.data || response;
+      setPromptText(promptData.prompt_text || '');
+      
+    } catch (err) {
+      console.error('Error loading prompt:', err);
+      setPromptError(err.response?.data?.detail || err.message || 'Failed to load prompt');
+    } finally {
+      setPromptLoading(false);
+    }
+  };
+
+  const handleSavePrompt = async () => {
+    try {
+      setPromptLoading(true);
+      setPromptError(null);
+      
+      await updatePipelinePrompt(selectedPromptStage, promptText);
+      
+      // Update local state
+      setPipelinePrompts(prev => ({
+        ...prev,
+        [selectedPromptStage]: promptText
+      }));
+      
+      setError(null);
+      // Show success message briefly
+      setTimeout(() => setPromptError(null), 3000);
+      
+    } catch (err) {
+      console.error('Error saving prompt:', err);
+      setPromptError(err.response?.data?.detail || err.message || 'Failed to save prompt');
+    } finally {
+      setPromptLoading(false);
+    }
+  };
+
+  const handleResetPrompt = async () => {
+    try {
+      setPromptLoading(true);
+      setPromptError(null);
+      
+      const response = await resetPipelinePrompt(selectedPromptStage);
+      const resetData = response.data || response;
+      
+      // Update local state with reset prompt
+      const newPromptText = resetData.default_prompt || '';
+      setPromptText(newPromptText);
+      setPipelinePrompts(prev => ({
+        ...prev,
+        [selectedPromptStage]: newPromptText
+      }));
+      
+      setError(null);
+      
+    } catch (err) {
+      console.error('Error resetting prompt:', err);
+      setPromptError(err.response?.data?.detail || err.message || 'Failed to reset prompt');
+    } finally {
+      setPromptLoading(false);
     }
   };
 
@@ -518,6 +608,108 @@ const TemplateManagement = () => {
     </Box>
   );
 
+  const PipelineSettingsContent = () => (
+    <Box>
+      <Typography variant="h5" sx={{ mb: 3 }}>
+        Pipeline Configuration
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+        Configure the prompts used in the PDF processing pipeline. The image analysis prompt controls how the AI describes each slide of the pitch deck.
+      </Typography>
+
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={8}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Image Analysis Prompt
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              This prompt is used by the vision AI model to describe each slide of the pitch deck. 
+              It forms the foundation for all subsequent analysis steps.
+            </Typography>
+
+            {promptError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {promptError}
+              </Alert>
+            )}
+
+            <TextField
+              fullWidth
+              multiline
+              rows={6}
+              label="Image Analysis Prompt"
+              value={promptText}
+              onChange={(e) => setPromptText(e.target.value)}
+              disabled={promptLoading}
+              sx={{ mb: 3 }}
+              helperText="Describe how the AI should analyze each slide image"
+            />
+
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="contained"
+                onClick={handleSavePrompt}
+                disabled={promptLoading || !promptText.trim()}
+                startIcon={promptLoading ? <CircularProgress size={20} /> : null}
+              >
+                {promptLoading ? 'Saving...' : 'Save Prompt'}
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={handleResetPrompt}
+                disabled={promptLoading}
+                color="secondary"
+              >
+                Reset to Default
+              </Button>
+            </Box>
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Current Settings
+            </Typography>
+            
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                Vision Model
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Configured in Model Configuration
+              </Typography>
+            </Box>
+
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                Processing Stage
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Image Analysis (PDF → Descriptions)
+              </Typography>
+            </Box>
+
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                Current Prompt Length
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {promptText.length} characters
+              </Typography>
+            </Box>
+
+            <Alert severity="info" sx={{ mt: 2 }}>
+              Changes to prompts will affect all new PDF processing. 
+              Existing analyses will not be reprocessed.
+            </Alert>
+          </Paper>
+        </Grid>
+      </Grid>
+    </Box>
+  );
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -577,6 +769,7 @@ const TemplateManagement = () => {
           <Tab label="Template Library" />
           <Tab label="My Customizations" />
           <Tab label="Performance Metrics" />
+          <Tab label="Pipeline Settings" />
         </Tabs>
 
         <TabPanel value={activeTab} index={0}>
@@ -663,6 +856,10 @@ const TemplateManagement = () => {
 
         <TabPanel value={activeTab} index={3}>
           <PerformanceMetricsPanel />
+        </TabPanel>
+
+        <TabPanel value={activeTab} index={4}>
+          <PipelineSettingsContent />
         </TabPanel>
       </Paper>
 
