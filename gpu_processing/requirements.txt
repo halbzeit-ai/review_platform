@@ -33,6 +33,7 @@ pandas>=2.0.0
 # API and HTTP utilities
 requests>=2.31.0
 httpx>=0.24.0
+flask>=2.3.0
 
 # Configuration and environment
 python-dotenv>=1.0.0

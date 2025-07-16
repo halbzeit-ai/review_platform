@@ -10,7 +10,7 @@ import os
 from ..db.models import User, ModelConfig
 from ..db.database import get_db
 from .auth import get_current_user
-from ..services.gpu_communication import gpu_service
+from ..services.gpu_http_client import gpu_http_client
 
 logger = logging.getLogger(__name__)
 
@@ -43,8 +43,8 @@ async def get_models(
         raise HTTPException(status_code=403, detail="Only GPs can access model configuration")
     
     try:
-        # Get installed models from GPU instance via shared filesystem
-        gpu_models = await gpu_service.get_installed_models()
+        # Get installed models from GPU instance via HTTP
+        gpu_models = gpu_http_client.get_installed_models()
         models = []
         
         for model in gpu_models:
@@ -137,7 +137,7 @@ async def set_active_model(
     
     try:
         # Verify the model exists on GPU instance
-        gpu_models = await gpu_service.get_installed_models()
+        gpu_models = gpu_http_client.get_installed_models()
         model_exists = any(model.name == request.model_name for model in gpu_models)
         
         if not model_exists:
@@ -185,7 +185,7 @@ async def pull_model(
     
     try:
         # Send pull command to GPU instance
-        success = await gpu_service.pull_model(request.model_name)
+        success = gpu_http_client.pull_model(request.model_name)
         
         if not success:
             raise HTTPException(status_code=500, detail="Failed to send pull command to GPU instance")
@@ -210,7 +210,7 @@ async def delete_model(
     
     try:
         # Send delete command to GPU instance
-        success = await gpu_service.delete_model(request.model_name)
+        success = gpu_http_client.delete_model(request.model_name)
         
         if not success:
             raise HTTPException(status_code=500, detail="Failed to send delete command to GPU instance")

@@ -1,0 +1,21 @@
+[Unit]
+Description=GPU HTTP Server - Model management API
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/gpu_processing
+ExecStart=/usr/bin/python3 /opt/gpu_processing/gpu_http_server.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Environment variables
+Environment=PYTHONPATH=/opt/gpu_processing
+Environment=OLLAMA_HOST=127.0.0.1:11434
+Environment=FLASK_ENV=production
+
+[Install]
+WantedBy=multi-user.target
