@@ -102,22 +102,34 @@ const TemplateManagement = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      const [sectorsData, metricsData, customizationsData] = await Promise.all([
+      const [sectorsResponse, metricsResponse, customizationsResponse] = await Promise.all([
         getHealthcareSectors(),
         getPerformanceMetrics(),
         getMyCustomizations()
       ]);
       
-      setSectors(sectorsData);
+      // Extract data from API responses
+      const sectorsData = sectorsResponse.data || sectorsResponse;
+      const metricsData = metricsResponse.data || metricsResponse;
+      const customizationsData = customizationsResponse.data || customizationsResponse;
+      
+      setSectors(Array.isArray(sectorsData) ? sectorsData : []);
       setPerformanceMetrics(metricsData);
-      setCustomizations(customizationsData);
+      setCustomizations(Array.isArray(customizationsData) ? customizationsData : []);
       
       // Load templates for first sector by default
-      if (sectorsData.length > 0) {
+      if (sectorsData && sectorsData.length > 0) {
         await loadSectorTemplates(sectorsData[0]);
       }
     } catch (err) {
-      setError(err.message);
+      console.error('Error loading initial data:', err);
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        // Authentication error - redirect to login
+        localStorage.removeItem('user');
+        navigate('/login');
+      } else {
+        setError(err.response?.data?.detail || err.message || 'Failed to load data');
+      }
     } finally {
       setLoading(false);
     }

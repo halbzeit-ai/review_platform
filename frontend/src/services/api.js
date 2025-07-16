@@ -35,14 +35,8 @@ export const submitQuestion = (reviewId, question) =>
 export const submitAnswer = (questionId, answer) =>
   api.post(`/questions/${questionId}/answer`, { answer_text: answer });
 
-export const getAllUsers = () => {
-  const user = JSON.parse(localStorage.getItem('user'));
-  return api.get('/auth/users', {
-    headers: {
-      'Authorization': `Bearer ${user?.access_token}`
-    }
-  });
-};
+export const getAllUsers = () => 
+  api.get('/auth/users');
 
 export const getPitchDecks = () => api.get('/decks');
 
