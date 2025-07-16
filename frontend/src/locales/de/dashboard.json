@@ -28,7 +28,9 @@
       },
       "status": {
         "uploaded": "Hochgeladen",
-        "processing": "Wird verarbeitet",
+        "pending": "Warte auf Verarbeitung",
+        "processing": "Wird analysiert...",
+        "completed": "Bewertet",
         "reviewed": "Bewertet",
         "failed": "Fehlgeschlagen"
       },

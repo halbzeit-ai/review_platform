@@ -131,18 +131,19 @@ function StartupDashboard() {
   const getStatusLabel = (status) => {
     switch (status) {
       case 'completed':
+        return t('startup.decksSection.status.completed');
       case 'reviewed':
-        return 'Bewertet';
+        return t('startup.decksSection.status.reviewed');
       case 'processing':
-        return 'Wird analysiert...';
+        return t('startup.decksSection.status.processing');
       case 'failed':
-        return 'Fehlgeschlagen';
+        return t('startup.decksSection.status.failed');
       case 'pending':
-        return 'Warte auf Verarbeitung';
+        return t('startup.decksSection.status.pending');
       case 'uploaded':
-        return 'Hochgeladen';
+        return t('startup.decksSection.status.uploaded');
       default:
-        return 'Hochgeladen';
+        return t('startup.decksSection.status.uploaded');
     }
   };
 

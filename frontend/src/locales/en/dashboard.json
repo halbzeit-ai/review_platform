@@ -28,7 +28,9 @@
       },
       "status": {
         "uploaded": "Uploaded",
-        "processing": "Processing",
+        "pending": "Waiting for processing",
+        "processing": "Being analyzed...",
+        "completed": "Evaluated",
         "reviewed": "Reviewed",
         "failed": "Failed"
       },
