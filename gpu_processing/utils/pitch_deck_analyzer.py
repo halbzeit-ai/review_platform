@@ -11,6 +11,7 @@ from PIL import Image
 from io import BytesIO
 import ollama
 from pdf2image import convert_from_path
+from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,9 @@ class PitchDeckAnalyzer:
     """Simplified pitch deck analyzer for single-file processing"""
     
     def __init__(self):
+        # Load environment variables from .env.gpu
+        load_dotenv('/opt/gpu_processing/.env.gpu')
+        
         # Model configuration - get each model type separately
         self.llm_model = self.get_model_by_type("vision") or "gemma3:12b"  # Vision model for image analysis
         self.report_model = self.get_model_by_type("text") or "gemma3:12b"  # Text generation model
@@ -53,8 +57,8 @@ class PitchDeckAnalyzer:
         self.scientific_hypotheses = ""
         self.company_offering = ""
         
-        # Project-based storage
-        self.project_root = "/mnt/shared/projects"
+        # Project-based storage - read from environment
+        self.project_root = os.path.join(os.getenv('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/CPU-GPU'), 'projects')
         
         # Initialize prompts
         self._setup_prompts()
