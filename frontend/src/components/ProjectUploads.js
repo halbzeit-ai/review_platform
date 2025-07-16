@@ -33,7 +33,7 @@ import {
   Close as CloseIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { getProjectUploads } from '../services/api';
+import { getProjectUploads, uploadPitchDeck } from '../services/api';
 
 const ProjectUploads = ({ companyId, onUploadComplete }) => {
   const { t } = useTranslation();
@@ -42,6 +42,8 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
   const [error, setError] = useState(null);
   const [selectedUpload, setSelectedUpload] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState(null);
 
   useEffect(() => {
     if (companyId) {
@@ -74,6 +76,72 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
   const handleCloseDetails = () => {
     setDetailsOpen(false);
     setSelectedUpload(null);
+  };
+
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Check file size (50MB limit)
+    const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+    if (file.size > maxSize) {
+      setUploadStatus({ 
+        type: 'error', 
+        message: `File too large. Maximum size is 50MB. Your file is ${(file.size / (1024 * 1024)).toFixed(1)}MB.` 
+      });
+      event.target.value = '';
+      return;
+    }
+
+    // Check file type
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      setUploadStatus({ 
+        type: 'error', 
+        message: 'Only PDF files are allowed.' 
+      });
+      event.target.value = '';
+      return;
+    }
+
+    setUploading(true);
+    setUploadStatus(null);
+
+    try {
+      const response = await uploadPitchDeck(file);
+      setUploadStatus({ 
+        type: 'success', 
+        message: 'File uploaded successfully!' 
+      });
+      
+      // Refresh the uploads list
+      loadUploads();
+      
+      // Call callback if provided
+      if (onUploadComplete) {
+        onUploadComplete(response.data);
+      }
+      
+    } catch (error) {
+      let errorMessage = 'Upload failed. Please try again.';
+      
+      // Handle specific error cases
+      if (error.response?.status === 413) {
+        errorMessage = 'File too large. Maximum size is 50MB.';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.detail || 'Invalid file type.';
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      }
+      
+      setUploadStatus({ 
+        type: 'error', 
+        message: errorMessage
+      });
+    } finally {
+      setUploading(false);
+      // Reset file input
+      event.target.value = '';
+    }
   };
 
   const formatFileSize = (bytes) => {
@@ -270,16 +338,41 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
         <Typography variant="h5">
           File Uploads
         </Typography>
-        <Button 
-          variant="outlined" 
-          startIcon={<UploadIcon />}
-          onClick={() => {
-            // TODO: Implement upload functionality or navigate to upload page
-          }}
-        >
-          Upload New File
-        </Button>
+        <Box>
+          <input
+            accept="application/pdf"
+            style={{ display: 'none' }}
+            id="upload-pitch-deck"
+            type="file"
+            onChange={handleFileUpload}
+            disabled={uploading}
+          />
+          <label htmlFor="upload-pitch-deck">
+            <Button 
+              variant="outlined" 
+              component="span"
+              startIcon={uploading ? <CircularProgress size={20} /> : <UploadIcon />}
+              disabled={uploading}
+            >
+              {uploading ? 'Uploading...' : 'Upload New File'}
+            </Button>
+          </label>
+        </Box>
       </Box>
+      
+      {/* Upload Status */}
+      {uploadStatus && (
+        <Alert severity={uploadStatus.type} sx={{ mb: 3 }}>
+          {uploadStatus.message}
+        </Alert>
+      )}
+      
+      {/* Upload Instructions */}
+      <Alert severity="info" sx={{ mb: 3 }}>
+        <Typography variant="body2">
+          <strong>Upload Instructions:</strong> Only PDF files are allowed. Maximum file size: 50MB.
+        </Typography>
+      </Alert>
       
       <Grid container spacing={3}>
         {uploads.map((upload, index) => (
@@ -289,7 +382,7 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
         ))}
       </Grid>
       
-      {uploads.length === 0 && (
+      {uploads.length === 0 && !loading && (
         <Paper sx={{ p: 4, textAlign: 'center', mt: 3 }}>
           <UploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
           <Typography variant="h6" color="text.secondary" gutterBottom>
@@ -298,15 +391,24 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Upload your first pitch deck to get started with the analysis.
           </Typography>
-          <Button 
-            variant="contained" 
-            startIcon={<UploadIcon />}
-            onClick={() => {
-              // TODO: Implement upload functionality or navigate to upload page
-            }}
-          >
-            Upload Pitch Deck
-          </Button>
+          <input
+            accept="application/pdf"
+            style={{ display: 'none' }}
+            id="upload-pitch-deck-empty"
+            type="file"
+            onChange={handleFileUpload}
+            disabled={uploading}
+          />
+          <label htmlFor="upload-pitch-deck-empty">
+            <Button 
+              variant="contained" 
+              component="span"
+              startIcon={uploading ? <CircularProgress size={20} /> : <UploadIcon />}
+              disabled={uploading}
+            >
+              {uploading ? 'Uploading...' : 'Upload Pitch Deck'}
+            </Button>
+          </label>
         </Paper>
       )}
       
