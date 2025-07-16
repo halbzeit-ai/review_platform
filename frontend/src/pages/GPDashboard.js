@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, IconButton, Box, Snackbar, Alert } from '@mui/material';
-import { Delete as DeleteIcon, Settings, Template } from '@mui/icons-material';
+import { Delete as DeleteIcon, Settings, Assignment } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { getAllUsers, getPitchDecks, updateUserRole, deleteUser } from '../services/api';
@@ -119,7 +119,7 @@ function GPDashboard() {
         <Box display="flex" gap={2}>
           <Button
             variant="outlined"
-            startIcon={<Template />}
+            startIcon={<Assignment />}
             onClick={() => navigate('/templates')}
           >
             Analysis Templates
