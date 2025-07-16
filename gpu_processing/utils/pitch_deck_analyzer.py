@@ -167,7 +167,7 @@ class PitchDeckAnalyzer:
             os.makedirs(uploads_path, exist_ok=True)
             os.makedirs(exports_path, exist_ok=True)
             
-            logger.info(f"Created project directories for {company_id}/{deck_name}")
+            logger.info(f"Created project directories for {company_id}/{deck_name} at {analysis_path}")
             return analysis_path
             
         except Exception as e:
@@ -293,6 +293,7 @@ class PitchDeckAnalyzer:
                 self.visual_analysis_results.append(page_analysis_data)
             
             logger.info(f"Saved {total_pages} slide images to {analysis_path}")
+            logger.info(f"Using project root: {self.project_root}")
                 
         except Exception as e:
             logger.error(f"Error in visual content analysis: {e}")
