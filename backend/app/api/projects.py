@@ -44,6 +44,7 @@ class ProjectUpload(BaseModel):
     upload_date: str
     file_type: str
     pages: Optional[int] = None
+    processing_status: str = "pending"
 
 class ProjectUploadsResponse(BaseModel):
     company_id: str
@@ -274,7 +275,7 @@ async def get_project_uploads(
         
         # Get all pitch decks for this company
         uploads_query = text("""
-        SELECT pd.id, pd.file_path, pd.created_at, pd.results_file_path, u.email
+        SELECT pd.id, pd.file_path, pd.created_at, pd.results_file_path, u.email, pd.processing_status
         FROM pitch_decks pd
         JOIN users u ON pd.user_id = u.id
         WHERE u.email LIKE :company_pattern
@@ -285,7 +286,7 @@ async def get_project_uploads(
         
         uploads = []
         for upload in uploads_result:
-            deck_id, file_path, created_at, results_file_path, user_email = upload
+            deck_id, file_path, created_at, results_file_path, user_email, processing_status = upload
             
             # Get file info
             full_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, file_path)
@@ -321,7 +322,8 @@ async def get_project_uploads(
                 file_size=file_size,
                 upload_date=created_at,
                 file_type=file_type,
-                pages=pages
+                pages=pages,
+                processing_status=processing_status
             ))
         
         return ProjectUploadsResponse(

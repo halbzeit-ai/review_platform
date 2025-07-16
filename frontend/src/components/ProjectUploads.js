@@ -177,7 +177,7 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
               {upload.filename}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {formatFileSize(upload.file_size)} • {upload.pages ? `${upload.pages} pages` : 'Processing...'} • {new Date(upload.upload_date).toLocaleString()}
+              {formatFileSize(upload.file_size)} • {upload.pages ? `${upload.pages} pages` : (upload.processing_status === 'completed' ? 'Analyzed' : 'Processing...')} • {new Date(upload.upload_date).toLocaleString()}
             </Typography>
           </Box>
         </Box>
