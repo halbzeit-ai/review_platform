@@ -17,16 +17,21 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/documents", tags=["documents"])
 
 async def trigger_gpu_processing(pitch_deck_id: int, file_path: str):
-    """Background task to trigger file-based GPU processing"""
-    from ..services.file_based_processing import file_based_gpu_service
+    """Background task to trigger HTTP-based GPU processing"""
+    from ..services.gpu_http_client import gpu_http_client
     
-    logger.info(f"BACKGROUND TASK START: File-based GPU processing triggered for pitch deck {pitch_deck_id} at {file_path}")
+    logger.info(f"BACKGROUND TASK START: HTTP-based GPU processing triggered for pitch deck {pitch_deck_id} at {file_path}")
     
     try:
-        logger.info(f"Calling file_based_gpu_service.process_pdf_direct for pitch deck {pitch_deck_id}")
-        results = await file_based_gpu_service.process_pdf_direct(pitch_deck_id, file_path)
-        logger.info(f"File-based GPU processing completed successfully for pitch deck {pitch_deck_id}")
-        logger.info(f"Results summary: {results.get('summary', 'No summary available')}")
+        logger.info(f"Calling gpu_http_client.process_pdf for pitch deck {pitch_deck_id}")
+        results = gpu_http_client.process_pdf(pitch_deck_id, file_path)
+        
+        if results.get("success"):
+            logger.info(f"HTTP-based GPU processing completed successfully for pitch deck {pitch_deck_id}")
+            logger.info(f"Results file: {results.get('results_file')}")
+        else:
+            logger.error(f"HTTP-based GPU processing failed for pitch deck {pitch_deck_id}: {results.get('error')}")
+            
     except Exception as e:
         logger.error(f"BACKGROUND TASK EXCEPTION for pitch deck {pitch_deck_id}: {str(e)}")
         logger.error(f"Exception type: {type(e)}")

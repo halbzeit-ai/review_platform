@@ -215,6 +215,81 @@ class GPUHTTPClient:
                 "online": False,
                 "error": str(e)
             }
+    
+    def process_pdf(self, pitch_deck_id: int, file_path: str) -> Dict[str, Any]:
+        """
+        Process a PDF file using the GPU instance
+        
+        Args:
+            pitch_deck_id: Database ID of the pitch deck
+            file_path: Path to PDF file relative to shared filesystem
+            
+        Returns:
+            Processing results or error information
+        """
+        try:
+            if not self.gpu_host:
+                logger.error("GPU_INSTANCE_HOST not configured")
+                return {
+                    "success": False,
+                    "error": "GPU_INSTANCE_HOST not configured"
+                }
+            
+            logger.info(f"Requesting PDF processing for pitch deck {pitch_deck_id}: {file_path}")
+            
+            payload = {
+                "pitch_deck_id": pitch_deck_id,
+                "file_path": file_path
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/process-pdf",
+                json=payload,
+                timeout=300,  # 5 minutes timeout for PDF processing
+                headers={'Content-Type': 'application/json'}
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    logger.info(f"Successfully processed PDF {file_path}")
+                    return {
+                        "success": True,
+                        "results_file": data.get("results_file"),
+                        "results_path": data.get("results_path"),
+                        "message": data.get("message", "PDF processed successfully")
+                    }
+                else:
+                    logger.error(f"GPU processing failed: {data.get('error')}")
+                    return {
+                        "success": False,
+                        "error": data.get("error", "Unknown GPU processing error")
+                    }
+            else:
+                logger.error(f"HTTP error {response.status_code}: {response.text}")
+                return {
+                    "success": False,
+                    "error": f"HTTP {response.status_code}: {response.text}"
+                }
+                
+        except requests.exceptions.Timeout:
+            logger.error(f"Timeout processing PDF {file_path}")
+            return {
+                "success": False,
+                "error": "Processing timeout (5 minutes exceeded)"
+            }
+        except requests.exceptions.ConnectionError:
+            logger.error("Connection error communicating with GPU instance")
+            return {
+                "success": False,
+                "error": "Connection error communicating with GPU instance"
+            }
+        except Exception as e:
+            logger.error(f"Error processing PDF {file_path}: {e}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
 
 # Global instance
 gpu_http_client = GPUHTTPClient()

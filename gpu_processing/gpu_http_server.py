@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
 """
-GPU HTTP Server for Model Management
+GPU HTTP Server for Model Management and PDF Processing
 
 This server runs on the GPU instance and provides HTTP endpoints
-for model management operations, replacing the NFS-based communication.
+for model management operations and PDF processing, replacing the NFS-based communication.
 """
 
 import logging
 import ollama
+import os
+import json
+import asyncio
 from flask import Flask, request, jsonify
 from datetime import datetime
 from typing import Dict, Any
+from pathlib import Path
+
+# Import PDF processing components
+from main import PDFProcessor
 
 # Configure logging
 logging.basicConfig(
@@ -22,10 +29,11 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 class GPUHTTPServer:
-    """HTTP server for GPU model management"""
+    """HTTP server for GPU model management and PDF processing"""
     
     def __init__(self):
         self.app = app
+        self.pdf_processor = PDFProcessor()
         self.setup_routes()
     
     def setup_routes(self):
@@ -182,6 +190,79 @@ class GPUHTTPServer:
                 return jsonify({
                     "success": False,
                     "error": str(e),
+                    "timestamp": datetime.now().isoformat()
+                }), 500
+        
+        @self.app.route('/api/process-pdf', methods=['POST'])
+        def process_pdf():
+            """Process a PDF file and generate AI review"""
+            try:
+                # Get request data
+                data = request.get_json()
+                if not data:
+                    return jsonify({
+                        "success": False,
+                        "error": "No JSON data provided",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                # Extract required fields
+                file_path = data.get('file_path')
+                pitch_deck_id = data.get('pitch_deck_id')
+                
+                if not file_path:
+                    return jsonify({
+                        "success": False,
+                        "error": "file_path is required",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                if not pitch_deck_id:
+                    return jsonify({
+                        "success": False,
+                        "error": "pitch_deck_id is required",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                logger.info(f"Processing PDF: {file_path} for pitch deck {pitch_deck_id}")
+                
+                # Process the PDF using the existing PDFProcessor
+                results = self.pdf_processor.process_pdf(file_path)
+                
+                # Save results to shared filesystem
+                results_filename = f"review_{pitch_deck_id}.json"
+                results_path = os.path.join("/mnt/shared/results", results_filename)
+                
+                # Ensure results directory exists
+                os.makedirs(os.path.dirname(results_path), exist_ok=True)
+                
+                # Write results to file
+                with open(results_path, 'w') as f:
+                    json.dump(results, f, indent=2)
+                
+                logger.info(f"PDF processing completed successfully. Results saved to: {results_path}")
+                
+                return jsonify({
+                    "success": True,
+                    "message": f"Successfully processed PDF {file_path}",
+                    "results_file": results_filename,
+                    "results_path": results_path,
+                    "timestamp": datetime.now().isoformat()
+                })
+                
+            except FileNotFoundError as e:
+                logger.error(f"PDF file not found: {e}")
+                return jsonify({
+                    "success": False,
+                    "error": f"PDF file not found: {str(e)}",
+                    "timestamp": datetime.now().isoformat()
+                }), 404
+                
+            except Exception as e:
+                logger.error(f"Error processing PDF: {e}")
+                return jsonify({
+                    "success": False,
+                    "error": f"Error processing PDF: {str(e)}",
                     "timestamp": datetime.now().isoformat()
                 }), 500
     
