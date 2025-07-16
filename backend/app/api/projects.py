@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 import json
 import os
 import logging
+import shutil
 from pathlib import Path
 
 from ..db.database import get_db
@@ -38,6 +39,7 @@ class DeckAnalysisResponse(BaseModel):
     processing_metadata: Dict[str, Any]
 
 class ProjectUpload(BaseModel):
+    id: int
     filename: str
     file_path: str
     file_size: int
@@ -317,6 +319,7 @@ async def get_project_uploads(
                     logger.warning(f"Could not extract page count from results file: {e}")
             
             uploads.append(ProjectUpload(
+                id=deck_id,
                 filename=filename,
                 file_path=file_path,
                 file_size=file_size,
@@ -380,4 +383,101 @@ async def get_slide_image(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to serve slide image"
+        )
+
+@router.delete("/{company_id}/deck/{deck_id}")
+async def delete_deck(
+    company_id: str,
+    deck_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a pitch deck including PDF, images, and results"""
+    try:
+        # Check access permissions
+        if not check_project_access(current_user, company_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have access to this project"
+            )
+        
+        # Get deck information
+        deck_query = text("""
+        SELECT pd.id, pd.file_name, pd.file_path, pd.results_file_path, u.email, u.company_name
+        FROM pitch_decks pd
+        JOIN users u ON pd.user_id = u.id
+        WHERE pd.id = :deck_id
+        """)
+        
+        deck_result = db.execute(deck_query, {"deck_id": deck_id}).fetchone()
+        
+        if not deck_result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Deck {deck_id} not found"
+            )
+        
+        deck_id_db, file_name, file_path, results_file_path, user_email, company_name = deck_result
+        
+        # Verify this deck belongs to the requested company
+        deck_company_id = user_email.split('@')[0]
+        if deck_company_id != company_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Deck doesn't belong to this company"
+            )
+        
+        # Delete the PDF file
+        if file_path:
+            if file_path.startswith('/'):
+                pdf_full_path = file_path
+            else:
+                pdf_full_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, file_path)
+            
+            if os.path.exists(pdf_full_path):
+                try:
+                    os.remove(pdf_full_path)
+                    logger.info(f"Deleted PDF file: {pdf_full_path}")
+                except Exception as e:
+                    logger.warning(f"Could not delete PDF file {pdf_full_path}: {e}")
+        
+        # Delete the results file
+        if results_file_path:
+            if results_file_path.startswith('/'):
+                results_full_path = results_file_path
+            else:
+                results_full_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, results_file_path)
+            
+            if os.path.exists(results_full_path):
+                try:
+                    os.remove(results_full_path)
+                    logger.info(f"Deleted results file: {results_full_path}")
+                except Exception as e:
+                    logger.warning(f"Could not delete results file {results_full_path}: {e}")
+        
+        # Delete the analysis folder with slide images (project-based structure)
+        analysis_folder = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id, "analysis", file_name)
+        if os.path.exists(analysis_folder):
+            try:
+                shutil.rmtree(analysis_folder)
+                logger.info(f"Deleted analysis folder: {analysis_folder}")
+            except Exception as e:
+                logger.warning(f"Could not delete analysis folder {analysis_folder}: {e}")
+        
+        # Delete the database record
+        delete_query = text("DELETE FROM pitch_decks WHERE id = :deck_id")
+        db.execute(delete_query, {"deck_id": deck_id})
+        db.commit()
+        
+        logger.info(f"Successfully deleted deck {deck_id} ({file_name}) for company {company_id}")
+        
+        return {"message": f"Deck {file_name} deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting deck {deck_id} for company {company_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete deck"
         )

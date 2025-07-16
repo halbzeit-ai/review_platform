@@ -108,4 +108,7 @@ export const getSlideImage = (companyId, deckName, slideFilename) =>
     responseType: 'blob'
   });
 
+export const deleteDeck = (companyId, deckId) =>
+  api.delete(`/projects/${companyId}/deck/${deckId}`);
+
 export default api;

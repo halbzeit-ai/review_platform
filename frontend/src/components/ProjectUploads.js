@@ -22,14 +22,13 @@ import {
 import {
   Upload as UploadIcon,
   Delete as DeleteIcon,
-  Download as DownloadIcon,
   PictureAsPdf as PdfIcon,
   Visibility as VisibilityIcon,
   Info as InfoIcon,
   Close as CloseIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { getProjectUploads, uploadPitchDeck } from '../services/api';
+import { getProjectUploads, uploadPitchDeck, deleteDeck } from '../services/api';
 
 const ProjectUploads = ({ companyId, onUploadComplete }) => {
   const { t } = useTranslation();
@@ -40,6 +39,7 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
+  const [deleting, setDeleting] = useState(null);
 
   useEffect(() => {
     if (companyId) {
@@ -140,6 +140,44 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
     }
   };
 
+  const handleDeleteUpload = async (upload) => {
+    if (!window.confirm(`Are you sure you want to delete "${upload.filename}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    setDeleting(upload.id);
+    setUploadStatus(null);
+
+    try {
+      await deleteDeck(companyId, upload.id);
+      setUploadStatus({ 
+        type: 'success', 
+        message: `"${upload.filename}" deleted successfully!` 
+      });
+      
+      // Refresh the uploads list
+      loadUploads();
+      
+    } catch (error) {
+      let errorMessage = 'Delete failed. Please try again.';
+      
+      if (error.response?.status === 403) {
+        errorMessage = 'You don\'t have permission to delete this file.';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'File not found or already deleted.';
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      }
+      
+      setUploadStatus({ 
+        type: 'error', 
+        message: errorMessage
+      });
+    } finally {
+      setDeleting(null);
+    }
+  };
+
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -196,11 +234,12 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
             size="small"
             onClick={(e) => {
               e.stopPropagation();
-              // TODO: Implement download functionality
+              handleDeleteUpload(upload);
             }}
-            disabled
+            disabled={deleting === upload.id}
+            color="error"
           >
-            <DownloadIcon />
+            {deleting === upload.id ? <CircularProgress size={20} /> : <DeleteIcon />}
           </IconButton>
         </Box>
       </Box>
@@ -284,13 +323,15 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
         </Button>
         <Button 
           variant="contained" 
-          startIcon={<DownloadIcon />}
+          color="error"
+          startIcon={deleting === selectedUpload?.id ? <CircularProgress size={20} /> : <DeleteIcon />}
           onClick={() => {
-            // TODO: Implement download functionality
+            handleDeleteUpload(selectedUpload);
+            handleCloseDetails();
           }}
-          disabled
+          disabled={deleting === selectedUpload?.id}
         >
-          Download
+          {deleting === selectedUpload?.id ? 'Deleting...' : 'Delete'}
         </Button>
       </DialogActions>
     </Dialog>
