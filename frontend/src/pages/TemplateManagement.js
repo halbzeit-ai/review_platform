@@ -11,14 +11,11 @@ import {
   CardActions,
   Button,
   Chip,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
-  Switch,
-  FormControlLabel,
   Breadcrumbs,
   Link,
   Alert,
@@ -31,13 +28,12 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   Divider,
-  Badge,
-  Tooltip
+  Badge
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
   Edit as EditIcon,
-  Copy as CopyIcon,
+  FileCopy as CopyIcon,
   Add as AddIcon,
   Assessment as AssessmentIcon,
   Science as ScienceIcon,
@@ -48,8 +44,7 @@ import {
   FitnessCenter as FitnessIcon,
   Storefront as StorefrontIcon,
   Settings as SettingsIcon,
-  Visibility as VisibilityIcon,
-  DragIndicator as DragIcon
+  Visibility as VisibilityIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -81,7 +76,6 @@ const TemplateManagement = () => {
   // Dialog states
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [customizeDialogOpen, setCustomizeDialogOpen] = useState(false);
-  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   
   const [breadcrumbs, setBreadcrumbs] = useState([
     { label: t('navigation.dashboard'), path: '/dashboard' },
