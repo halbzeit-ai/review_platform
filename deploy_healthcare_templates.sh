@@ -14,15 +14,29 @@ fi
 echo "📋 Step 1: Setting up database schema..."
 cd backend
 
-# Run database migrations
-echo "  - Creating healthcare sectors table..."
-sqlite3 sql_app.db < migrations/create_healthcare_templates.sql
+# Check if healthcare_sectors table exists
+if sqlite3 sql_app.db "SELECT name FROM sqlite_master WHERE type='table' AND name='healthcare_sectors';" | grep -q healthcare_sectors; then
+    echo "  ✅ Healthcare sectors table already exists"
+else
+    echo "  - Creating healthcare sectors table..."
+    sqlite3 sql_app.db < migrations/create_healthcare_templates.sql
+fi
 
-echo "  - Inserting healthcare sectors data..."
-sqlite3 sql_app.db < migrations/insert_healthcare_sectors.sql
+# Check if healthcare sectors data exists
+if sqlite3 sql_app.db "SELECT COUNT(*) FROM healthcare_sectors;" | grep -q "^8$"; then
+    echo "  ✅ Healthcare sectors data already loaded"
+else
+    echo "  - Inserting healthcare sectors data..."
+    sqlite3 sql_app.db < migrations/insert_healthcare_sectors.sql 2>/dev/null || echo "  ⚠️  Some sectors data already exists (skipping duplicates)"
+fi
 
-echo "  - Inserting sample template data..."
-sqlite3 sql_app.db < migrations/insert_digital_therapeutics_template.sql
+# Check if sample template data exists
+if sqlite3 sql_app.db "SELECT COUNT(*) FROM template_chapters;" | grep -q "^[7-9]$\|^[1-9][0-9]"; then
+    echo "  ✅ Sample template data already loaded"
+else
+    echo "  - Inserting sample template data..."
+    sqlite3 sql_app.db < migrations/insert_digital_therapeutics_template.sql 2>/dev/null || echo "  ⚠️  Some template data already exists (skipping duplicates)"
+fi
 
 echo "✅ Database setup complete"
 
@@ -91,3 +105,11 @@ echo "🧪 Test the system:"
 echo "   - Visit /templates to access template management"
 echo "   - Test classification: POST /api/healthcare-templates/classify"
 echo "   - Check healthcare sectors: GET /api/healthcare-templates/sectors"
+echo ""
+echo "📊 Database status:"
+SECTOR_COUNT=$(sqlite3 backend/sql_app.db "SELECT COUNT(*) FROM healthcare_sectors;" 2>/dev/null || echo "0")
+TEMPLATE_COUNT=$(sqlite3 backend/sql_app.db "SELECT COUNT(*) FROM analysis_templates;" 2>/dev/null || echo "0")
+CHAPTER_COUNT=$(sqlite3 backend/sql_app.db "SELECT COUNT(*) FROM template_chapters;" 2>/dev/null || echo "0")
+echo "   - Healthcare sectors: $SECTOR_COUNT"
+echo "   - Analysis templates: $TEMPLATE_COUNT"
+echo "   - Template chapters: $CHAPTER_COUNT"

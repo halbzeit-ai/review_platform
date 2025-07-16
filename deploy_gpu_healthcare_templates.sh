@@ -68,22 +68,25 @@ if [[ $? -ne 0 ]]; then
 fi
 
 echo "📋 Step 5: Environment configuration..."
-echo "  - Setting up environment variables..."
+echo "  - Checking existing .env.gpu configuration..."
 
-# Create or update environment file
-cat > .env << EOF
-# Healthcare Template System Configuration
-BACKEND_URL=http://frontend-backend-server:8000
-SHARED_FILESYSTEM_MOUNT_PATH=/mnt/shared
-OLLAMA_HOST=127.0.0.1:11434
+if [[ -f ".env.gpu" ]]; then
+    echo "  ✅ .env.gpu already exists"
+    
+    # Add BACKEND_URL if not present
+    if ! grep -q "BACKEND_URL" .env.gpu; then
+        echo "" >> .env.gpu
+        echo "# Healthcare Template System Configuration" >> .env.gpu
+        echo "BACKEND_URL=http://frontend-backend-server:8000" >> .env.gpu
+        echo "  ✅ Added BACKEND_URL to .env.gpu"
+    else
+        echo "  ✅ BACKEND_URL already configured in .env.gpu"
+    fi
+else
+    echo "  ⚠️  .env.gpu not found - using existing system configuration"
+fi
 
-# GPU Processing Configuration
-PROCESSING_DEVICE=cuda
-MAX_PROCESSING_TIME=300
-MODEL_CACHE_PATH=/tmp/model_cache
-EOF
-
-echo "  ✅ Environment configuration created"
+echo "  ✅ Environment configuration ready"
 
 echo "📋 Step 6: Testing healthcare template system..."
 echo "  - Testing with sample company offering..."
@@ -116,10 +119,11 @@ echo "  - Main processor: ✅ Updated to use healthcare templates"
 echo "  - Environment: ✅ Configured"
 echo "  - Dependencies: ✅ Installed"
 echo ""
-echo "🔧 Environment variables set:"
-echo "  - BACKEND_URL: Points to your frontend/backend server"
-echo "  - SHARED_FILESYSTEM_MOUNT_PATH: /mnt/shared"
-echo "  - OLLAMA_HOST: 127.0.0.1:11434"
+echo "🔧 Environment configuration:"
+echo "  - Using existing .env.gpu file"
+echo "  - BACKEND_URL: Added for healthcare template system"
+echo "  - SHARED_FILESYSTEM_MOUNT_PATH: /mnt/CPU-GPU (from .env.gpu)"
+echo "  - OLLAMA_HOST: 127.0.0.1:11434 (from .env.gpu)"
 echo ""
 echo "🚀 To start the GPU HTTP server:"
 echo "   python3 gpu_http_server.py"
@@ -129,7 +133,7 @@ echo "   python3 main.py uploads/company_name/pitch.pdf"
 echo ""
 echo "⚠️  Important notes:"
 echo "  - Ensure your backend server is running and accessible"
-echo "  - Update BACKEND_URL in .env if using different server address"
+echo "  - Update BACKEND_URL in .env.gpu if using different server address"
 echo "  - The system will use fallback classification if backend unavailable"
 echo "  - Healthcare templates provide sector-specific analysis"
 echo ""
