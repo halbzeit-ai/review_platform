@@ -58,4 +58,29 @@ export const updateLanguagePreference = (language) =>
 export const deleteUser = (userEmail) =>
   api.delete(`/auth/delete-user?user_email=${encodeURIComponent(userEmail)}`);
 
+// Healthcare Templates API
+export const getHealthcareSectors = () =>
+  api.get('/healthcare-templates/sectors');
+
+export const getSectorTemplates = (sectorId) =>
+  api.get(`/healthcare-templates/sectors/${sectorId}/templates`);
+
+export const getTemplateDetails = (templateId) =>
+  api.get(`/healthcare-templates/templates/${templateId}`);
+
+export const classifyStartup = (companyOffering, manualClassification = null) =>
+  api.post('/healthcare-templates/classify', {
+    company_offering: companyOffering,
+    manual_classification: manualClassification
+  });
+
+export const customizeTemplate = (customizationData) =>
+  api.post('/healthcare-templates/customize-template', customizationData);
+
+export const getMyCustomizations = () =>
+  api.get('/healthcare-templates/my-customizations');
+
+export const getPerformanceMetrics = () =>
+  api.get('/healthcare-templates/performance-metrics');
+
 export default api;
