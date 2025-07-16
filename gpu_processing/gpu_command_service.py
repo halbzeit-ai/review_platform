@@ -147,25 +147,34 @@ class GPUCommandService:
         try:
             # Use ollama.list() to get installed models
             models_response = ollama.list()
-            logger.info(f"Ollama response: {models_response}")
             
             models = []
             for model in models_response.get('models', []):
-                logger.info(f"Processing model: {model}")
-                # Convert datetime objects to ISO strings if needed
-                modified_at = model.get('modified_at', '')
-                if hasattr(modified_at, 'isoformat'):
-                    modified_at = modified_at.isoformat()
-                elif modified_at is None:
-                    modified_at = ''
+                # Handle both dict and Model object formats
+                if hasattr(model, 'model'):
+                    # Model object format (newer Ollama versions)
+                    model_name = str(model.model)
+                    model_size = int(model.size)
+                    model_digest = str(model.digest)
+                    modified_at = model.modified_at.isoformat() if hasattr(model.modified_at, 'isoformat') else str(model.modified_at)
                 else:
-                    modified_at = str(modified_at)
+                    # Dict format (older versions)
+                    model_name = str(model.get('name', '') or model.get('model', ''))
+                    model_size = int(model.get('size', 0))
+                    model_digest = str(model.get('digest', ''))
+                    modified_at = model.get('modified_at', '')
+                    if hasattr(modified_at, 'isoformat'):
+                        modified_at = modified_at.isoformat()
+                    elif modified_at is None:
+                        modified_at = ''
+                    else:
+                        modified_at = str(modified_at)
                 
                 models.append({
-                    "name": str(model.get('name', '')),
-                    "size": int(model.get('size', 0)),
+                    "name": model_name,
+                    "size": model_size,
                     "modified_at": modified_at,
-                    "digest": str(model.get('digest', ''))
+                    "digest": model_digest
                 })
             
             return {
