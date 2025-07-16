@@ -146,7 +146,7 @@ async def get_processing_results(
         logger.info(f"No results in database for pitch deck {pitch_deck_id}, checking file system")
         
         # Find the result file using job format: job_{pitch_deck_id}_*_results.json
-        results_dir = "/mnt/shared/results"
+        results_dir = f"{settings.SHARED_FILESYSTEM_MOUNT_PATH}/results"
         pattern = f"{results_dir}/job_{pitch_deck_id}_*_results.json"
         result_files = glob.glob(pattern)
         
