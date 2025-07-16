@@ -11,7 +11,7 @@ def fix_remaining_decks():
     MOUNT_PATH = "/mnt/CPU-GPU"
     
     # Database path
-    db_path = "/opt/review-platform/backend/sql_app.db"
+    db_path = "sql_app.db"
     
     # Connect to database
     conn = sqlite3.connect(db_path)
