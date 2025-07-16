@@ -147,9 +147,11 @@ class GPUCommandService:
         try:
             # Use ollama.list() to get installed models
             models_response = ollama.list()
+            logger.info(f"Ollama response: {models_response}")
             
             models = []
             for model in models_response.get('models', []):
+                logger.info(f"Processing model: {model}")
                 # Convert datetime objects to ISO strings if needed
                 modified_at = model.get('modified_at', '')
                 if hasattr(modified_at, 'isoformat'):
