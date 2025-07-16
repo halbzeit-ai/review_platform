@@ -28,9 +28,9 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { 
-  getProjectDeckAnalysis,
-  api
+  getProjectDeckAnalysis
 } from '../services/api';
+import api from '../services/api';
 
 const DeckViewer = () => {
   const { t } = useTranslation();
