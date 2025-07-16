@@ -93,4 +93,19 @@ export const resetPipelinePrompt = (stageName) =>
 export const getPipelineStages = () =>
   api.get('/pipeline/stages');
 
+// Project-based API
+export const getProjectDeckAnalysis = (companyId, deckId) =>
+  api.get(`/projects/${companyId}/deck-analysis/${deckId}`);
+
+export const getProjectResults = (companyId, deckId) =>
+  api.get(`/projects/${companyId}/results/${deckId}`);
+
+export const getProjectUploads = (companyId) =>
+  api.get(`/projects/${companyId}/uploads`);
+
+export const getSlideImage = (companyId, deckName, slideFilename) =>
+  api.get(`/projects/${companyId}/slide-image/${deckName}/${slideFilename}`, {
+    responseType: 'blob'
+  });
+
 export default api;

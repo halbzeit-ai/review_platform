@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Container, Paper, Typography, Button, Grid, Alert, CircularProgress, List, ListItem, ListItemText, Divider, Chip, Box } from '@mui/material';
-import { Upload, CheckCircle, Pending, Error, Visibility, Schedule } from '@mui/icons-material';
+import { Upload, CheckCircle, Pending, Error, Visibility, Schedule, Folder } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { uploadPitchDeck, getPitchDecks } from '../services/api';
@@ -151,6 +151,16 @@ function StartupDashboard() {
     navigate(`/results/${deckId}`);
   };
 
+  const getCompanyId = () => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    return user?.email?.split('@')[0] || 'unknown';
+  };
+
+  const handleViewProject = () => {
+    const companyId = getCompanyId();
+    navigate(`/project/${companyId}`);
+  };
+
   // Check if there are any decks currently processing
   const hasProcessingDecks = pitchDecks.some(deck => 
     deck.processing_status === 'processing' || deck.processing_status === 'pending'
@@ -200,6 +210,30 @@ function StartupDashboard() {
                 {uploading ? t('startup.uploadSection.uploading') : t('startup.uploadSection.title')}
               </Button>
             </label>
+          </Paper>
+        </Grid>
+
+        {/* Project Dashboard Link */}
+        <Grid item xs={12}>
+          <Paper sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box>
+                <Typography variant="h6" gutterBottom>
+                  Project Dashboard
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  View all your decks, slide-by-slide analysis, and project files in one place.
+                </Typography>
+              </Box>
+              <Button
+                variant="outlined"
+                startIcon={<Folder />}
+                onClick={handleViewProject}
+                size="large"
+              >
+                View Project
+              </Button>
+            </Box>
           </Paper>
         </Grid>
         

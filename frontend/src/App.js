@@ -13,6 +13,8 @@ import Review from './pages/Review';
 import ResultsPage from './pages/ResultsPage';
 import ConfigPage from './pages/ConfigPage';
 import TemplateManagement from './pages/TemplateManagement';
+import ProjectDashboard from './pages/ProjectDashboard';
+import DeckViewer from './pages/DeckViewer';
 
 function App() {
   return (
@@ -30,6 +32,8 @@ function App() {
           <Route path="/results/:pitchDeckId" element={<ResultsPage />} />
           <Route path="/config" element={<ConfigPage />} />
           <Route path="/templates" element={<TemplateManagement />} />
+          <Route path="/project/:companyId" element={<ProjectDashboard />} />
+          <Route path="/project/:companyId/deck-viewer/:deckId" element={<DeckViewer />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>
