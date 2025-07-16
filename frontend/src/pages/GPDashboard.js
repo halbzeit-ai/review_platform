@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, IconButton, Box, Snackbar, Alert } from '@mui/material';
-import { Delete as DeleteIcon, Settings } from '@mui/icons-material';
+import { Delete as DeleteIcon, Settings, Template } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { getAllUsers, getPitchDecks, updateUserRole, deleteUser } from '../services/api';
@@ -116,13 +116,22 @@ function GPDashboard() {
     <Container maxWidth="lg" sx={{ mt: 4 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4">{t('gp.title')}</Typography>
-        <Button
-          variant="outlined"
-          startIcon={<Settings />}
-          onClick={() => navigate('/config')}
-        >
-          Model Configuration
-        </Button>
+        <Box display="flex" gap={2}>
+          <Button
+            variant="outlined"
+            startIcon={<Template />}
+            onClick={() => navigate('/templates')}
+          >
+            Analysis Templates
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<Settings />}
+            onClick={() => navigate('/config')}
+          >
+            Model Configuration
+          </Button>
+        </Box>
       </Box>
       <Grid container spacing={3}>
         <Grid item xs={12}>
