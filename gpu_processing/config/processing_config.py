@@ -12,7 +12,7 @@ class ProcessingConfig:
     """Configuration for AI processing parameters"""
     
     # File paths
-    mount_path: str = "/mnt/shared"
+    mount_path: str = "/mnt/CPU-GPU"
     uploads_dir: str = "uploads"
     results_dir: str = "results"
     temp_dir: str = "temp"
@@ -44,7 +44,7 @@ class ProcessingConfig:
     def from_env(cls) -> "ProcessingConfig":
         """Load configuration from environment variables"""
         return cls(
-            mount_path=os.getenv("SHARED_FILESYSTEM_MOUNT_PATH", "/mnt/shared"),
+            mount_path=os.getenv("SHARED_FILESYSTEM_MOUNT_PATH", "/mnt/CPU-GPU"),
             max_processing_time=int(os.getenv("MAX_PROCESSING_TIME", "300")),
             device=os.getenv("PROCESSING_DEVICE", "cuda"),
             batch_size=int(os.getenv("BATCH_SIZE", "16")),

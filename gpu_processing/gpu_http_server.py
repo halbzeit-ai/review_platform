@@ -18,6 +18,7 @@ from pathlib import Path
 
 # Import PDF processing components
 from main import PDFProcessor
+from config.processing_config import config
 
 # Configure logging
 logging.basicConfig(
@@ -33,7 +34,7 @@ class GPUHTTPServer:
     
     def __init__(self):
         self.app = app
-        self.pdf_processor = PDFProcessor()
+        self.pdf_processor = PDFProcessor(mount_path=config.mount_path)
         self.setup_routes()
     
     def setup_routes(self):
@@ -231,13 +232,13 @@ class GPUHTTPServer:
                 
                 # Save results to shared filesystem
                 results_filename = f"review_{pitch_deck_id}.json"
-                results_path = os.path.join("/mnt/shared/results", results_filename)
+                results_path = config.results_path / results_filename
                 
                 # Ensure results directory exists
-                os.makedirs(os.path.dirname(results_path), exist_ok=True)
+                os.makedirs(config.results_path, exist_ok=True)
                 
                 # Write results to file
-                with open(results_path, 'w') as f:
+                with open(str(results_path), 'w') as f:
                     json.dump(results, f, indent=2)
                 
                 logger.info(f"PDF processing completed successfully. Results saved to: {results_path}")
@@ -246,7 +247,7 @@ class GPUHTTPServer:
                     "success": True,
                     "message": f"Successfully processed PDF {file_path}",
                     "results_file": results_filename,
-                    "results_path": results_path,
+                    "results_path": str(results_path),
                     "timestamp": datetime.now().isoformat()
                 })
                 
