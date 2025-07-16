@@ -16,6 +16,7 @@ from pathlib import Path
 from ..db.database import get_db
 from ..db.models import User
 from .auth import get_current_user
+from ..core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +114,10 @@ async def get_deck_analysis(
                 detail="Analysis results not found for this deck"
             )
         
-        results_full_path = os.path.join("/mnt/shared", results_file_path)
+        if results_file_path.startswith('/'):
+            results_full_path = results_file_path
+        else:
+            results_full_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, results_file_path)
         
         if not os.path.exists(results_full_path):
             raise HTTPException(
@@ -223,7 +227,10 @@ async def get_project_results(
                 detail="Analysis results not found for this deck"
             )
         
-        results_full_path = os.path.join("/mnt/shared", results_file_path)
+        if results_file_path.startswith('/'):
+            results_full_path = results_file_path
+        else:
+            results_full_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, results_file_path)
         
         if not os.path.exists(results_full_path):
             raise HTTPException(
@@ -281,7 +288,7 @@ async def get_project_uploads(
             deck_id, file_path, created_at, results_file_path, user_email = upload
             
             # Get file info
-            full_path = os.path.join("/mnt/shared", file_path)
+            full_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, file_path)
             filename = os.path.basename(file_path)
             file_size = 0
             file_type = "PDF"
@@ -293,7 +300,11 @@ async def get_project_uploads(
             # Try to get page count from analysis results
             if results_file_path:
                 try:
-                    results_full_path = os.path.join("/mnt/shared", results_file_path)
+                    if results_file_path.startswith('/'):
+                        results_full_path = results_file_path
+                    else:
+                        results_full_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, results_file_path)
+                    
                     if os.path.exists(results_full_path):
                         with open(results_full_path, 'r') as f:
                             results_data = json.load(f)
@@ -344,7 +355,7 @@ async def get_slide_image(
             )
         
         # Construct image path
-        image_path = os.path.join("/mnt/shared/projects", company_id, "analysis", deck_name, slide_filename)
+        image_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id, "analysis", deck_name, slide_filename)
         
         if not os.path.exists(image_path):
             raise HTTPException(

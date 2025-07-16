@@ -13,6 +13,7 @@ import asyncio
 from typing import List, Dict, Optional
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from ..core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ class GPUCommunicationService:
     """Service to communicate with GPU instance for model management"""
     
     def __init__(self):
-        self.shared_fs_path = "/mnt/CPU-GPU"
+        self.shared_fs_path = settings.SHARED_FILESYSTEM_MOUNT_PATH
         self.gpu_commands_path = f"{self.shared_fs_path}/gpu_commands"
         self.gpu_status_path = f"{self.shared_fs_path}/gpu_status"
         
