@@ -14,8 +14,8 @@ from pathlib import Path
 from typing import Dict, Any, List
 import logging
 
-# Import the new AI analyzer
-from utils.pitch_deck_analyzer import PitchDeckAnalyzer
+# Import the new healthcare template analyzer
+from utils.healthcare_template_analyzer import HealthcareTemplateAnalyzer
 
 # Configure logging
 logging.basicConfig(
@@ -27,10 +27,12 @@ logger = logging.getLogger(__name__)
 class PDFProcessor:
     """Main PDF processing class for AI analysis"""
     
-    def __init__(self, mount_path: str = "/mnt/shared"):
+    def __init__(self, mount_path: str = "/mnt/shared", backend_url: str = "http://localhost:8000"):
         self.mount_path = mount_path
-        self.analyzer = PitchDeckAnalyzer()
+        self.backend_url = backend_url
+        self.analyzer = HealthcareTemplateAnalyzer(backend_base_url=backend_url)
         logger.info(f"Initialized PDF processor with mount path: {mount_path}")
+        logger.info(f"Healthcare template analyzer initialized with backend URL: {backend_url}")
         logger.info("AI analyzer initialized successfully")
     
     def process_pdf(self, file_path: str) -> Dict[str, Any]:
@@ -61,102 +63,129 @@ class PDFProcessor:
     
     def _ai_processing(self, file_path: str) -> Dict[str, Any]:
         """
-        Real AI processing using the PitchDeckAnalyzer
+        Real AI processing using the HealthcareTemplateAnalyzer
         
-        Performs comprehensive analysis including:
+        Performs comprehensive healthcare-focused analysis including:
         1. Visual analysis of PDF pages using vision models
-        2. Detailed analysis across 7 VC evaluation areas
-        3. Numerical scoring (0-7) for each area
-        4. Scientific hypothesis extraction
-        5. Company offering summarization
+        2. Company offering extraction and healthcare sector classification
+        3. Template-based analysis with healthcare-specific questions
+        4. Specialized analysis (clinical validation, regulatory, scientific)
+        5. Question-level scoring with healthcare criteria
         """
-        logger.info("Running real AI processing...")
+        logger.info("Running healthcare template-based AI processing...")
         
         try:
-            # Use the AI analyzer to process the PDF
+            # Use the healthcare template analyzer to process the PDF
             results = self.analyzer.analyze_pdf(file_path)
             
             # Transform results to include additional fields for backward compatibility
-            enhanced_results = self._enhance_results_format(results)
+            enhanced_results = self._enhance_healthcare_results_format(results)
             
-            logger.info("AI processing completed successfully")
+            logger.info("Healthcare template analysis completed successfully")
             return enhanced_results
             
         except Exception as e:
-            logger.error(f"AI processing failed: {e}")
+            logger.error(f"Healthcare template analysis failed: {e}")
             # Fallback to basic error structure
             return {
-                "error": f"AI processing failed: {str(e)}",
+                "error": f"Healthcare template analysis failed: {str(e)}",
                 "company_offering": "Error during processing",
-                "report_chapters": {},
-                "report_scores": {},
-                "scientific_hypotheses": "Error during processing",
+                "classification": None,
+                "chapter_analysis": {},
+                "question_analysis": {},
+                "specialized_analysis": {},
+                "overall_score": 0.0,
                 "processing_metadata": {
                     "processing_time": 0.0,
                     "error": True
                 }
             }
     
-    def _enhance_results_format(self, ai_results: Dict[str, Any]) -> Dict[str, Any]:
+    def _enhance_healthcare_results_format(self, ai_results: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Enhance AI results with additional fields for compatibility
+        Enhance healthcare template results with additional fields for compatibility
         
-        Adds summary fields and recommendations based on the detailed analysis
+        Transforms new healthcare template results to maintain backward compatibility
+        while adding new healthcare-specific fields
         """
-        # Calculate overall score from individual area scores
-        scores = ai_results.get("report_scores", {})
-        if scores:
-            overall_score = sum(scores.values()) / len(scores)
-        else:
-            overall_score = 0.0
+        # Extract healthcare-specific results
+        overall_score = ai_results.get("overall_score", 0.0)
+        chapter_analysis = ai_results.get("chapter_analysis", {})
+        question_analysis = ai_results.get("question_analysis", {})
+        classification = ai_results.get("classification", {})
+        specialized_analysis = ai_results.get("specialized_analysis", {})
         
-        # Generate key points from the analysis chapters
+        # Generate key points from chapter analysis
         key_points = []
-        chapters = ai_results.get("report_chapters", {})
-        for area, analysis in chapters.items():
-            if analysis and len(analysis) > 10:  # Non-empty analysis
-                # Extract first sentence as key point
-                first_sentence = analysis.split('.')[0]
-                if first_sentence:
-                    key_points.append(f"{area.title()}: {first_sentence}")
+        for chapter_id, chapter_data in chapter_analysis.items():
+            chapter_name = chapter_data.get("name", chapter_id)
+            if chapter_data.get("responses"):
+                # Extract first meaningful response
+                first_response = chapter_data["responses"][0] if chapter_data["responses"] else ""
+                if first_response and len(first_response) > 10:
+                    first_sentence = first_response.split('.')[0]
+                    if first_sentence:
+                        key_points.append(f"{chapter_name}: {first_sentence}")
         
-        # Generate recommendations based on low-scoring areas
+        # Generate recommendations based on low-scoring chapters
         recommendations = []
-        for area, score in scores.items():
-            if score < 4:  # Areas that need improvement
-                recommendations.append(f"Strengthen {area.replace('_', ' ')} section with more detailed information")
+        for chapter_id, chapter_data in chapter_analysis.items():
+            chapter_name = chapter_data.get("name", chapter_id)
+            weighted_score = chapter_data.get("weighted_score", 0.0)
+            if weighted_score < 4:  # Areas that need improvement
+                recommendations.append(f"Strengthen {chapter_name} with more detailed information")
         
         if not recommendations:
             recommendations = ["Continue developing strong areas identified in the analysis"]
         
-        # Enhanced results combining AI analysis with compatibility fields
+        # Create backward-compatible report structure
+        report_chapters = {}
+        report_scores = {}
+        
+        for chapter_id, chapter_data in chapter_analysis.items():
+            # Combine all responses for backward compatibility
+            combined_response = " ".join(chapter_data.get("responses", []))
+            report_chapters[chapter_id] = combined_response
+            report_scores[chapter_id] = chapter_data.get("weighted_score", 0.0)
+        
+        # Enhanced results combining new healthcare analysis with backward compatibility
         enhanced_results = {
-            # Core AI analysis results (your structure)
+            # Core healthcare template results (new structure)
             "company_offering": ai_results.get("company_offering", ""),
-            "report_chapters": ai_results.get("report_chapters", {}),
-            "report_scores": ai_results.get("report_scores", {}),
-            "scientific_hypotheses": ai_results.get("scientific_hypotheses", ""),
+            "classification": classification,
+            "template_used": ai_results.get("template_used"),
+            "chapter_analysis": chapter_analysis,
+            "question_analysis": question_analysis,
+            "specialized_analysis": specialized_analysis,
+            "overall_score": overall_score,
+            
+            # Backward compatibility fields (old structure)
+            "report_chapters": report_chapters,
+            "report_scores": report_scores,
+            "scientific_hypotheses": specialized_analysis.get("scientific_hypothesis", ""),
             
             # Additional compatibility fields
-            "summary": ai_results.get("company_offering", "Comprehensive pitch deck analysis completed"),
+            "summary": ai_results.get("company_offering", "Healthcare startup analysis completed"),
             "score": round(overall_score, 1),
             "key_points": key_points[:5],  # Limit to top 5
             "recommendations": recommendations[:4],  # Limit to top 4
             
             # Analysis breakdown for compatibility
             "analysis": {
-                "problem_analysis": chapters.get("problem", "")[:200],
-                "solution_analysis": chapters.get("solution", "")[:200], 
-                "market_fit": chapters.get("product market fit", "")[:200],
-                "business_model": chapters.get("monetisation", "")[:200],
-                "team_analysis": chapters.get("organisation", "")[:200]
+                "problem_analysis": report_chapters.get("problem_analysis", "")[:200],
+                "solution_analysis": report_chapters.get("solution_approach", "")[:200], 
+                "market_fit": report_chapters.get("product_market_fit", "")[:200],
+                "business_model": report_chapters.get("monetisation", "")[:200],
+                "team_analysis": report_chapters.get("organisation", "")[:200]
             },
             
-            # Metadata
+            # Healthcare-specific metadata
             "processing_metadata": ai_results.get("processing_metadata", {}),
             "confidence_score": min(overall_score / 7.0, 1.0),  # Normalize to 0-1
-            "sections_analyzed": list(chapters.keys()),
-            "model_version": "ai-v1.0"
+            "sections_analyzed": list(chapter_analysis.keys()),
+            "model_version": "healthcare-template-v1.0",
+            "healthcare_sector": classification.get("primary_sector") if classification else None,
+            "classification_confidence": classification.get("confidence_score") if classification else None
         }
         
         return enhanced_results
@@ -199,10 +228,11 @@ def main():
     
     file_path = sys.argv[1]
     mount_path = os.environ.get('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/shared')
+    backend_url = os.environ.get('BACKEND_URL', 'http://localhost:8000')
     
     try:
-        # Initialize processor
-        processor = PDFProcessor(mount_path)
+        # Initialize processor with healthcare template support
+        processor = PDFProcessor(mount_path, backend_url)
         
         # Process PDF
         results = processor.process_pdf(file_path)
