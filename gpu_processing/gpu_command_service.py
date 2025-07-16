@@ -79,6 +79,12 @@ class GPUCommandService:
                 
                 # Skip if already processed
                 if command_file in self.processed_commands:
+                    # Try to clean up old processed command file
+                    try:
+                        os.remove(command_path)
+                        logger.info(f"Cleaned up old command file: {command_file}")
+                    except OSError:
+                        pass  # File might not exist or be removable
                     continue
                 
                 try:
@@ -96,6 +102,13 @@ class GPUCommandService:
                     
                     # Mark as processed
                     self.processed_commands.add(command_file)
+                    
+                    # Clean up the command file after processing
+                    try:
+                        os.remove(command_path)
+                        logger.info(f"Cleaned up processed command file: {command_file}")
+                    except OSError:
+                        pass  # File might not exist or be removable
                     
                     # Clean up old processed commands (keep last 100)
                     if len(self.processed_commands) > 100:
