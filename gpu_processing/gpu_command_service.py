@@ -18,9 +18,13 @@ from typing import Dict, Any
 
 # Configure logging
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+
+# Reduce verbosity of HTTP libraries
+logging.getLogger('httpcore').setLevel(logging.WARNING)
+logging.getLogger('httpx').setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 class GPUCommandService:
@@ -47,11 +51,9 @@ class GPUCommandService:
         while True:
             try:
                 # Check for new command files
-                logger.debug("Checking for pending commands...")
                 await self.process_pending_commands()
                 
                 # Update status
-                logger.debug("Updating status...")
                 await self.update_status()
                 
                 # Wait before next check
@@ -77,7 +79,6 @@ class GPUCommandService:
                 
                 # Skip if already processed
                 if command_file in self.processed_commands:
-                    logger.debug(f"Skipping already processed command: {command_file}")
                     continue
                 
                 try:
