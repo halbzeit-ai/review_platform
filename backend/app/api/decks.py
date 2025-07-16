@@ -15,7 +15,12 @@ def get_decks(db: Session = Depends(get_db), current_user: User = Depends(get_cu
         decks = db.query(PitchDeck).all()
     else:
         # Startups can only see their own pitch decks
-        decks = db.query(PitchDeck).filter(PitchDeck.user_id == current_user.id).all()
+        # Use company_id for project-based access if available, fallback to user_id
+        user_company_id = current_user.email.split('@')[0]  # Extract company from email
+        decks = db.query(PitchDeck).filter(
+            (PitchDeck.company_id == user_company_id) | 
+            (PitchDeck.user_id == current_user.id)
+        ).all()
     
     # Include user info for GPs
     result = []
@@ -23,7 +28,10 @@ def get_decks(db: Session = Depends(get_db), current_user: User = Depends(get_cu
         deck_data = {
             "id": deck.id,
             "file_name": deck.file_name,
+            "filename": deck.file_name,  # Add filename alias for compatibility
             "file_path": deck.file_path,
+            "results_file_path": deck.results_file_path,
+            "company_id": deck.company_id,
             "s3_url": deck.s3_url,
             "processing_status": deck.processing_status,
             "created_at": deck.created_at,
@@ -52,7 +60,10 @@ def get_deck(deck_id: int, db: Session = Depends(get_db), current_user: User = D
         raise HTTPException(status_code=404, detail="Pitch deck not found")
     
     # Check if user owns this deck or is a GP
-    if deck.user_id != current_user.id and current_user.role != "gp":
+    user_company_id = current_user.email.split('@')[0]
+    if (deck.user_id != current_user.id and 
+        deck.company_id != user_company_id and 
+        current_user.role != "gp"):
         raise HTTPException(status_code=403, detail="Access denied")
     
     return deck

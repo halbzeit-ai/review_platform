@@ -27,11 +27,9 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { 
-  getProjectDeckAnalysis,
-  getProjectResults,
-  getProjectUploads,
   getPitchDecks
 } from '../services/api';
+import ProjectUploads from '../components/ProjectUploads';
 
 const ProjectDashboard = () => {
   const { t } = useTranslation();
@@ -44,7 +42,6 @@ const ProjectDashboard = () => {
   
   // Project data
   const [projectDecks, setProjectDecks] = useState([]);
-  const [uploads, setUploads] = useState([]);
   const [selectedDeck, setSelectedDeck] = useState(null);
   
   const [breadcrumbs, setBreadcrumbs] = useState([
@@ -61,17 +58,12 @@ const ProjectDashboard = () => {
       setLoading(true);
       setError(null);
       
-      // Load project decks and uploads
-      const [decksResponse, uploadsResponse] = await Promise.all([
-        getPitchDecks(),
-        getProjectUploads(companyId)
-      ]);
+      // Load project decks
+      const decksResponse = await getPitchDecks();
       
       const decksData = decksResponse.data || decksResponse;
-      const uploadsData = uploadsResponse.data || uploadsResponse;
       
       setProjectDecks(Array.isArray(decksData) ? decksData : []);
-      setUploads(uploadsData.uploads || []);
       
       // Set first deck as selected if available
       if (decksData && decksData.length > 0) {
@@ -257,45 +249,7 @@ const ProjectDashboard = () => {
   );
 
   const UploadsContent = () => (
-    <Box>
-      <Typography variant="h5" sx={{ mb: 3 }}>
-        File Uploads
-      </Typography>
-      
-      <Grid container spacing={2}>
-        {uploads.map((upload, index) => (
-          <Grid item xs={12} key={index}>
-            <Paper sx={{ p: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <UploadIcon sx={{ mr: 2, color: 'text.secondary' }} />
-                  <Box>
-                    <Typography variant="subtitle1">
-                      {upload.filename}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {(upload.file_size / 1024 / 1024).toFixed(2)} MB • {upload.file_type} • {new Date(upload.upload_date).toLocaleDateString()}
-                    </Typography>
-                  </Box>
-                </Box>
-                
-                <Chip 
-                  label={upload.file_type} 
-                  variant="outlined"
-                  size="small"
-                />
-              </Box>
-            </Paper>
-          </Grid>
-        ))}
-      </Grid>
-      
-      {uploads.length === 0 && (
-        <Alert severity="info" sx={{ mt: 2 }}>
-          No uploads found for this project.
-        </Alert>
-      )}
-    </Box>
+    <ProjectUploads companyId={companyId} />
   );
 
   if (loading) {

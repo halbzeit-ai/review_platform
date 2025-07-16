@@ -98,8 +98,10 @@ async def upload_document(
         )
         
         # Create PitchDeck record in database
+        company_id = current_user.email.split('@')[0]  # Extract company from email
         pitch_deck = PitchDeck(
             user_id=current_user.id,
+            company_id=company_id,
             file_name=file.filename,
             file_path=file_path,
             processing_status="processing"  # Start with processing for better UX
@@ -136,7 +138,10 @@ async def get_processing_status(
         raise HTTPException(status_code=404, detail="Pitch deck not found")
     
     # Check if user owns this deck or is a GP
-    if pitch_deck.user_id != current_user.id and current_user.role != "gp":
+    user_company_id = current_user.email.split('@')[0]
+    if (pitch_deck.user_id != current_user.id and 
+        pitch_deck.company_id != user_company_id and 
+        current_user.role != "gp"):
         raise HTTPException(status_code=403, detail="Access denied")
     
     return {
@@ -158,7 +163,10 @@ async def get_processing_results(
         raise HTTPException(status_code=404, detail="Pitch deck not found")
     
     # Check if user owns this deck or is a GP
-    if pitch_deck.user_id != current_user.id and current_user.role != "gp":
+    user_company_id = current_user.email.split('@')[0]
+    if (pitch_deck.user_id != current_user.id and 
+        pitch_deck.company_id != user_company_id and 
+        current_user.role != "gp"):
         raise HTTPException(status_code=403, detail="Access denied")
     
     if pitch_deck.processing_status != "completed":

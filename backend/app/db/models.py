@@ -24,8 +24,10 @@ class PitchDeck(Base):
     __tablename__ = "pitch_decks"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
+    company_id = Column(String, index=True)  # Company identifier for project-based access
     file_name = Column(String)
     file_path = Column(String)  # Relative path in shared volume
+    results_file_path = Column(String)  # Path to analysis results file
     s3_url = Column(String)  # Legacy field, kept for compatibility
     processing_status = Column(String, default="pending")  # pending, processing, completed, failed
     ai_analysis_results = Column(Text, nullable=True)  # JSON string of AI analysis results
