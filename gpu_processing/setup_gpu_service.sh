@@ -40,10 +40,10 @@ check_command "pip3"
 check_command "systemctl"
 
 # Check if shared filesystem is mounted
-if ! mountpoint -q /mnt/shared 2>/dev/null; then
-    echo "❌ Error: Shared filesystem is not mounted at /mnt/shared"
+if ! mountpoint -q /mnt/CPU-GPU 2>/dev/null; then
+    echo "❌ Error: Shared filesystem is not mounted at /mnt/CPU-GPU"
     echo "   Please mount the shared filesystem first:"
-    echo "   sudo mount -t nfs nfs.fin-01.datacrunch.io:/SFS-3H6ebwA1-b0cbae8b /mnt/shared"
+    echo "   sudo mount -t nfs -o nconnect=16 nfs.fin-01.datacrunch.io:/CPU-GPU-d3ddf613 /mnt/CPU-GPU"
     exit 1
 fi
 
@@ -77,16 +77,16 @@ echo "✅ Pre-flight checks passed!"
 # Create directories
 echo "📁 Creating directories..."
 sudo mkdir -p /opt/gpu_processing
-sudo mkdir -p /mnt/shared/gpu_commands
-sudo mkdir -p /mnt/shared/gpu_status
+sudo mkdir -p /mnt/CPU-GPU/gpu_commands
+sudo mkdir -p /mnt/CPU-GPU/gpu_status
 
 # Verify we can write to shared filesystem
 echo "🔍 Testing shared filesystem write permissions..."
-if ! sudo touch /mnt/shared/gpu_commands/test_write 2>/dev/null; then
+if ! sudo touch /mnt/CPU-GPU/gpu_commands/test_write 2>/dev/null; then
     echo "❌ Error: Cannot write to shared filesystem"
     exit 1
 fi
-sudo rm -f /mnt/shared/gpu_commands/test_write
+sudo rm -f /mnt/CPU-GPU/gpu_commands/test_write
 
 # Copy service files
 echo "📋 Installing service files..."
@@ -165,8 +165,8 @@ echo ""
 echo "📁 Service files:"
 echo "   Script:   /opt/gpu_processing/gpu_command_service.py"
 echo "   Service:  /etc/systemd/system/gpu-command-service.service"
-echo "   Commands: /mnt/shared/gpu_commands/"
-echo "   Status:   /mnt/shared/gpu_status/"
+echo "   Commands: /mnt/CPU-GPU/gpu_commands/"
+echo "   Status:   /mnt/CPU-GPU/gpu_status/"
 echo ""
-echo "💡 The service will now monitor /mnt/shared/gpu_commands/ for commands"
-echo "   and write responses to /mnt/shared/gpu_status/"
+echo "💡 The service will now monitor /mnt/CPU-GPU/gpu_commands/ for commands"
+echo "   and write responses to /mnt/CPU-GPU/gpu_status/"

@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/mnt/shared
+WorkingDirectory=/mnt/CPU-GPU
 ExecStart=/usr/bin/python3 /opt/gpu_processing/gpu_command_service.py
 Restart=always
 RestartSec=10

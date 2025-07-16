@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 class GPUCommandService:
     """Service that monitors for commands and executes them on GPU instance"""
     
-    def __init__(self, shared_fs_path: str = "/mnt/shared"):
+    def __init__(self, shared_fs_path: str = "/mnt/CPU-GPU"):
         self.shared_fs_path = shared_fs_path
         self.commands_path = f"{shared_fs_path}/gpu_commands"
         self.status_path = f"{shared_fs_path}/gpu_status"

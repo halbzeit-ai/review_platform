@@ -13,9 +13,9 @@ class Settings(BaseSettings):
     DATACRUNCH_CLIENT_ID: str = ""
     DATACRUNCH_CLIENT_SECRET: str = ""
     DATACRUNCH_API_BASE: str = "https://api.datacrunch.io/v1"
-    DATACRUNCH_SHARED_FILESYSTEM_ID: Optional[str] = "SFS-3H6ebwA1-b0cbae8b"
+    DATACRUNCH_SHARED_FILESYSTEM_ID: Optional[str] = "ef23bde1-085b-4482-8d73-3fd9950af3e4"
     DATACRUNCH_SSH_KEY_IDS: str = ""  # Comma-separated SSH key IDs for GPU instances
-    SHARED_FILESYSTEM_MOUNT_PATH: str = "/mnt/shared"
+    SHARED_FILESYSTEM_MOUNT_PATH: str = "/mnt/CPU-GPU"
     
     # Direct GPU Processing Configuration
     GPU_INSTANCE_HOST: str = ""  # IP address of your persistent GPU instance
