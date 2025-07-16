@@ -7,7 +7,6 @@ import Navigation from './components/Navigation';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyEmail from './pages/VerifyEmail';
-import StartupDashboard from './pages/StartupDashboard';
 import GPDashboard from './pages/GPDashboard';
 import Review from './pages/Review';
 import ResultsPage from './pages/ResultsPage';
@@ -16,6 +15,8 @@ import TemplateManagement from './pages/TemplateManagement';
 import ProjectDashboard from './pages/ProjectDashboard';
 import DeckViewer from './pages/DeckViewer';
 import ProjectResultsPage from './pages/ProjectResultsPage';
+import StartupDashboardRedirect from './components/StartupDashboardRedirect';
+import DashboardRedirect from './components/DashboardRedirect';
 
 function App() {
   return (
@@ -27,7 +28,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/dashboard/startup" element={<StartupDashboard />} />
+          <Route path="/dashboard" element={<DashboardRedirect />} />
+          <Route path="/dashboard/startup" element={<StartupDashboardRedirect />} />
           <Route path="/dashboard/gp" element={<GPDashboard />} />
           <Route path="/review/:id" element={<Review />} />
           <Route path="/results/:pitchDeckId" element={<ResultsPage />} />

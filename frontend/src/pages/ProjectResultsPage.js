@@ -49,7 +49,18 @@ const ProjectResultsPage = () => {
               key={index} 
               component="button" 
               variant="body2" 
-              onClick={() => navigate(crumb.path)}
+              onClick={() => {
+                if (crumb.path === '/dashboard') {
+                  const user = JSON.parse(localStorage.getItem('user'));
+                  if (user?.role === 'gp') {
+                    navigate('/dashboard/gp');
+                  } else {
+                    navigate('/dashboard');
+                  }
+                } else {
+                  navigate(crumb.path);
+                }
+              }}
               sx={{ textDecoration: 'none' }}
             >
               {crumb.label}

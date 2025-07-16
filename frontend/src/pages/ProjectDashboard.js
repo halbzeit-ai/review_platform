@@ -266,7 +266,14 @@ const ProjectDashboard = () => {
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
         <Button
           startIcon={<ArrowBackIcon />}
-          onClick={() => navigate('/dashboard')}
+          onClick={() => {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user?.role === 'gp') {
+              navigate('/dashboard/gp');
+            } else {
+              navigate('/dashboard');
+            }
+          }}
           sx={{ mr: 2 }}
         >
           Back to Dashboard

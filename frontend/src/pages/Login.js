@@ -39,7 +39,12 @@ function Login() {
       }
 
       // Redirect based on role
-      window.location.href = data.role === 'startup' ? '/dashboard/startup' : '/dashboard/gp';
+      if (data.role === 'startup') {
+        const companyId = data.email.split('@')[0];
+        window.location.href = `/project/${companyId}`;
+      } else {
+        window.location.href = '/dashboard/gp';
+      }
     } catch (error) {
       console.error('Login error:', error);
       setError(error.response?.data?.detail || t('login.errors.loginFailed'));
