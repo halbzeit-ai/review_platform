@@ -6,6 +6,7 @@ replacing the NFS-based communication system.
 """
 
 import requests
+import httpx
 import logging
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
@@ -216,7 +217,7 @@ class GPUHTTPClient:
                 "error": str(e)
             }
     
-    def process_pdf(self, pitch_deck_id: int, file_path: str) -> Dict[str, Any]:
+    async def process_pdf(self, pitch_deck_id: int, file_path: str) -> Dict[str, Any]:
         """
         Process a PDF file using the GPU instance
         
@@ -242,12 +243,12 @@ class GPUHTTPClient:
                 "file_path": file_path
             }
             
-            response = requests.post(
-                f"{self.base_url}/process-pdf",
-                json=payload,
-                timeout=300,  # 5 minutes timeout for PDF processing
-                headers={'Content-Type': 'application/json'}
-            )
+            async with httpx.AsyncClient(timeout=300.0) as client:
+                response = await client.post(
+                    f"{self.base_url}/process-pdf",
+                    json=payload,
+                    headers={'Content-Type': 'application/json'}
+                )
             
             if response.status_code == 200:
                 data = response.json()
@@ -272,13 +273,13 @@ class GPUHTTPClient:
                     "error": f"HTTP {response.status_code}: {response.text}"
                 }
                 
-        except requests.exceptions.Timeout:
+        except httpx.TimeoutException:
             logger.error(f"Timeout processing PDF {file_path}")
             return {
                 "success": False,
                 "error": "Processing timeout (5 minutes exceeded)"
             }
-        except requests.exceptions.ConnectionError:
+        except httpx.ConnectError:
             logger.error("Connection error communicating with GPU instance")
             return {
                 "success": False,

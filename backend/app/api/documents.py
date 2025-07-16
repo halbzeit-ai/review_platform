@@ -34,7 +34,7 @@ async def trigger_gpu_processing(pitch_deck_id: int, file_path: str):
             logger.info(f"Updated pitch deck {pitch_deck_id} status to 'processing'")
         
         logger.info(f"Calling gpu_http_client.process_pdf for pitch deck {pitch_deck_id}")
-        results = gpu_http_client.process_pdf(pitch_deck_id, file_path)
+        results = await gpu_http_client.process_pdf(pitch_deck_id, file_path)
         
         if results.get("success"):
             logger.info(f"HTTP-based GPU processing completed successfully for pitch deck {pitch_deck_id}")
