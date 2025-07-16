@@ -150,6 +150,10 @@ function StartupDashboard() {
     navigate(`/results/${deckId}`);
   };
 
+  // Check if there are any decks currently processing
+  const hasProcessingDecks = pitchDecks.some(deck => 
+    deck.processing_status === 'processing' || deck.processing_status === 'pending'
+  );
 
   useEffect(() => {
     fetchPitchDecks();
@@ -161,11 +165,6 @@ function StartupDashboard() {
     
     return () => clearInterval(interval);
   }, [hasProcessingDecks]);
-
-  // Check if there are any decks currently processing
-  const hasProcessingDecks = pitchDecks.some(deck => 
-    deck.processing_status === 'processing' || deck.processing_status === 'pending'
-  );
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4 }}>
