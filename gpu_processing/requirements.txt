@@ -1,5 +1,13 @@
 # GPU Processing Requirements
 # Dependencies for AI processing on GPU instances
+#
+# SYSTEM DEPENDENCIES (install with apt):
+# - poppler-utils (for PDF processing)
+# - tesseract-ocr (for OCR functionality)
+# - python3-dev (for building Python packages)
+# - build-essential (for compiling dependencies)
+#
+# Install with: sudo apt-get install -y poppler-utils tesseract-ocr python3-dev build-essential
 
 # PyTorch with CUDA support
 torch>=2.0.0
