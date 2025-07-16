@@ -105,29 +105,16 @@ sudo cp gpu-command-service.service /etc/systemd/system/
 
 # Install Python dependencies
 echo "📦 Installing Python dependencies..."
-# Handle externally-managed-environment on Ubuntu 24.04+
-if pip3 install ollama 2>&1 | grep -q "externally-managed-environment"; then
-    echo "🔧 Using --break-system-packages for system-wide installation..."
-    pip3 install --break-system-packages ollama
-elif ! python3 -c "import ollama" 2>/dev/null; then
-    # Try alternative installation methods
-    echo "🔧 Trying alternative installation methods..."
-    
-    # Try pipx first
-    if command -v pipx &> /dev/null; then
-        echo "📦 Installing via pipx..."
-        pipx install ollama
-    else
-        # Try apt package if available
-        if apt list --installed python3-ollama 2>/dev/null | grep -q python3-ollama; then
-            echo "📦 Ollama Python package already installed via apt"
-        else
-            echo "📦 Installing with --break-system-packages..."
-            pip3 install --break-system-packages ollama
-        fi
-    fi
+# Always use --break-system-packages and ignore conflicts for system-wide installation
+echo "🔧 Installing ollama with --break-system-packages and --ignore-installed..."
+pip3 install --break-system-packages --ignore-installed ollama
+
+# Verify installation
+if python3 -c "import ollama" 2>/dev/null; then
+    echo "✅ Ollama Python package installed successfully"
 else
-    echo "📦 Ollama Python package already installed"
+    echo "❌ Failed to install Ollama Python package"
+    exit 1
 fi
 
 # Set permissions
