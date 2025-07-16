@@ -267,9 +267,16 @@ class GPUHTTPServer:
                     "timestamp": datetime.now().isoformat()
                 }), 500
     
-    def run(self, host: str = '0.0.0.0', port: int = 8001):
+    def run(self, host: str = None, port: int = None):
         """Run the HTTP server"""
+        # Use environment variables or defaults
+        host = host or os.getenv("GPU_HTTP_HOST", "0.0.0.0")
+        port = port or int(os.getenv("GPU_HTTP_PORT", "8001"))
+        
         logger.info(f"Starting GPU HTTP server on {host}:{port}")
+        logger.info(f"Using mount path: {config.mount_path}")
+        logger.info(f"Results will be saved to: {config.results_path}")
+        
         self.app.run(host=host, port=port, debug=False)
 
 def main():

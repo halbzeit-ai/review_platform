@@ -6,6 +6,10 @@ import os
 from typing import Dict, Any, List
 from dataclasses import dataclass
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load GPU-specific environment variables
+load_dotenv(Path(__file__).parent.parent / ".env.gpu")
 
 @dataclass
 class ProcessingConfig:

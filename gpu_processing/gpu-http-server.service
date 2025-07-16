@@ -14,8 +14,7 @@ StandardError=journal
 
 # Environment variables
 Environment=PYTHONPATH=/opt/gpu_processing
-Environment=OLLAMA_HOST=127.0.0.1:11434
-Environment=FLASK_ENV=production
+EnvironmentFile=/opt/gpu_processing/.env.gpu
 
 [Install]
 WantedBy=multi-user.target
