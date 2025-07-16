@@ -5,6 +5,7 @@ Handles classification, template management, and analysis configuration
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 import json
@@ -90,13 +91,13 @@ async def get_healthcare_sectors(
 ):
     """Get all healthcare sectors"""
     try:
-        query = """
+        query = text("""
         SELECT id, name, display_name, description, keywords, subcategories, 
                confidence_threshold, regulatory_requirements, is_active
         FROM healthcare_sectors
         WHERE is_active = TRUE
         ORDER BY display_name
-        """
+        """)
         
         result = db.execute(query).fetchall()
         
@@ -131,15 +132,15 @@ async def get_sector_templates(
 ):
     """Get all analysis templates for a specific healthcare sector"""
     try:
-        query = """
+        query = text("""
         SELECT id, healthcare_sector_id, name, description, template_version,
                specialized_analysis, is_active, is_default, usage_count
         FROM analysis_templates
-        WHERE healthcare_sector_id = ? AND is_active = TRUE
+        WHERE healthcare_sector_id = :sector_id AND is_active = TRUE
         ORDER BY is_default DESC, name
-        """
+        """)
         
-        result = db.execute(query, (sector_id,)).fetchall()
+        result = db.execute(query, {"sector_id": sector_id}).fetchall()
         
         templates = []
         for row in result:
@@ -173,15 +174,15 @@ async def get_template_details(
     """Get detailed template information including chapters and questions"""
     try:
         # Get template basic info
-        template_query = """
+        template_query = text("""
         SELECT t.id, t.name, t.description, t.template_version, t.specialized_analysis,
                s.name as sector_name, s.display_name as sector_display_name
         FROM analysis_templates t
         JOIN healthcare_sectors s ON t.healthcare_sector_id = s.id
-        WHERE t.id = ? AND t.is_active = TRUE
-        """
+        WHERE t.id = :template_id AND t.is_active = TRUE
+        """)
         
-        template_result = db.execute(template_query, (template_id,)).fetchone()
+        template_result = db.execute(template_query, {"template_id": template_id}).fetchone()
         
         if not template_result:
             raise HTTPException(
@@ -190,30 +191,30 @@ async def get_template_details(
             )
         
         # Get chapters
-        chapters_query = """
+        chapters_query = text("""
         SELECT id, chapter_id, name, description, weight, order_index, 
                is_required, enabled
         FROM template_chapters
-        WHERE template_id = ? AND enabled = TRUE
+        WHERE template_id = :template_id AND enabled = TRUE
         ORDER BY order_index
-        """
+        """)
         
-        chapters_result = db.execute(chapters_query, (template_id,)).fetchall()
+        chapters_result = db.execute(chapters_query, {"template_id": template_id}).fetchall()
         
         # Get questions for each chapter
         chapters = []
         for chapter_row in chapters_result:
             chapter_id = chapter_row[0]
             
-            questions_query = """
+            questions_query = text("""
             SELECT id, question_id, question_text, weight, order_index, enabled,
                    scoring_criteria, healthcare_focus
             FROM chapter_questions
-            WHERE chapter_id = ? AND enabled = TRUE
+            WHERE chapter_id = :chapter_id AND enabled = TRUE
             ORDER BY order_index
-            """
+            """)
             
-            questions_result = db.execute(questions_query, (chapter_id,)).fetchall()
+            questions_result = db.execute(questions_query, {"chapter_id": chapter_id}).fetchall()
             
             questions = []
             for question_row in questions_result:
@@ -305,21 +306,22 @@ async def customize_template(
             )
         
         # Insert customization
-        insert_query = """
+        insert_query = text("""
         INSERT INTO gp_template_customizations 
         (gp_email, base_template_id, customization_name, customized_chapters, 
          customized_questions, customized_weights, is_active)
-        VALUES (?, ?, ?, ?, ?, ?, TRUE)
-        """
+        VALUES (:gp_email, :base_template_id, :customization_name, :customized_chapters, 
+                :customized_questions, :customized_weights, TRUE)
+        """)
         
-        result = db.execute(insert_query, (
-            current_user.email,
-            request.base_template_id,
-            request.customization_name,
-            json.dumps(request.customized_chapters or {}),
-            json.dumps(request.customized_questions or {}),
-            json.dumps(request.customized_weights or {})
-        ))
+        result = db.execute(insert_query, {
+            "gp_email": current_user.email,
+            "base_template_id": request.base_template_id,
+            "customization_name": request.customization_name,
+            "customized_chapters": json.dumps(request.customized_chapters or {}),
+            "customized_questions": json.dumps(request.customized_questions or {}),
+            "customized_weights": json.dumps(request.customized_weights or {})
+        })
         
         customization_id = result.lastrowid
         db.commit()
@@ -352,17 +354,17 @@ async def get_my_customizations(
                 detail="Only GPs can view customizations"
             )
         
-        query = """
+        query = text("""
         SELECT c.id, c.customization_name, c.base_template_id, c.created_at,
                t.name as template_name, s.display_name as sector_name
         FROM gp_template_customizations c
         JOIN analysis_templates t ON c.base_template_id = t.id
         JOIN healthcare_sectors s ON t.healthcare_sector_id = s.id
-        WHERE c.gp_email = ? AND c.is_active = TRUE
+        WHERE c.gp_email = :gp_email AND c.is_active = TRUE
         ORDER BY c.created_at DESC
-        """
+        """)
         
-        result = db.execute(query, (current_user.email,)).fetchall()
+        result = db.execute(query, {"gp_email": current_user.email}).fetchall()
         
         customizations = []
         for row in result:
@@ -394,7 +396,7 @@ async def get_performance_metrics(
     """Get performance metrics for templates and classifications"""
     try:
         # Template performance metrics
-        template_performance_query = """
+        template_performance_query = text("""
         SELECT t.name, COUNT(tp.id) as usage_count, 
                AVG(tp.average_confidence) as avg_confidence,
                AVG(tp.gp_rating) as avg_rating
@@ -403,28 +405,28 @@ async def get_performance_metrics(
         WHERE t.is_active = TRUE
         GROUP BY t.id, t.name
         ORDER BY usage_count DESC
-        """
+        """)
         
         template_result = db.execute(template_performance_query).fetchall()
         
         # Classification accuracy metrics
-        classification_accuracy_query = """
+        classification_accuracy_query = text("""
         SELECT COUNT(*) as total_classifications,
                SUM(CASE WHEN was_accurate = TRUE THEN 1 ELSE 0 END) as accurate_classifications,
                SUM(CASE WHEN was_accurate = FALSE THEN 1 ELSE 0 END) as inaccurate_classifications
         FROM classification_performance
-        """
+        """)
         
         accuracy_result = db.execute(classification_accuracy_query).fetchone()
         
         # Sector distribution
-        sector_distribution_query = """
+        sector_distribution_query = text("""
         SELECT s.display_name, COUNT(sc.id) as classification_count
         FROM healthcare_sectors s
         LEFT JOIN startup_classifications sc ON s.id = sc.primary_sector_id
         GROUP BY s.id, s.display_name
         ORDER BY classification_count DESC
-        """
+        """)
         
         sector_result = db.execute(sector_distribution_query).fetchall()
         
