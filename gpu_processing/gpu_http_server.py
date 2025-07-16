@@ -245,6 +245,9 @@ class GPUHTTPServer:
                 
                 logger.info(f"PDF processing completed successfully. Results saved to: {results_path}")
                 
+                # Update database with results file path
+                self._update_database_with_results(pitch_deck_id, results_filename)
+                
                 return jsonify({
                     "success": True,
                     "message": f"Successfully processed PDF {file_path}",
@@ -268,6 +271,36 @@ class GPUHTTPServer:
                     "error": f"Error processing PDF: {str(e)}",
                     "timestamp": datetime.now().isoformat()
                 }), 500
+    
+    def _update_database_with_results(self, pitch_deck_id: int, results_filename: str):
+        """Update the database via HTTP request to the production server"""
+        try:
+            import requests
+            
+            # Get the production server URL from environment or use default
+            production_server = os.getenv("PRODUCTION_SERVER_URL", "http://65.108.32.168")
+            
+            # Prepare the update data
+            update_data = {
+                "pitch_deck_id": pitch_deck_id,
+                "results_file_path": f"results/{results_filename}",
+                "processing_status": "completed"
+            }
+            
+            # Make HTTP request to update database
+            response = requests.post(
+                f"{production_server}/api/internal/update-deck-results",
+                json=update_data,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                logger.info(f"Updated database via HTTP: deck {pitch_deck_id} -> results/{results_filename}")
+            else:
+                logger.error(f"Failed to update database via HTTP: {response.status_code} - {response.text}")
+            
+        except Exception as e:
+            logger.error(f"Error updating database via HTTP for deck {pitch_deck_id}: {e}")
     
     def run(self, host: str = None, port: int = None):
         """Run the HTTP server"""
