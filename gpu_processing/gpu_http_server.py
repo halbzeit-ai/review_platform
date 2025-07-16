@@ -230,8 +230,10 @@ class GPUHTTPServer:
                 # Process the PDF using the existing PDFProcessor
                 results = self.pdf_processor.process_pdf(file_path)
                 
-                # Save results to shared filesystem
-                results_filename = f"review_{pitch_deck_id}.json"
+                # Save results to shared filesystem (using backend-expected naming pattern)
+                import time
+                timestamp = int(time.time())
+                results_filename = f"job_{pitch_deck_id}_{timestamp}_results.json"
                 results_path = config.results_path / results_filename
                 
                 # Ensure results directory exists
