@@ -63,11 +63,13 @@ const ProjectDashboard = () => {
       
       const decksData = decksResponse.data || decksResponse;
       
-      setProjectDecks(Array.isArray(decksData) ? decksData : []);
+      // Handle the response structure: {decks: [...]}
+      const decks = decksData.decks || decksData;
+      setProjectDecks(Array.isArray(decks) ? decks : []);
       
       // Set first deck as selected if available
-      if (decksData && decksData.length > 0) {
-        setSelectedDeck(decksData[0]);
+      if (decks && decks.length > 0) {
+        setSelectedDeck(decks[0]);
       }
       
       // Update breadcrumbs
