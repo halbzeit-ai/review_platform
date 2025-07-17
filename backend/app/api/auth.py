@@ -228,7 +228,7 @@ async def delete_user(
     current_user: User = Depends(get_current_user), 
     db: Session = Depends(get_db)
 ):
-    """Delete a user account (GP only)"""
+    """Delete a user account and cascade delete their projects (GP only)"""
     # Verify the requester is a GP
     if current_user.role != "gp":
         raise HTTPException(status_code=403, detail="Only GPs can delete users")
@@ -241,22 +241,121 @@ async def delete_user(
     print(f"[DEBUG] Attempting to delete user with email: '{user_email}'")
     user_to_delete = db.query(User).filter(User.email == user_email).first()
     
-    # Debug: List all users in database for comparison
-    all_users = db.query(User).all()
-    print(f"[DEBUG] All users in database: {[u.email for u in all_users]}")
-    
     if not user_to_delete:
         raise HTTPException(status_code=404, detail=f"User not found: {user_email}")
     
-    # Delete the user
+    # Import necessary modules for file operations
+    import os
+    import shutil
+    from sqlalchemy import text
+    from ..core.config import Settings
+    
+    settings = Settings()
+    
+    # Get user's company_id for project cleanup
+    from ..api.projects import get_company_id_from_user
+    company_id = get_company_id_from_user(user_to_delete)
+    
+    # Find all pitch decks belonging to this user
+    pitch_decks = db.execute(
+        text("SELECT id, file_name, file_path, results_file_path FROM pitch_decks WHERE user_id = :user_id"),
+        {"user_id": user_to_delete.id}
+    ).fetchall()
+    
+    deleted_files = []
+    deleted_folders = []
+    
+    # Delete all associated pitch decks and their files
+    for deck in pitch_decks:
+        deck_id, file_name, file_path, results_file_path = deck
+        
+        # Delete the PDF file
+        if file_path:
+            if file_path.startswith('/'):
+                pdf_full_path = file_path
+            else:
+                pdf_full_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, file_path)
+            
+            if os.path.exists(pdf_full_path):
+                try:
+                    os.remove(pdf_full_path)
+                    deleted_files.append(pdf_full_path)
+                    print(f"[DEBUG] Deleted PDF file: {pdf_full_path}")
+                except Exception as e:
+                    print(f"[WARNING] Could not delete PDF file {pdf_full_path}: {e}")
+        
+        # Delete the results file
+        if results_file_path:
+            if results_file_path.startswith('/'):
+                results_full_path = results_file_path
+            else:
+                results_full_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, results_file_path)
+            
+            if os.path.exists(results_full_path):
+                try:
+                    os.remove(results_full_path)
+                    deleted_files.append(results_full_path)
+                    print(f"[DEBUG] Deleted results file: {results_full_path}")
+                except Exception as e:
+                    print(f"[WARNING] Could not delete results file {results_full_path}: {e}")
+        
+        # Delete the analysis folder with slide images
+        if file_name:
+            deck_name = os.path.splitext(file_name)[0]
+            analysis_folder = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id, "analysis", deck_name)
+            
+            if os.path.exists(analysis_folder):
+                try:
+                    shutil.rmtree(analysis_folder)
+                    deleted_folders.append(analysis_folder)
+                    print(f"[DEBUG] Deleted analysis folder: {analysis_folder}")
+                except Exception as e:
+                    print(f"[WARNING] Could not delete analysis folder {analysis_folder}: {e}")
+    
+    # Delete the entire project directory if it exists and is empty
+    project_dir = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id)
+    if os.path.exists(project_dir):
+        try:
+            # Check if directory is empty or only contains empty subdirectories
+            if not any(os.listdir(subdir) for subdir in [
+                os.path.join(project_dir, "analysis"),
+                os.path.join(project_dir, "uploads"),
+                os.path.join(project_dir, "exports")
+            ] if os.path.exists(subdir)):
+                shutil.rmtree(project_dir)
+                deleted_folders.append(project_dir)
+                print(f"[DEBUG] Deleted project directory: {project_dir}")
+        except Exception as e:
+            print(f"[WARNING] Could not delete project directory {project_dir}: {e}")
+    
+    # Delete all database records related to this user
+    # Delete pitch decks
+    db.execute(text("DELETE FROM pitch_decks WHERE user_id = :user_id"), {"user_id": user_to_delete.id})
+    
+    # Delete reviews (if they exist)
+    db.execute(text("DELETE FROM reviews WHERE pitch_deck_id IN (SELECT id FROM pitch_decks WHERE user_id = :user_id)"), {"user_id": user_to_delete.id})
+    
+    # Delete questions (if they exist)
+    db.execute(text("DELETE FROM questions WHERE review_id IN (SELECT id FROM reviews WHERE pitch_deck_id IN (SELECT id FROM pitch_decks WHERE user_id = :user_id))"), {"user_id": user_to_delete.id})
+    
+    # Finally, delete the user
     db.delete(user_to_delete)
     db.commit()
+    
+    print(f"[DEBUG] User deletion completed: {user_email}")
+    print(f"[DEBUG] Deleted {len(pitch_decks)} pitch decks")
+    print(f"[DEBUG] Deleted {len(deleted_files)} files")
+    print(f"[DEBUG] Deleted {len(deleted_folders)} folders")
     
     return JSONResponse(
         status_code=200,
         content={
-            "message": "User deleted successfully",
-            "deleted_email": user_email
+            "message": "User and all associated projects deleted successfully",
+            "deleted_email": user_email,
+            "deleted_projects": len(pitch_decks),
+            "deleted_files": len(deleted_files),
+            "deleted_folders": len(deleted_folders),
+            "company_id": company_id
         }
     )
 
