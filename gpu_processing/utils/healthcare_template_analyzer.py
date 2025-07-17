@@ -60,8 +60,9 @@ class HealthcareTemplateAnalyzer:
         self.question_results = {}
         self.specialized_results = {}
         
-        # Initialize image analysis prompt
-        self.image_analysis_prompt = self._get_image_analysis_prompt()
+        # Initialize pipeline prompts
+        self.image_analysis_prompt = self._get_pipeline_prompt("image_analysis")
+        self.offering_extraction_prompt = self._get_pipeline_prompt("offering_extraction")
         
         # Project-based storage - read from environment
         self.project_root = os.path.join(os.getenv('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/CPU-GPU'), 'projects')
@@ -156,37 +157,46 @@ class HealthcareTemplateAnalyzer:
             # Fallback to old structure
             return os.path.join("/mnt/shared/temp", "analysis")
     
-    def _get_image_analysis_prompt(self) -> str:
-        """Get image analysis prompt from configuration or use default"""
+    def _get_pipeline_prompt(self, stage_name: str) -> str:
+        """Get pipeline prompt from configuration or use default"""
         try:
             if os.path.exists(self.backend_db_path):
                 conn = sqlite3.connect(self.backend_db_path)
                 cursor = conn.cursor()
                 cursor.execute(
-                    "SELECT prompt_text FROM pipeline_prompts WHERE stage_name = 'image_analysis' AND is_active = 1 LIMIT 1"
+                    "SELECT prompt_text FROM pipeline_prompts WHERE stage_name = ? AND is_active = 1 LIMIT 1",
+                    (stage_name,)
                 )
                 result = cursor.fetchone()
                 conn.close()
                 
                 if result:
-                    logger.info(f"✅ Using configured image analysis prompt from database:")
+                    logger.info(f"✅ Using configured {stage_name} prompt from database:")
                     logger.info(f"📝 Prompt: {result[0]}")
                     return result[0]
         except Exception as e:
-            logger.warning(f"Could not get image analysis prompt: {e}")
+            logger.warning(f"Could not get {stage_name} prompt: {e}")
         
-        # Default fallback
-        default_prompt = """
-        Describe this image and make sure to include anything notable about it (include text you see in the image).
-        Focus on:
-        - All visible text and numbers
-        - Charts, graphs, and visual data
-        - Layout and structure of information
-        - Key visual elements and their relationships
+        # Default fallback prompts
+        default_prompts = {
+            "image_analysis": """
+            Describe this image and make sure to include anything notable about it (include text you see in the image).
+            Focus on:
+            - All visible text and numbers
+            - Charts, graphs, and visual data
+            - Layout and structure of information
+            - Key visual elements and their relationships
+            
+            Provide a structured description that preserves the logical flow of information as presented.
+            """,
+            "offering_extraction": """
+            Your Task is to explain in one single short sentence the service or product the startup provides. 
+            Do not mention the name of the product or the company.
+            """
+        }
         
-        Provide a structured description that preserves the logical flow of information as presented.
-        """
-        logger.info(f"⚠️  Using default fallback image analysis prompt:")
+        default_prompt = default_prompts.get(stage_name, f"No default prompt for {stage_name}")
+        logger.info(f"⚠️  Using default fallback {stage_name} prompt:")
         logger.info(f"📝 Default prompt: {default_prompt}")
         return default_prompt
     
@@ -494,20 +504,8 @@ class HealthcareTemplateAnalyzer:
         
         full_pitchdeck_text = " ".join(descriptions)
         
-        offering_prompt = """
-        You are a healthcare venture capital analyst. Based on the following pitch deck content, 
-        provide a single, clear sentence that describes what this healthcare startup does.
-        
-        Focus on:
-        - The specific healthcare problem being solved
-        - The target patient population or healthcare setting
-        - The core solution or intervention
-        - The intended clinical or health outcome
-        
-        Provide only the single sentence description, no additional text.
-        
-        Pitch deck content: {pitch_deck_content}
-        """
+        # Use pipeline prompt for offering extraction
+        offering_prompt = f"{self.offering_extraction_prompt}\n\nPitch deck content: {{pitch_deck_content}}"
         
         try:
             response = ollama.generate(
