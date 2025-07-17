@@ -40,7 +40,7 @@ const DeckViewer = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [imageZoom, setImageZoom] = useState(1);
+  const [imageZoom, setImageZoom] = useState('fit'); // 'fit' for auto-fit, or number for manual zoom
   
   // Deck analysis data
   const [deckAnalysis, setDeckAnalysis] = useState(null);
@@ -117,7 +117,7 @@ const DeckViewer = () => {
 
   const handleSlideChange = (slideIndex) => {
     setCurrentSlide(slideIndex);
-    setImageZoom(1); // Reset zoom when changing slides
+    // Keep current zoom level when changing slides - don't reset
   };
 
   const handleNextSlide = () => {
@@ -133,11 +133,21 @@ const DeckViewer = () => {
   };
 
   const handleZoomIn = () => {
-    setImageZoom(prev => Math.min(prev + 0.2, 3));
+    setImageZoom(prev => {
+      const currentZoom = prev === 'fit' ? 1 : prev;
+      return Math.min(currentZoom + 0.2, 3);
+    });
   };
 
   const handleZoomOut = () => {
-    setImageZoom(prev => Math.max(prev - 0.2, 0.5));
+    setImageZoom(prev => {
+      const currentZoom = prev === 'fit' ? 1 : prev;
+      return Math.max(currentZoom - 0.2, 0.5);
+    });
+  };
+
+  const handleZoomFit = () => {
+    setImageZoom('fit');
   };
 
   const SlideNavigationCard = ({ slide, index, isActive }) => (
@@ -337,12 +347,20 @@ const DeckViewer = () => {
                     <IconButton onClick={handleZoomOut} size="small">
                       <ZoomOutIcon />
                     </IconButton>
-                    <Typography variant="body2" sx={{ minWidth: '50px', textAlign: 'center' }}>
-                      {Math.round(imageZoom * 100)}%
+                    <Typography variant="body2" sx={{ minWidth: '60px', textAlign: 'center' }}>
+                      {imageZoom === 'fit' ? 'Fit' : `${Math.round(imageZoom * 100)}%`}
                     </Typography>
                     <IconButton onClick={handleZoomIn} size="small">
                       <ZoomInIcon />
                     </IconButton>
+                    <Button 
+                      onClick={handleZoomFit} 
+                      size="small" 
+                      variant="outlined"
+                      sx={{ ml: 1, fontSize: '0.75rem', minWidth: 'auto', px: 1 }}
+                    >
+                      Fit
+                    </Button>
                   </Box>
                 </Box>
 
@@ -354,7 +372,7 @@ const DeckViewer = () => {
                   justifyContent: 'center', 
                   alignItems: 'center',
                   mb: 3,
-                  overflow: 'auto',
+                  overflow: imageZoom === 'fit' ? 'hidden' : 'auto',
                   maxHeight: '600px',
                   minHeight: '300px',
                   backgroundColor: 'grey.50',
@@ -365,13 +383,14 @@ const DeckViewer = () => {
                       src={imageUrls[currentSlideData.page_number]}
                       alt={`Slide ${currentSlideData.page_number}`}
                       style={{
-                        maxWidth: '100%',
-                        maxHeight: '100%',
-                        width: 'auto',
-                        height: 'auto',
-                        objectFit: 'contain',
-                        transform: `scale(${imageZoom})`,
-                        transition: 'transform 0.2s ease-in-out'
+                        maxWidth: imageZoom === 'fit' ? '100%' : 'none',
+                        maxHeight: imageZoom === 'fit' ? '100%' : 'none',
+                        width: imageZoom === 'fit' ? 'auto' : 'auto',
+                        height: imageZoom === 'fit' ? 'auto' : 'auto',
+                        objectFit: imageZoom === 'fit' ? 'contain' : 'none',
+                        transform: imageZoom === 'fit' ? 'none' : `scale(${imageZoom})`,
+                        transition: 'transform 0.2s ease-in-out',
+                        transformOrigin: 'center center'
                       }}
                     />
                   ) : (
