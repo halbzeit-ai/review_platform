@@ -125,6 +125,12 @@ const TemplateManagement = () => {
     if (promptTextareaRef.current && !isSavingRef.current) {
       console.log('Updating textarea value to:', promptText);
       promptTextareaRef.current.value = promptText || '';
+      
+      // Check what the value actually is after setting it
+      setTimeout(() => {
+        console.log('Textarea value after setting:', promptTextareaRef.current?.value);
+        console.log('Textarea value length:', promptTextareaRef.current?.value?.length);
+      }, 10);
     } else {
       console.log('Skipping textarea update - ref or saving condition failed');
     }
@@ -687,7 +693,6 @@ const TemplateManagement = () => {
               </Typography>
               <textarea
                 ref={promptTextareaRef}
-                defaultValue=""
                 disabled={promptLoading}
                 rows={8}
                 style={{
