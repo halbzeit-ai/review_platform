@@ -87,6 +87,7 @@ const TemplateManagement = () => {
   
   // Ref for uncontrolled textarea
   const promptTextareaRef = useRef(null);
+  const isSavingRef = useRef(false);
   
   
   // Dialog states
@@ -117,8 +118,8 @@ const TemplateManagement = () => {
 
   // Update textarea when promptText changes (from loading or stage change)
   useEffect(() => {
-    if (promptTextareaRef.current && promptText) {
-      promptTextareaRef.current.value = promptText;
+    if (promptTextareaRef.current && !isSavingRef.current) {
+      promptTextareaRef.current.value = promptText || '';
     }
   }, [promptText]);
 
@@ -249,6 +250,7 @@ const TemplateManagement = () => {
     try {
       setPromptLoading(true);
       setPromptError(null);
+      isSavingRef.current = true;
       
       const currentPromptText = getCurrentPromptText();
       await updatePipelinePrompt(selectedPromptStage, currentPromptText);
@@ -268,6 +270,10 @@ const TemplateManagement = () => {
       setPromptError(err.response?.data?.detail || err.message || 'Failed to save prompt');
     } finally {
       setPromptLoading(false);
+      // Reset the saving flag after a brief delay
+      setTimeout(() => {
+        isSavingRef.current = false;
+      }, 100);
     }
   };
 
