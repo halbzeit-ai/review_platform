@@ -859,7 +859,8 @@ class HealthcareTemplateAnalyzer:
                     "questions": chapter_question_details,  # New detailed structure
                     "weighted_score": weighted_score,
                     "weight": chapter.get("weight", 1.0),
-                    "total_questions": len(chapter_questions)
+                    "total_questions": len(chapter_questions),
+                    "code_version": "v2.0-with-questions-array"  # Debug marker
                 }
     
     def _score_question(self, question_text: str, scoring_criteria: str, response: str, pitch_deck_text: str) -> int:
