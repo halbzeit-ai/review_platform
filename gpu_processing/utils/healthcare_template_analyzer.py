@@ -45,7 +45,7 @@ class HealthcareTemplateAnalyzer:
     def __init__(self, backend_base_url: str = "http://localhost:8000"):
         self.backend_base_url = backend_base_url
         # Use PostgreSQL database connection
-        self.database_url = "postgresql://review_user:review_password@happy-heart-shines-fin-01:5432/review_platform"
+        self.database_url = "postgresql://review_user:review_password@happy-heart-shines-fin-01:5432/review-platform"
         
         # Model configuration
         self.vision_model = self.get_model_by_type("vision") or "gemma3:12b"
