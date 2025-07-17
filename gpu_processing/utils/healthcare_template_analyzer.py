@@ -169,13 +169,14 @@ class HealthcareTemplateAnalyzer:
                 conn.close()
                 
                 if result:
-                    logger.info(f"Using configured image analysis prompt: {result[0][:50]}...")
+                    logger.info(f"✅ Using configured image analysis prompt from database:")
+                    logger.info(f"📝 Prompt: {result[0]}")
                     return result[0]
         except Exception as e:
             logger.warning(f"Could not get image analysis prompt: {e}")
         
         # Default fallback
-        return """
+        default_prompt = """
         Describe this image and make sure to include anything notable about it (include text you see in the image).
         Focus on:
         - All visible text and numbers
@@ -185,6 +186,9 @@ class HealthcareTemplateAnalyzer:
         
         Provide a structured description that preserves the logical flow of information as presented.
         """
+        logger.info(f"⚠️  Using default fallback image analysis prompt:")
+        logger.info(f"📝 Default prompt: {default_prompt}")
+        return default_prompt
     
     def _classify_startup(self, company_offering: str) -> Dict[str, Any]:
         """Classify startup using backend API"""
@@ -451,6 +455,7 @@ class HealthcareTemplateAnalyzer:
                 image_bytes = image_to_byte_array(page_image)
                 
                 # Get AI analysis of the page
+                logger.info(f"🔍 Analyzing page {page_number + 1} with prompt: {self.image_analysis_prompt[:100]}...")
                 page_analysis = get_information_for_image(
                     image_bytes, 
                     self.image_analysis_prompt, 
