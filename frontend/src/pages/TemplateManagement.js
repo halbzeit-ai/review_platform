@@ -115,6 +115,13 @@ const TemplateManagement = () => {
     loadInitialData();
   }, []);
 
+  // Update textarea when promptText changes (from loading or stage change)
+  useEffect(() => {
+    if (promptTextareaRef.current && promptText) {
+      promptTextareaRef.current.value = promptText;
+    }
+  }, [promptText]);
+
 
   // Get current prompt text from textarea
   const getCurrentPromptText = useCallback(() => {
@@ -145,10 +152,6 @@ const TemplateManagement = () => {
       // Set initial prompt text for image_analysis
       if (pipelineData.prompts && pipelineData.prompts.image_analysis) {
         setPromptText(pipelineData.prompts.image_analysis);
-        // Also set in textarea if it exists
-        if (promptTextareaRef.current) {
-          promptTextareaRef.current.value = pipelineData.prompts.image_analysis;
-        }
       }
       
       // Load templates for first sector by default
@@ -233,10 +236,6 @@ const TemplateManagement = () => {
       const promptData = response.data || response;
       const newPromptText = promptData.prompt_text || '';
       setPromptText(newPromptText);
-      // Also update textarea
-      if (promptTextareaRef.current) {
-        promptTextareaRef.current.value = newPromptText;
-      }
       
     } catch (err) {
       console.error('Error loading prompt:', err);
@@ -254,7 +253,7 @@ const TemplateManagement = () => {
       const currentPromptText = getCurrentPromptText();
       await updatePipelinePrompt(selectedPromptStage, currentPromptText);
       
-      // Update local state
+      // Update local state - don't update promptText to avoid reset
       setPipelinePrompts(prev => ({
         ...prev,
         [selectedPromptStage]: currentPromptText
@@ -283,10 +282,6 @@ const TemplateManagement = () => {
       // Update local state with reset prompt
       const newPromptText = resetData.default_prompt || '';
       setPromptText(newPromptText);
-      // Also update textarea
-      if (promptTextareaRef.current) {
-        promptTextareaRef.current.value = newPromptText;
-      }
       setPipelinePrompts(prev => ({
         ...prev,
         [selectedPromptStage]: newPromptText
@@ -663,7 +658,7 @@ const TemplateManagement = () => {
               </Typography>
               <textarea
                 ref={promptTextareaRef}
-                defaultValue={promptText}
+                defaultValue=""
                 disabled={promptLoading}
                 rows={8}
                 style={{
