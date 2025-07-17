@@ -53,6 +53,11 @@ const ProjectDashboard = () => {
     loadProjectData();
   }, [companyId]);
 
+  // Function to refresh project data (can be called after upload)
+  const refreshProjectData = () => {
+    loadProjectData();
+  };
+
   const loadProjectData = async () => {
     try {
       setLoading(true);
@@ -251,7 +256,7 @@ const ProjectDashboard = () => {
   );
 
   const UploadsContent = () => (
-    <ProjectUploads companyId={companyId} />
+    <ProjectUploads companyId={companyId} onUploadComplete={refreshProjectData} />
   );
 
   if (loading) {
