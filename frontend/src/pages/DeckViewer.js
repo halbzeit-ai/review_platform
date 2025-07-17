@@ -352,9 +352,13 @@ const DeckViewer = () => {
                 <Box sx={{ 
                   display: 'flex', 
                   justifyContent: 'center', 
+                  alignItems: 'center',
                   mb: 3,
                   overflow: 'auto',
-                  maxHeight: '500px'
+                  maxHeight: '600px',
+                  minHeight: '300px',
+                  backgroundColor: 'grey.50',
+                  borderRadius: 1
                 }}>
                   {imageUrls[currentSlideData.page_number] ? (
                     <img
@@ -362,7 +366,10 @@ const DeckViewer = () => {
                       alt={`Slide ${currentSlideData.page_number}`}
                       style={{
                         maxWidth: '100%',
+                        maxHeight: '100%',
+                        width: 'auto',
                         height: 'auto',
+                        objectFit: 'contain',
                         transform: `scale(${imageZoom})`,
                         transition: 'transform 0.2s ease-in-out'
                       }}
