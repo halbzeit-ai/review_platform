@@ -277,10 +277,10 @@ const ConfigPage = () => {
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
           <Box>
             <Typography variant="h4" gutterBottom>
-              AI Model Configuration
+              {t('modelConfig.title')}
             </Typography>
             <Typography variant="subtitle1" color="text.secondary">
-              Configure different AI models for each analysis task
+              {t('modelConfig.description')}
             </Typography>
           </Box>
           <Settings fontSize="large" color="primary" />
@@ -321,7 +321,7 @@ const ConfigPage = () => {
                   </Typography>
                   {activeModels[modelType.key] && (
                     <Chip 
-                      label="Active" 
+                      label={t('modelConfig.labels.active')} 
                       color="success" 
                       size="small"
                       icon={<CheckCircle />}
@@ -405,7 +405,7 @@ const ConfigPage = () => {
                         <Typography variant="h6">{model.name}</Typography>
                         {model.name === activeModels[getCurrentModelType().key] && (
                           <Chip 
-                            label="Active" 
+                            label={t('modelConfig.labels.active')} 
                             color="success" 
                             size="small"
                             icon={<CheckCircle />}
@@ -457,10 +457,10 @@ const ConfigPage = () => {
       {availableModels.length > 0 && (
         <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
           <Typography variant="h5" gutterBottom>
-            Popular Models
+            {t('modelConfig.sections.popularModels')}
           </Typography>
           <Typography variant="body2" color="text.secondary" paragraph>
-            These models are available for download from Ollama
+            {t('modelConfig.messages.modelDescription')}
           </Typography>
           
           <Grid container spacing={2}>
@@ -505,22 +505,22 @@ const ConfigPage = () => {
           <TextField
             autoFocus
             margin="dense"
-            label="Model Name"
+            label={t('modelConfig.labels.modelName')}
             type="text"
             fullWidth
             variant="outlined"
             value={newModelName}
             onChange={(e) => setNewModelName(e.target.value)}
             placeholder="e.g., llama3.1, gemma2, phi3"
-            helperText="Enter the name of the model you want to pull from Ollama"
+            helperText={t('modelConfig.messages.pullModelHelper')}
             sx={{ mb: 2 }}
           />
           <FormControl fullWidth variant="outlined">
-            <InputLabel>Model Type</InputLabel>
+            <InputLabel>{t('modelConfig.labels.modelType')}</InputLabel>
             <Select
               value={selectedModelType}
               onChange={(e) => setSelectedModelType(e.target.value)}
-              label="Model Type"
+              label={t('modelConfig.labels.modelType')}
             >
               {MODEL_TYPES.map((type) => (
                 <MenuItem key={type.key} value={type.key}>
@@ -534,14 +534,14 @@ const ConfigPage = () => {
           </FormControl>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPullDialog(false)}>Cancel</Button>
+          <Button onClick={() => setPullDialog(false)}>{t('modelConfig.buttons.cancel')}</Button>
           <Button 
             onClick={handlePullModel} 
             variant="contained"
             disabled={pulling || !newModelName.trim()}
             startIcon={pulling ? <CircularProgress size={20} /> : <Download />}
           >
-            {pulling ? 'Pulling...' : 'Pull Model'}
+            {pulling ? t('modelConfig.buttons.pulling') : t('modelConfig.buttons.pullModel')}
           </Button>
         </DialogActions>
       </Dialog>

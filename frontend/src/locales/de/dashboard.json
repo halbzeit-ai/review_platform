@@ -128,5 +128,55 @@
       "deckViewer": "Deck Viewer",
       "viewResults": "Ergebnisse anzeigen"
     }
+  },
+  "modelConfig": {
+    "title": "KI-Modell-Konfiguration",
+    "description": "Konfigurieren Sie verschiedene KI-Modelle für jede Analyseaufgabe",
+    "navigation": {
+      "backToDashboard": "Zurück zum Dashboard"
+    },
+    "sections": {
+      "configuredModels": "Konfigurierte Modelle",
+      "availableModels": "Verfügbare Modelle",
+      "popularModels": "Beliebte Modelle",
+      "pullNewModel": "Neues Modell herunterladen"
+    },
+    "labels": {
+      "modelType": "Modell-Typ",
+      "modelName": "Modell-Name",
+      "status": "Status",
+      "actions": "Aktionen",
+      "active": "Aktiv",
+      "inactive": "Inaktiv",
+      "available": "Verfügbar",
+      "downloading": "Wird heruntergeladen",
+      "ready": "Bereit",
+      "error": "Fehler"
+    },
+    "buttons": {
+      "activate": "Aktivieren",
+      "deactivate": "Deaktivieren",
+      "download": "Herunterladen",
+      "delete": "Löschen",
+      "pullModel": "Modell herunterladen",
+      "pulling": "Wird heruntergeladen...",
+      "cancel": "Abbrechen",
+      "refresh": "Modelle aktualisieren"
+    },
+    "types": {
+      "vision": "Vision-Modell",
+      "text": "Text-Modell",
+      "scoring": "Bewertungs-Modell"
+    },
+    "messages": {
+      "noModelsConfigured": "Noch keine Modelle konfiguriert",
+      "noModelsAvailable": "Keine Modelle zum Herunterladen verfügbar",
+      "modelDescription": "Diese Modelle sind zum Herunterladen von Ollama verfügbar",
+      "pullModelHelper": "Geben Sie den Namen des Modells ein, das Sie von Ollama herunterladen möchten",
+      "modelActivated": "Modell erfolgreich aktiviert",
+      "modelDeactivated": "Modell erfolgreich deaktiviert",
+      "modelDeleted": "Modell erfolgreich gelöscht",
+      "modelPulled": "Modell erfolgreich heruntergeladen"
+    }
   }
 }

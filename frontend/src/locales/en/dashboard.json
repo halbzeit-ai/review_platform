@@ -128,5 +128,55 @@
       "deckViewer": "Deck Viewer",
       "viewResults": "View Results"
     }
+  },
+  "modelConfig": {
+    "title": "AI Model Configuration",
+    "description": "Configure different AI models for each analysis task",
+    "navigation": {
+      "backToDashboard": "Back to Dashboard"
+    },
+    "sections": {
+      "configuredModels": "Configured Models",
+      "availableModels": "Available Models",
+      "popularModels": "Popular Models",
+      "pullNewModel": "Pull New Model"
+    },
+    "labels": {
+      "modelType": "Model Type",
+      "modelName": "Model Name",
+      "status": "Status",
+      "actions": "Actions",
+      "active": "Active",
+      "inactive": "Inactive",
+      "available": "Available",
+      "downloading": "Downloading",
+      "ready": "Ready",
+      "error": "Error"
+    },
+    "buttons": {
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "download": "Download",
+      "delete": "Delete",
+      "pullModel": "Pull Model",
+      "pulling": "Pulling...",
+      "cancel": "Cancel",
+      "refresh": "Refresh Models"
+    },
+    "types": {
+      "vision": "Vision Model",
+      "text": "Text Model",
+      "scoring": "Scoring Model"
+    },
+    "messages": {
+      "noModelsConfigured": "No models configured yet",
+      "noModelsAvailable": "No models available for download",
+      "modelDescription": "These models are available for download from Ollama",
+      "pullModelHelper": "Enter the name of the model you want to pull from Ollama",
+      "modelActivated": "Model activated successfully",
+      "modelDeactivated": "Model deactivated successfully",
+      "modelDeleted": "Model deleted successfully",
+      "modelPulled": "Model pulled successfully"
+    }
   }
 }
