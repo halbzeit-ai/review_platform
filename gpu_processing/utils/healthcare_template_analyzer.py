@@ -377,6 +377,15 @@ class HealthcareTemplateAnalyzer:
         start_time = time.time()
         logger.info(f"Starting healthcare template analysis of PDF: {pdf_path}")
         
+        # Clear state from previous analysis sessions
+        self.visual_analysis_results = []
+        self.company_offering = ""
+        self.classification_result = None
+        self.template_config = None
+        self.chapter_results = {}
+        self.question_results = {}
+        logger.info("Cleared previous analysis state")
+        
         try:
             # Step 1: Convert PDF to images and analyze each page
             self._analyze_visual_content(pdf_path, company_id)
