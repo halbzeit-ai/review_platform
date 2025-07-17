@@ -143,28 +143,14 @@ class PDFProcessor:
         report_chapters = {}
         report_scores = {}
         
-        # Get the template configuration to map questions to chapters
-        template_config = ai_results.get("template_used")
-        question_to_chapter_map = {}
-        
-        if template_config and "chapters" in template_config:
-            for chapter in template_config["chapters"]:
-                chapter_id = chapter["chapter_id"]
-                for question in chapter.get("questions", []):
-                    question_id = question["question_id"]
-                    question_to_chapter_map[question_id] = chapter_id
-        
         for chapter_id, chapter_data in chapter_analysis.items():
-            # Get questions that belong to this chapter
-            chapter_questions = []
-            for question_id, question_data in question_analysis.items():
-                if question_to_chapter_map.get(question_id) == chapter_id:
-                    chapter_questions.append((question_id, question_data))
+            # Use the new structured question data if available
+            chapter_questions = chapter_data.get("questions", [])
             
-            # Create formatted chapter content with questions and answers
             if chapter_questions:
+                # Create formatted chapter content using structured question data
                 formatted_content = []
-                for question_id, question_data in chapter_questions:
+                for question_data in chapter_questions:
                     question_text = question_data.get("question_text", "")
                     response = question_data.get("response", "")
                     score = question_data.get("score", 0)
@@ -180,7 +166,7 @@ class PDFProcessor:
                     # Fallback to chapter responses if no question content found
                     report_chapters[chapter_id] = "\n\n".join(chapter_data.get("responses", []))
             else:
-                # Fallback to combining responses if no question mapping found
+                # Fallback to combining responses if no structured questions available
                 combined_response = "\n\n".join(chapter_data.get("responses", []))
                 report_chapters[chapter_id] = combined_response or "No detailed analysis available for this chapter."
             

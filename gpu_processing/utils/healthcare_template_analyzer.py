@@ -836,11 +836,27 @@ class HealthcareTemplateAnalyzer:
                 weights = [q.get("weight", 1.0) for q in chapter_questions]
                 weighted_score = sum(s * w for s, w in zip(chapter_scores, weights)) / sum(weights)
                 
+                # Build detailed question structure for this chapter
+                chapter_question_details = []
+                for i, question in enumerate(chapter_questions):
+                    question_detail = {
+                        "id": question.get("id"),
+                        "question_id": question["question_id"],
+                        "question_text": question["question_text"],
+                        "response": chapter_responses[i] if i < len(chapter_responses) else "",
+                        "score": chapter_scores[i] if i < len(chapter_scores) else 0,
+                        "weight": question.get("weight", 1.0),
+                        "scoring_criteria": question.get("scoring_criteria", ""),
+                        "healthcare_focus": question.get("healthcare_focus", "")
+                    }
+                    chapter_question_details.append(question_detail)
+                
                 self.chapter_results[chapter_id] = {
                     "name": chapter_name,
                     "description": chapter.get("description", ""),
-                    "responses": chapter_responses,
-                    "scores": chapter_scores,
+                    "responses": chapter_responses,  # Keep for backward compatibility
+                    "scores": chapter_scores,       # Keep for backward compatibility
+                    "questions": chapter_question_details,  # New detailed structure
                     "weighted_score": weighted_score,
                     "weight": chapter.get("weight", 1.0),
                     "total_questions": len(chapter_questions)
