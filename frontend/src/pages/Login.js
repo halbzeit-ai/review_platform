@@ -40,7 +40,17 @@ function Login() {
 
       // Redirect based on role
       if (data.role === 'startup') {
-        const companyId = data.email.split('@')[0];
+        // Generate company ID using same logic as backend
+        const getCompanyId = () => {
+          if (data.company_name) {
+            // Convert company name to a URL-safe slug (same logic as backend)
+            return data.company_name.toLowerCase().replace(' ', '-').replace(/[^a-z0-9-]/g, '');
+          }
+          // Fallback to email prefix if company name is not available
+          return data.email.split('@')[0];
+        };
+        
+        const companyId = getCompanyId();
         window.location.href = `/project/${companyId}`;
       } else {
         window.location.href = '/dashboard/gp';

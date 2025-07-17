@@ -12,9 +12,9 @@ const StartupDashboardRedirect = () => {
     if (user && user.role === 'startup') {
       // Generate company ID using same logic as backend
       const getCompanyId = () => {
-        if (user?.company_name) {
+        if (user?.companyName) {
           // Convert company name to a URL-safe slug (same logic as backend)
-          return user.company_name.toLowerCase().replace(' ', '-').replace(/[^a-z0-9-]/g, '');
+          return user.companyName.toLowerCase().replace(' ', '-').replace(/[^a-z0-9-]/g, '');
         }
         // Fallback to email prefix if company name is not available
         return user?.email?.split('@')[0] || 'unknown';
