@@ -16,12 +16,12 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
-async def trigger_gpu_processing(pitch_deck_id: int, file_path: str):
+async def trigger_gpu_processing(pitch_deck_id: int, file_path: str, company_id: str):
     """Background task to trigger HTTP-based GPU processing"""
     from ..services.gpu_http_client import gpu_http_client
     from ..db.database import SessionLocal
     
-    logger.info(f"BACKGROUND TASK START: HTTP-based GPU processing triggered for pitch deck {pitch_deck_id} at {file_path}")
+    logger.info(f"BACKGROUND TASK START: HTTP-based GPU processing triggered for pitch deck {pitch_deck_id} at {file_path} for company {company_id}")
     
     # Create database session for background task
     db = SessionLocal()
@@ -34,7 +34,7 @@ async def trigger_gpu_processing(pitch_deck_id: int, file_path: str):
             logger.info(f"Updated pitch deck {pitch_deck_id} status to 'processing'")
         
         logger.info(f"Calling gpu_http_client.process_pdf for pitch deck {pitch_deck_id}")
-        results = await gpu_http_client.process_pdf(pitch_deck_id, file_path)
+        results = await gpu_http_client.process_pdf(pitch_deck_id, file_path, company_id)
         
         if results.get("success"):
             logger.info(f"HTTP-based GPU processing completed successfully for pitch deck {pitch_deck_id}")
@@ -113,7 +113,7 @@ async def upload_document(
         db.refresh(pitch_deck)
         
         # Trigger GPU processing in background
-        background_tasks.add_task(trigger_gpu_processing, pitch_deck.id, file_path)
+        background_tasks.add_task(trigger_gpu_processing, pitch_deck.id, file_path, company_id)
         
         logger.info(f"Document uploaded: {file.filename} for user {current_user.email}")
         

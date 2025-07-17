@@ -97,5 +97,5 @@ Key principles:
 - git: claude should always add and commit, human should always push 
 - the GPU and the CPU have access to the git repo, i.e. usually no copying between these two is necessary.
 
-
-
+## Development Memories
+- please do remember that you are on a development machine, the UUIDs, filepaths and SQL databases I paste are from the production machine

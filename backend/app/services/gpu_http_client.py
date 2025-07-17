@@ -217,13 +217,14 @@ class GPUHTTPClient:
                 "error": str(e)
             }
     
-    async def process_pdf(self, pitch_deck_id: int, file_path: str) -> Dict[str, Any]:
+    async def process_pdf(self, pitch_deck_id: int, file_path: str, company_id: str) -> Dict[str, Any]:
         """
         Process a PDF file using the GPU instance
         
         Args:
             pitch_deck_id: Database ID of the pitch deck
             file_path: Path to PDF file relative to shared filesystem
+            company_id: Company ID for creating project directories
             
         Returns:
             Processing results or error information
@@ -236,11 +237,12 @@ class GPUHTTPClient:
                     "error": "GPU_INSTANCE_HOST not configured"
                 }
             
-            logger.info(f"Requesting PDF processing for pitch deck {pitch_deck_id}: {file_path}")
+            logger.info(f"Requesting PDF processing for pitch deck {pitch_deck_id}: {file_path} for company {company_id}")
             
             payload = {
                 "pitch_deck_id": pitch_deck_id,
-                "file_path": file_path
+                "file_path": file_path,
+                "company_id": company_id
             }
             
             async with httpx.AsyncClient(timeout=300.0) as client:
