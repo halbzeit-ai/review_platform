@@ -44,7 +44,16 @@ class HealthcareTemplateAnalyzer:
     
     def __init__(self, backend_base_url: str = "http://localhost:8000"):
         self.backend_base_url = backend_base_url
-        self.backend_db_path = "/opt/review-platform/backend/sql_app.db"
+        # Try shared filesystem first, then fallback to local path
+        shared_db_path = "/mnt/CPU-GPU/sql_app.db"
+        local_db_path = "/opt/review-platform/backend/sql_app.db"
+        
+        if os.path.exists(shared_db_path):
+            self.backend_db_path = shared_db_path
+        elif os.path.exists(local_db_path):
+            self.backend_db_path = local_db_path
+        else:
+            self.backend_db_path = shared_db_path  # Default to shared path
         
         # Model configuration
         self.vision_model = self.get_model_by_type("vision") or "gemma3:12b"
