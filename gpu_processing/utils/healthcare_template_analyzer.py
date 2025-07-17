@@ -44,16 +44,8 @@ class HealthcareTemplateAnalyzer:
     
     def __init__(self, backend_base_url: str = "http://localhost:8000"):
         self.backend_base_url = backend_base_url
-        # Try shared filesystem first, then fallback to local path
-        shared_db_path = "/mnt/CPU-GPU/sql_app.db"
-        local_db_path = "/opt/review-platform/backend/sql_app.db"
-        
-        if os.path.exists(shared_db_path):
-            self.backend_db_path = shared_db_path
-        elif os.path.exists(local_db_path):
-            self.backend_db_path = local_db_path
-        else:
-            self.backend_db_path = shared_db_path  # Default to shared path
+        # Use PostgreSQL database connection
+        self.database_url = "postgresql://review_user:review_password@happy-heart-shines-fin-01:5432/review_platform"
         
         # Model configuration
         self.vision_model = self.get_model_by_type("vision") or "gemma3:12b"
@@ -167,31 +159,28 @@ class HealthcareTemplateAnalyzer:
             return os.path.join("/mnt/shared/temp", "analysis")
     
     def _get_pipeline_prompt(self, stage_name: str) -> str:
-        """Get pipeline prompt from configuration or use default"""
-        logger.info(f"🔍 Loading {stage_name} prompt from database: {self.backend_db_path}")
+        """Get pipeline prompt from PostgreSQL database"""
+        logger.info(f"🔍 Loading {stage_name} prompt from PostgreSQL database")
         
         try:
-            if os.path.exists(self.backend_db_path):
-                logger.info(f"✅ Database file exists: {self.backend_db_path}")
-                conn = sqlite3.connect(self.backend_db_path)
-                cursor = conn.cursor()
-                cursor.execute(
-                    "SELECT prompt_text FROM pipeline_prompts WHERE stage_name = ? AND is_active = 1 LIMIT 1",
-                    (stage_name,)
-                )
-                result = cursor.fetchone()
-                conn.close()
-                
-                if result:
-                    logger.info(f"✅ Using configured {stage_name} prompt from database:")
-                    logger.info(f"📝 Prompt: {result[0]}")
-                    return result[0]
-                else:
-                    logger.warning(f"❌ No {stage_name} prompt found in database")
+            import psycopg2
+            conn = psycopg2.connect(self.database_url)
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT prompt_text FROM pipeline_prompts WHERE stage_name = %s AND is_active = true LIMIT 1",
+                (stage_name,)
+            )
+            result = cursor.fetchone()
+            conn.close()
+            
+            if result:
+                logger.info(f"✅ Using configured {stage_name} prompt from PostgreSQL:")
+                logger.info(f"📝 Prompt: {result[0]}")
+                return result[0]
             else:
-                logger.warning(f"❌ Database file does not exist: {self.backend_db_path}")
+                logger.warning(f"❌ No {stage_name} prompt found in PostgreSQL database")
         except Exception as e:
-            logger.warning(f"❌ Could not get {stage_name} prompt: {e}")
+            logger.warning(f"❌ Could not get {stage_name} prompt from PostgreSQL: {e}")
         
         # Default fallback prompts (only used if database is unavailable)
         default_prompts = {

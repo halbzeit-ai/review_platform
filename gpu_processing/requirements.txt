@@ -50,6 +50,9 @@ pydantic>=2.0.0
 # Local AI models via Ollama
 ollama>=0.3.0
 
+# PostgreSQL database connection
+psycopg2-binary>=2.9.10
+
 # Progress tracking
 tqdm>=4.65.0
 
