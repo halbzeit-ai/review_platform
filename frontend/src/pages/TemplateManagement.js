@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -85,6 +85,7 @@ const TemplateManagement = () => {
   const [promptLoading, setPromptLoading] = useState(false);
   const [promptError, setPromptError] = useState(null);
   
+  
   // Dialog states
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [customizeDialogOpen, setCustomizeDialogOpen] = useState(false);
@@ -109,6 +110,12 @@ const TemplateManagement = () => {
 
   useEffect(() => {
     loadInitialData();
+  }, []);
+
+
+  // Memoized handlers
+  const handlePromptTextChange = useCallback((event) => {
+    setPromptText(event.target.value);
   }, []);
 
   const loadInitialData = async () => {
@@ -639,10 +646,14 @@ const TemplateManagement = () => {
               rows={6}
               label={t('labels.imageAnalysisPrompt')}
               value={promptText}
-              onChange={(e) => setPromptText(e.target.value)}
+              onChange={handlePromptTextChange}
               disabled={promptLoading}
               sx={{ mb: 3 }}
               helperText={t('labels.imageAnalysisHelper')}
+              InputProps={{
+                style: { fontFamily: 'monospace' }
+              }}
+              variant="outlined"
             />
 
             <Box sx={{ display: 'flex', gap: 2 }}>
