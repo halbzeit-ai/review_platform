@@ -35,12 +35,13 @@ class PDFProcessor:
         logger.info(f"Healthcare template analyzer initialized with backend URL: {backend_url}")
         logger.info("AI analyzer initialized successfully")
     
-    def process_pdf(self, file_path: str) -> Dict[str, Any]:
+    def process_pdf(self, file_path: str, company_id: str = None) -> Dict[str, Any]:
         """
         Process a PDF file and generate AI-powered review
         
         Args:
             file_path: Path to the PDF file relative to mount_path
+            company_id: Company ID for creating project directories (optional)
             
         Returns:
             Dictionary containing review results
@@ -53,7 +54,7 @@ class PDFProcessor:
         
         try:
             # Use real AI processing instead of placeholder
-            results = self._ai_processing(full_path)
+            results = self._ai_processing(full_path, company_id)
             logger.info("PDF processing completed successfully")
             return results
             
@@ -61,7 +62,7 @@ class PDFProcessor:
             logger.error(f"Error processing PDF: {e}")
             raise
     
-    def _ai_processing(self, file_path: str) -> Dict[str, Any]:
+    def _ai_processing(self, file_path: str, company_id: str = None) -> Dict[str, Any]:
         """
         Real AI processing using the HealthcareTemplateAnalyzer
         
@@ -76,7 +77,7 @@ class PDFProcessor:
         
         try:
             # Use the healthcare template analyzer to process the PDF
-            results = self.analyzer.analyze_pdf(file_path)
+            results = self.analyzer.analyze_pdf(file_path, company_id)
             
             # Transform results to include additional fields for backward compatibility
             enhanced_results = self._enhance_healthcare_results_format(results)

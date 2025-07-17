@@ -210,6 +210,7 @@ class GPUHTTPServer:
                 # Extract required fields
                 file_path = data.get('file_path')
                 pitch_deck_id = data.get('pitch_deck_id')
+                company_id = data.get('company_id')
                 
                 if not file_path:
                     return jsonify({
@@ -225,10 +226,17 @@ class GPUHTTPServer:
                         "timestamp": datetime.now().isoformat()
                     }), 400
                 
+                if not company_id:
+                    return jsonify({
+                        "success": False,
+                        "error": "company_id is required",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
                 logger.info(f"Processing PDF: {file_path} for pitch deck {pitch_deck_id}")
                 
                 # Process the PDF using the existing PDFProcessor
-                results = self.pdf_processor.process_pdf(file_path)
+                results = self.pdf_processor.process_pdf(file_path, company_id)
                 
                 # Save results to shared filesystem (using backend-expected naming pattern)
                 import time

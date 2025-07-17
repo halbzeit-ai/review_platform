@@ -372,14 +372,14 @@ class HealthcareTemplateAnalyzer:
             ]
         }
     
-    def analyze_pdf(self, pdf_path: str) -> Dict[str, Any]:
+    def analyze_pdf(self, pdf_path: str, company_id: str = None) -> Dict[str, Any]:
         """Main method to analyze a healthcare startup pitch deck"""
         start_time = time.time()
         logger.info(f"Starting healthcare template analysis of PDF: {pdf_path}")
         
         try:
             # Step 1: Convert PDF to images and analyze each page
-            self._analyze_visual_content(pdf_path)
+            self._analyze_visual_content(pdf_path, company_id)
             
             # Step 2: Generate company offering summary
             self._generate_company_offering()
@@ -409,13 +409,18 @@ class HealthcareTemplateAnalyzer:
             logger.error(f"Error in healthcare template analysis: {e}")
             raise
     
-    def _analyze_visual_content(self, pdf_path: str):
+    def _analyze_visual_content(self, pdf_path: str, company_id: str = None):
         """Convert PDF to images and analyze each page with project-based storage"""
         logger.info("Converting PDF to images for visual analysis")
         
         try:
             # Get company and deck information
-            company_id, deck_name, deck_id = self._get_company_info_from_path(pdf_path)
+            if company_id:
+                # Use provided company_id
+                _, deck_name, deck_id = self._get_company_info_from_path(pdf_path)
+            else:
+                # Fallback to extracting from path
+                company_id, deck_name, deck_id = self._get_company_info_from_path(pdf_path)
             
             # Create project directories
             analysis_path = self._create_project_directories(company_id, deck_name)
