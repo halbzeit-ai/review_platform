@@ -7,7 +7,7 @@ import os
 import json
 import time
 import logging
-import sqlite3
+import psycopg2
 from typing import Dict, List, Optional, Any
 from PIL import Image
 from io import BytesIO
@@ -69,46 +69,41 @@ class HealthcareTemplateAnalyzer:
         self.project_root = os.path.join(os.getenv('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/CPU-GPU'), 'projects')
     
     def get_model_by_type(self, model_type: str) -> Optional[str]:
-        """Get the active model for a specific type from backend configuration"""
+        """Get the active model for a specific type from PostgreSQL database"""
         try:
-            if os.path.exists(self.backend_db_path):
-                conn = sqlite3.connect(self.backend_db_path)
-                cursor = conn.cursor()
-                cursor.execute(
-                    "SELECT model_name FROM model_configs WHERE model_type = ? AND is_active = 1 LIMIT 1", 
-                    (model_type,)
-                )
-                result = cursor.fetchone()
-                conn.close()
-                
-                if result:
-                    logger.info(f"Using configured {model_type} model: {result[0]}")
-                    return result[0]
+            conn = psycopg2.connect(self.database_url)
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT model_name FROM model_configs WHERE model_type = %s AND is_active = true LIMIT 1", 
+                (model_type,)
+            )
+            result = cursor.fetchone()
+            conn.close()
+            
+            if result:
+                logger.info(f"Using configured {model_type} model: {result[0]}")
+                return result[0]
         except Exception as e:
-            logger.warning(f"Could not get {model_type} model from configuration: {e}")
+            logger.warning(f"Could not get {model_type} model from PostgreSQL: {e}")
         
         return None
     
     def _get_company_info_from_path(self, pdf_path: str) -> tuple:
         """Extract company_id and deck_name from file path"""
         try:
-            # Expected path format: /mnt/shared/uploads/company_name/deck_name.pdf
-            import sqlite3
-            
             # Get the filename without extension
             filename = os.path.basename(pdf_path)
             deck_name = os.path.splitext(filename)[0]
             
-            # Try to get company info from database based on the deck
-            db_path = "/opt/review-platform/backend/sql_app.db"
-            if os.path.exists(db_path):
-                conn = sqlite3.connect(db_path)
+            # Try to get company info from PostgreSQL database
+            try:
+                conn = psycopg2.connect(self.database_url)
                 cursor = conn.cursor()
                 cursor.execute("""
                     SELECT pd.id, u.company_name, u.email 
                     FROM pitch_decks pd 
                     JOIN users u ON pd.user_id = u.id 
-                    WHERE pd.file_path LIKE ?
+                    WHERE pd.file_path LIKE %s
                 """, (f"%{filename}%",))
                 result = cursor.fetchone()
                 conn.close()
@@ -123,6 +118,8 @@ class HealthcareTemplateAnalyzer:
                         # Fallback to email prefix if company name is not available
                         company_id = user_email.split('@')[0]
                     return company_id, deck_name, deck_id
+            except Exception as e:
+                logger.warning(f"Could not get company info from PostgreSQL: {e}")
             
             # Fallback: use path-based extraction
             path_parts = pdf_path.split('/')
@@ -214,53 +211,15 @@ class HealthcareTemplateAnalyzer:
             return self._fallback_classification(company_offering)
     
     def _fallback_classification(self, company_offering: str) -> Dict[str, Any]:
-        """Fallback classification using local database"""
-        try:
-            if os.path.exists(self.backend_db_path):
-                conn = sqlite3.connect(self.backend_db_path)
-                cursor = conn.cursor()
-                
-                # Get all sectors
-                cursor.execute("SELECT id, name, display_name, keywords FROM healthcare_sectors WHERE is_active = 1")
-                sectors = cursor.fetchall()
-                
-                # Simple keyword matching
-                offering_lower = company_offering.lower()
-                best_match = None
-                best_score = 0
-                
-                for sector in sectors:
-                    sector_id, name, display_name, keywords_json = sector
-                    keywords = json.loads(keywords_json)
-                    
-                    score = sum(1 for keyword in keywords if keyword.lower() in offering_lower)
-                    
-                    if score > best_score:
-                        best_score = score
-                        best_match = {
-                            "primary_sector": name,
-                            "subcategory": "",
-                            "confidence_score": min(score / len(keywords), 1.0),
-                            "reasoning": f"Keyword-based classification. Matched {score} keywords.",
-                            "secondary_sector": None,
-                            "keywords_matched": [k for k in keywords if k.lower() in offering_lower][:5],
-                            "recommended_template": None
-                        }
-                
-                conn.close()
-                
-                if best_match:
-                    return best_match
-                    
-        except Exception as e:
-            logger.error(f"Error in fallback classification: {e}")
+        """Fallback classification - healthcare sectors not migrated to PostgreSQL"""
+        logger.warning("Healthcare sectors not available in PostgreSQL, using default classification")
         
         # Ultimate fallback
         return {
             "primary_sector": "consumer_health",
             "subcategory": "Health Optimization Tools",
             "confidence_score": 0.3,
-            "reasoning": "Default classification - unable to determine specific sector",
+            "reasoning": "Default classification - healthcare sectors not migrated to PostgreSQL",
             "secondary_sector": None,
             "keywords_matched": [],
             "recommended_template": None
@@ -270,25 +229,8 @@ class HealthcareTemplateAnalyzer:
         """Load template configuration from database"""
         try:
             if not template_id:
-                # Find default template for classified sector
-                if self.classification_result:
-                    sector_name = self.classification_result.get("primary_sector")
-                    if sector_name and os.path.exists(self.backend_db_path):
-                        conn = sqlite3.connect(self.backend_db_path)
-                        cursor = conn.cursor()
-                        
-                        cursor.execute("""
-                            SELECT at.id FROM analysis_templates at
-                            JOIN healthcare_sectors hs ON at.healthcare_sector_id = hs.id
-                            WHERE hs.name = ? AND at.is_default = 1 AND at.is_active = 1
-                            LIMIT 1
-                        """, (sector_name,))
-                        
-                        result = cursor.fetchone()
-                        conn.close()
-                        
-                        if result:
-                            template_id = result[0]
+                # Healthcare templates not migrated to PostgreSQL yet
+                logger.warning("Healthcare templates not available in PostgreSQL, using fallback")
             
             if not template_id:
                 logger.warning("No template ID found, using fallback configuration")
