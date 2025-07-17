@@ -139,12 +139,12 @@ class PDFProcessor:
         if not recommendations:
             recommendations = ["Continue developing strong areas identified in the analysis"]
         
-        # Create backward-compatible report structure with proper formatting
+        # Create report structure using new questions format
         report_chapters = {}
         report_scores = {}
         
         for chapter_id, chapter_data in chapter_analysis.items():
-            # Use the new structured question data if available
+            # Use the new structured question data
             chapter_questions = chapter_data.get("questions", [])
             
             if chapter_questions:
@@ -163,12 +163,10 @@ class PDFProcessor:
                 if formatted_content:
                     report_chapters[chapter_id] = "\n\n---\n\n".join(formatted_content)
                 else:
-                    # Fallback to chapter responses if no question content found
-                    report_chapters[chapter_id] = "\n\n".join(chapter_data.get("responses", []))
+                    report_chapters[chapter_id] = "No question responses available for this chapter."
             else:
-                # Fallback to combining responses if no structured questions available
-                combined_response = "\n\n".join(chapter_data.get("responses", []))
-                report_chapters[chapter_id] = combined_response or "No detailed analysis available for this chapter."
+                # Error case - no structured questions found
+                report_chapters[chapter_id] = "ERROR: No structured questions found in chapter analysis."
             
             report_scores[chapter_id] = chapter_data.get("weighted_score", 0.0)
         

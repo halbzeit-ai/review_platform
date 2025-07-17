@@ -854,9 +854,7 @@ class HealthcareTemplateAnalyzer:
                 self.chapter_results[chapter_id] = {
                     "name": chapter_name,
                     "description": chapter.get("description", ""),
-                    "responses": chapter_responses,  # Keep for backward compatibility
-                    "scores": chapter_scores,       # Keep for backward compatibility
-                    "questions": chapter_question_details,  # New detailed structure
+                    "questions": chapter_question_details,  # New structured format
                     "weighted_score": weighted_score,
                     "weight": chapter.get("weight", 1.0),
                     "total_questions": len(chapter_questions),
