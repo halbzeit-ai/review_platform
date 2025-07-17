@@ -98,7 +98,9 @@ async def upload_document(
         )
         
         # Create PitchDeck record in database
-        company_id = current_user.email.split('@')[0]  # Extract company from email
+        # Use the same company_id generation logic as in projects.py
+        from ..api.projects import get_company_id_from_user
+        company_id = get_company_id_from_user(current_user)
         pitch_deck = PitchDeck(
             user_id=current_user.id,
             company_id=company_id,

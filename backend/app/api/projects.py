@@ -288,20 +288,20 @@ async def get_project_uploads(
                 detail="You don't have access to this project"
             )
         
-        # Get all pitch decks for this company
+        # Get all pitch decks for this company using company_id
         uploads_query = text("""
-        SELECT pd.id, pd.file_path, pd.created_at, pd.results_file_path, u.email, pd.processing_status
+        SELECT pd.id, pd.file_path, pd.created_at, pd.results_file_path, u.email, pd.processing_status, u.company_name
         FROM pitch_decks pd
         JOIN users u ON pd.user_id = u.id
-        WHERE u.email LIKE :company_pattern
+        WHERE pd.company_id = :company_id 
         ORDER BY pd.created_at DESC
         """)
         
-        uploads_result = db.execute(uploads_query, {"company_pattern": f"{company_id}@%"}).fetchall()
+        uploads_result = db.execute(uploads_query, {"company_id": company_id}).fetchall()
         
         uploads = []
         for upload in uploads_result:
-            deck_id, file_path, created_at, results_file_path, user_email, processing_status = upload
+            deck_id, file_path, created_at, results_file_path, user_email, processing_status, company_name = upload
             
             # Get file info
             full_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, file_path)
