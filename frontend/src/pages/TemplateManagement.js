@@ -115,10 +115,11 @@ const TemplateManagement = () => {
 
   // Memoized handlers
   const handlePromptTextChange = useCallback((event) => {
-    setPromptText(event.target.value);
+    const newValue = event.target.value;
+    setPromptText(newValue);
   }, []);
 
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     try {
       setLoading(true);
       const [sectorsResponse, metricsResponse, customizationsResponse, pipelineResponse] = await Promise.all([
@@ -160,7 +161,7 @@ const TemplateManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
 
   const loadSectorTemplates = async (sector) => {
     try {
@@ -640,21 +641,33 @@ const TemplateManagement = () => {
               </Alert>
             )}
 
-            <TextField
-              fullWidth
-              multiline
-              rows={6}
-              label={t('labels.imageAnalysisPrompt')}
-              value={promptText}
-              onChange={handlePromptTextChange}
-              disabled={promptLoading}
-              sx={{ mb: 3 }}
-              helperText={t('labels.imageAnalysisHelper')}
-              InputProps={{
-                style: { fontFamily: 'monospace' }
-              }}
-              variant="outlined"
-            />
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" sx={{ mb: 1, fontWeight: 'medium' }}>
+                {t('labels.imageAnalysisPrompt')}
+              </Typography>
+              <textarea
+                value={promptText}
+                onChange={handlePromptTextChange}
+                disabled={promptLoading}
+                rows={8}
+                style={{
+                  width: '100%',
+                  fontFamily: 'monospace',
+                  fontSize: '14px',
+                  padding: '12px',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  resize: 'vertical',
+                  outline: 'none',
+                  backgroundColor: promptLoading ? '#f5f5f5' : 'white'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#1976d2'}
+                onBlur={(e) => e.target.style.borderColor = '#ccc'}
+              />
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                {t('labels.imageAnalysisHelper')}
+              </Typography>
+            </Box>
 
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
@@ -701,14 +714,6 @@ const TemplateManagement = () => {
               </Typography>
             </Box>
 
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                Current Prompt Length
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {promptText.length} characters
-              </Typography>
-            </Box>
 
             <Alert severity="info" sx={{ mt: 2 }}>
               Changes to prompts will affect all new PDF processing. 
