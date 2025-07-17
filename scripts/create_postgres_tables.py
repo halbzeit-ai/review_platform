@@ -9,8 +9,8 @@ import os
 sys.path.append('/opt/review-platform/backend')
 
 from sqlalchemy import create_engine
-from app.db.database import Base
-from app.db import models  # This imports all models
+from app.db.models import Base  # Base is in models.py
+import app.db.models  # This imports all models
 
 def create_tables():
     """Create all tables in PostgreSQL database"""
