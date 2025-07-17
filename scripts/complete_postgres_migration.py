@@ -20,15 +20,19 @@ def convert_sqlite_to_postgres_schema(sqlite_schema):
     if not sqlite_schema:
         return None
     
-    # Basic conversions
-    postgres_schema = sqlite_schema.replace('AUTOINCREMENT', 'SERIAL')
+    # More careful conversions to avoid duplicate keywords
+    postgres_schema = sqlite_schema
+    
+    # Handle AUTOINCREMENT first (most specific)
     postgres_schema = postgres_schema.replace('INTEGER PRIMARY KEY AUTOINCREMENT', 'SERIAL PRIMARY KEY')
     postgres_schema = postgres_schema.replace('INTEGER PRIMARY KEY', 'SERIAL PRIMARY KEY')
+    
+    # Handle remaining type conversions
     postgres_schema = postgres_schema.replace('DATETIME', 'TIMESTAMP')
-    postgres_schema = postgres_schema.replace('BOOLEAN', 'BOOLEAN')
-    postgres_schema = postgres_schema.replace('TEXT', 'TEXT')
-    postgres_schema = postgres_schema.replace('REAL', 'REAL')
     postgres_schema = postgres_schema.replace('BLOB', 'BYTEA')
+    
+    # Remove any remaining AUTOINCREMENT
+    postgres_schema = postgres_schema.replace('AUTOINCREMENT', '')
     
     return postgres_schema
 
@@ -162,6 +166,9 @@ def main():
                 print(f"  ✅ Created table {table}")
             except Exception as e:
                 print(f"  ❌ Error creating table {table}: {e}")
+                print(f"  Schema: {postgres_schema}")
+                # Rollback transaction and continue
+                pg_conn.rollback()
                 continue
         else:
             print(f"  Table {table} already exists in PostgreSQL")
