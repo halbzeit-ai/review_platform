@@ -1,0 +1,50 @@
+{
+  "title": "Healthcare Analysis Templates",
+  "navigation": {
+    "backToDashboard": "Back to Dashboard"
+  },
+  "tabs": {
+    "healthcareSectors": "Healthcare Sectors",
+    "templateLibrary": "Template Library",
+    "myCustomizations": "My Customizations",
+    "performanceMetrics": "Performance Metrics",
+    "pipelineSettings": "Pipeline Settings"
+  },
+  "buttons": {
+    "createCustomTemplate": "Create Custom Template",
+    "viewTemplates": "View Templates",
+    "customize": "Customize",
+    "useTemplate": "Use Template",
+    "saveCustomization": "Save Customization",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "copy": "Copy",
+    "preview": "Preview",
+    "activate": "Activate",
+    "deactivate": "Deactivate"
+  },
+  "labels": {
+    "default": "Default",
+    "active": "Active",
+    "inactive": "Inactive",
+    "customizationName": "Customization Name",
+    "placeholderCustomTemplate": "My Custom Healthcare Template",
+    "imageAnalysisPrompt": "Image Analysis Prompt",
+    "imageAnalysisHelper": "Describe how the AI should analyze each slide image",
+    "sectors": "Sectors",
+    "templates": "Templates",
+    "questions": "Questions",
+    "chapters": "Chapters",
+    "weight": "Weight",
+    "healthcareFocus": "Healthcare Focus",
+    "scoringCriteria": "Scoring Criteria"
+  },
+  "messages": {
+    "noTemplatesAvailable": "No templates available for this sector",
+    "noCustomizationsYet": "No customizations created yet",
+    "loadingTemplates": "Loading templates...",
+    "loadingSectors": "Loading sectors...",
+    "templateSaved": "Template saved successfully",
+    "templateError": "Error saving template"
+  }
+}

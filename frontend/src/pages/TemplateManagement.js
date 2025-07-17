@@ -64,7 +64,7 @@ import {
 } from '../services/api';
 
 const TemplateManagement = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('templates');
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState(0);
@@ -352,7 +352,7 @@ const TemplateManagement = () => {
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
             {template.is_default && (
-              <Chip label="Default" size="small" color="primary" />
+              <Chip label={t('labels.default')} size="small" color="primary" />
             )}
             <Badge badgeContent={template.usage_count} color="secondary">
               <AssessmentIcon />
@@ -401,7 +401,7 @@ const TemplateManagement = () => {
           startIcon={<CopyIcon />}
           onClick={() => onCustomize(template)}
         >
-          Customize
+          {t('buttons.customize')}
         </Button>
       </CardActions>
     </Card>
@@ -490,7 +490,7 @@ const TemplateManagement = () => {
                               </Typography>
                               <br />
                               <Typography variant="caption" color="primary">
-                                Healthcare Focus: {question.healthcare_focus}
+                                {t('labels.healthcareFocus')}: {question.healthcare_focus}
                               </Typography>
                             </Box>
                           }
@@ -621,7 +621,7 @@ const TemplateManagement = () => {
         <Grid item xs={12} md={8}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" sx={{ mb: 2 }}>
-              Image Analysis Prompt
+              {t('labels.imageAnalysisPrompt')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               This prompt is used by the vision AI model to describe each slide of the pitch deck. 
@@ -638,7 +638,7 @@ const TemplateManagement = () => {
               fullWidth
               multiline
               rows={6}
-              label="Image Analysis Prompt"
+              label={t('labels.imageAnalysisPrompt')}
               value={promptText}
               onChange={(e) => setPromptText(e.target.value)}
               disabled={promptLoading}
@@ -744,14 +744,14 @@ const TemplateManagement = () => {
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4">
-          Healthcare Analysis Templates
+          {t('title')}
         </Typography>
         <Button 
           variant="contained" 
           startIcon={<AddIcon />}
           onClick={() => setCustomizeDialogOpen(true)}
         >
-          Create Custom Template
+          {t('buttons.createCustomTemplate')}
         </Button>
       </Box>
 
@@ -765,11 +765,11 @@ const TemplateManagement = () => {
       {/* Main Content */}
       <Paper sx={{ width: '100%' }}>
         <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
-          <Tab label="Healthcare Sectors" />
-          <Tab label="Template Library" />
-          <Tab label="My Customizations" />
-          <Tab label="Performance Metrics" />
-          <Tab label="Pipeline Settings" />
+          <Tab label={t('tabs.healthcareSectors')} />
+          <Tab label={t('tabs.templateLibrary')} />
+          <Tab label={t('tabs.myCustomizations')} />
+          <Tab label={t('tabs.performanceMetrics')} />
+          <Tab label={t('tabs.pipelineSettings')} />
         </Tabs>
 
         <TabPanel value={activeTab} index={0}>
@@ -882,8 +882,8 @@ const TemplateManagement = () => {
           </Typography>
           <TextField
             fullWidth
-            label="Customization Name"
-            placeholder="My Custom Healthcare Template"
+            label={t('labels.customizationName')}
+            placeholder={t('labels.placeholderCustomTemplate')}
             sx={{ mb: 2 }}
           />
           <Typography variant="body2" color="text.secondary">
@@ -892,10 +892,10 @@ const TemplateManagement = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setCustomizeDialogOpen(false)}>
-            Cancel
+            {t('buttons.cancel')}
           </Button>
           <Button variant="contained">
-            Create Customization
+            {t('buttons.saveCustomization')}
           </Button>
         </DialogActions>
       </Dialog>

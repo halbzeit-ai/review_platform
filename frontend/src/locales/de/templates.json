@@ -1,0 +1,50 @@
+{
+  "title": "Healthcare-Analyse-Vorlagen",
+  "navigation": {
+    "backToDashboard": "Zurück zum Dashboard"
+  },
+  "tabs": {
+    "healthcareSectors": "Healthcare-Sektoren",
+    "templateLibrary": "Vorlagen-Bibliothek",
+    "myCustomizations": "Meine Anpassungen",
+    "performanceMetrics": "Leistungskennzahlen",
+    "pipelineSettings": "Pipeline-Einstellungen"
+  },
+  "buttons": {
+    "createCustomTemplate": "Benutzerdefinierte Vorlage erstellen",
+    "viewTemplates": "Vorlagen anzeigen",
+    "customize": "Anpassen",
+    "useTemplate": "Vorlage verwenden",
+    "saveCustomization": "Anpassung speichern",
+    "cancel": "Abbrechen",
+    "edit": "Bearbeiten",
+    "copy": "Kopieren",
+    "preview": "Vorschau",
+    "activate": "Aktivieren",
+    "deactivate": "Deaktivieren"
+  },
+  "labels": {
+    "default": "Standard",
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "customizationName": "Anpassungsname",
+    "placeholderCustomTemplate": "Meine benutzerdefinierte Healthcare-Vorlage",
+    "imageAnalysisPrompt": "Bildanalyse-Prompt",
+    "imageAnalysisHelper": "Beschreiben Sie, wie die KI jedes Folien-Bild analysieren soll",
+    "sectors": "Sektoren",
+    "templates": "Vorlagen",
+    "questions": "Fragen",
+    "chapters": "Kapitel",
+    "weight": "Gewichtung",
+    "healthcareFocus": "Healthcare-Fokus",
+    "scoringCriteria": "Bewertungskriterien"
+  },
+  "messages": {
+    "noTemplatesAvailable": "Keine Vorlagen für diesen Sektor verfügbar",
+    "noCustomizationsYet": "Noch keine Anpassungen erstellt",
+    "loadingTemplates": "Vorlagen werden geladen...",
+    "loadingSectors": "Sektoren werden geladen...",
+    "templateSaved": "Vorlage erfolgreich gespeichert",
+    "templateError": "Fehler beim Speichern der Vorlage"
+  }
+}
