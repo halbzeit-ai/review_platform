@@ -159,8 +159,11 @@ class HealthcareTemplateAnalyzer:
     
     def _get_pipeline_prompt(self, stage_name: str) -> str:
         """Get pipeline prompt from configuration or use default"""
+        logger.info(f"🔍 Loading {stage_name} prompt from database: {self.backend_db_path}")
+        
         try:
             if os.path.exists(self.backend_db_path):
+                logger.info(f"✅ Database file exists: {self.backend_db_path}")
                 conn = sqlite3.connect(self.backend_db_path)
                 cursor = conn.cursor()
                 cursor.execute(
@@ -174,25 +177,17 @@ class HealthcareTemplateAnalyzer:
                     logger.info(f"✅ Using configured {stage_name} prompt from database:")
                     logger.info(f"📝 Prompt: {result[0]}")
                     return result[0]
+                else:
+                    logger.warning(f"❌ No {stage_name} prompt found in database")
+            else:
+                logger.warning(f"❌ Database file does not exist: {self.backend_db_path}")
         except Exception as e:
-            logger.warning(f"Could not get {stage_name} prompt: {e}")
+            logger.warning(f"❌ Could not get {stage_name} prompt: {e}")
         
-        # Default fallback prompts
+        # Default fallback prompts (only used if database is unavailable)
         default_prompts = {
-            "image_analysis": """
-            Describe this image and make sure to include anything notable about it (include text you see in the image).
-            Focus on:
-            - All visible text and numbers
-            - Charts, graphs, and visual data
-            - Layout and structure of information
-            - Key visual elements and their relationships
-            
-            Provide a structured description that preserves the logical flow of information as presented.
-            """,
-            "offering_extraction": """
-            Your Task is to explain in one single short sentence the service or product the startup provides. 
-            Do not mention the name of the product or the company.
-            """
+            "image_analysis": "Describe this image and make sure to include anything notable about it (include text you see in the image):",
+            "offering_extraction": "Your Task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company."
         }
         
         default_prompt = default_prompts.get(stage_name, f"No default prompt for {stage_name}")
