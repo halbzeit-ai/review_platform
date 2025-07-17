@@ -85,9 +85,6 @@ const TemplateManagement = () => {
   const [promptLoading, setPromptLoading] = useState(false);
   const [promptError, setPromptError] = useState(null);
   
-  // Ref for uncontrolled textarea
-  const promptTextareaRef = useRef(null);
-  const isSavingRef = useRef(false);
   
   
   // Dialog states
@@ -116,31 +113,8 @@ const TemplateManagement = () => {
     loadInitialData();
   }, []);
 
-  // Update textarea when promptText changes (from loading or stage change)
-  useEffect(() => {
-    console.log('useEffect triggered - promptText:', promptText);
-    console.log('promptTextareaRef.current:', !!promptTextareaRef.current);
-    console.log('isSavingRef.current:', isSavingRef.current);
-    
-    if (promptTextareaRef.current && !isSavingRef.current) {
-      console.log('Updating textarea value to:', promptText);
-      promptTextareaRef.current.value = promptText || '';
-      
-      // Check what the value actually is after setting it
-      setTimeout(() => {
-        console.log('Textarea value after setting:', promptTextareaRef.current?.value);
-        console.log('Textarea value length:', promptTextareaRef.current?.value?.length);
-      }, 10);
-    } else {
-      console.log('Skipping textarea update - ref or saving condition failed');
-    }
-  }, [promptText]);
 
 
-  // Get current prompt text from textarea
-  const getCurrentPromptText = useCallback(() => {
-    return promptTextareaRef.current?.value || '';
-  }, []);
 
   const loadInitialData = useCallback(async () => {
     try {
@@ -279,15 +253,13 @@ const TemplateManagement = () => {
     try {
       setPromptLoading(true);
       setPromptError(null);
-      isSavingRef.current = true;
       
-      const currentPromptText = getCurrentPromptText();
-      await updatePipelinePrompt(selectedPromptStage, currentPromptText);
+      await updatePipelinePrompt(selectedPromptStage, promptText);
       
-      // Update local state - don't update promptText to avoid reset
+      // Update local state
       setPipelinePrompts(prev => ({
         ...prev,
-        [selectedPromptStage]: currentPromptText
+        [selectedPromptStage]: promptText
       }));
       
       setError(null);
@@ -299,10 +271,6 @@ const TemplateManagement = () => {
       setPromptError(err.response?.data?.detail || err.message || 'Failed to save prompt');
     } finally {
       setPromptLoading(false);
-      // Reset the saving flag after a brief delay
-      setTimeout(() => {
-        isSavingRef.current = false;
-      }, 100);
     }
   };
 
@@ -691,23 +659,20 @@ const TemplateManagement = () => {
               <Typography variant="body2" sx={{ mb: 1, fontWeight: 'medium' }}>
                 {t('labels.imageAnalysisPrompt')}
               </Typography>
-              <textarea
-                ref={promptTextareaRef}
+              <TextField
+                value={promptText}
+                onChange={(e) => setPromptText(e.target.value)}
                 disabled={promptLoading}
+                multiline
                 rows={8}
-                style={{
-                  width: '100%',
-                  fontFamily: 'monospace',
-                  fontSize: '14px',
-                  padding: '12px',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
-                  resize: 'vertical',
-                  outline: 'none',
-                  backgroundColor: promptLoading ? '#f5f5f5' : 'white'
+                fullWidth
+                variant="outlined"
+                sx={{
+                  '& .MuiInputBase-input': {
+                    fontFamily: 'monospace',
+                    fontSize: '14px'
+                  }
                 }}
-                onFocus={(e) => e.target.style.borderColor = '#1976d2'}
-                onBlur={(e) => e.target.style.borderColor = '#ccc'}
               />
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                 {t('labels.imageAnalysisHelper')}
@@ -718,7 +683,7 @@ const TemplateManagement = () => {
               <Button
                 variant="contained"
                 onClick={handleSavePrompt}
-                disabled={promptLoading}
+                disabled={promptLoading || !promptText.trim()}
                 startIcon={promptLoading ? <CircularProgress size={20} /> : null}
               >
                 {promptLoading ? t('pipeline.saving') : t('pipeline.savePrompt')}
