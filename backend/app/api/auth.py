@@ -256,10 +256,10 @@ async def delete_user(
     from ..api.projects import get_company_id_from_user
     company_id = get_company_id_from_user(user_to_delete)
     
-    # Find all pitch decks belonging to this user
+    # Find all pitch decks belonging to this user (by user_id OR company_id)
     pitch_decks = db.execute(
-        text("SELECT id, file_name, file_path, results_file_path FROM pitch_decks WHERE user_id = :user_id"),
-        {"user_id": user_to_delete.id}
+        text("SELECT id, file_name, file_path, results_file_path FROM pitch_decks WHERE user_id = :user_id OR company_id = :company_id"),
+        {"user_id": user_to_delete.id, "company_id": company_id}
     ).fetchall()
     
     deleted_files = []
@@ -332,13 +332,13 @@ async def delete_user(
     # Delete in correct order: questions -> reviews -> pitch_decks
     
     # Delete questions (if they exist)
-    db.execute(text("DELETE FROM questions WHERE review_id IN (SELECT id FROM reviews WHERE pitch_deck_id IN (SELECT id FROM pitch_decks WHERE user_id = :user_id))"), {"user_id": user_to_delete.id})
+    db.execute(text("DELETE FROM questions WHERE review_id IN (SELECT id FROM reviews WHERE pitch_deck_id IN (SELECT id FROM pitch_decks WHERE user_id = :user_id OR company_id = :company_id))"), {"user_id": user_to_delete.id, "company_id": company_id})
     
     # Delete reviews (if they exist)
-    db.execute(text("DELETE FROM reviews WHERE pitch_deck_id IN (SELECT id FROM pitch_decks WHERE user_id = :user_id)"), {"user_id": user_to_delete.id})
+    db.execute(text("DELETE FROM reviews WHERE pitch_deck_id IN (SELECT id FROM pitch_decks WHERE user_id = :user_id OR company_id = :company_id)"), {"user_id": user_to_delete.id, "company_id": company_id})
     
     # Delete pitch decks
-    db.execute(text("DELETE FROM pitch_decks WHERE user_id = :user_id"), {"user_id": user_to_delete.id})
+    db.execute(text("DELETE FROM pitch_decks WHERE user_id = :user_id OR company_id = :company_id"), {"user_id": user_to_delete.id, "company_id": company_id})
     
     # Finally, delete the user
     db.delete(user_to_delete)
