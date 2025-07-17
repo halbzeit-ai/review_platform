@@ -64,8 +64,10 @@ class HealthcareTemplateAnalyzer:
         self.specialized_results = {}
         
         # Initialize pipeline prompts
+        logger.info("🔧 Initializing pipeline prompts from PostgreSQL...")
         self.image_analysis_prompt = self._get_pipeline_prompt("image_analysis")
         self.offering_extraction_prompt = self._get_pipeline_prompt("offering_extraction")
+        logger.info(f"📝 Loaded image_analysis_prompt: {self.image_analysis_prompt[:100]}...")
         
         # Project-based storage - read from environment
         self.project_root = os.path.join(os.getenv('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/CPU-GPU'), 'projects')
