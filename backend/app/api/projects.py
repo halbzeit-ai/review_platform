@@ -53,7 +53,12 @@ class ProjectUploadsResponse(BaseModel):
     uploads: List[ProjectUpload]
 
 def get_company_id_from_user(user: User) -> str:
-    """Extract company_id from user (for now using email prefix)"""
+    """Extract company_id from user based on company name"""
+    if user.company_name:
+        # Convert company name to a URL-safe slug
+        import re
+        return re.sub(r'[^a-z0-9-]', '', user.company_name.lower().replace(' ', '-'))
+    # Fallback to email prefix if company name is not available
     return user.email.split('@')[0]
 
 def check_project_access(user: User, company_id: str) -> bool:
@@ -103,7 +108,11 @@ async def get_deck_analysis(
         deck_id_db, file_path, results_file_path, user_email, company_name = deck_result
         
         # Verify this deck belongs to the requested company
-        deck_company_id = user_email.split('@')[0]
+        if company_name:
+            import re
+            deck_company_id = re.sub(r'[^a-z0-9-]', '', company_name.lower().replace(' ', '-'))
+        else:
+            deck_company_id = user_email.split('@')[0]
         if deck_company_id != company_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -216,7 +225,11 @@ async def get_project_results(
         deck_id_db, file_path, results_file_path, user_email = deck_result
         
         # Verify this deck belongs to the requested company
-        deck_company_id = user_email.split('@')[0]
+        if company_name:
+            import re
+            deck_company_id = re.sub(r'[^a-z0-9-]', '', company_name.lower().replace(' ', '-'))
+        else:
+            deck_company_id = user_email.split('@')[0]
         if deck_company_id != company_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -362,10 +375,21 @@ async def get_slide_image(
         # Construct image path
         image_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id, "analysis", deck_name, slide_filename)
         
+        # Debug logging
+        logger.info(f"Looking for image at: {image_path}")
+        logger.info(f"File exists: {os.path.exists(image_path)}")
+        
         if not os.path.exists(image_path):
+            # Add more debug info
+            parent_dir = os.path.dirname(image_path)
+            logger.error(f"Image not found: {image_path}")
+            logger.error(f"Parent directory exists: {os.path.exists(parent_dir)}")
+            if os.path.exists(parent_dir):
+                logger.error(f"Files in parent directory: {os.listdir(parent_dir)}")
+            
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Slide image not found"
+                detail=f"Slide image not found: {image_path}"
             )
         
         # Return image file
@@ -420,7 +444,11 @@ async def delete_deck(
         deck_id_db, file_name, file_path, results_file_path, user_email, company_name = deck_result
         
         # Verify this deck belongs to the requested company
-        deck_company_id = user_email.split('@')[0]
+        if company_name:
+            import re
+            deck_company_id = re.sub(r'[^a-z0-9-]', '', company_name.lower().replace(' ', '-'))
+        else:
+            deck_company_id = user_email.split('@')[0]
         if deck_company_id != company_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

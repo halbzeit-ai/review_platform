@@ -137,8 +137,13 @@ class PitchDeckAnalyzer:
                 
                 if result:
                     deck_id, company_name, user_email = result
-                    # Use email as company_id for now (can be changed to proper company_id later)
-                    company_id = user_email.split('@')[0]  # Simple company identifier
+                    # Use company name as company_id (convert to URL-safe slug)
+                    if company_name:
+                        import re
+                        company_id = re.sub(r'[^a-z0-9-]', '', company_name.lower().replace(' ', '-'))
+                    else:
+                        # Fallback to email prefix if company name is not available
+                        company_id = user_email.split('@')[0]
                     return company_id, deck_name, deck_id
             
             # Fallback: use path-based extraction
