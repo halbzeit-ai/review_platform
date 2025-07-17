@@ -96,6 +96,25 @@
         "success": "Benutzer erfolgreich gelöscht",
         "error": "Fehler beim Löschen des Benutzers"
       }
+    },
+    "adminActions": {
+      "analysisTemplates": "Analyse-Vorlagen",
+      "modelConfiguration": "Modell-Konfiguration",
+      "cleanupOrphanedData": "Verwaiste Daten bereinigen",
+      "cleanupInProgress": "Bereinigung läuft...",
+      "cleanupSuccess": "Verwaiste Datensätze erfolgreich bereinigt",
+      "cleanupError": "Bereinigung fehlgeschlagen"
+    },
+    "cascadeDeletion": {
+      "warning": "⚠️ WARNUNG: Dies wird auch alle Projekte, Pitch Decks, Analyseergebnisse und Dateien, die mit diesem Benutzer verknüpft sind, dauerhaft löschen. Diese Aktion kann nicht rückgängig gemacht werden."
     }
+  },
+  "project": {
+    "tabs": {
+      "overview": "Übersicht",
+      "allDecks": "Alle Decks",
+      "uploads": "Uploads"
+    }
+  }
   }
 }

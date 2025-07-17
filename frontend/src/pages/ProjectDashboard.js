@@ -316,9 +316,9 @@ const ProjectDashboard = () => {
       {/* Main Content */}
       <Paper sx={{ width: '100%' }}>
         <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
-          <Tab label="Overview" />
-          <Tab label="All Decks" />
-          <Tab label="Uploads" />
+          <Tab label={t('project.tabs.overview')} />
+          <Tab label={t('project.tabs.allDecks')} />
+          <Tab label={t('project.tabs.uploads')} />
         </Tabs>
 
         <TabPanel value={activeTab} index={0}>

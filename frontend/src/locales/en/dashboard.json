@@ -96,6 +96,25 @@
         "success": "User deleted successfully",
         "error": "Error deleting user"
       }
+    },
+    "adminActions": {
+      "analysisTemplates": "Analysis Templates",
+      "modelConfiguration": "Model Configuration",
+      "cleanupOrphanedData": "Cleanup Orphaned Data",
+      "cleanupInProgress": "Cleaning...",
+      "cleanupSuccess": "Orphaned records cleaned up successfully",
+      "cleanupError": "Cleanup failed"
+    },
+    "cascadeDeletion": {
+      "warning": "⚠️ WARNING: This will also permanently delete all projects, pitch decks, analysis results, and files associated with this user. This action cannot be undone."
     }
+  },
+  "project": {
+    "tabs": {
+      "overview": "Overview",
+      "allDecks": "All Decks",
+      "uploads": "Uploads"
+    }
+  }
   }
 }

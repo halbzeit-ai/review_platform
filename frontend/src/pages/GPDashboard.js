@@ -102,7 +102,7 @@ function GPDashboard() {
       
       setSnackbar({
         open: true,
-        message: response.data.message || 'Orphaned records cleaned up successfully',
+        message: response.data.message || t('gp.adminActions.cleanupSuccess'),
         severity: 'success'
       });
       
@@ -114,7 +114,7 @@ function GPDashboard() {
       
       setSnackbar({
         open: true,
-        message: `Cleanup failed: ${error.response?.data?.detail || error.message}`,
+        message: `${t('gp.adminActions.cleanupError')}: ${error.response?.data?.detail || error.message}`,
         severity: 'error'
       });
     } finally {
@@ -150,14 +150,14 @@ function GPDashboard() {
             startIcon={<Assignment />}
             onClick={() => navigate('/templates')}
           >
-            Analysis Templates
+            {t('gp.adminActions.analysisTemplates')}
           </Button>
           <Button
             variant="outlined"
             startIcon={<Settings />}
             onClick={() => navigate('/config')}
           >
-            Model Configuration
+            {t('gp.adminActions.modelConfiguration')}
           </Button>
           <Button
             variant="outlined"
@@ -165,7 +165,7 @@ function GPDashboard() {
             onClick={handleCleanupOrphanedDecks}
             disabled={cleanupLoading}
           >
-            {cleanupLoading ? 'Cleaning...' : 'Cleanup Orphaned Data'}
+            {cleanupLoading ? t('gp.adminActions.cleanupInProgress') : t('gp.adminActions.cleanupOrphanedData')}
           </Button>
         </Box>
       </Box>
@@ -261,7 +261,7 @@ function GPDashboard() {
         title={t('gp.usersSection.deleteConfirm.title')}
         message={`${t('gp.usersSection.deleteConfirm.message').replace('{email}', deleteDialog.user?.email || '')}
 
-⚠️ WARNING: This will also permanently delete all projects, pitch decks, analysis results, and files associated with this user. This action cannot be undone.`}
+${t('gp.cascadeDeletion.warning')}`}
         confirmText={t('gp.usersSection.deleteConfirm.confirmButton')}
         cancelText={t('gp.usersSection.deleteConfirm.cancelButton')}
         severity="error"
