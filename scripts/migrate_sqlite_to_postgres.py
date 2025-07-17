@@ -73,11 +73,22 @@ def migrate_database(sqlite_path, pg_host, pg_database, pg_user, pg_password):
         placeholders = ', '.join(['%s'] * len(columns))
         insert_sql = f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({placeholders})"
         
-        # Insert data
+        # Insert data with data type conversion
         successful_inserts = 0
         for row in rows:
             try:
-                pg_cursor.execute(insert_sql, tuple(row))
+                # Convert SQLite data to PostgreSQL compatible format
+                converted_row = []
+                for i, value in enumerate(row):
+                    column_name = columns[i]
+                    
+                    # Convert SQLite boolean integers to PostgreSQL booleans
+                    if column_name in ['is_verified', 'is_active', 'is_required', 'enabled', 'is_default'] and isinstance(value, int):
+                        converted_row.append(bool(value))
+                    else:
+                        converted_row.append(value)
+                
+                pg_cursor.execute(insert_sql, tuple(converted_row))
                 successful_inserts += 1
             except Exception as e:
                 print(f"  Error inserting row: {e}")
@@ -95,9 +106,12 @@ def migrate_database(sqlite_path, pg_host, pg_database, pg_user, pg_password):
         # Verify migration
         print("\nVerifying migration...")
         for table in tables:
-            pg_cursor.execute(f"SELECT COUNT(*) FROM {table}")
-            count = pg_cursor.fetchone()[0]
-            print(f"  {table}: {count} rows")
+            try:
+                pg_cursor.execute(f"SELECT COUNT(*) FROM {table}")
+                count = pg_cursor.fetchone()[0]
+                print(f"  {table}: {count} rows")
+            except Exception as e:
+                print(f"  {table}: Table not found in PostgreSQL - {e}")
         
     except Exception as e:
         print(f"Error committing changes: {e}")
