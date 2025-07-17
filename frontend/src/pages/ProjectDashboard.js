@@ -32,7 +32,7 @@ import {
 import ProjectUploads from '../components/ProjectUploads';
 
 const ProjectDashboard = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation('dashboard');
   const navigate = useNavigate();
   const { companyId } = useParams();
   
@@ -122,22 +122,22 @@ const ProjectDashboard = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <AssessmentIcon sx={{ mr: 1, color: 'primary.main' }} />
           <Typography variant="h6">
-            {deck.filename || `Deck ${deck.id}`}
+            {deck.filename || `${t('project.labels.deckDefault')} ${deck.id}`}
           </Typography>
         </Box>
         
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Uploaded: {new Date(deck.created_at).toLocaleDateString()}
+          {t('project.labels.uploaded')} {new Date(deck.created_at).toLocaleDateString()}
         </Typography>
         
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
           <Chip 
-            label={deck.results_file_path ? 'Analyzed' : 'Processing'} 
+            label={deck.results_file_path ? t('project.status.analyzed') : t('project.status.processing')} 
             color={deck.results_file_path ? 'success' : 'warning'}
             size="small"
           />
           <Chip 
-            label="PDF" 
+            label={t('project.status.pdf')} 
             variant="outlined"
             size="small"
           />
@@ -154,7 +154,7 @@ const ProjectDashboard = () => {
           }}
           disabled={!deck.results_file_path}
         >
-          Deck Viewer
+          {t('project.actions.deckViewer')}
         </Button>
         <Button
           size="small"
@@ -165,7 +165,7 @@ const ProjectDashboard = () => {
           }}
           disabled={!deck.results_file_path}
         >
-          Results
+          {t('project.actions.viewResults')}
         </Button>
       </CardActions>
     </Card>

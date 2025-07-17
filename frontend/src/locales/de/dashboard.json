@@ -114,6 +114,19 @@
       "overview": "Übersicht",
       "allDecks": "Alle Decks",
       "uploads": "Uploads"
+    },
+    "status": {
+      "analyzed": "Analysiert",
+      "processing": "Verarbeitung",
+      "pdf": "PDF"
+    },
+    "labels": {
+      "uploaded": "Hochgeladen:",
+      "deckDefault": "Deck"
+    },
+    "actions": {
+      "deckViewer": "Deck Viewer",
+      "viewResults": "Ergebnisse anzeigen"
     }
   }
 }
