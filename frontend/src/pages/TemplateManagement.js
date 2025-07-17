@@ -145,14 +145,25 @@ const TemplateManagement = () => {
       const customizationsData = customizationsResponse.data || customizationsResponse;
       const pipelineData = pipelineResponse.data || pipelineResponse;
       
+      // Debug logging
+      console.log('Pipeline response:', pipelineResponse);
+      console.log('Pipeline data:', pipelineData);
+      
       setSectors(Array.isArray(sectorsData) ? sectorsData : []);
       setPerformanceMetrics(metricsData);
       setCustomizations(Array.isArray(customizationsData) ? customizationsData : []);
       setPipelinePrompts(pipelineData.prompts || {});
       
       // Set initial prompt text for image_analysis
+      console.log('Available prompts:', pipelineData.prompts);
       if (pipelineData.prompts && pipelineData.prompts.image_analysis) {
+        console.log('Setting initial prompt text:', pipelineData.prompts.image_analysis);
         setPromptText(pipelineData.prompts.image_analysis);
+      } else {
+        console.log('No image_analysis prompt found, using default');
+        // Use default prompt if none found
+        const defaultPrompt = "Describe this image and make sure to include anything notable about it (include text you see in the image):";
+        setPromptText(defaultPrompt);
       }
       
       // Load templates for first sector by default
