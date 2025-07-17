@@ -223,7 +223,9 @@ function GPDashboard() {
         onClose={() => setDeleteDialog({ open: false, user: null })}
         onConfirm={confirmDeleteUser}
         title={t('gp.usersSection.deleteConfirm.title')}
-        message={t('gp.usersSection.deleteConfirm.message').replace('{email}', deleteDialog.user?.email || '')}
+        message={`${t('gp.usersSection.deleteConfirm.message').replace('{email}', deleteDialog.user?.email || '')}
+
+⚠️ WARNING: This will also permanently delete all projects, pitch decks, analysis results, and files associated with this user. This action cannot be undone.`}
         confirmText={t('gp.usersSection.deleteConfirm.confirmButton')}
         cancelText={t('gp.usersSection.deleteConfirm.cancelButton')}
         severity="error"
