@@ -154,8 +154,8 @@ function StartupDashboard() {
   const getCompanyId = () => {
     const user = JSON.parse(localStorage.getItem('user'));
     if (user?.company_name) {
-      // Convert company name to a URL-safe slug
-      return user.company_name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      // Convert company name to a URL-safe slug (same logic as backend)
+      return user.company_name.toLowerCase().replace(' ', '-').replace(/[^a-z0-9-]/g, '');
     }
     // Fallback to email prefix if company name is not available
     return user?.email?.split('@')[0] || 'unknown';
