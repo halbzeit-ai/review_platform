@@ -156,9 +156,14 @@ const TemplateManagement = () => {
       
       // Set initial prompt text for image_analysis
       console.log('Available prompts:', pipelineData.prompts);
-      if (pipelineData.prompts && pipelineData.prompts.image_analysis) {
-        console.log('Setting initial prompt text:', pipelineData.prompts.image_analysis);
-        setPromptText(pipelineData.prompts.image_analysis);
+      console.log('pipelineData.prompts exists:', !!pipelineData.prompts);
+      console.log('image_analysis exists:', !!pipelineData.prompts?.image_analysis);
+      console.log('image_analysis value:', pipelineData.prompts?.image_analysis);
+      
+      const imageAnalysisPrompt = pipelineData.prompts?.image_analysis;
+      if (imageAnalysisPrompt) {
+        console.log('Setting initial prompt text:', imageAnalysisPrompt);
+        setPromptText(imageAnalysisPrompt);
       } else {
         console.log('No image_analysis prompt found, using default');
         // Use default prompt if none found
