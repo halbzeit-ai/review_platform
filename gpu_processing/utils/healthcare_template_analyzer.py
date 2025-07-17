@@ -62,6 +62,9 @@ class HealthcareTemplateAnalyzer:
         
         # Initialize image analysis prompt
         self.image_analysis_prompt = self._get_image_analysis_prompt()
+        
+        # Project-based storage - read from environment
+        self.project_root = os.path.join(os.getenv('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/CPU-GPU'), 'projects')
     
     def get_model_by_type(self, model_type: str) -> Optional[str]:
         """Get the active model for a specific type from backend configuration"""
@@ -83,6 +86,70 @@ class HealthcareTemplateAnalyzer:
             logger.warning(f"Could not get {model_type} model from configuration: {e}")
         
         return None
+    
+    def _get_company_info_from_path(self, pdf_path: str) -> tuple:
+        """Extract company_id and deck_name from file path"""
+        try:
+            # Expected path format: /mnt/shared/uploads/company_name/deck_name.pdf
+            import sqlite3
+            
+            # Get the filename without extension
+            filename = os.path.basename(pdf_path)
+            deck_name = os.path.splitext(filename)[0]
+            
+            # Try to get company info from database based on the deck
+            db_path = "/opt/review-platform/backend/sql_app.db"
+            if os.path.exists(db_path):
+                conn = sqlite3.connect(db_path)
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT pd.id, u.company_name, u.email 
+                    FROM pitch_decks pd 
+                    JOIN users u ON pd.user_id = u.id 
+                    WHERE pd.file_path LIKE ?
+                """, (f"%{filename}%",))
+                result = cursor.fetchone()
+                conn.close()
+                
+                if result:
+                    deck_id, company_name, user_email = result
+                    # Use email as company_id for now (can be changed to proper company_id later)
+                    company_id = user_email.split('@')[0]  # Simple company identifier
+                    return company_id, deck_name, deck_id
+            
+            # Fallback: use path-based extraction
+            path_parts = pdf_path.split('/')
+            if len(path_parts) >= 2:
+                company_id = path_parts[-2] if path_parts[-2] != 'uploads' else 'unknown'
+                return company_id, deck_name, None
+            
+            return 'unknown', deck_name, None
+            
+        except Exception as e:
+            logger.warning(f"Could not extract company info from path {pdf_path}: {e}")
+            return 'unknown', os.path.splitext(os.path.basename(pdf_path))[0], None
+    
+    def _create_project_directories(self, company_id: str, deck_name: str) -> str:
+        """Create project directory structure and return analysis path"""
+        try:
+            # Create project structure
+            project_path = os.path.join(self.project_root, company_id)
+            analysis_path = os.path.join(project_path, "analysis", deck_name)
+            uploads_path = os.path.join(project_path, "uploads")
+            exports_path = os.path.join(project_path, "exports")
+            
+            # Create directories
+            os.makedirs(analysis_path, exist_ok=True)
+            os.makedirs(uploads_path, exist_ok=True)
+            os.makedirs(exports_path, exist_ok=True)
+            
+            logger.info(f"Created project directories for {company_id}/{deck_name} at {analysis_path}")
+            return analysis_path
+            
+        except Exception as e:
+            logger.error(f"Error creating project directories: {e}")
+            # Fallback to old structure
+            return os.path.join("/mnt/shared/temp", "analysis")
     
     def _get_image_analysis_prompt(self) -> str:
         """Get image analysis prompt from configuration or use default"""
@@ -338,26 +405,52 @@ class HealthcareTemplateAnalyzer:
             raise
     
     def _analyze_visual_content(self, pdf_path: str):
-        """Convert PDF to images and analyze each page"""
+        """Convert PDF to images and analyze each page with project-based storage"""
         logger.info("Converting PDF to images for visual analysis")
         
         try:
+            # Get company and deck information
+            company_id, deck_name, deck_id = self._get_company_info_from_path(pdf_path)
+            
+            # Create project directories
+            analysis_path = self._create_project_directories(company_id, deck_name)
+            
+            # Convert PDF to images
             pages_as_images = convert_from_path(pdf_path, fmt="jpeg")
             total_pages = len(pages_as_images)
-            logger.info(f"Processing {total_pages} pages")
+            logger.info(f"Processing {total_pages} pages for {company_id}/{deck_name}")
             
             for page_number, page_image in enumerate(pages_as_images):
                 logger.info(f"Analyzing page {page_number + 1}/{total_pages}")
                 
+                # Save slide image to project structure
+                slide_filename = f"slide_{page_number + 1}.jpg"
+                slide_path = os.path.join(analysis_path, slide_filename)
+                page_image.save(slide_path, "JPEG")
+                
+                # Convert image to bytes for AI analysis
                 image_bytes = image_to_byte_array(page_image)
                 
+                # Get AI analysis of the page
                 page_analysis = get_information_for_image(
                     image_bytes, 
                     self.image_analysis_prompt, 
                     self.vision_model
                 )
                 
-                self.visual_analysis_results.append(page_analysis)
+                # Store analysis with image path reference (structured format)
+                page_analysis_data = {
+                    "page_number": page_number + 1,
+                    "slide_image_path": os.path.join("analysis", deck_name, slide_filename),  # Relative path
+                    "description": page_analysis,
+                    "company_id": company_id,
+                    "deck_name": deck_name,
+                    "deck_id": deck_id
+                }
+                
+                self.visual_analysis_results.append(page_analysis_data)
+            
+            logger.info(f"Saved {total_pages} slide images to {analysis_path}")
                 
         except Exception as e:
             logger.error(f"Error in visual content analysis: {e}")
@@ -367,7 +460,15 @@ class HealthcareTemplateAnalyzer:
         """Generate company offering summary"""
         logger.info("Generating company offering summary")
         
-        full_pitchdeck_text = " ".join(self.visual_analysis_results)
+        # Extract descriptions from the structured data
+        descriptions = []
+        for page_data in self.visual_analysis_results:
+            if isinstance(page_data, dict):
+                descriptions.append(page_data.get("description", ""))
+            else:
+                descriptions.append(str(page_data))
+        
+        full_pitchdeck_text = " ".join(descriptions)
         
         offering_prompt = """
         You are a healthcare venture capital analyst. Based on the following pitch deck content, 
@@ -406,7 +507,15 @@ class HealthcareTemplateAnalyzer:
             logger.warning("No template configuration available, skipping template analysis")
             return
         
-        full_pitchdeck_text = " ".join(self.visual_analysis_results)
+        # Extract descriptions from the structured data
+        descriptions = []
+        for page_data in self.visual_analysis_results:
+            if isinstance(page_data, dict):
+                descriptions.append(page_data.get("description", ""))
+            else:
+                descriptions.append(str(page_data))
+        
+        full_pitchdeck_text = " ".join(descriptions)
         
         for chapter in self.template_config["chapters"]:
             chapter_id = chapter["chapter_id"]
@@ -541,7 +650,15 @@ class HealthcareTemplateAnalyzer:
         
         logger.info(f"Generating specialized analysis: {', '.join(specialized_analyses)}")
         
-        full_pitchdeck_text = " ".join(self.visual_analysis_results)
+        # Extract descriptions from the structured data
+        descriptions = []
+        for page_data in self.visual_analysis_results:
+            if isinstance(page_data, dict):
+                descriptions.append(page_data.get("description", ""))
+            else:
+                descriptions.append(str(page_data))
+        
+        full_pitchdeck_text = " ".join(descriptions)
         
         for analysis_type in specialized_analyses:
             try:
@@ -676,6 +793,7 @@ class HealthcareTemplateAnalyzer:
             "chapter_analysis": self.chapter_results,
             "question_analysis": self.question_results,
             "specialized_analysis": self.specialized_results,
+            "visual_analysis_results": self.visual_analysis_results,  # Include slide-by-slide analysis
             "processing_metadata": {
                 "processing_time": processing_time,
                 "model_versions": {
