@@ -261,38 +261,54 @@ class HealthcareTemplateAnalyzer:
             return self._get_fallback_template_config()
     
     def _get_fallback_template_config(self) -> Dict[str, Any]:
-        """Fallback template configuration when API is unavailable"""
+        """Comprehensive fallback template configuration based on standard pitch deck analysis"""
         return {
             "template": {
                 "id": 0,
-                "name": "Fallback Healthcare Template",
-                "description": "Default template when configuration is unavailable",
-                "specialized_analysis": ["clinical_validation", "regulatory_pathway"]
+                "name": "Comprehensive Startup Analysis Template",
+                "description": "Standard venture capital pitch deck analysis template covering all critical areas",
+                "specialized_analysis": ["clinical_validation", "regulatory_pathway", "scientific_hypothesis"]
             },
             "chapters": [
                 {
                     "id": 1,
                     "chapter_id": "problem_analysis",
                     "name": "Problem Analysis",
-                    "description": "Analysis of the healthcare problem being addressed",
-                    "weight": 1.5,
+                    "description": "Analysis of the problem being addressed and target market",
+                    "weight": 1.8,
                     "order_index": 1,
                     "questions": [
                         {
                             "id": 1,
                             "question_id": "target_problem",
-                            "question_text": "What healthcare problem is being addressed?",
+                            "question_text": "Who has the problem?",
                             "weight": 2.0,
-                            "scoring_criteria": "Clear identification of healthcare problem with clinical significance",
-                            "healthcare_focus": "Healthcare problem identification is crucial for clinical validation"
+                            "scoring_criteria": "Clear identification of target audience with specific demographics and characteristics",
+                            "healthcare_focus": "Understanding the patient population and healthcare stakeholders affected"
                         },
                         {
                             "id": 2,
-                            "question_id": "patient_population",
-                            "question_text": "Who is the target patient population?",
+                            "question_id": "problem_nature",
+                            "question_text": "What exactly is the nature of the problem?",
+                            "weight": 2.2,
+                            "scoring_criteria": "Detailed problem description with root cause analysis",
+                            "healthcare_focus": "Medical or healthcare-specific problem definition with clinical significance"
+                        },
+                        {
+                            "id": 3,
+                            "question_id": "pain_points",
+                            "question_text": "What are the pain points?",
+                            "weight": 2.0,
+                            "scoring_criteria": "Specific pain points with impact assessment",
+                            "healthcare_focus": "Clinical pain points affecting patient outcomes or healthcare delivery"
+                        },
+                        {
+                            "id": 4,
+                            "question_id": "problem_quantification",
+                            "question_text": "Can the problem be quantified?",
                             "weight": 1.8,
-                            "scoring_criteria": "Well-defined patient population with demographics and clinical characteristics",
-                            "healthcare_focus": "Patient population definition drives clinical strategy"
+                            "scoring_criteria": "Quantitative data supporting problem scope and impact",
+                            "healthcare_focus": "Clinical metrics, patient numbers, or healthcare cost implications"
                         }
                     ]
                 },
@@ -300,25 +316,299 @@ class HealthcareTemplateAnalyzer:
                     "id": 2,
                     "chapter_id": "solution_approach",
                     "name": "Solution Approach",
-                    "description": "Analysis of the healthcare solution and approach",
-                    "weight": 1.8,
+                    "description": "Analysis of the proposed solution and competitive landscape",
+                    "weight": 2.0,
                     "order_index": 2,
                     "questions": [
                         {
-                            "id": 3,
+                            "id": 5,
                             "question_id": "solution_description",
-                            "question_text": "What is the healthcare solution and how does it work?",
-                            "weight": 2.0,
-                            "scoring_criteria": "Clear solution description with clinical mechanism",
-                            "healthcare_focus": "Solution clarity is essential for regulatory approval"
+                            "question_text": "What exactly does your solution look like?",
+                            "weight": 2.2,
+                            "scoring_criteria": "Clear, detailed solution description with implementation approach",
+                            "healthcare_focus": "Clinical mechanism, therapeutic approach, or healthcare delivery method"
                         },
                         {
-                            "id": 4,
-                            "question_id": "clinical_evidence",
-                            "question_text": "What clinical evidence supports the solution?",
+                            "id": 6,
+                            "question_id": "differentiation",
+                            "question_text": "What distinguishes it from existing solutions?",
+                            "weight": 2.0,
+                            "scoring_criteria": "Clear competitive differentiation with unique value proposition",
+                            "healthcare_focus": "Clinical advantages, regulatory benefits, or improved patient outcomes"
+                        },
+                        {
+                            "id": 7,
+                            "question_id": "current_solutions",
+                            "question_text": "How does the customer solve the problem currently?",
+                            "weight": 1.8,
+                            "scoring_criteria": "Understanding of current alternatives and their limitations",
+                            "healthcare_focus": "Current standard of care, existing treatments, or workflow solutions"
+                        },
+                        {
+                            "id": 8,
+                            "question_id": "competitive_landscape",
+                            "question_text": "Are there competitors and what does their solution & positioning look like?",
+                            "weight": 1.9,
+                            "scoring_criteria": "Comprehensive competitive analysis with positioning comparison",
+                            "healthcare_focus": "Competitive healthcare solutions, regulatory status, and market positioning"
+                        },
+                        {
+                            "id": 9,
+                            "question_id": "quantified_advantage",
+                            "question_text": "Can you quantify your advantage?",
+                            "weight": 1.8,
+                            "scoring_criteria": "Quantitative metrics demonstrating competitive advantage",
+                            "healthcare_focus": "Clinical efficacy data, cost savings, or improved health outcomes"
+                        }
+                    ]
+                },
+                {
+                    "id": 3,
+                    "chapter_id": "product_market_fit",
+                    "name": "Product Market Fit",
+                    "description": "Analysis of customer validation and market adoption",
+                    "weight": 2.1,
+                    "order_index": 3,
+                    "questions": [
+                        {
+                            "id": 10,
+                            "question_id": "paying_customers",
+                            "question_text": "Do you have paying customers?",
+                            "weight": 2.5,
+                            "scoring_criteria": "Evidence of paying customers with revenue generation",
+                            "healthcare_focus": "Healthcare providers, patients, or payers actually purchasing the solution"
+                        },
+                        {
+                            "id": 11,
+                            "question_id": "pilot_customers",
+                            "question_text": "Do you have non-paying but convinced pilot customers?",
+                            "weight": 2.0,
+                            "scoring_criteria": "Pilot customers demonstrating product validation and commitment",
+                            "healthcare_focus": "Healthcare institutions, clinicians, or patients engaged in pilots"
+                        },
+                        {
+                            "id": 12,
+                            "question_id": "customer_acquisition",
+                            "question_text": "How did you find them?",
+                            "weight": 1.8,
+                            "scoring_criteria": "Clear customer acquisition strategy with repeatable process",
+                            "healthcare_focus": "Healthcare-specific acquisition channels and relationship building"
+                        },
+                        {
+                            "id": 13,
+                            "question_id": "customer_satisfaction",
+                            "question_text": "What do users & payers love about your solution?",
+                            "weight": 2.0,
+                            "scoring_criteria": "Specific customer feedback highlighting value proposition",
+                            "healthcare_focus": "Clinical outcomes, workflow improvements, or patient satisfaction"
+                        },
+                        {
+                            "id": 14,
+                            "question_id": "churn_analysis",
+                            "question_text": "What is the churn and the reasons for it?",
+                            "weight": 1.9,
+                            "scoring_criteria": "Churn metrics with root cause analysis and mitigation strategies",
+                            "healthcare_focus": "Healthcare-specific retention challenges and solutions"
+                        }
+                    ]
+                },
+                {
+                    "id": 4,
+                    "chapter_id": "monetization",
+                    "name": "Monetization",
+                    "description": "Analysis of revenue model and pricing strategy",
+                    "weight": 1.9,
+                    "order_index": 4,
+                    "questions": [
+                        {
+                            "id": 15,
+                            "question_id": "payer_identification",
+                            "question_text": "Who will pay for it?",
                             "weight": 2.2,
-                            "scoring_criteria": "Strong clinical evidence with appropriate validation",
-                            "healthcare_focus": "Clinical evidence is the foundation of healthcare solutions"
+                            "scoring_criteria": "Clear identification of paying customers and decision makers",
+                            "healthcare_focus": "Healthcare payers, insurance, providers, or patients as payment sources"
+                        },
+                        {
+                            "id": 16,
+                            "question_id": "payer_vs_user",
+                            "question_text": "Is it the users or someone else?",
+                            "weight": 1.8,
+                            "scoring_criteria": "Clear distinction between users and payers with rationale",
+                            "healthcare_focus": "Healthcare stakeholder payment dynamics and reimbursement models"
+                        },
+                        {
+                            "id": 17,
+                            "question_id": "decision_making",
+                            "question_text": "What does the buyer's decision-making structure look like?",
+                            "weight": 2.0,
+                            "scoring_criteria": "Understanding of decision-making process and key stakeholders",
+                            "healthcare_focus": "Healthcare procurement, clinical committees, or administrative approval processes"
+                        },
+                        {
+                            "id": 18,
+                            "question_id": "sales_cycle",
+                            "question_text": "How much time elapses between initial contact and payment?",
+                            "weight": 1.8,
+                            "scoring_criteria": "Clear sales cycle timeline with key milestones",
+                            "healthcare_focus": "Healthcare-specific sales cycles including regulatory and compliance considerations"
+                        },
+                        {
+                            "id": 19,
+                            "question_id": "pricing_strategy",
+                            "question_text": "How did you design the pricing and why?",
+                            "weight": 2.0,
+                            "scoring_criteria": "Pricing strategy with market research and value-based rationale",
+                            "healthcare_focus": "Healthcare pricing models, reimbursement alignment, and value-based care"
+                        },
+                        {
+                            "id": 20,
+                            "question_id": "unit_economics",
+                            "question_text": "What are your margins and unit economics?",
+                            "weight": 2.1,
+                            "scoring_criteria": "Clear unit economics with margin analysis and scalability",
+                            "healthcare_focus": "Healthcare-specific cost structure and regulatory compliance costs"
+                        }
+                    ]
+                },
+                {
+                    "id": 5,
+                    "chapter_id": "financials",
+                    "name": "Financials",
+                    "description": "Analysis of financial metrics and funding requirements",
+                    "weight": 2.0,
+                    "order_index": 5,
+                    "questions": [
+                        {
+                            "id": 21,
+                            "question_id": "monthly_burn",
+                            "question_text": "What is your current monthly burn?",
+                            "weight": 2.2,
+                            "scoring_criteria": "Current burn rate with detailed breakdown",
+                            "healthcare_focus": "Healthcare-specific operational costs and regulatory compliance expenses"
+                        },
+                        {
+                            "id": 22,
+                            "question_id": "monthly_sales",
+                            "question_text": "What are your monthly sales?",
+                            "weight": 2.2,
+                            "scoring_criteria": "Monthly revenue with growth trends and predictability",
+                            "healthcare_focus": "Healthcare revenue recognition and reimbursement timing"
+                        },
+                        {
+                            "id": 23,
+                            "question_id": "financial_fluctuations",
+                            "question_text": "Are there major fluctuations and why?",
+                            "weight": 1.8,
+                            "scoring_criteria": "Understanding of financial volatility with explanations",
+                            "healthcare_focus": "Healthcare-specific seasonality, reimbursement cycles, or regulatory impacts"
+                        },
+                        {
+                            "id": 24,
+                            "question_id": "annual_burn",
+                            "question_text": "How much money did you burn last year?",
+                            "weight": 1.9,
+                            "scoring_criteria": "Historical burn rate with efficiency analysis",
+                            "healthcare_focus": "Healthcare development costs, clinical trials, or regulatory expenses"
+                        },
+                        {
+                            "id": 25,
+                            "question_id": "funding_requirements",
+                            "question_text": "How much funding are you looking for and why exactly this amount?",
+                            "weight": 2.3,
+                            "scoring_criteria": "Specific funding amount with detailed justification and milestones",
+                            "healthcare_focus": "Healthcare-specific funding needs for clinical trials, regulatory approval, or market access"
+                        }
+                    ]
+                },
+                {
+                    "id": 6,
+                    "chapter_id": "use_of_funds",
+                    "name": "Use of Funds",
+                    "description": "Analysis of investment strategy and future plans",
+                    "weight": 1.8,
+                    "order_index": 6,
+                    "questions": [
+                        {
+                            "id": 26,
+                            "question_id": "fund_allocation",
+                            "question_text": "What will you do with the money?",
+                            "weight": 2.2,
+                            "scoring_criteria": "Detailed fund allocation with specific use cases and timelines",
+                            "healthcare_focus": "Healthcare-specific investments in clinical development, regulatory processes, or market access"
+                        },
+                        {
+                            "id": 27,
+                            "question_id": "priority_deficits",
+                            "question_text": "Is there a ranked list of deficits to address?",
+                            "weight": 2.0,
+                            "scoring_criteria": "Prioritized list of organizational gaps with investment rationale",
+                            "healthcare_focus": "Healthcare-specific capabilities like clinical expertise, regulatory affairs, or quality systems"
+                        },
+                        {
+                            "id": 28,
+                            "question_id": "investment_strategy",
+                            "question_text": "Can you tell us about your investment strategy?",
+                            "weight": 1.9,
+                            "scoring_criteria": "Clear investment strategy with risk management and milestone planning",
+                            "healthcare_focus": "Healthcare development strategy including clinical phases and regulatory pathways"
+                        },
+                        {
+                            "id": 29,
+                            "question_id": "future_state",
+                            "question_text": "What will your company look like at the end of this investment period?",
+                            "weight": 2.1,
+                            "scoring_criteria": "Clear vision of future state with specific metrics and capabilities",
+                            "healthcare_focus": "Healthcare milestones including clinical data, regulatory approvals, or market penetration"
+                        }
+                    ]
+                },
+                {
+                    "id": 7,
+                    "chapter_id": "organization",
+                    "name": "Organization",
+                    "description": "Analysis of team, experience, and organizational maturity",
+                    "weight": 1.7,
+                    "order_index": 7,
+                    "questions": [
+                        {
+                            "id": 30,
+                            "question_id": "team_experience",
+                            "question_text": "Who are you and what experience do you have?",
+                            "weight": 2.2,
+                            "scoring_criteria": "Team backgrounds with relevant experience and track record",
+                            "healthcare_focus": "Healthcare industry experience, clinical expertise, or regulatory knowledge"
+                        },
+                        {
+                            "id": 31,
+                            "question_id": "organizational_maturity",
+                            "question_text": "How can your organizational maturity be described/quantified?",
+                            "weight": 1.8,
+                            "scoring_criteria": "Organizational structure, processes, and governance maturity",
+                            "healthcare_focus": "Healthcare-specific organizational requirements like quality systems or clinical governance"
+                        },
+                        {
+                            "id": 32,
+                            "question_id": "team_composition",
+                            "question_text": "How many people are you / pie chart of people per unit?",
+                            "weight": 1.7,
+                            "scoring_criteria": "Team size and composition with functional distribution",
+                            "healthcare_focus": "Healthcare-specific roles including clinical, regulatory, and quality assurance"
+                        },
+                        {
+                            "id": 33,
+                            "question_id": "skill_gaps",
+                            "question_text": "What skills are missing in the management team?",
+                            "weight": 2.0,
+                            "scoring_criteria": "Identified skill gaps with plans for addressing them",
+                            "healthcare_focus": "Healthcare-specific expertise gaps in clinical development, regulatory affairs, or commercial strategy"
+                        },
+                        {
+                            "id": 34,
+                            "question_id": "urgent_hiring",
+                            "question_text": "What are the most urgent positions that need to be filled?",
+                            "weight": 2.1,
+                            "scoring_criteria": "Prioritized hiring needs with impact on business objectives",
+                            "healthcare_focus": "Critical healthcare roles for clinical development, regulatory compliance, or market access"
                         }
                     ]
                 }
