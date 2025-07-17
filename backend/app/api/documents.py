@@ -140,7 +140,8 @@ async def get_processing_status(
         raise HTTPException(status_code=404, detail="Pitch deck not found")
     
     # Check if user owns this deck or is a GP
-    user_company_id = current_user.email.split('@')[0]
+    from ..api.projects import get_company_id_from_user
+    user_company_id = get_company_id_from_user(current_user)
     if (pitch_deck.user_id != current_user.id and 
         pitch_deck.company_id != user_company_id and 
         current_user.role != "gp"):
@@ -165,7 +166,8 @@ async def get_processing_results(
         raise HTTPException(status_code=404, detail="Pitch deck not found")
     
     # Check if user owns this deck or is a GP
-    user_company_id = current_user.email.split('@')[0]
+    from ..api.projects import get_company_id_from_user
+    user_company_id = get_company_id_from_user(current_user)
     if (pitch_deck.user_id != current_user.id and 
         pitch_deck.company_id != user_company_id and 
         current_user.role != "gp"):

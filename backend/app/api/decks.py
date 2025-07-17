@@ -15,8 +15,9 @@ def get_decks(db: Session = Depends(get_db), current_user: User = Depends(get_cu
         decks = db.query(PitchDeck).all()
     else:
         # Startups can only see their own pitch decks
-        # Use company_id for project-based access if available, fallback to user_id
-        user_company_id = current_user.email.split('@')[0]  # Extract company from email
+        # Use the same company_id generation logic as in projects.py
+        from .projects import get_company_id_from_user
+        user_company_id = get_company_id_from_user(current_user)
         print(f"[DEBUG] User {current_user.email} (ID: {current_user.id}) looking for decks with company_id: {user_company_id}")
         
         decks = db.query(PitchDeck).filter(
@@ -81,7 +82,8 @@ def get_deck(deck_id: int, db: Session = Depends(get_db), current_user: User = D
         raise HTTPException(status_code=404, detail="Pitch deck not found")
     
     # Check if user owns this deck or is a GP
-    user_company_id = current_user.email.split('@')[0]
+    from .projects import get_company_id_from_user
+    user_company_id = get_company_id_from_user(current_user)
     if (deck.user_id != current_user.id and 
         deck.company_id != user_company_id and 
         current_user.role != "gp"):

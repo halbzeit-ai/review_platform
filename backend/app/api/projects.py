@@ -208,7 +208,7 @@ async def get_project_results(
         
         # Get deck information
         deck_query = text("""
-        SELECT pd.id, pd.file_path, pd.results_file_path, u.email
+        SELECT pd.id, pd.file_path, pd.results_file_path, u.email, u.company_name
         FROM pitch_decks pd
         JOIN users u ON pd.user_id = u.id
         WHERE pd.id = :deck_id
@@ -222,7 +222,7 @@ async def get_project_results(
                 detail=f"Deck {deck_id} not found"
             )
         
-        deck_id_db, file_path, results_file_path, user_email = deck_result
+        deck_id_db, file_path, results_file_path, user_email, company_name = deck_result
         
         # Verify this deck belongs to the requested company
         if company_name:
