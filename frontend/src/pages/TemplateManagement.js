@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -85,6 +85,9 @@ const TemplateManagement = () => {
   const [promptLoading, setPromptLoading] = useState(false);
   const [promptError, setPromptError] = useState(null);
   
+  // Ref for uncontrolled textarea
+  const promptTextareaRef = useRef(null);
+  
   
   // Dialog states
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
@@ -113,10 +116,9 @@ const TemplateManagement = () => {
   }, []);
 
 
-  // Memoized handlers
-  const handlePromptTextChange = useCallback((event) => {
-    const newValue = event.target.value;
-    setPromptText(newValue);
+  // Get current prompt text from textarea
+  const getCurrentPromptText = useCallback(() => {
+    return promptTextareaRef.current?.value || '';
   }, []);
 
   const loadInitialData = useCallback(async () => {
@@ -143,6 +145,10 @@ const TemplateManagement = () => {
       // Set initial prompt text for image_analysis
       if (pipelineData.prompts && pipelineData.prompts.image_analysis) {
         setPromptText(pipelineData.prompts.image_analysis);
+        // Also set in textarea if it exists
+        if (promptTextareaRef.current) {
+          promptTextareaRef.current.value = pipelineData.prompts.image_analysis;
+        }
       }
       
       // Load templates for first sector by default
@@ -225,7 +231,12 @@ const TemplateManagement = () => {
       
       const response = await getPipelinePromptByStage(stageName);
       const promptData = response.data || response;
-      setPromptText(promptData.prompt_text || '');
+      const newPromptText = promptData.prompt_text || '';
+      setPromptText(newPromptText);
+      // Also update textarea
+      if (promptTextareaRef.current) {
+        promptTextareaRef.current.value = newPromptText;
+      }
       
     } catch (err) {
       console.error('Error loading prompt:', err);
@@ -240,12 +251,13 @@ const TemplateManagement = () => {
       setPromptLoading(true);
       setPromptError(null);
       
-      await updatePipelinePrompt(selectedPromptStage, promptText);
+      const currentPromptText = getCurrentPromptText();
+      await updatePipelinePrompt(selectedPromptStage, currentPromptText);
       
       // Update local state
       setPipelinePrompts(prev => ({
         ...prev,
-        [selectedPromptStage]: promptText
+        [selectedPromptStage]: currentPromptText
       }));
       
       setError(null);
@@ -271,6 +283,10 @@ const TemplateManagement = () => {
       // Update local state with reset prompt
       const newPromptText = resetData.default_prompt || '';
       setPromptText(newPromptText);
+      // Also update textarea
+      if (promptTextareaRef.current) {
+        promptTextareaRef.current.value = newPromptText;
+      }
       setPipelinePrompts(prev => ({
         ...prev,
         [selectedPromptStage]: newPromptText
@@ -646,8 +662,8 @@ const TemplateManagement = () => {
                 {t('labels.imageAnalysisPrompt')}
               </Typography>
               <textarea
-                value={promptText}
-                onChange={handlePromptTextChange}
+                ref={promptTextareaRef}
+                defaultValue={promptText}
                 disabled={promptLoading}
                 rows={8}
                 style={{
@@ -673,7 +689,7 @@ const TemplateManagement = () => {
               <Button
                 variant="contained"
                 onClick={handleSavePrompt}
-                disabled={promptLoading || !promptText.trim()}
+                disabled={promptLoading}
                 startIcon={promptLoading ? <CircularProgress size={20} /> : null}
               >
                 {promptLoading ? t('pipeline.saving') : t('pipeline.savePrompt')}
