@@ -132,9 +132,6 @@ const TemplateManagement = () => {
       const customizationsData = customizationsResponse.data || customizationsResponse;
       const pipelineData = pipelineResponse.data || pipelineResponse;
       
-      // Debug logging
-      console.log('Pipeline response:', pipelineResponse);
-      console.log('Pipeline data:', pipelineData);
       
       setSectors(Array.isArray(sectorsData) ? sectorsData : []);
       setPerformanceMetrics(metricsData);
@@ -142,20 +139,9 @@ const TemplateManagement = () => {
       setPipelinePrompts(pipelineData.prompts || {});
       
       // Set initial prompt text for image_analysis
-      console.log('Available prompts:', pipelineData.prompts);
-      console.log('pipelineData.prompts exists:', !!pipelineData.prompts);
-      console.log('image_analysis exists:', !!pipelineData.prompts?.image_analysis);
-      console.log('image_analysis value:', pipelineData.prompts?.image_analysis);
-      
       const imageAnalysisPrompt = pipelineData.prompts?.image_analysis;
       if (imageAnalysisPrompt) {
-        console.log('Setting initial prompt text:', imageAnalysisPrompt);
         setPromptText(imageAnalysisPrompt);
-      } else {
-        console.log('No image_analysis prompt found, using default');
-        // Use default prompt if none found
-        const defaultPrompt = "Describe this image and make sure to include anything notable about it (include text you see in the image):";
-        setPromptText(defaultPrompt);
       }
       
       // Load templates for first sector by default
@@ -659,19 +645,21 @@ const TemplateManagement = () => {
               <Typography variant="body2" sx={{ mb: 1, fontWeight: 'medium' }}>
                 {t('labels.imageAnalysisPrompt')}
               </Typography>
-              <TextField
+              <textarea
                 value={promptText}
                 onChange={(e) => setPromptText(e.target.value)}
                 disabled={promptLoading}
-                multiline
                 rows={8}
-                fullWidth
-                variant="outlined"
-                sx={{
-                  '& .MuiInputBase-input': {
-                    fontFamily: 'monospace',
-                    fontSize: '14px'
-                  }
+                style={{
+                  width: '100%',
+                  fontFamily: 'monospace',
+                  fontSize: '14px',
+                  padding: '12px',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  resize: 'vertical',
+                  outline: 'none',
+                  backgroundColor: promptLoading ? '#f5f5f5' : 'white'
                 }}
               />
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
