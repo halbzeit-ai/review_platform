@@ -185,7 +185,10 @@ class PDFProcessor:
             "sections_analyzed": list(chapter_analysis.keys()),
             "model_version": "healthcare-template-v1.0",
             "healthcare_sector": classification.get("primary_sector") if classification else None,
-            "classification_confidence": classification.get("confidence_score") if classification else None
+            "classification_confidence": classification.get("confidence_score") if classification else None,
+            
+            # Critical field for deck viewer - visual analysis results
+            "visual_analysis_results": ai_results.get("visual_analysis_results", [])
         }
         
         return enhanced_results
