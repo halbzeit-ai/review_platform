@@ -111,4 +111,7 @@ export const getSlideImage = (companyId, deckName, slideFilename) =>
 export const deleteDeck = (companyId, deckId) =>
   api.delete(`/projects/${companyId}/deck/${deckId}`);
 
+export const cleanupOrphanedDecks = () =>
+  api.delete('/decks/cleanup-orphaned');
+
 export default api;

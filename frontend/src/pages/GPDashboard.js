@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, IconButton, Box, Snackbar, Alert } from '@mui/material';
-import { Delete as DeleteIcon, Settings, Assignment } from '@mui/icons-material';
+import { Delete as DeleteIcon, Settings, Assignment, CleaningServices } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { getAllUsers, getPitchDecks, updateUserRole, deleteUser } from '../services/api';
+import { getAllUsers, getPitchDecks, updateUserRole, deleteUser, cleanupOrphanedDecks } from '../services/api';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 function GPDashboard() {
@@ -14,6 +14,7 @@ function GPDashboard() {
   const [loadingDecks, setLoadingDecks] = useState(true);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, user: null });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [cleanupLoading, setCleanupLoading] = useState(false);
 
   const handleRoleChange = async (userEmail, newRole) => {
     try {
@@ -94,6 +95,33 @@ function GPDashboard() {
     }
   };
 
+  const handleCleanupOrphanedDecks = async () => {
+    setCleanupLoading(true);
+    try {
+      const response = await cleanupOrphanedDecks();
+      
+      setSnackbar({
+        open: true,
+        message: response.data.message || 'Orphaned records cleaned up successfully',
+        severity: 'success'
+      });
+      
+      // Refresh the decks list
+      await fetchPitchDecks();
+      
+    } catch (error) {
+      console.error('Error cleaning up orphaned decks:', error);
+      
+      setSnackbar({
+        open: true,
+        message: `Cleanup failed: ${error.response?.data?.detail || error.message}`,
+        severity: 'error'
+      });
+    } finally {
+      setCleanupLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -130,6 +158,14 @@ function GPDashboard() {
             onClick={() => navigate('/config')}
           >
             Model Configuration
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<CleaningServices />}
+            onClick={handleCleanupOrphanedDecks}
+            disabled={cleanupLoading}
+          >
+            {cleanupLoading ? 'Cleaning...' : 'Cleanup Orphaned Data'}
           </Button>
         </Box>
       </Box>
