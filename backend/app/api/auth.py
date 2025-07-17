@@ -329,14 +329,16 @@ async def delete_user(
             print(f"[WARNING] Could not delete project directory {project_dir}: {e}")
     
     # Delete all database records related to this user
-    # Delete pitch decks
-    db.execute(text("DELETE FROM pitch_decks WHERE user_id = :user_id"), {"user_id": user_to_delete.id})
+    # Delete in correct order: questions -> reviews -> pitch_decks
+    
+    # Delete questions (if they exist)
+    db.execute(text("DELETE FROM questions WHERE review_id IN (SELECT id FROM reviews WHERE pitch_deck_id IN (SELECT id FROM pitch_decks WHERE user_id = :user_id))"), {"user_id": user_to_delete.id})
     
     # Delete reviews (if they exist)
     db.execute(text("DELETE FROM reviews WHERE pitch_deck_id IN (SELECT id FROM pitch_decks WHERE user_id = :user_id)"), {"user_id": user_to_delete.id})
     
-    # Delete questions (if they exist)
-    db.execute(text("DELETE FROM questions WHERE review_id IN (SELECT id FROM reviews WHERE pitch_deck_id IN (SELECT id FROM pitch_decks WHERE user_id = :user_id))"), {"user_id": user_to_delete.id})
+    # Delete pitch decks
+    db.execute(text("DELETE FROM pitch_decks WHERE user_id = :user_id"), {"user_id": user_to_delete.id})
     
     # Finally, delete the user
     db.delete(user_to_delete)
