@@ -37,7 +37,8 @@
     "chapters": "Chapters",
     "weight": "Weight",
     "healthcareFocus": "Healthcare Focus",
-    "scoringCriteria": "Scoring Criteria"
+    "scoringCriteria": "Scoring Criteria",
+    "customizeTemplateTitle": "Customize Template"
   },
   "messages": {
     "noTemplatesAvailable": "No templates available for this sector",
@@ -46,5 +47,16 @@
     "loadingSectors": "Loading sectors...",
     "templateSaved": "Template saved successfully",
     "templateError": "Error saving template"
+  },
+  "pipeline": {
+    "title": "Pipeline Configuration",
+    "description": "Configure the prompts used in the PDF processing pipeline. The image analysis prompt controls how the AI describes each slide of the pitch deck.",
+    "promptDescription": "This prompt is used by the vision AI model to describe each slide of the pitch deck. It forms the foundation for all subsequent analysis steps.",
+    "savePrompt": "Save Prompt",
+    "saving": "Saving...",
+    "resetPrompt": "Reset to Default",
+    "resetConfirm": "Are you sure you want to reset this prompt to its default value?",
+    "resetSuccess": "Prompt reset successfully",
+    "saveSuccess": "Prompt saved successfully"
   }
 }

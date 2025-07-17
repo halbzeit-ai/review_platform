@@ -611,10 +611,10 @@ const TemplateManagement = () => {
   const PipelineSettingsContent = () => (
     <Box>
       <Typography variant="h5" sx={{ mb: 3 }}>
-        Pipeline Configuration
+        {t('pipeline.title')}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-        Configure the prompts used in the PDF processing pipeline. The image analysis prompt controls how the AI describes each slide of the pitch deck.
+        {t('pipeline.description')}
       </Typography>
 
       <Grid container spacing={3}>
@@ -624,8 +624,7 @@ const TemplateManagement = () => {
               {t('labels.imageAnalysisPrompt')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              This prompt is used by the vision AI model to describe each slide of the pitch deck. 
-              It forms the foundation for all subsequent analysis steps.
+              {t('pipeline.promptDescription')}
             </Typography>
 
             {promptError && (
@@ -643,7 +642,7 @@ const TemplateManagement = () => {
               onChange={(e) => setPromptText(e.target.value)}
               disabled={promptLoading}
               sx={{ mb: 3 }}
-              helperText="Describe how the AI should analyze each slide image"
+              helperText={t('labels.imageAnalysisHelper')}
             />
 
             <Box sx={{ display: 'flex', gap: 2 }}>
@@ -653,7 +652,7 @@ const TemplateManagement = () => {
                 disabled={promptLoading || !promptText.trim()}
                 startIcon={promptLoading ? <CircularProgress size={20} /> : null}
               >
-                {promptLoading ? 'Saving...' : 'Save Prompt'}
+                {promptLoading ? t('pipeline.saving') : t('pipeline.savePrompt')}
               </Button>
               <Button
                 variant="outlined"
@@ -661,7 +660,7 @@ const TemplateManagement = () => {
                 disabled={promptLoading}
                 color="secondary"
               >
-                Reset to Default
+                {t('pipeline.resetPrompt')}
               </Button>
             </Box>
           </Paper>
@@ -874,7 +873,7 @@ const TemplateManagement = () => {
         fullWidth
       >
         <DialogTitle>
-          Customize Template: {selectedTemplate?.name}
+          {t('labels.customizeTemplateTitle')}: {selectedTemplate?.name}
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ mb: 2 }}>
