@@ -118,8 +118,15 @@ const TemplateManagement = () => {
 
   // Update textarea when promptText changes (from loading or stage change)
   useEffect(() => {
+    console.log('useEffect triggered - promptText:', promptText);
+    console.log('promptTextareaRef.current:', !!promptTextareaRef.current);
+    console.log('isSavingRef.current:', isSavingRef.current);
+    
     if (promptTextareaRef.current && !isSavingRef.current) {
+      console.log('Updating textarea value to:', promptText);
       promptTextareaRef.current.value = promptText || '';
+    } else {
+      console.log('Skipping textarea update - ref or saving condition failed');
     }
   }, [promptText]);
 
