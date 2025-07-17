@@ -10,8 +10,17 @@ const StartupDashboardRedirect = () => {
     const user = JSON.parse(localStorage.getItem('user'));
     
     if (user && user.role === 'startup') {
-      // Extract company ID from email
-      const companyId = user.email.split('@')[0];
+      // Generate company ID using same logic as backend
+      const getCompanyId = () => {
+        if (user?.company_name) {
+          // Convert company name to a URL-safe slug (same logic as backend)
+          return user.company_name.toLowerCase().replace(' ', '-').replace(/[^a-z0-9-]/g, '');
+        }
+        // Fallback to email prefix if company name is not available
+        return user?.email?.split('@')[0] || 'unknown';
+      };
+      
+      const companyId = getCompanyId();
       
       // Redirect to project dashboard
       navigate(`/project/${companyId}`, { replace: true });
