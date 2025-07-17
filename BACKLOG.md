@@ -4,6 +4,25 @@ This document tracks features, improvements, and technical debt that need to be 
 
 ## High Priority
 
+### Data Integrity & User Management
+- **Multi-User Project Management System**
+  - Status: Critical - Data integrity issue identified
+  - Description: Implement proper project-user relationship management
+  - Current Issue: When a user is deleted, their projects (PDFs, results, analysis) remain orphaned. Re-registering the same user grants access to old projects.
+  - Proposed Solution:
+    - Create project-user association table (many-to-many relationship)
+    - Allow multiple users per project (team collaboration)
+    - Implement cascade deletion: when last user of a project is deleted, delete the project
+    - Add project ownership and permission management
+  - Tasks:
+    - Design project-user association schema
+    - Create migration for existing data
+    - Implement project deletion cascade logic
+    - Add user permission levels (owner, viewer, editor)
+    - Update frontend to handle multi-user projects
+    - Add project sharing/invitation functionality
+  - Impact: Prevents data leakage and ensures proper project lifecycle management
+
 ### Security & Infrastructure
 - **HTTPS Setup with Let's Encrypt**
   - Status: Postponed until domain DNS is configured
