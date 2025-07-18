@@ -203,6 +203,7 @@ async def reset_prompt_to_default(
         # Default prompts mapping
         default_prompts = {
             "image_analysis": "Describe this image and make sure to include anything notable about it (include text you see in the image):",
+            "company_offering": "You are an analyst working at a Venture Capital company. Here is the descriptions of a startup's pitchdeck. Your Task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company.",
             "role_definition": "You are an analyst working at a Venture Capital company. Here is the descriptions of a startup's pitchdeck.",
             "offering_extraction": "Your Task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company.",
             "question_analysis": "Your task is to find answers to the following questions: ",
