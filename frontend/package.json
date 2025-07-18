@@ -67,5 +67,8 @@
       "!src/**/__tests__/**",
       "!src/**/*.test.js"
     ]
+  },
+  "overrides": {
+    "typescript": "^4.9.5"
   }
 }

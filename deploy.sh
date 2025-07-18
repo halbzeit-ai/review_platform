@@ -98,7 +98,7 @@ echo "🎨 Setting up frontend..."
 cd frontend
 
 echo "📦 Installing frontend dependencies..."
-run_command "npm install" "Install all frontend dependencies from package.json"
+run_command "npm install --legacy-peer-deps" "Install all frontend dependencies from package.json (with legacy peer deps resolution)"
 
 if [ "$PRODUCTION" = true ]; then
     echo "🏗️  Building frontend for production..."
