@@ -100,6 +100,18 @@ cd frontend
 echo "📦 Installing frontend dependencies..."
 run_command "npm install --legacy-peer-deps" "Install all frontend dependencies from package.json (with legacy peer deps resolution)"
 
+# Verify critical dependencies are installed
+if [ "$DRY_RUN" = false ]; then
+    echo "🔍 Verifying critical dependencies..."
+    if ! npm list i18next-http-backend >/dev/null 2>&1; then
+        echo "⚠️  Missing i18next-http-backend dependency"
+        echo "   This is required for dynamic translation loading"
+        echo "   Run: npm install i18next-http-backend"
+        exit 1
+    fi
+    echo "✅ All critical dependencies verified"
+fi
+
 if [ "$PRODUCTION" = true ]; then
     echo "🏗️  Building frontend for production..."
     run_command "npm run build" "Create optimized production build"
