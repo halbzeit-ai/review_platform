@@ -1,10 +1,14 @@
 
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Text
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship, DeclarativeBase
 from datetime import datetime
+from typing import TYPE_CHECKING
 
-Base = declarative_base()
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Mapped
+
+class Base(DeclarativeBase):
+    pass
 
 class User(Base):
     __tablename__ = "users"

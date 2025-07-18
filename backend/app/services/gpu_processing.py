@@ -171,7 +171,7 @@ class GPUProcessingService:
         finally:
             db.close()
     
-    def _create_startup_script(self, file_path: str, pitch_deck_id: int = None) -> str:
+    def _create_startup_script(self, file_path: str, pitch_deck_id: Optional[int] = None) -> str:
         """Create bash startup script for GPU instance"""
         mount_path = settings.SHARED_FILESYSTEM_MOUNT_PATH
         

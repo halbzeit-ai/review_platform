@@ -131,9 +131,9 @@ class DatacrunchClient:
                              instance_type: str, 
                              image: str = "ubuntu-22.04",
                              description: str = "Review Platform Instance",
-                             ssh_key_ids: List[str] = None,
-                             existing_volume_ids: List[str] = None,
-                             startup_script_id: str = None) -> Dict[Any, Any]:
+                             ssh_key_ids: Optional[List[str]] = None,
+                             existing_volume_ids: Optional[List[str]] = None,
+                             startup_script_id: Optional[str] = None) -> Dict[Any, Any]:
         """Deploy instance with proper API parameters"""
         data = {
             "hostname": hostname,

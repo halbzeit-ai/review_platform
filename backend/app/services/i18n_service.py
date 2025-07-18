@@ -44,7 +44,7 @@ class I18nService:
                 except Exception as e:
                     logger.error(f"Failed to load translation file {json_file}: {e}")
     
-    def t(self, key: str, language: str = None, **kwargs) -> str:
+    def t(self, key: str, language: Optional[str] = None, **kwargs) -> str:
         """
         Translate a key to the specified language
         
