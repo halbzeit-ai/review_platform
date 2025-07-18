@@ -279,7 +279,7 @@ const ProjectResults = ({ companyId, deckId }) => {
       <Card variant="outlined" sx={{ mb: 3, bgcolor: 'primary.50' }}>
         <CardContent>
           <Typography variant="h6" gutterBottom color="primary">
-            Company Overview
+            {t('results.companyOverview')}
           </Typography>
           <Box sx={{ mb: 2 }}>
             {formatText(results.company_offering || 'No company summary available')}
@@ -287,7 +287,7 @@ const ProjectResults = ({ companyId, deckId }) => {
           {results.key_points && results.key_points.length > 0 && (
             <Box>
               <Typography variant="subtitle2" gutterBottom>
-                Key Points:
+                {t('results.keyPoints')}:
               </Typography>
               <List dense sx={{ pl: 1 }}>
                 {results.key_points.slice(0, 3).map((point, index) => (
@@ -337,9 +337,9 @@ const ProjectResults = ({ companyId, deckId }) => {
           {results.classification && (
             <Box sx={{ mt: 2, p: 2, bgcolor: 'success.50', borderRadius: 1 }}>
               <Typography variant="body2" color="success.main">
-                <strong>Healthcare Classification:</strong> {results.classification.sector || 'Healthcare'} 
+                <strong>{t('results.healthcareClassification')}:</strong> {results.classification.sector || 'Healthcare'} 
                 {results.classification.confidence && (
-                  <span> (Confidence: {Math.round(results.classification.confidence * 100)}%)</span>
+                  <span> ({t('results.confidence')}: {Math.round(results.classification.confidence * 100)}%)</span>
                 )}
               </Typography>
             </Box>
@@ -357,7 +357,7 @@ const ProjectResults = ({ companyId, deckId }) => {
         <Card variant="outlined" sx={{ mb: 4 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom sx={{ textAlign: 'center', mb: 3 }}>
-              Analysis Dimensions
+              {t('results.analysisDimensions')}
             </Typography>
             <Box sx={{ height: 400, width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -433,7 +433,7 @@ const ProjectResults = ({ companyId, deckId }) => {
                       sx={{ fontSize: '0.75rem' }}
                     />
                     <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
-                      ({chapter.total_questions || 0} questions)
+                      ({chapter.total_questions || 0} {t('results.questions')})
                     </Typography>
                   </Box>
                 </AccordionSummary>
@@ -487,7 +487,7 @@ const ProjectResults = ({ companyId, deckId }) => {
                               {question.healthcare_focus && (
                                 <Box sx={{ mt: 1.5, p: 1.5, bgcolor: 'info.50', borderRadius: 1, ml: 5 }}>
                                   <Typography variant="caption" color="info.main" fontWeight="bold" sx={{ fontSize: '0.75rem' }}>
-                                    Healthcare Focus:
+                                    {t('results.healthcareFocus')}:
                                   </Typography>
                                   <Typography variant="body2" color="info.main" sx={{ fontSize: '0.85rem', mt: 0.5 }}>
                                     {question.healthcare_focus}
@@ -540,14 +540,14 @@ const ProjectResults = ({ companyId, deckId }) => {
       {/* Additional Insights */}
       <Paper elevation={1} sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" gutterBottom>
-          Additional Insights
+          {t('results.additionalInsights')}
         </Typography>
 
         {/* Healthcare Specialized Analysis */}
         {results.specialized_analysis && (
           <Box sx={{ mb: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Healthcare-Specific Analysis
+              {t('results.healthcareSpecificAnalysis')}
             </Typography>
             
             {/* Clinical Validation */}
@@ -556,7 +556,7 @@ const ProjectResults = ({ companyId, deckId }) => {
                 <CardContent>
                   <Typography variant="subtitle1" gutterBottom fontWeight="bold" color="info.main">
                     <Science sx={{ mr: 1, verticalAlign: 'middle' }} />
-                    Clinical Validation
+                    {t('results.clinicalValidation')}
                   </Typography>
                   <Box>
                     {formatText(results.specialized_analysis.clinical_validation)}
@@ -571,7 +571,7 @@ const ProjectResults = ({ companyId, deckId }) => {
                 <CardContent>
                   <Typography variant="subtitle1" gutterBottom fontWeight="bold" color="warning.main">
                     <Assignment sx={{ mr: 1, verticalAlign: 'middle' }} />
-                    Regulatory Pathway
+                    {t('results.regulatoryPathway')}
                   </Typography>
                   <Box>
                     {formatText(results.specialized_analysis.regulatory_pathway)}
@@ -586,7 +586,7 @@ const ProjectResults = ({ companyId, deckId }) => {
                 <CardContent>
                   <Typography variant="subtitle1" gutterBottom fontWeight="bold" color="success.main">
                     <Lightbulb sx={{ mr: 1, verticalAlign: 'middle' }} />
-                    Scientific Hypothesis
+                    {t('results.scientificHypothesis')}
                   </Typography>
                   <Box>
                     {formatText(results.specialized_analysis.scientific_hypothesis)}
