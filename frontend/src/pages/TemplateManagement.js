@@ -85,7 +85,7 @@ const TemplateManagement = () => {
   const [selectedPromptStage, setSelectedPromptStage] = useState('image_analysis');
   const [promptTexts, setPromptTexts] = useState({
     image_analysis: '',
-    company_offering: ''
+    offering_extraction: ''
   });
   const [promptLoading, setPromptLoading] = useState(false);
   const [promptError, setPromptError] = useState(null);
@@ -147,7 +147,7 @@ const TemplateManagement = () => {
       const prompts = pipelineData.prompts || {};
       setPromptTexts({
         image_analysis: prompts.image_analysis || '',
-        company_offering: prompts.company_offering || ''
+        offering_extraction: prompts.offering_extraction || ''
       });
       
       // Load templates for first sector by default
@@ -638,7 +638,7 @@ const TemplateManagement = () => {
         icon: <VisibilityIcon />
       },
       {
-        key: 'company_offering',
+        key: 'offering_extraction',
         name: t('labels.companyOfferingPrompt'),
         description: t('pipeline.companyOfferingDescription'),
         icon: <StorefrontIcon />
