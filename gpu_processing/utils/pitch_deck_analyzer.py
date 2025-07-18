@@ -184,6 +184,7 @@ class PitchDeckAnalyzer:
         """Initialize all analysis prompts"""
         # Get configurable prompts from database
         image_prompt = self.get_pipeline_prompt("image_analysis") or "Describe this image and make sure to include anything notable about it (include text you see in the image):"
+        offering_prompt = self.get_pipeline_prompt("offering_extraction") or "Your Task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company."
         
         self.prompts = {
             # Image analysis (configurable)
@@ -191,7 +192,7 @@ class PitchDeckAnalyzer:
             
             # Role and task definitions
             "role": "You are an analyst working at a Venture Capital company. Here is the descriptions of a startup's pitchdeck.",
-            "offering": "Your Task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company.",
+            "offering": offering_prompt,
             "answers": "Your task is to find answers to the following questions: ",
             "scores": "Your task is to give a score between 0 and 7 based on how much information is provided for the following questions. Just give a number, no explanations.",
             "science": "You are a medical doctor reviewing a pitchdeck of a health startup. Provide a numbered list of core scientific, health related or medical hypothesis that are addressed by the startup. Do not report market size or any other economic hypotheses. Do not mention the name of the product or the company.",
