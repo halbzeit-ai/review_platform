@@ -99,6 +99,7 @@
     },
     "adminActions": {
       "analysisTemplates": "Analyse-Vorlagen",
+      "dojo": "Dojo",
       "modelConfiguration": "Modell-Konfiguration",
       "cleanupOrphanedData": "Verwaiste Daten bereinigen",
       "cleanupInProgress": "Bereinigung läuft...",

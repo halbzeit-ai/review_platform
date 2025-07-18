@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
-from .api import auth, decks, reviews, questions, documents, config, healthcare_templates, pipeline, projects, internal
+from .api import auth, decks, reviews, questions, documents, config, healthcare_templates, pipeline, projects, internal, dojo
 from .db.models import Base
 from .db.database import engine
 
@@ -30,6 +30,7 @@ app.include_router(healthcare_templates.router, prefix=settings.API_V1_STR)
 app.include_router(pipeline.router, prefix=settings.API_V1_STR)
 app.include_router(projects.router, prefix=settings.API_V1_STR)
 app.include_router(internal.router, prefix=settings.API_V1_STR)
+app.include_router(dojo.router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 def read_root():

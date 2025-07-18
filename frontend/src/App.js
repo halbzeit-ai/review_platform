@@ -13,6 +13,7 @@ import Review from './pages/Review';
 import ResultsPage from './pages/ResultsPage';
 import ConfigPage from './pages/ConfigPage';
 import TemplateManagement from './pages/TemplateManagement';
+import DojoManagement from './pages/DojoManagement';
 import ProjectDashboard from './pages/ProjectDashboard';
 import DeckViewer from './pages/DeckViewer';
 import ProjectResultsPage from './pages/ProjectResultsPage';
@@ -37,6 +38,7 @@ function App() {
           <Route path="/results/:pitchDeckId" element={<ResultsPage />} />
           <Route path="/config" element={<ConfigPage />} />
           <Route path="/templates" element={<TemplateManagement />} />
+          <Route path="/dojo" element={<DojoManagement />} />
           <Route path="/project/:companyId" element={<ProjectDashboard />} />
           <Route path="/project/:companyId/deck-viewer/:deckId" element={<DeckViewer />} />
           <Route path="/project/:companyId/results/:deckId" element={<ProjectResultsPage />} />

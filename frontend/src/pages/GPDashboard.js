@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, IconButton, Box, Snackbar, Alert } from '@mui/material';
-import { Delete as DeleteIcon, Settings, Assignment, CleaningServices } from '@mui/icons-material';
+import { Delete as DeleteIcon, Settings, Assignment, CleaningServices, Storage } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { getAllUsers, getPitchDecks, updateUserRole, deleteUser, cleanupOrphanedDecks } from '../services/api';
@@ -151,6 +151,13 @@ function GPDashboard() {
             onClick={() => navigate('/templates')}
           >
             {t('gp.adminActions.analysisTemplates')}
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<Storage />}
+            onClick={() => navigate('/dojo')}
+          >
+            {t('gp.adminActions.dojo')}
           </Button>
           <Button
             variant="outlined"
