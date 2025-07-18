@@ -74,7 +74,7 @@ def add_company_offering_prompt():
         
         # Verify the insertion/update
         verify_query = text("""
-        SELECT id, stage_name, LEFT(prompt_text, 100) as prompt_preview, is_active, created_by, created_at, updated_at
+        SELECT id, stage_name, SUBSTR(prompt_text, 1, 100) as prompt_preview, is_active, created_by, created_at, updated_at
         FROM pipeline_prompts 
         WHERE stage_name = :stage_name
         """)
