@@ -104,17 +104,25 @@ const ProjectResults = ({ companyId, deckId }) => {
       if (paragraph.trim().startsWith('*') || paragraph.trim().startsWith('-')) {
         const items = paragraph.split('\n').filter(line => line.trim().startsWith('*') || line.trim().startsWith('-'));
         return (
-          <List key={index} dense sx={{ my: 1 }}>
+          <List key={index} dense sx={{ my: 1, pl: 2 }}>
             {items.map((item, itemIndex) => (
-              <ListItem key={itemIndex} sx={{ py: 0.5 }}>
-                <ListItemIcon sx={{ minWidth: 32 }}>
-                  <CheckCircle color="success" fontSize="small" />
+              <ListItem key={itemIndex} sx={{ py: 0.3, pl: 0 }}>
+                <ListItemIcon sx={{ minWidth: 20 }}>
+                  <Box sx={{ 
+                    width: 4, 
+                    height: 4, 
+                    borderRadius: '50%', 
+                    bgcolor: 'text.secondary',
+                    mt: 1
+                  }} />
                 </ListItemIcon>
                 <ListItemText 
                   primary={
-                    <span dangerouslySetInnerHTML={{ 
-                      __html: item.replace(/^[\*\-]\s*/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
-                    }} />
+                    <Typography variant="body1" sx={{ fontSize: '0.95rem', lineHeight: 1.5 }}>
+                      <span dangerouslySetInnerHTML={{ 
+                        __html: item.replace(/^[\*\-]\s*/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+                      }} />
+                    </Typography>
                   } 
                 />
               </ListItem>
@@ -143,7 +151,12 @@ const ProjectResults = ({ companyId, deckId }) => {
       
       // Regular paragraph
       return (
-        <Typography key={index} variant="body1" paragraph sx={{ lineHeight: 1.6 }}>
+        <Typography key={index} variant="body1" paragraph sx={{ 
+          lineHeight: 1.6, 
+          fontSize: '0.95rem',
+          color: 'text.primary',
+          mb: 1.5
+        }}>
           <span dangerouslySetInnerHTML={{ __html: formattedParagraph }} />
         </Typography>
       );
@@ -209,13 +222,25 @@ const ProjectResults = ({ companyId, deckId }) => {
               <Typography variant="subtitle2" gutterBottom>
                 Key Points:
               </Typography>
-              <List dense>
+              <List dense sx={{ pl: 1 }}>
                 {results.key_points.slice(0, 3).map((point, index) => (
-                  <ListItem key={index} sx={{ py: 0.5 }}>
-                    <ListItemIcon sx={{ minWidth: 32 }}>
-                      <CheckCircle color="success" fontSize="small" />
+                  <ListItem key={index} sx={{ py: 0.3, pl: 0 }}>
+                    <ListItemIcon sx={{ minWidth: 20 }}>
+                      <Box sx={{ 
+                        width: 6, 
+                        height: 6, 
+                        borderRadius: '50%', 
+                        bgcolor: 'primary.main',
+                        mt: 1
+                      }} />
                     </ListItemIcon>
-                    <ListItemText primary={formatText(point)} />
+                    <ListItemText 
+                      primary={
+                        <Typography variant="body2" sx={{ fontSize: '0.9rem', lineHeight: 1.4 }}>
+                          {formatText(point)}
+                        </Typography>
+                      } 
+                    />
                   </ListItem>
                 ))}
               </List>
@@ -332,15 +357,16 @@ const ProjectResults = ({ companyId, deckId }) => {
                 <AccordionSummary expandIcon={<ExpandMore />}>
                   <Box display="flex" alignItems="center" gap={2}>
                     {getScoreIcon(chapterKey)}
-                    <Typography variant="subtitle1" fontWeight="bold">
+                    <Typography variant="subtitle1" fontWeight="bold" sx={{ fontSize: '1rem' }}>
                       {chapter.name || chapterKey.replace('_', ' ')}
                     </Typography>
                     <Chip
                       label={`${chapter.weighted_score?.toFixed(1) || 0}/7`}
                       color={getScoreColor(chapter.weighted_score || 0)}
                       size="small"
+                      sx={{ fontSize: '0.75rem' }}
                     />
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
                       ({chapter.total_questions || 0} questions)
                     </Typography>
                   </Box>
@@ -348,7 +374,12 @@ const ProjectResults = ({ companyId, deckId }) => {
                 <AccordionDetails>
                   <Box sx={{ pt: 1 }}>
                     {chapter.description && (
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ 
+                        mb: 2, 
+                        fontStyle: 'italic',
+                        fontSize: '0.85rem',
+                        lineHeight: 1.4
+                      }}>
                         {chapter.description}
                       </Typography>
                     )}
@@ -357,37 +388,42 @@ const ProjectResults = ({ companyId, deckId }) => {
                     {chapter.questions && chapter.questions.length > 0 && (
                       <Box>
                         {chapter.questions.map((question, qIndex) => (
-                          <Card key={qIndex} variant="outlined" sx={{ mb: 2, bgcolor: 'grey.50' }}>
-                            <CardContent>
-                              <Box display="flex" alignItems="center" gap={2} mb={1}>
-                                <Typography variant="subtitle2" fontWeight="bold" color="primary">
-                                  Q{qIndex + 1}:
-                                </Typography>
-                                <Typography variant="body2" fontWeight="bold">
+                          <Card key={qIndex} variant="outlined" sx={{ mb: 1.5, bgcolor: 'grey.50' }}>
+                            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                              <Box display="flex" alignItems="flex-start" gap={2} mb={1}>
+                                <Chip
+                                  label={`Q${qIndex + 1}`}
+                                  color="primary"
+                                  size="small"
+                                  sx={{ minWidth: 36, fontSize: '0.75rem' }}
+                                />
+                                <Typography variant="body2" fontWeight="bold" sx={{ 
+                                  fontSize: '0.9rem', 
+                                  lineHeight: 1.4,
+                                  flex: 1
+                                }}>
                                   {question.question_text}
                                 </Typography>
-                                <Box sx={{ ml: 'auto' }}>
-                                  <Chip
-                                    label={`${question.score}/7`}
-                                    color={getScoreColor(question.score)}
-                                    size="small"
-                                  />
+                                <Chip
+                                  label={`${question.score}/7`}
+                                  color={getScoreColor(question.score)}
+                                  size="small"
+                                  sx={{ fontSize: '0.75rem' }}
+                                />
+                              </Box>
+                              
+                              <Box sx={{ pl: 1, borderLeft: 3, borderColor: 'primary.main', ml: 5 }}>
+                                <Box sx={{ fontSize: '0.9rem' }}>
+                                  {formatText(question.response)}
                                 </Box>
                               </Box>
                               
-                              <Typography variant="body2" sx={{ mb: 1 }}>
-                                <strong>Response:</strong>
-                              </Typography>
-                              <Box sx={{ pl: 2, borderLeft: 2, borderColor: 'primary.main' }}>
-                                {formatText(question.response)}
-                              </Box>
-                              
                               {question.healthcare_focus && (
-                                <Box sx={{ mt: 1, p: 1, bgcolor: 'info.50', borderRadius: 1 }}>
-                                  <Typography variant="caption" color="info.main" fontWeight="bold">
+                                <Box sx={{ mt: 1.5, p: 1.5, bgcolor: 'info.50', borderRadius: 1, ml: 5 }}>
+                                  <Typography variant="caption" color="info.main" fontWeight="bold" sx={{ fontSize: '0.75rem' }}>
                                     Healthcare Focus:
                                   </Typography>
-                                  <Typography variant="body2" color="info.main">
+                                  <Typography variant="body2" color="info.main" sx={{ fontSize: '0.85rem', mt: 0.5 }}>
                                     {question.healthcare_focus}
                                   </Typography>
                                 </Box>
@@ -513,16 +549,22 @@ const ProjectResults = ({ companyId, deckId }) => {
         {results.recommendations && results.recommendations.length > 0 && (
           <Card variant="outlined" sx={{ mb: 3 }}>
             <CardContent>
-              <Typography variant="subtitle1" gutterBottom fontWeight="bold">
+              <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ fontSize: '1rem' }}>
                 {t('results.recommendations')}
               </Typography>
-              <List>
+              <List sx={{ pl: 1 }}>
                 {results.recommendations.map((rec, index) => (
-                  <ListItem key={index}>
-                    <ListItemIcon>
-                      <Lightbulb color="warning" />
+                  <ListItem key={index} sx={{ py: 0.5, pl: 0, alignItems: 'flex-start' }}>
+                    <ListItemIcon sx={{ minWidth: 24, mt: 0.5 }}>
+                      <Lightbulb color="warning" fontSize="small" />
                     </ListItemIcon>
-                    <ListItemText primary={formatText(rec)} />
+                    <ListItemText 
+                      primary={
+                        <Box sx={{ fontSize: '0.9rem' }}>
+                          {formatText(rec)}
+                        </Box>
+                      } 
+                    />
                   </ListItem>
                 ))}
               </List>
