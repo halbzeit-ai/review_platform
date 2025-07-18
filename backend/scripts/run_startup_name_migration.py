@@ -85,7 +85,22 @@ def add_startup_name_prompt():
             logger.info("✅ startup_name_extraction prompt already exists")
             return True
         
-        # Insert new prompt
+        # Fix PostgreSQL sequence if needed
+        try:
+            # Get the current max ID
+            max_id_query = text("SELECT COALESCE(MAX(id), 0) FROM pipeline_prompts")
+            max_id = db.execute(max_id_query).scalar()
+            
+            # Reset sequence to max_id + 1
+            sequence_query = text("SELECT setval('pipeline_prompts_id_seq', :max_id + 1)")
+            db.execute(sequence_query, {"max_id": max_id})
+            
+            logger.info(f"Reset sequence to {max_id + 1}")
+            
+        except Exception as seq_error:
+            logger.warning(f"Could not reset sequence: {seq_error}")
+        
+        # Insert new prompt (let PostgreSQL auto-increment the id)
         insert_query = text("""
         INSERT INTO pipeline_prompts (stage_name, prompt_text, is_active, created_by, created_at, updated_at)
         VALUES (
