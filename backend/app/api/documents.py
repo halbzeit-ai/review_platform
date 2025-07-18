@@ -236,3 +236,38 @@ async def get_processing_results(
         "ai_extracted_startup_name": pitch_deck.ai_extracted_startup_name,
         "results": results
     }
+
+@router.get("/processing-progress/{pitch_deck_id}")
+async def get_processing_progress(
+    pitch_deck_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get real-time processing progress for a pitch deck"""
+    try:
+        # Get pitch deck info
+        pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == pitch_deck_id).first()
+        if not pitch_deck:
+            raise HTTPException(status_code=404, detail="Pitch deck not found")
+        
+        # Check if user has access to this pitch deck
+        if current_user.role == "startup" and pitch_deck.user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Get progress from GPU server
+        from ..services.gpu_http_client import gpu_http_client
+        progress_info = gpu_http_client.get_processing_progress(pitch_deck_id)
+        
+        return {
+            "pitch_deck_id": pitch_deck_id,
+            "file_name": pitch_deck.file_name,
+            "processing_status": pitch_deck.processing_status,
+            "gpu_progress": progress_info,
+            "created_at": pitch_deck.created_at.isoformat() if pitch_deck.created_at else None
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting processing progress for pitch deck {pitch_deck_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get processing progress")

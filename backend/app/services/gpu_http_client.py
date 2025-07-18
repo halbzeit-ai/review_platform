@@ -245,7 +245,7 @@ class GPUHTTPClient:
                 "company_id": company_id
             }
             
-            async with httpx.AsyncClient(timeout=300.0) as client:
+            async with httpx.AsyncClient(timeout=1800.0) as client:  # 30 minutes timeout
                 response = await client.post(
                     f"{self.base_url}/process-pdf",
                     json=payload,
@@ -279,7 +279,7 @@ class GPUHTTPClient:
             logger.error(f"Timeout processing PDF {file_path}")
             return {
                 "success": False,
-                "error": "Processing timeout (5 minutes exceeded)"
+                "error": "Processing timeout (30 minutes exceeded)"
             }
         except httpx.ConnectError:
             logger.error("Connection error communicating with GPU instance")
@@ -289,6 +289,51 @@ class GPUHTTPClient:
             }
         except Exception as e:
             logger.error(f"Error processing PDF {file_path}: {e}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
+    
+    def get_processing_progress(self, pitch_deck_id: int) -> Dict[str, Any]:
+        """
+        Get processing progress for a specific pitch deck
+        
+        Args:
+            pitch_deck_id: Database ID of the pitch deck
+            
+        Returns:
+            Progress information or error
+        """
+        try:
+            if not self.gpu_host:
+                return {
+                    "success": False,
+                    "error": "GPU_INSTANCE_HOST not configured"
+                }
+            
+            response = requests.get(
+                f"{self.base_url}/processing-progress/{pitch_deck_id}",
+                timeout=10,
+                headers={'Content-Type': 'application/json'}
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                return {
+                    "success": True,
+                    "progress": data.get("progress", {}),
+                    "status": data.get("status", "unknown"),
+                    "current_step": data.get("current_step", ""),
+                    "estimated_completion": data.get("estimated_completion", "")
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": f"HTTP {response.status_code}: {response.text}"
+                }
+                
+        except Exception as e:
+            logger.error(f"Error getting processing progress for pitch deck {pitch_deck_id}: {e}")
             return {
                 "success": False,
                 "error": str(e)
