@@ -7,11 +7,13 @@ import deCommon from './locales/de/common.json';
 import deAuth from './locales/de/auth.json';
 import deDashboard from './locales/de/dashboard.json';
 import deTemplates from './locales/de/templates.json';
+import deReview from './locales/de/review.json';
 
 import enCommon from './locales/en/common.json';
 import enAuth from './locales/en/auth.json';
 import enDashboard from './locales/en/dashboard.json';
 import enTemplates from './locales/en/templates.json';
+import enReview from './locales/en/review.json';
 
 const resources = {
   de: {
@@ -19,12 +21,14 @@ const resources = {
     auth: deAuth,
     dashboard: deDashboard,
     templates: deTemplates,
+    review: deReview,
   },
   en: {
     common: enCommon,
     auth: enAuth,
     dashboard: enDashboard,
     templates: enTemplates,
+    review: enReview,
   },
 };
 
@@ -48,7 +52,7 @@ i18n
 
     // Namespace handling
     defaultNS: 'common',
-    ns: ['common', 'auth', 'dashboard', 'templates'],
+    ns: ['common', 'auth', 'dashboard', 'templates', 'review'],
 
     // Debug mode for development
     debug: process.env.NODE_ENV === 'development',

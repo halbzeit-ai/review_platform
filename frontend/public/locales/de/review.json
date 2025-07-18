@@ -1,0 +1,42 @@
+{
+  "processing": {
+    "analyzing": "Analysiere dein Pitch Deck...",
+    "loading": "Lade Ergebnisse...",
+    "pleaseWait": "Dies kann einige Minuten dauern. Bitte warten."
+  },
+  "results": {
+    "title": "KI-Review Ergebnisse",
+    "analysisComplete": "Analyse erfolgreich abgeschlossen",
+    "overallScore": "Gesamtbewertung",
+    "detailedAnalysis": "Detaillierte Analyse",
+    "analysisDetails": "Analyse-Details",
+    "analysisDimensions": "Analyse-Dimensionen",
+    "scientificHypotheses": "Wissenschaftliche Hypothesen",
+    "keyPoints": "Wichtige Punkte",
+    "recommendations": "Empfehlungen",
+    "processedBy": "Verarbeitet von",
+    "confidence": "Vertrauen",
+    "noResults": "Keine Ergebnisse verfügbar",
+    "noAnalysisAvailable": "Keine Analyse für diesen Bereich verfügbar",
+    "companyOverview": "Unternehmensübersicht",
+    "additionalInsights": "Zusätzliche Einblicke",
+    "healthcareSpecificAnalysis": "Gesundheitsspezifische Analyse",
+    "clinicalValidation": "Klinische Validierung",
+    "regulatoryPathway": "Regulatorischer Pfad",
+    "scientificHypothesis": "Wissenschaftliche Hypothese",
+    "healthcareClassification": "Gesundheitsklassifikation",
+    "healthcareFocus": "Gesundheitsfokus",
+    "questions": "Fragen",
+    "weight": "Gewicht",
+    "response": "Antwort"
+  },
+  "areas": {
+    "problem": "Problem-Analyse",
+    "solution": "Lösung",
+    "product_market_fit": "Produkt-Markt-Passung",
+    "monetisation": "Monetarisierung",
+    "organisation": "Team & Organisation",
+    "competition": "Konkurrenz",
+    "execution": "Umsetzung"
+  }
+}

@@ -1,0 +1,182 @@
+{
+  "startup": {
+    "title": "Startup Dashboard",
+    "welcome": "Willkommen",
+    "uploadSection": {
+      "title": "Pitch Deck hochladen",
+      "description": "Laden Sie Ihr Pitch Deck hoch, um eine KI-gestützte Bewertung zu erhalten",
+      "dropzone": "PDF hier ablegen oder klicken zum Auswählen",
+      "maxSize": "Maximale Dateigröße: 50MB",
+      "allowedTypes": "Nur PDF-Dateien erlaubt",
+      "uploading": "Datei wird hochgeladen...",
+      "success": "Datei erfolgreich hochgeladen!",
+      "errors": {
+        "fileTooLarge": "Datei zu groß. Maximum: 50MB",
+        "invalidType": "Ungültiger Dateityp. Nur PDF erlaubt",
+        "uploadFailed": "Upload fehlgeschlagen",
+        "networkError": "Netzwerkfehler beim Upload"
+      }
+    },
+    "decksSection": {
+      "title": "Ihre Pitch Decks",
+      "noDecks": "Noch keine Pitch Decks hochgeladen",
+      "columns": {
+        "filename": "Dateiname",
+        "uploadDate": "Upload-Datum",
+        "status": "Status",
+        "actions": "Aktionen"
+      },
+      "status": {
+        "uploaded": "Hochgeladen",
+        "pending": "Warte auf Verarbeitung",
+        "processing": "Wird analysiert...",
+        "completed": "Bewertet",
+        "reviewed": "Bewertet",
+        "failed": "Fehlgeschlagen"
+      },
+      "actions": {
+        "view": "Ansehen",
+        "download": "Herunterladen",
+        "delete": "Löschen"
+      },
+      "viewResults": "Ergebnisse ansehen",
+      "reviewResults": "Review-Ergebnisse"
+    }
+  },
+  "gp": {
+    "title": "General Partner Dashboard",
+    "welcome": "Willkommen",
+    "reviewsSection": {
+      "title": "Bewertungen verwalten",
+      "description": "Überprüfen und bearbeiten Sie KI-generierte Bewertungen",
+      "noReviews": "Keine Bewertungen verfügbar",
+      "columns": {
+        "company": "Unternehmen",
+        "deck": "Pitch Deck",
+        "date": "Datum",
+        "status": "Status",
+        "actions": "Aktionen"
+      },
+      "status": {
+        "pending": "Ausstehend",
+        "inReview": "In Bearbeitung",
+        "completed": "Abgeschlossen",
+        "approved": "Genehmigt"
+      },
+      "actions": {
+        "review": "Bewerten",
+        "edit": "Bearbeiten",
+        "approve": "Genehmigen",
+        "reject": "Ablehnen"
+      }
+    },
+    "usersSection": {
+      "title": "Benutzer verwalten",
+      "description": "Verwalten Sie Benutzerrollen und -berechtigungen",
+      "noUsers": "Keine Benutzer gefunden",
+      "columns": {
+        "email": "E-Mail",
+        "company": "Unternehmen",
+        "role": "Rolle",
+        "verified": "Verifiziert",
+        "lastLogin": "Letzte Anmeldung",
+        "actions": "Aktionen"
+      },
+      "actions": {
+        "changeRole": "Rolle ändern",
+        "suspend": "Sperren",
+        "activate": "Aktivieren",
+        "delete": "Löschen"
+      },
+      "deleteConfirm": {
+        "title": "Benutzer löschen?",
+        "message": "Sind Sie sicher, dass Sie den Benutzer {email} dauerhaft löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+        "confirmButton": "Ja, löschen",
+        "cancelButton": "Abbrechen",
+        "success": "Benutzer erfolgreich gelöscht",
+        "error": "Fehler beim Löschen des Benutzers"
+      }
+    },
+    "adminActions": {
+      "analysisTemplates": "Analyse-Vorlagen",
+      "modelConfiguration": "Modell-Konfiguration",
+      "cleanupOrphanedData": "Verwaiste Daten bereinigen",
+      "cleanupInProgress": "Bereinigung läuft...",
+      "cleanupSuccess": "Verwaiste Datensätze erfolgreich bereinigt",
+      "cleanupError": "Bereinigung fehlgeschlagen"
+    },
+    "cascadeDeletion": {
+      "warning": "⚠️ WARNUNG: Dies wird auch alle Projekte, Pitch Decks, Analyseergebnisse und Dateien, die mit diesem Benutzer verknüpft sind, dauerhaft löschen. Diese Aktion kann nicht rückgängig gemacht werden."
+    }
+  },
+  "project": {
+    "tabs": {
+      "overview": "Übersicht",
+      "allDecks": "Alle Decks",
+      "uploads": "Uploads"
+    },
+    "status": {
+      "analyzed": "Analysiert",
+      "processing": "Verarbeitung",
+      "pdf": "PDF"
+    },
+    "labels": {
+      "uploaded": "Hochgeladen:",
+      "deckDefault": "Deck"
+    },
+    "actions": {
+      "deckViewer": "Deck Viewer",
+      "viewResults": "Ergebnisse anzeigen"
+    }
+  },
+  "modelConfig": {
+    "title": "KI-Modell-Konfiguration",
+    "description": "Konfigurieren Sie verschiedene KI-Modelle für jede Analyseaufgabe",
+    "navigation": {
+      "backToDashboard": "Zurück zum Dashboard"
+    },
+    "sections": {
+      "configuredModels": "Konfigurierte Modelle",
+      "availableModels": "Verfügbare Modelle",
+      "popularModels": "Beliebte Modelle",
+      "pullNewModel": "Neues Modell herunterladen"
+    },
+    "labels": {
+      "modelType": "Modell-Typ",
+      "modelName": "Modell-Name",
+      "status": "Status",
+      "actions": "Aktionen",
+      "active": "Aktiv",
+      "inactive": "Inaktiv",
+      "available": "Verfügbar",
+      "downloading": "Wird heruntergeladen",
+      "ready": "Bereit",
+      "error": "Fehler"
+    },
+    "buttons": {
+      "activate": "Aktivieren",
+      "deactivate": "Deaktivieren",
+      "download": "Herunterladen",
+      "delete": "Löschen",
+      "pullModel": "Modell herunterladen",
+      "pulling": "Wird heruntergeladen...",
+      "cancel": "Abbrechen",
+      "refresh": "Modelle aktualisieren"
+    },
+    "types": {
+      "vision": "Vision-Modell",
+      "text": "Text-Modell",
+      "scoring": "Bewertungs-Modell"
+    },
+    "messages": {
+      "noModelsConfigured": "Noch keine Modelle konfiguriert",
+      "noModelsAvailable": "Keine Modelle zum Herunterladen verfügbar",
+      "modelDescription": "Diese Modelle sind zum Herunterladen von Ollama verfügbar",
+      "pullModelHelper": "Geben Sie den Namen des Modells ein, das Sie von Ollama herunterladen möchten",
+      "modelActivated": "Modell erfolgreich aktiviert",
+      "modelDeactivated": "Modell erfolgreich deaktiviert",
+      "modelDeleted": "Modell erfolgreich gelöscht",
+      "modelPulled": "Modell erfolgreich heruntergeladen"
+    }
+  }
+}

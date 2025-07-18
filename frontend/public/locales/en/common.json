@@ -1,0 +1,53 @@
+{
+  "navigation": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "logout": "Logout",
+    "login": "Login",
+    "register": "Register"
+  },
+  "buttons": {
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "upload": "Upload",
+    "download": "Download",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "confirm": "Confirm",
+    "loading": "Loading..."
+  },
+  "forms": {
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "companyName": "Company Name",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "phone": "Phone",
+    "required": "Required field",
+    "invalidEmail": "Invalid email address",
+    "passwordTooShort": "Password too short",
+    "passwordsNotMatch": "Passwords do not match"
+  },
+  "messages": {
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Information",
+    "confirmDelete": "Are you sure you want to delete this item?",
+    "noData": "No data available",
+    "connectionError": "Connection error",
+    "never": "Never"
+  },
+  "language": {
+    "current": "English",
+    "switch": "Switch Language",
+    "german": "Deutsch",
+    "english": "English"
+  }
+}

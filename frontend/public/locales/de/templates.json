@@ -1,0 +1,62 @@
+{
+  "title": "Healthcare Analyse-Vorlagen",
+  "navigation": {
+    "backToDashboard": "Zurück zum Dashboard"
+  },
+  "tabs": {
+    "healthcareSectors": "Healthcare Sektoren",
+    "templateLibrary": "Vorlagen-Bibliothek",
+    "myCustomizations": "Meine Anpassungen",
+    "performanceMetrics": "Leistungskennzahlen",
+    "pipelineSettings": "Pipeline-Einstellungen"
+  },
+  "buttons": {
+    "createCustomTemplate": "Benutzerdefinierte Vorlage erstellen",
+    "viewTemplates": "Vorlagen anzeigen",
+    "customize": "Anpassen",
+    "useTemplate": "Vorlage verwenden",
+    "saveCustomization": "Anpassung speichern",
+    "cancel": "Abbrechen",
+    "edit": "Bearbeiten",
+    "copy": "Kopieren",
+    "preview": "Vorschau",
+    "activate": "Aktivieren",
+    "deactivate": "Deaktivieren"
+  },
+  "labels": {
+    "default": "Standard",
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "customizationName": "Anpassungsname",
+    "placeholderCustomTemplate": "Meine benutzerdefinierte Healthcare Vorlage",
+    "imageAnalysisPrompt": "Bildanalyse-Prompt",
+    "imageAnalysisHelper": "Beschreiben Sie, wie die KI jedes Folien-Bild analysieren soll",
+    "sectors": "Sektoren",
+    "templates": "Vorlagen",
+    "questions": "Fragen",
+    "chapters": "Kapitel",
+    "weight": "Gewichtung",
+    "healthcareFocus": "Healthcare Fokus",
+    "scoringCriteria": "Bewertungskriterien",
+    "customizeTemplateTitle": "Vorlage anpassen"
+  },
+  "messages": {
+    "noTemplatesAvailable": "Keine Vorlagen für diesen Sektor verfügbar",
+    "noCustomizationsYet": "Noch keine Anpassungen erstellt",
+    "loadingTemplates": "Vorlagen werden geladen...",
+    "loadingSectors": "Sektoren werden geladen...",
+    "templateSaved": "Vorlage erfolgreich gespeichert",
+    "templateError": "Fehler beim Speichern der Vorlage"
+  },
+  "pipeline": {
+    "title": "Pipeline-Konfiguration",
+    "description": "Konfigurieren Sie die Prompts, die in der PDF-Verarbeitungspipeline verwendet werden. Der Bildanalyse-Prompt steuert, wie die KI jede Folie des Pitch Decks beschreibt.",
+    "promptDescription": "Dieser Prompt wird vom Vision-KI-Modell verwendet, um jede Folie des Pitch Decks zu beschreiben. Er bildet die Grundlage für alle nachfolgenden Analyseschritte.",
+    "savePrompt": "Prompt speichern",
+    "saving": "Speichern...",
+    "resetPrompt": "Auf Standard zurücksetzen",
+    "resetConfirm": "Sind Sie sicher, dass Sie diesen Prompt auf den Standardwert zurücksetzen möchten?",
+    "resetSuccess": "Prompt erfolgreich zurückgesetzt",
+    "saveSuccess": "Prompt erfolgreich gespeichert"
+  }
+}

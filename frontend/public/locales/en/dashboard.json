@@ -1,0 +1,182 @@
+{
+  "startup": {
+    "title": "Startup Dashboard",
+    "welcome": "Welcome",
+    "uploadSection": {
+      "title": "Upload Pitch Deck",
+      "description": "Upload your pitch deck to receive an AI-powered review",
+      "dropzone": "Drop PDF here or click to select",
+      "maxSize": "Maximum file size: 50MB",
+      "allowedTypes": "Only PDF files allowed",
+      "uploading": "Uploading file...",
+      "success": "File uploaded successfully!",
+      "errors": {
+        "fileTooLarge": "File too large. Maximum: 50MB",
+        "invalidType": "Invalid file type. Only PDF allowed",
+        "uploadFailed": "Upload failed",
+        "networkError": "Network error during upload"
+      }
+    },
+    "decksSection": {
+      "title": "Your Pitch Decks",
+      "noDecks": "No pitch decks uploaded yet",
+      "columns": {
+        "filename": "Filename",
+        "uploadDate": "Upload Date",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "uploaded": "Uploaded",
+        "pending": "Waiting for processing",
+        "processing": "Being analyzed...",
+        "completed": "Evaluated",
+        "reviewed": "Reviewed",
+        "failed": "Failed"
+      },
+      "actions": {
+        "view": "View",
+        "download": "Download",
+        "delete": "Delete"
+      },
+      "viewResults": "View Results",
+      "reviewResults": "Review Results"
+    }
+  },
+  "gp": {
+    "title": "General Partner Dashboard",
+    "welcome": "Welcome",
+    "reviewsSection": {
+      "title": "Manage Reviews",
+      "description": "Review and edit AI-generated assessments",
+      "noReviews": "No reviews available",
+      "columns": {
+        "company": "Company",
+        "deck": "Pitch Deck",
+        "date": "Date",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "pending": "Pending",
+        "inReview": "In Review",
+        "completed": "Completed",
+        "approved": "Approved"
+      },
+      "actions": {
+        "review": "Review",
+        "edit": "Edit",
+        "approve": "Approve",
+        "reject": "Reject"
+      }
+    },
+    "usersSection": {
+      "title": "Manage Users",
+      "description": "Manage user roles and permissions",
+      "noUsers": "No users found",
+      "columns": {
+        "email": "Email",
+        "company": "Company",
+        "role": "Role",
+        "verified": "Verified",
+        "lastLogin": "Last Login",
+        "actions": "Actions"
+      },
+      "actions": {
+        "changeRole": "Change Role",
+        "suspend": "Suspend",
+        "activate": "Activate",
+        "delete": "Delete"
+      },
+      "deleteConfirm": {
+        "title": "Delete User?",
+        "message": "Are you sure you want to permanently delete user {email}? This action cannot be undone.",
+        "confirmButton": "Yes, Delete",
+        "cancelButton": "Cancel",
+        "success": "User deleted successfully",
+        "error": "Error deleting user"
+      }
+    },
+    "adminActions": {
+      "analysisTemplates": "Analysis Templates",
+      "modelConfiguration": "Model Configuration",
+      "cleanupOrphanedData": "Cleanup Orphaned Data",
+      "cleanupInProgress": "Cleaning...",
+      "cleanupSuccess": "Orphaned records cleaned up successfully",
+      "cleanupError": "Cleanup failed"
+    },
+    "cascadeDeletion": {
+      "warning": "⚠️ WARNING: This will also permanently delete all projects, pitch decks, analysis results, and files associated with this user. This action cannot be undone."
+    }
+  },
+  "project": {
+    "tabs": {
+      "overview": "Overview",
+      "allDecks": "All Decks",
+      "uploads": "Uploads"
+    },
+    "status": {
+      "analyzed": "Analyzed",
+      "processing": "Processing",
+      "pdf": "PDF"
+    },
+    "labels": {
+      "uploaded": "Uploaded:",
+      "deckDefault": "Deck"
+    },
+    "actions": {
+      "deckViewer": "Deck Viewer",
+      "viewResults": "View Results"
+    }
+  },
+  "modelConfig": {
+    "title": "AI Model Configuration",
+    "description": "Configure different AI models for each analysis task",
+    "navigation": {
+      "backToDashboard": "Back to Dashboard"
+    },
+    "sections": {
+      "configuredModels": "Configured Models",
+      "availableModels": "Available Models",
+      "popularModels": "Popular Models",
+      "pullNewModel": "Pull New Model"
+    },
+    "labels": {
+      "modelType": "Model Type",
+      "modelName": "Model Name",
+      "status": "Status",
+      "actions": "Actions",
+      "active": "Active",
+      "inactive": "Inactive",
+      "available": "Available",
+      "downloading": "Downloading",
+      "ready": "Ready",
+      "error": "Error"
+    },
+    "buttons": {
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "download": "Download",
+      "delete": "Delete",
+      "pullModel": "Pull Model",
+      "pulling": "Pulling...",
+      "cancel": "Cancel",
+      "refresh": "Refresh Models"
+    },
+    "types": {
+      "vision": "Vision Model",
+      "text": "Text Model",
+      "scoring": "Scoring Model"
+    },
+    "messages": {
+      "noModelsConfigured": "No models configured yet",
+      "noModelsAvailable": "No models available for download",
+      "modelDescription": "These models are available for download from Ollama",
+      "pullModelHelper": "Enter the name of the model you want to pull from Ollama",
+      "modelActivated": "Model activated successfully",
+      "modelDeactivated": "Model deactivated successfully",
+      "modelDeleted": "Model deleted successfully",
+      "modelPulled": "Model pulled successfully"
+    }
+  }
+}
