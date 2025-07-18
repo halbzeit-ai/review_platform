@@ -26,6 +26,7 @@ import {
   List,
   ListItem,
   ListItemText,
+  ListItemIcon,
   ListItemSecondaryAction,
   Divider,
   Badge
@@ -82,7 +83,10 @@ const TemplateManagement = () => {
   // Pipeline configuration state
   const [pipelinePrompts, setPipelinePrompts] = useState({});
   const [selectedPromptStage, setSelectedPromptStage] = useState('image_analysis');
-  const [promptText, setPromptText] = useState('');
+  const [promptTexts, setPromptTexts] = useState({
+    image_analysis: '',
+    company_offering: ''
+  });
   const [promptLoading, setPromptLoading] = useState(false);
   const [promptError, setPromptError] = useState(null);
   
@@ -139,11 +143,12 @@ const TemplateManagement = () => {
       setCustomizations(Array.isArray(customizationsData) ? customizationsData : []);
       setPipelinePrompts(pipelineData.prompts || {});
       
-      // Set initial prompt text for image_analysis
-      const imageAnalysisPrompt = pipelineData.prompts?.image_analysis;
-      if (imageAnalysisPrompt) {
-        setPromptText(imageAnalysisPrompt);
-      }
+      // Set initial prompt texts for all stages
+      const prompts = pipelineData.prompts || {};
+      setPromptTexts({
+        image_analysis: prompts.image_analysis || '',
+        company_offering: prompts.company_offering || ''
+      });
       
       // Load templates for first sector by default
       if (sectorsData && sectorsData.length > 0) {
@@ -226,7 +231,10 @@ const TemplateManagement = () => {
       const response = await getPipelinePromptByStage(stageName);
       const promptData = response.data || response;
       const newPromptText = promptData.prompt_text || '';
-      setPromptText(newPromptText);
+      setPromptTexts(prev => ({
+        ...prev,
+        [stageName]: newPromptText
+      }));
       
     } catch (err) {
       console.error('Error loading prompt:', err);
@@ -241,12 +249,13 @@ const TemplateManagement = () => {
       setPromptLoading(true);
       setPromptError(null);
       
-      await updatePipelinePrompt(selectedPromptStage, promptText);
+      const currentPromptText = promptTexts[selectedPromptStage];
+      await updatePipelinePrompt(selectedPromptStage, currentPromptText);
       
       // Update local state
       setPipelinePrompts(prev => ({
         ...prev,
-        [selectedPromptStage]: promptText
+        [selectedPromptStage]: currentPromptText
       }));
       
       setError(null);
@@ -271,7 +280,10 @@ const TemplateManagement = () => {
       
       // Update local state with reset prompt
       const newPromptText = resetData.default_prompt || '';
-      setPromptText(newPromptText);
+      setPromptTexts(prev => ({
+        ...prev,
+        [selectedPromptStage]: newPromptText
+      }));
       setPipelinePrompts(prev => ({
         ...prev,
         [selectedPromptStage]: newPromptText
@@ -617,73 +629,113 @@ const TemplateManagement = () => {
     </Box>
   );
 
-  const PipelineSettingsContent = () => (
-    <Box>
-      <Typography variant="h5" sx={{ mb: 3 }}>
-        {t('pipeline.title')}
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-        {t('pipeline.description')}
-      </Typography>
+  const PipelineSettingsContent = () => {
+    const extractionTypes = [
+      {
+        key: 'image_analysis',
+        name: t('labels.imageAnalysisPrompt'),
+        description: t('pipeline.imageAnalysisDescription'),
+        icon: <VisibilityIcon />
+      },
+      {
+        key: 'company_offering',
+        name: t('labels.companyOfferingPrompt'),
+        description: t('pipeline.companyOfferingDescription'),
+        icon: <StorefrontIcon />
+      }
+    ];
 
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              {t('labels.imageAnalysisPrompt')}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              {t('pipeline.promptDescription')}
-            </Typography>
+    return (
+      <Box>
+        <Typography variant="h5" sx={{ mb: 3 }}>
+          {t('pipeline.title')}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+          {t('pipeline.description')}
+        </Typography>
 
-            <PromptEditor
-              initialPrompt={promptText}
-              stageName="image_analysis"
-              onSave={(newText) => {
-                setPromptText(newText);
-                setPipelinePrompts(prev => ({
-                  ...prev,
-                  image_analysis: newText
-                }));
-              }}
-            />
-          </Paper>
+        <Grid container spacing={3}>
+          {/* Extraction Type Selector */}
+          <Grid item xs={12} md={3}>
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Extraction Types
+              </Typography>
+              <List>
+                {extractionTypes.map((type) => (
+                  <ListItem
+                    key={type.key}
+                    button
+                    selected={selectedPromptStage === type.key}
+                    onClick={() => setSelectedPromptStage(type.key)}
+                    sx={{
+                      borderRadius: 1,
+                      mb: 1,
+                      '&.Mui-selected': {
+                        backgroundColor: 'primary.50',
+                        borderLeft: 3,
+                        borderLeftColor: 'primary.main'
+                      }
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 40 }}>
+                      {type.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={type.name}
+                      secondary={type.key === 'image_analysis' ? 'Vision AI' : 'Text Processing'}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Paper>
+          </Grid>
+
+          {/* Prompt Editor */}
+          <Grid item xs={12} md={9}>
+            <Paper sx={{ p: 3 }}>
+              {(() => {
+                const currentType = extractionTypes.find(t => t.key === selectedPromptStage);
+                return (
+                  <>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      {currentType?.icon}
+                      <Typography variant="h6" sx={{ ml: 1 }}>
+                        {currentType?.name}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                      {currentType?.description}
+                    </Typography>
+
+                    <PromptEditor
+                      initialPrompt={promptTexts[selectedPromptStage]}
+                      stageName={selectedPromptStage}
+                      onSave={(newText) => {
+                        setPromptTexts(prev => ({
+                          ...prev,
+                          [selectedPromptStage]: newText
+                        }));
+                        setPipelinePrompts(prev => ({
+                          ...prev,
+                          [selectedPromptStage]: newText
+                        }));
+                      }}
+                    />
+
+                    <Alert severity="info" sx={{ mt: 2 }}>
+                      Changes to prompts will affect all new PDF processing. 
+                      Existing analyses will not be reprocessed.
+                    </Alert>
+                  </>
+                );
+              })()}
+            </Paper>
+          </Grid>
         </Grid>
-
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Current Settings
-            </Typography>
-            
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                Vision Model
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Configured in Model Configuration
-              </Typography>
-            </Box>
-
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                Processing Stage
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Image Analysis (PDF → Descriptions)
-              </Typography>
-            </Box>
-
-
-            <Alert severity="info" sx={{ mt: 2 }}>
-              Changes to prompts will affect all new PDF processing. 
-              Existing analyses will not be reprocessed.
-            </Alert>
-          </Paper>
-        </Grid>
-      </Grid>
-    </Box>
-  );
+      </Box>
+    );
+  };
 
   if (loading) {
     return (
@@ -744,7 +796,7 @@ const TemplateManagement = () => {
           <Tab label={t('tabs.templateLibrary')} />
           <Tab label={t('tabs.myCustomizations')} />
           <Tab label={t('tabs.performanceMetrics')} />
-          <Tab label={t('tabs.pipelineSettings')} />
+          <Tab label={t('tabs.obligatoryExtractions')} />
         </Tabs>
 
         <TabPanel value={activeTab} index={0}>

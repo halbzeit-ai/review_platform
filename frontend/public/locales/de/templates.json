@@ -8,7 +8,7 @@
     "templateLibrary": "Vorlagen-Bibliothek",
     "myCustomizations": "Meine Anpassungen",
     "performanceMetrics": "Leistungskennzahlen",
-    "pipelineSettings": "Pipeline-Einstellungen"
+    "obligatoryExtractions": "Obligatorische Extraktionen"
   },
   "buttons": {
     "createCustomTemplate": "Benutzerdefinierte Vorlage erstellen",
@@ -31,6 +31,8 @@
     "placeholderCustomTemplate": "Meine benutzerdefinierte Healthcare Vorlage",
     "imageAnalysisPrompt": "Bildanalyse-Prompt",
     "imageAnalysisHelper": "Beschreiben Sie, wie die KI jedes Folien-Bild analysieren soll",
+    "companyOfferingPrompt": "Unternehmensangebot-Prompt",
+    "companyOfferingHelper": "Beschreiben Sie, wie die KI Unternehmens-Zusammenfassung und Angebot extrahieren soll",
     "sectors": "Sektoren",
     "templates": "Vorlagen",
     "questions": "Fragen",
@@ -49,9 +51,10 @@
     "templateError": "Fehler beim Speichern der Vorlage"
   },
   "pipeline": {
-    "title": "Pipeline-Konfiguration",
-    "description": "Konfigurieren Sie die Prompts, die in der PDF-Verarbeitungspipeline verwendet werden. Der Bildanalyse-Prompt steuert, wie die KI jede Folie des Pitch Decks beschreibt.",
-    "promptDescription": "Dieser Prompt wird vom Vision-KI-Modell verwendet, um jede Folie des Pitch Decks zu beschreiben. Er bildet die Grundlage für alle nachfolgenden Analyseschritte.",
+    "title": "Obligatorische Extraktionen",
+    "description": "Konfigurieren Sie die Prompts für die Extraktion wesentlicher Informationen aus Pitch Decks. Diese Prompts steuern, wie die KI den Inhalt verarbeitet und versteht.",
+    "imageAnalysisDescription": "Dieser Prompt wird vom Vision-KI-Modell verwendet, um jede Folie des Pitch Decks zu beschreiben. Er bildet die Grundlage für alle nachfolgenden Analyseschritte.",
+    "companyOfferingDescription": "Dieser Prompt steuert, wie die KI das Kernangebot und Geschäftsmodell des Unternehmens aus dem Pitch Deck-Inhalt extrahiert und zusammenfasst.",
     "savePrompt": "Prompt speichern",
     "saving": "Speichern...",
     "resetPrompt": "Auf Standard zurücksetzen",

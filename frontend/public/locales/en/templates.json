@@ -8,7 +8,7 @@
     "templateLibrary": "Template Library",
     "myCustomizations": "My Customizations",
     "performanceMetrics": "Performance Metrics",
-    "pipelineSettings": "Pipeline Settings"
+    "obligatoryExtractions": "Obligatory Extractions"
   },
   "buttons": {
     "createCustomTemplate": "Create Custom Template",
@@ -31,6 +31,8 @@
     "placeholderCustomTemplate": "My Custom Healthcare Template",
     "imageAnalysisPrompt": "Image Analysis Prompt",
     "imageAnalysisHelper": "Describe how the AI should analyze each slide image",
+    "companyOfferingPrompt": "Company Offering Prompt",
+    "companyOfferingHelper": "Describe how the AI should extract company summary and offering",
     "sectors": "Sectors",
     "templates": "Templates",
     "questions": "Questions",
@@ -49,9 +51,10 @@
     "templateError": "Error saving template"
   },
   "pipeline": {
-    "title": "Pipeline Configuration",
-    "description": "Configure the prompts used in the PDF processing pipeline. The image analysis prompt controls how the AI describes each slide of the pitch deck.",
-    "promptDescription": "This prompt is used by the vision AI model to describe each slide of the pitch deck. It forms the foundation for all subsequent analysis steps.",
+    "title": "Obligatory Extractions",
+    "description": "Configure the prompts used for extracting essential information from pitch decks. These prompts control how the AI processes and understands the content.",
+    "imageAnalysisDescription": "This prompt is used by the vision AI model to describe each slide of the pitch deck. It forms the foundation for all subsequent analysis steps.",
+    "companyOfferingDescription": "This prompt controls how the AI extracts and summarizes the company's core offering and business model from the pitch deck content.",
     "savePrompt": "Save Prompt",
     "saving": "Saving...",
     "resetPrompt": "Reset to Default",
