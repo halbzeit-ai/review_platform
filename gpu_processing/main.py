@@ -156,8 +156,8 @@ class PDFProcessor:
                     score = question_data.get("score", 0)
                     
                     if response and response.strip():
-                        # Format each question as a section with bold question and score
-                        formatted_content.append(f"**{question_text}**\n\n{response.strip()}\n\n*Score: {score}/7*")
+                        # Format each question as a clear section with bold headings
+                        formatted_content.append(f"**{question_text}**\n\n{response.strip()}\n\n**Score: {score}/7**")
                 
                 # Join all questions with section separators for proper formatting
                 if formatted_content:
