@@ -46,6 +46,20 @@ import { useTranslation } from 'react-i18next';
 const DojoManagement = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  // Helper function to format upload speed
+  const formatUploadSpeed = (bytesPerSecond) => {
+    if (bytesPerSecond < 1024) return `${bytesPerSecond.toFixed(0)} B/s`;
+    if (bytesPerSecond < 1024 * 1024) return `${(bytesPerSecond / 1024).toFixed(1)} KB/s`;
+    return `${(bytesPerSecond / (1024 * 1024)).toFixed(1)} MB/s`;
+  };
+
+  // Helper function to format file size
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
   
   const [files, setFiles] = useState([]);
   const [stats, setStats] = useState({});
@@ -56,6 +70,10 @@ const DojoManagement = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState(null);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState('');
+  const [uploadSpeed, setUploadSpeed] = useState(0);
+  const [uploadStartTime, setUploadStartTime] = useState(null);
 
   useEffect(() => {
     loadDojoData();
@@ -122,6 +140,8 @@ const DojoManagement = () => {
       setUploading(true);
       setUploadProgress(0);
       setError(null);
+      setSelectedFile(file);
+      setUploadStartTime(Date.now());
 
       const user = JSON.parse(localStorage.getItem('user'));
       const token = user?.token;
@@ -129,34 +149,100 @@ const DojoManagement = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('/api/dojo/upload', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
+      // Create XMLHttpRequest to track upload progress
+      const xhr = new XMLHttpRequest();
+      
+      // Track upload progress
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = Math.round((event.loaded / event.total) * 100);
+          setUploadProgress(percentComplete);
+          
+          // Calculate upload speed
+          const currentTime = Date.now();
+          const elapsedTime = (currentTime - uploadStartTime) / 1000; // in seconds
+          if (elapsedTime > 0) {
+            const speed = event.loaded / elapsedTime; // bytes per second
+            setUploadSpeed(speed);
+          }
+        }
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Upload failed');
-      }
+      // Handle response
+      xhr.addEventListener('load', async () => {
+        if (xhr.status === 200) {
+          try {
+            const result = JSON.parse(xhr.responseText);
+            setUploadProgress(100);
+            setProcessingStatus('Upload completed successfully! Processing files...');
+            setUploadSuccess(true);
+            
+            // Show success message briefly, then reload data
+            setTimeout(() => {
+              loadDojoData();
+              setUploading(false);
+              setUploadProgress(0);
+              setSelectedFile(null);
+              setUploadSuccess(false);
+              setProcessingStatus('');
+              setUploadSpeed(0);
+              setUploadStartTime(null);
+            }, 2000);
+          } catch (parseError) {
+            throw new Error('Invalid response from server');
+          }
+        } else {
+          try {
+            const errorData = JSON.parse(xhr.responseText);
+            throw new Error(errorData.detail || 'Upload failed');
+          } catch (parseError) {
+            throw new Error(`Upload failed with status: ${xhr.status}`);
+          }
+        }
+      });
 
-      const result = await response.json();
-      setUploadProgress(100);
-
-      // Reload data after successful upload
-      setTimeout(() => {
-        loadDojoData();
+      // Handle errors
+      xhr.addEventListener('error', () => {
+        setError('Upload failed due to network error');
         setUploading(false);
         setUploadProgress(0);
-      }, 1000);
+        setSelectedFile(null);
+        setUploadSuccess(false);
+        setProcessingStatus('');
+        setUploadSpeed(0);
+        setUploadStartTime(null);
+      });
+
+      // Handle timeout
+      xhr.addEventListener('timeout', () => {
+        setError('Upload timed out. Please try again.');
+        setUploading(false);
+        setUploadProgress(0);
+        setSelectedFile(null);
+        setUploadSuccess(false);
+        setProcessingStatus('');
+        setUploadSpeed(0);
+        setUploadStartTime(null);
+      });
+
+      // Set timeout (5 minutes for large files)
+      xhr.timeout = 5 * 60 * 1000;
+
+      // Send request
+      xhr.open('POST', '/api/dojo/upload');
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      xhr.send(formData);
 
     } catch (err) {
       console.error('Error uploading file:', err);
       setError(err.message || 'Failed to upload file');
       setUploading(false);
       setUploadProgress(0);
+      setSelectedFile(null);
+      setUploadSuccess(false);
+      setProcessingStatus('');
+      setUploadSpeed(0);
+      setUploadStartTime(null);
     }
 
     // Clear file input
@@ -329,26 +415,125 @@ const DojoManagement = () => {
 
         {uploading ? (
           <Box sx={{ width: '100%', mb: 2 }}>
-            <LinearProgress variant="determinate" value={uploadProgress} />
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Uploading and processing... {uploadProgress}%
-            </Typography>
+            {/* File Info */}
+            {selectedFile && (
+              <Box sx={{ mb: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                  Uploading: {selectedFile.name}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Size: {formatFileSize(selectedFile.size)}
+                </Typography>
+              </Box>
+            )}
+
+            {/* Progress Bar */}
+            <Box sx={{ width: '100%', mb: 1 }}>
+              <LinearProgress 
+                variant="determinate" 
+                value={uploadProgress} 
+                sx={{ height: 8, borderRadius: 4 }}
+              />
+            </Box>
+
+            {/* Progress Info */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box>
+                <Typography variant="body2" color={uploadSuccess ? 'success.main' : 'text.secondary'}>
+                  {processingStatus || (uploadProgress < 100 ? `Uploading... ${uploadProgress}%` : 'Processing files...')}
+                </Typography>
+                {uploadSpeed > 0 && uploadProgress < 100 && (
+                  <Typography variant="caption" color="text.secondary">
+                    {formatUploadSpeed(uploadSpeed)}
+                  </Typography>
+                )}
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                {uploadSuccess ? (
+                  <CheckCircle color="success" sx={{ mr: 1 }} />
+                ) : (
+                  <CircularProgress size={16} sx={{ mr: 1 }} />
+                )}
+                <Typography variant="caption" color={uploadSuccess ? 'success.main' : 'text.secondary'}>
+                  {uploadSuccess ? 'Success' : (uploadProgress < 100 ? 'Uploading' : 'Processing')}
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Cancel Button - only show if upload is in progress and not completed */}
+            {!uploadSuccess && (
+              <Box sx={{ mt: 2 }}>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  onClick={() => {
+                    setUploading(false);
+                    setUploadProgress(0);
+                    setSelectedFile(null);
+                    setUploadSuccess(false);
+                    setProcessingStatus('');
+                    setUploadSpeed(0);
+                    setUploadStartTime(null);
+                    setError('Upload cancelled');
+                  }}
+                >
+                  Cancel Upload
+                </Button>
+              </Box>
+            )}
           </Box>
         ) : (
-          <Button
-            variant="contained"
-            component="label"
-            startIcon={<CloudUpload />}
-            disabled={uploading}
-          >
-            Select ZIP File
-            <input
-              type="file"
-              hidden
-              accept=".zip"
-              onChange={handleFileUpload}
-            />
-          </Button>
+          <Box>
+            <Button
+              variant="contained"
+              component="label"
+              startIcon={<CloudUpload />}
+              disabled={uploading}
+              sx={{ mb: 2 }}
+            >
+              Select ZIP File
+              <input
+                type="file"
+                hidden
+                accept=".zip"
+                onChange={handleFileUpload}
+              />
+            </Button>
+
+            {/* Upload Guidelines */}
+            <Box sx={{ mt: 2, p: 2, bgcolor: 'info.light', borderRadius: 1, color: 'info.contrastText' }}>
+              <Typography variant="caption" sx={{ fontWeight: 'medium' }}>
+                Upload Guidelines:
+              </Typography>
+              <List dense sx={{ mt: 1 }}>
+                <ListItem sx={{ py: 0.5 }}>
+                  <ListItemText 
+                    primary="• Only ZIP files containing PDF pitch decks" 
+                    primaryTypographyProps={{ variant: 'caption' }}
+                  />
+                </ListItem>
+                <ListItem sx={{ py: 0.5 }}>
+                  <ListItemText 
+                    primary="• Maximum file size: 1GB" 
+                    primaryTypographyProps={{ variant: 'caption' }}
+                  />
+                </ListItem>
+                <ListItem sx={{ py: 0.5 }}>
+                  <ListItemText 
+                    primary="• Files will be processed automatically after upload" 
+                    primaryTypographyProps={{ variant: 'caption' }}
+                  />
+                </ListItem>
+                <ListItem sx={{ py: 0.5 }}>
+                  <ListItemText 
+                    primary="• Processing time depends on number of files" 
+                    primaryTypographyProps={{ variant: 'caption' }}
+                  />
+                </ListItem>
+              </List>
+            </Box>
+          </Box>
         )}
       </Paper>
 
