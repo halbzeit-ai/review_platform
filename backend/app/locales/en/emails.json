@@ -27,5 +27,17 @@
     "feature_track": "📊 Track your review progress",
     "login_button": "Login to Your Account",
     "excited": "We're excited to help you get valuable feedback on your startup!"
+  },
+  "password_reset": {
+    "subject": "Reset your HALBZEIT AI password",
+    "title": "🔒 Password Reset Request",
+    "reset_text": "We received a request to reset your password for your HALBZEIT AI account. Click the button below to create a new password.",
+    "button_text": "Reset Password",
+    "important": "Important:",
+    "expiry": "This password reset link will expire in 24 hours. If you don't reset within this time, you'll need to request a new reset link.",
+    "fallback": "If the button above doesn't work, you can copy and paste this link into your browser:",
+    "ignore": "If you didn't request a password reset, please ignore this email. Your password will remain unchanged.",
+    "footer": "This email was sent by HALBZEIT AI Review Platform",
+    "support": "If you have any questions, please contact our support team."
   }
 }

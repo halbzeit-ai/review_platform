@@ -20,6 +20,12 @@ export const login = (email, password) =>
 export const register = (email, password, companyName, role) =>
   api.post('/auth/register', { email, password, company_name: companyName, role });
 
+export const forgotPassword = (email) =>
+  api.post('/auth/forgot-password', { email });
+
+export const resetPassword = (token, newPassword) =>
+  api.post('/auth/reset-password', { token, new_password: newPassword });
+
 export const uploadPitchDeck = (file) => {
   const formData = new FormData();
   formData.append('file', file);

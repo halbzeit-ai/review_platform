@@ -27,5 +27,17 @@
     "feature_track": "📊 Verfolgen Sie Ihren Review-Fortschritt",
     "login_button": "Bei Ihrem Konto anmelden",
     "excited": "Wir freuen uns darauf, Ihnen wertvolles Feedback zu Ihrem Startup zu geben!"
+  },
+  "password_reset": {
+    "subject": "Setzen Sie Ihr HALBZEIT AI Passwort zurück",
+    "title": "🔒 Passwort zurücksetzen",
+    "reset_text": "Wir haben eine Anfrage zum Zurücksetzen Ihres Passworts für Ihr HALBZEIT AI Konto erhalten. Klicken Sie auf die Schaltfläche unten, um ein neues Passwort zu erstellen.",
+    "button_text": "Passwort zurücksetzen",
+    "important": "Wichtig:",
+    "expiry": "Dieser Link zum Zurücksetzen des Passworts läuft in 24 Stunden ab. Wenn Sie nicht innerhalb dieser Zeit zurücksetzen, müssen Sie einen neuen Link anfordern.",
+    "fallback": "Wenn die Schaltfläche oben nicht funktioniert, können Sie diesen Link kopieren und in Ihren Browser einfügen:",
+    "ignore": "Wenn Sie kein Passwort zurücksetzen angefordert haben, ignorieren Sie diese E-Mail bitte. Ihr Passwort bleibt unverändert.",
+    "footer": "Diese E-Mail wurde von HALBZEIT AI Review Platform gesendet",
+    "support": "Wenn Sie Fragen haben, wenden Sie sich bitte an unser Support-Team."
   }
 }

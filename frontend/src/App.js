@@ -7,6 +7,7 @@ import Navigation from './components/Navigation';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyEmail from './pages/VerifyEmail';
+import ResetPassword from './pages/ResetPassword';
 import GPDashboard from './pages/GPDashboard';
 import Review from './pages/Review';
 import ResultsPage from './pages/ResultsPage';
@@ -28,6 +29,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/dashboard" element={<DashboardRedirect />} />
           <Route path="/dashboard/startup" element={<StartupDashboardRedirect />} />
           <Route path="/dashboard/gp" element={<GPDashboard />} />

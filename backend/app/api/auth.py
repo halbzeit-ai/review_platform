@@ -33,6 +33,13 @@ class RegisterData(BaseModel):
 class LanguagePreferenceData(BaseModel):
     preferred_language: str
 
+class ForgotPasswordData(BaseModel):
+    email: str
+
+class ResetPasswordData(BaseModel):
+    token: str
+    new_password: str
+
 @router.post("/register")
 async def register(data: RegisterData, db: Session = Depends(get_db)):
     # Check if user already exists
@@ -443,3 +450,74 @@ async def get_all_users(current_user: User = Depends(get_current_user), db: Sess
     
     users = db.query(User).all()
     return [{"email": user.email, "company_name": user.company_name, "role": user.role, "created_at": user.created_at, "last_login": user.last_login, "is_verified": user.is_verified} for user in users]
+
+@router.post("/forgot-password")
+async def forgot_password(data: ForgotPasswordData, db: Session = Depends(get_db)):
+    """Send password reset email"""
+    user = db.query(User).filter(User.email == data.email).first()
+    
+    # Don't reveal if email exists or not for security
+    if not user:
+        return JSONResponse(
+            status_code=200,
+            content={"message": "If an account with this email exists, a password reset email has been sent."}
+        )
+    
+    # Generate password reset token
+    reset_token, expires_at = token_service.generate_verification_token()
+    token_hash = token_service.hash_token(reset_token)
+    
+    # Update user with reset token (reuse verification fields)
+    user.verification_token = token_hash
+    user.verification_token_expires = expires_at
+    db.commit()
+    
+    # Send password reset email
+    email_sent = email_service.send_password_reset_email(data.email, reset_token)
+    
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": "If an account with this email exists, a password reset email has been sent.",
+            "email_sent": email_sent
+        }
+    )
+
+@router.post("/reset-password")
+async def reset_password(data: ResetPasswordData, db: Session = Depends(get_db)):
+    """Reset password using token"""
+    # Hash the provided token
+    token_hash = token_service.hash_token(data.token)
+    
+    # Find user with this token
+    user = db.query(User).filter(
+        User.verification_token == token_hash,
+        User.verification_token_expires > datetime.utcnow()
+    ).first()
+    
+    if not user:
+        raise HTTPException(
+            status_code=400, 
+            detail="Invalid or expired password reset token"
+        )
+    
+    # Validate new password
+    if len(data.new_password) < 6:
+        raise HTTPException(
+            status_code=400,
+            detail="Password must be at least 6 characters long"
+        )
+    
+    # Update password
+    user.password_hash = pwd_context.hash(data.new_password)
+    user.verification_token = None
+    user.verification_token_expires = None
+    db.commit()
+    
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": "Password reset successful. You can now login with your new password.",
+            "email": user.email
+        }
+    )

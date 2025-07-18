@@ -279,5 +279,130 @@ class EmailService:
         
         return self.send_email(email, subject, html_body)
 
+    def send_password_reset_email(self, email: str, reset_token: str, language: str = "en") -> bool:
+        """Send password reset email"""
+        
+        # Create reset URL
+        reset_url = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}"
+        
+        # Get translations using I18n service
+        subject = i18n_service.t("emails.password_reset.subject", language)
+        reset_title = i18n_service.t("emails.password_reset.title", language)
+        reset_text = i18n_service.t("emails.password_reset.reset_text", language)
+        button_text = i18n_service.t("emails.password_reset.button_text", language)
+        important_text = i18n_service.t("emails.password_reset.important", language)
+        expiry_text = i18n_service.t("emails.password_reset.expiry", language)
+        fallback_text = i18n_service.t("emails.password_reset.fallback", language)
+        ignore_text = i18n_service.t("emails.password_reset.ignore", language)
+        footer_text = i18n_service.t("emails.password_reset.footer", language)
+        support_text = i18n_service.t("emails.password_reset.support", language)
+        
+        html_body = f"""
+        <!DOCTYPE html>
+        <html lang="{language}">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Password Reset - HALBZEIT AI</title>
+            <style>
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }}
+                .header {{
+                    text-align: center;
+                    padding: 20px 0;
+                    border-bottom: 2px solid #1976d2;
+                }}
+                .logo {{
+                    font-size: 24px;
+                    font-weight: bold;
+                    color: #1976d2;
+                }}
+                .content {{
+                    padding: 30px 0;
+                }}
+                .button {{
+                    display: inline-block;
+                    padding: 12px 24px;
+                    background-color: #f44336;
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 5px;
+                    font-weight: bold;
+                    margin: 20px 0;
+                }}
+                .footer {{
+                    margin-top: 30px;
+                    padding-top: 20px;
+                    border-top: 1px solid #eee;
+                    font-size: 12px;
+                    color: #666;
+                }}
+                .warning {{
+                    background-color: #fff3cd;
+                    border: 1px solid #ffeaa7;
+                    padding: 10px;
+                    border-radius: 4px;
+                    margin: 20px 0;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="logo">HALBZEIT AI</div>
+                <div>Startup Review Platform</div>
+            </div>
+            
+            <div class="content">
+                <h2>{reset_title}</h2>
+                
+                <p>{reset_text}</p>
+                
+                <p style="text-align: center;">
+                    <a href="{reset_url}" class="button">{button_text}</a>
+                </p>
+                
+                <div class="warning">
+                    <strong>{important_text}</strong> {expiry_text}
+                </div>
+                
+                <p>{fallback_text}</p>
+                <p style="word-break: break-all; background-color: #f8f9fa; padding: 10px; border-radius: 4px;">
+                    {reset_url}
+                </p>
+                
+                <p>{ignore_text}</p>
+            </div>
+            
+            <div class="footer">
+                <p>{footer_text}</p>
+                <p>{support_text}</p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Text version for email clients that don't support HTML
+        text_body = f"""
+        {reset_title}
+        
+        {reset_text}
+        
+        {reset_url}
+        
+        {expiry_text}
+        
+        {ignore_text}
+        
+        HALBZEIT AI Team
+        """
+        
+        return self.send_email(email, subject, html_body, text_body)
+
 # Global email service instance
 email_service = EmailService()
