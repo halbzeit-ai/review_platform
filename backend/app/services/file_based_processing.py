@@ -159,6 +159,13 @@ class FileBasedGPUProcessingService:
             if results:
                 results_json = json.dumps(results)
                 pitch_deck.ai_analysis_results = results_json
+                
+                # Extract and store the startup name if available
+                startup_name = results.get("startup_name")
+                if startup_name:
+                    pitch_deck.ai_extracted_startup_name = startup_name
+                    logger.info(f"Extracted startup name: {startup_name}")
+                
                 logger.info(f"Added results to pitch deck {pitch_deck_id} ({len(results_json)} chars)")
             
             db.commit()

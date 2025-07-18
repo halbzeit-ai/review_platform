@@ -212,6 +212,13 @@ async def get_processing_results(
                 
                 # Store results in database for future use
                 pitch_deck.ai_analysis_results = json.dumps(results)
+                
+                # Extract and store the startup name if available
+                startup_name = results.get("startup_name")
+                if startup_name:
+                    pitch_deck.ai_extracted_startup_name = startup_name
+                    logger.info(f"Extracted startup name from results: {startup_name}")
+                
                 db.commit()
                 logger.info(f"Loaded and stored results for pitch deck {pitch_deck_id}")
                 

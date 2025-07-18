@@ -144,6 +144,12 @@ class DirectGPUProcessingService:
             # Update results if provided
             if results:
                 pitch_deck.ai_analysis_results = json.dumps(results)
+                
+                # Extract and store the startup name if available
+                startup_name = results.get("startup_name")
+                if startup_name:
+                    pitch_deck.ai_extracted_startup_name = startup_name
+                    logger.info(f"Extracted startup name: {startup_name}")
             
             db.commit()
             db.close()

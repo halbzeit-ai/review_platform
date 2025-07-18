@@ -57,6 +57,7 @@ class HealthcareTemplateAnalyzer:
         # Analysis results storage
         self.visual_analysis_results = []
         self.company_offering = ""
+        self.startup_name = None
         self.classification_result = None
         self.template_config = None
         self.chapter_results = {}
@@ -67,7 +68,9 @@ class HealthcareTemplateAnalyzer:
         logger.info("🔧 Initializing pipeline prompts from PostgreSQL...")
         self.image_analysis_prompt = self._get_pipeline_prompt("image_analysis")
         self.offering_extraction_prompt = self._get_pipeline_prompt("offering_extraction")
+        self.startup_name_extraction_prompt = self._get_pipeline_prompt("startup_name_extraction")
         logger.info(f"📝 Loaded image_analysis_prompt: {self.image_analysis_prompt[:100]}...")
+        logger.info(f"📝 Loaded startup_name_extraction_prompt: {self.startup_name_extraction_prompt[:100]}...")
         
         # Project-based storage - read from environment
         self.project_root = os.path.join(os.getenv('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/CPU-GPU'), 'projects')
@@ -636,6 +639,9 @@ class HealthcareTemplateAnalyzer:
             # Step 2: Generate company offering summary
             self._generate_company_offering()
             
+            # Step 2.5: Extract startup name
+            self._extract_startup_name()
+            
             # Step 3: Classify startup based on company offering
             self.classification_result = self._classify_startup(self.company_offering)
             logger.info(f"Startup classified as: {self.classification_result.get('primary_sector')} "
@@ -749,6 +755,56 @@ class HealthcareTemplateAnalyzer:
         except Exception as e:
             logger.error(f"Error generating company offering: {e}")
             self.company_offering = "Healthcare technology startup"
+    
+    def _extract_startup_name(self):
+        """Extract startup name from pitch deck content"""
+        logger.info("Extracting startup name from pitch deck content")
+        
+        # Extract descriptions from the structured data
+        descriptions = []
+        for page_data in self.visual_analysis_results:
+            if isinstance(page_data, dict):
+                descriptions.append(page_data.get("description", ""))
+            else:
+                descriptions.append(str(page_data))
+        
+        full_pitchdeck_text = " ".join(descriptions)
+        
+        try:
+            # Use the startup name extraction prompt from database
+            startup_name_prompt = f"{self.startup_name_extraction_prompt}\n\nPitch deck content: {{pitch_deck_content}}"
+            
+            response = ollama.generate(
+                model=self.text_model,
+                prompt=startup_name_prompt.format(pitch_deck_content=full_pitchdeck_text),
+                options={'num_ctx': 32768, 'temperature': 0.1}  # Lower temperature for more accurate extraction
+            )
+            
+            # Clean up the response to extract just the name
+            self.startup_name = response['response'].strip()
+            
+            # Remove common conversational phrases that might slip through
+            unwanted_phrases = [
+                "the startup is called", "the company is", "the name is", 
+                "according to", "based on", "the startup", "the company"
+            ]
+            
+            for phrase in unwanted_phrases:
+                if phrase in self.startup_name.lower():
+                    # Try to extract just the name part
+                    parts = self.startup_name.lower().split(phrase)
+                    if len(parts) > 1:
+                        self.startup_name = parts[1].strip()
+                        break
+            
+            # Clean up any remaining punctuation
+            self.startup_name = self.startup_name.strip('.,!?;:"\'')
+            
+            logger.info(f"Extracted startup name: {self.startup_name}")
+            
+        except Exception as e:
+            logger.error(f"Error extracting startup name: {e}")
+            self.startup_name = None
     
     def _execute_template_analysis(self):
         """Execute analysis based on loaded template"""
@@ -1053,6 +1109,7 @@ class HealthcareTemplateAnalyzer:
         
         return {
             "company_offering": self.company_offering,
+            "startup_name": self.startup_name,
             "classification": self.classification_result,
             "template_used": self.template_config.get("template", {}) if self.template_config else None,
             "overall_score": overall_score,
