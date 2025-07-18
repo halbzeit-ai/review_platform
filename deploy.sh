@@ -105,9 +105,15 @@ if [ "$DRY_RUN" = false ]; then
     echo "🔍 Verifying critical dependencies..."
     if ! npm list i18next-http-backend >/dev/null 2>&1; then
         echo "⚠️  Missing i18next-http-backend dependency"
-        echo "   This is required for dynamic translation loading"
-        echo "   Run: npm install i18next-http-backend"
-        exit 1
+        echo "🌐 Installing i18next-http-backend for dynamic translation loading..."
+        run_command "npm install i18next-http-backend --legacy-peer-deps" "Install i18next HTTP backend for translation loading"
+        
+        # Verify it was installed successfully
+        if ! npm list i18next-http-backend >/dev/null 2>&1; then
+            echo "❌ Failed to install i18next-http-backend"
+            echo "   Please run manually: npm install i18next-http-backend"
+            exit 1
+        fi
     fi
     echo "✅ All critical dependencies verified"
 fi
