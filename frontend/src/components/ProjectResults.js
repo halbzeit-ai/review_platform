@@ -31,6 +31,7 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { getProjectResults } from '../services/api';
+import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
 
 const ProjectResults = ({ companyId, deckId }) => {
   const { t } = useTranslation('review');
@@ -206,6 +207,49 @@ const ProjectResults = ({ companyId, deckId }) => {
     return icons[area] || <Assignment />;
   };
 
+  // Prepare radar chart data
+  const prepareRadarData = () => {
+    if (!results) return [];
+    
+    // Use healthcare template data if available
+    if (results.chapter_analysis) {
+      return Object.entries(results.chapter_analysis).map(([key, chapter]) => {
+        let dimensionName = chapter.name || key.replace('_', ' ');
+        
+        // Shorten long dimension names for better display
+        if (dimensionName.length > 20) {
+          dimensionName = dimensionName.substring(0, 17) + '...';
+        }
+        
+        return {
+          dimension: dimensionName,
+          score: chapter.weighted_score || 0,
+          maxScore: 7,
+          originalKey: key
+        };
+      });
+    }
+    
+    // Fallback to legacy report_scores
+    if (results.report_scores) {
+      return Object.entries(results.report_scores).map(([key, score]) => {
+        let dimensionName = key.replace('_', ' ');
+        
+        // Capitalize first letter of each word
+        dimensionName = dimensionName.replace(/\b\w/g, l => l.toUpperCase());
+        
+        return {
+          dimension: dimensionName,
+          score: score || 0,
+          maxScore: 7,
+          originalKey: key
+        };
+      });
+    }
+    
+    return [];
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -310,63 +354,62 @@ const ProjectResults = ({ companyId, deckId }) => {
           {t('results.detailedAnalysis')}
         </Typography>
         
-        {/* Detailed Scores */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {results.chapter_analysis ? (
-            Object.entries(results.chapter_analysis).map(([chapterKey, chapter]) => (
-              <Grid item xs={12} md={6} key={chapterKey}>
-                <Card variant="outlined" sx={{ height: '100%' }}>
-                  <CardContent>
-                    <Box display="flex" alignItems="center" gap={2} mb={2}>
-                      {getScoreIcon(chapterKey)}
-                      <Typography variant="subtitle1" fontWeight="bold">
-                        {chapter.name || chapterKey.replace('_', ' ')}
-                      </Typography>
-                    </Box>
-                    <Box display="flex" alignItems="center" gap={2}>
-                      <LinearProgress
-                        variant="determinate"
-                        value={(chapter.weighted_score || 0) * 100 / 7}
-                        color={getScoreColor(chapter.weighted_score || 0)}
-                        sx={{ flex: 1, height: 8, borderRadius: 4 }}
-                      />
-                      <Typography variant="subtitle1" fontWeight="bold" color={getScoreColor(chapter.weighted_score || 0) + '.main'}>
-                        {chapter.weighted_score?.toFixed(1) || 0}/7
-                      </Typography>
-                    </Box>
-                    <Typography variant="caption" color="text.secondary">
-                      {chapter.total_questions || 0} questions • Weight: {chapter.weight || 1}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))
-          ) : results.report_scores && Object.entries(results.report_scores).map(([area, score]) => (
-            <Grid item xs={12} md={6} key={area}>
-              <Card variant="outlined" sx={{ height: '100%' }}>
-                <CardContent>
-                  <Box display="flex" alignItems="center" gap={2} mb={2}>
-                    {getScoreIcon(area)}
-                    <Typography variant="subtitle1" fontWeight="bold">
-                      {t(`areas.${area}`, area.replace('_', ' '))}
-                    </Typography>
-                  </Box>
-                  <Box display="flex" alignItems="center" gap={2}>
-                    <LinearProgress
-                      variant="determinate"
-                      value={score * 100 / 7}
-                      color={getScoreColor(score)}
-                      sx={{ flex: 1, height: 8, borderRadius: 4 }}
-                    />
-                    <Typography variant="subtitle1" fontWeight="bold" color={getScoreColor(score) + '.main'}>
-                      {score}/7
-                    </Typography>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+        {/* Radar Chart */}
+        <Card variant="outlined" sx={{ mb: 4 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom sx={{ textAlign: 'center', mb: 3 }}>
+              Analysis Dimensions
+            </Typography>
+            <Box sx={{ height: 400, width: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart data={prepareRadarData()} margin={{ top: 40, right: 100, bottom: 40, left: 100 }}>
+                  <PolarGrid 
+                    gridType="polygon" 
+                    stroke="#e0e0e0"
+                    strokeWidth={1}
+                  />
+                  <PolarAngleAxis 
+                    dataKey="dimension" 
+                    tick={{ 
+                      fontSize: 11, 
+                      fill: '#555',
+                      fontWeight: 500
+                    }}
+                    className="radar-axis"
+                  />
+                  <PolarRadiusAxis 
+                    angle={90} 
+                    domain={[0, 7]} 
+                    tick={{ fontSize: 9, fill: '#999' }}
+                    tickCount={8}
+                    stroke="#e0e0e0"
+                  />
+                  <Radar 
+                    dataKey="score" 
+                    stroke="#1976d2" 
+                    fill="#1976d2" 
+                    fillOpacity={0.25}
+                    strokeWidth={2}
+                    dot={{ r: 4, fill: '#1976d2', strokeWidth: 2, stroke: '#fff' }}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </Box>
+            
+            {/* Legend/Summary */}
+            <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
+              {prepareRadarData().map((item, index) => (
+                <Chip
+                  key={index}
+                  label={`${item.dimension}: ${item.score.toFixed(1)}/7`}
+                  size="small"
+                  color={getScoreColor(item.score)}
+                  sx={{ fontSize: '0.75rem' }}
+                />
+              ))}
+            </Box>
+          </CardContent>
+        </Card>
 
         <Divider sx={{ my: 3 }} />
 
