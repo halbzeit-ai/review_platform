@@ -76,9 +76,9 @@ const ProjectResults = ({ companyId, deckId }) => {
       if (paragraph.match(/^\d+\.\s/)) {
         const items = paragraph.split('\n').filter(line => line.match(/^\d+\.\s/));
         return (
-          <List key={index} dense sx={{ my: 1 }}>
+          <List key={index} dense sx={{ my: 0.5, pl: 2 }}>
             {items.map((item, itemIndex) => (
-              <ListItem key={itemIndex} sx={{ py: 0.5, pl: 0 }}>
+              <ListItem key={itemIndex} sx={{ py: 0.2, pl: 0 }}>
                 <ListItemIcon sx={{ minWidth: 32 }}>
                   <Chip 
                     label={item.match(/^(\d+)\./)[1]} 
@@ -89,9 +89,11 @@ const ProjectResults = ({ companyId, deckId }) => {
                 </ListItemIcon>
                 <ListItemText 
                   primary={
-                    <span dangerouslySetInnerHTML={{ 
-                      __html: item.replace(/^\d+\.\s*/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
-                    }} />
+                    <Typography variant="body1" sx={{ fontSize: '0.9rem', lineHeight: 1.4 }}>
+                      <span dangerouslySetInnerHTML={{ 
+                        __html: item.replace(/^\d+\.\s*/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+                      }} />
+                    </Typography>
                   } 
                 />
               </ListItem>
@@ -100,13 +102,18 @@ const ProjectResults = ({ companyId, deckId }) => {
         );
       }
       
-      // Handle bullet points
-      if (paragraph.trim().startsWith('*') || paragraph.trim().startsWith('-')) {
-        const items = paragraph.split('\n').filter(line => line.trim().startsWith('*') || line.trim().startsWith('-'));
+      // Handle bullet points and checkmark items
+      if (paragraph.trim().startsWith('*') || paragraph.trim().startsWith('-') || paragraph.includes('✓') || paragraph.includes('✔')) {
+        const items = paragraph.split('\n').filter(line => 
+          line.trim().startsWith('*') || 
+          line.trim().startsWith('-') || 
+          line.includes('✓') || 
+          line.includes('✔')
+        );
         return (
-          <List key={index} dense sx={{ my: 1, pl: 2 }}>
+          <List key={index} dense sx={{ my: 0.5, pl: 2 }}>
             {items.map((item, itemIndex) => (
-              <ListItem key={itemIndex} sx={{ py: 0.3, pl: 0 }}>
+              <ListItem key={itemIndex} sx={{ py: 0.1, pl: 0 }}>
                 <ListItemIcon sx={{ minWidth: 20 }}>
                   <Box sx={{ 
                     width: 4, 
@@ -118,9 +125,13 @@ const ProjectResults = ({ companyId, deckId }) => {
                 </ListItemIcon>
                 <ListItemText 
                   primary={
-                    <Typography variant="body1" sx={{ fontSize: '0.95rem', lineHeight: 1.5 }}>
+                    <Typography variant="body1" sx={{ fontSize: '0.9rem', lineHeight: 1.4 }}>
                       <span dangerouslySetInnerHTML={{ 
-                        __html: item.replace(/^[\*\-]\s*/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+                        __html: item
+                          .replace(/^[\*\-]\s*/, '')
+                          .replace(/✓\s*/, '')
+                          .replace(/✔\s*/, '')
+                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
                       }} />
                     </Typography>
                   } 
@@ -131,20 +142,29 @@ const ProjectResults = ({ companyId, deckId }) => {
         );
       }
       
-      // Handle headers (### text)
+      // Handle headers (### text and # text)
       if (paragraph.startsWith('###')) {
         return (
           <Typography key={index} variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 'bold', color: 'primary.main' }}>
-            {paragraph.replace(/^###\s*/, '')}
+            {paragraph.replace(/^###\s*/, '').replace(/^#\s*/, '')}
           </Typography>
         );
       }
       
-      // Handle subheaders (## text)
+      // Handle subheaders (## text and # text)
       if (paragraph.startsWith('##')) {
         return (
           <Typography key={index} variant="h5" sx={{ mt: 2, mb: 1, fontWeight: 'bold', color: 'primary.main' }}>
-            {paragraph.replace(/^##\s*/, '')}
+            {paragraph.replace(/^##\s*/, '').replace(/^#\s*/, '')}
+          </Typography>
+        );
+      }
+      
+      // Handle single hash headers (# text)
+      if (paragraph.startsWith('#') && !paragraph.startsWith('##')) {
+        return (
+          <Typography key={index} variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 'bold', color: 'primary.main' }}>
+            {paragraph.replace(/^#\s*/, '')}
           </Typography>
         );
       }
@@ -153,11 +173,15 @@ const ProjectResults = ({ companyId, deckId }) => {
       return (
         <Typography key={index} variant="body1" paragraph sx={{ 
           lineHeight: 1.6, 
-          fontSize: '0.95rem',
+          fontSize: '0.9rem',
           color: 'text.primary',
-          mb: 1.5
+          mb: 1.2
         }}>
-          <span dangerouslySetInnerHTML={{ __html: formattedParagraph }} />
+          <span dangerouslySetInnerHTML={{ 
+            __html: formattedParagraph
+              .replace(/✓\s*/g, '')
+              .replace(/✔\s*/g, '')
+          }} />
         </Typography>
       );
     });
