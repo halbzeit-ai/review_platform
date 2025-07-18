@@ -1,42 +1,13 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
-
-// Import translation files
-import deCommon from './locales/de/common.json';
-import deAuth from './locales/de/auth.json';
-import deDashboard from './locales/de/dashboard.json';
-import deTemplates from './locales/de/templates.json';
-import deReview from './locales/de/review.json';
-
-import enCommon from './locales/en/common.json';
-import enAuth from './locales/en/auth.json';
-import enDashboard from './locales/en/dashboard.json';
-import enTemplates from './locales/en/templates.json';
-import enReview from './locales/en/review.json';
-
-const resources = {
-  de: {
-    common: deCommon,
-    auth: deAuth,
-    dashboard: deDashboard,
-    templates: deTemplates,
-    review: deReview,
-  },
-  en: {
-    common: enCommon,
-    auth: enAuth,
-    dashboard: enDashboard,
-    templates: enTemplates,
-    review: enReview,
-  },
-};
+import Backend from 'i18next-http-backend';
 
 i18n
+  .use(Backend)
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    resources,
     fallbackLng: 'de', // German as default
     lng: 'de', // Start with German
     
@@ -44,6 +15,11 @@ i18n
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
       caches: ['localStorage'],
+    },
+
+    // Backend configuration for loading translations
+    backend: {
+      loadPath: '/locales/{{lng}}/{{ns}}.json',
     },
 
     interpolation: {
