@@ -8,25 +8,17 @@ Adds the company_offering prompt to the pipeline_prompts table in PostgreSQL. Th
 
 ### Usage on Production Server:
 
-1. **Set environment variables** (if not already configured):
-   ```bash
-   export DB_HOST=localhost
-   export DB_PORT=5432
-   export DB_NAME=review_platform
-   export DB_USER=postgres
-   export DB_PASSWORD=your_password
-   ```
-
-2. **Run the script**:
+1. **Navigate to backend directory**:
    ```bash
    cd /opt/review-platform/backend
+   ```
+
+2. **Run the script** (uses FastAPI database configuration):
+   ```bash
    python scripts/add_company_offering_prompt.py
    ```
 
-3. **Alternative with direct environment variables**:
-   ```bash
-   DB_HOST=localhost DB_NAME=review_platform DB_USER=postgres DB_PASSWORD=your_password python scripts/add_company_offering_prompt.py
-   ```
+   The script automatically uses the same database configuration as the FastAPI application (from settings and .env file).
 
 ### What it does:
 
@@ -47,8 +39,8 @@ This prompt combines the role context with the offering extraction task, matchin
 ### Requirements:
 
 - Python 3.x
-- psycopg2 (PostgreSQL adapter)
-- Access to PostgreSQL database
+- FastAPI application dependencies (sqlalchemy, pydantic-settings)
+- Access to PostgreSQL database via application configuration
 
 ### Safety:
 
