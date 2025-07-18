@@ -226,5 +226,6 @@ async def get_processing_results(
         "pitch_deck_id": pitch_deck_id,
         "file_name": pitch_deck.file_name,
         "processing_status": pitch_deck.processing_status,
+        "ai_extracted_startup_name": pitch_deck.ai_extracted_startup_name,
         "results": results
     }

@@ -90,6 +90,7 @@ const ResultsPage = () => {
   const [error, setError] = useState(null);
   const [processingStatus, setProcessingStatus] = useState('processing');
   const [deckInfo, setDeckInfo] = useState(null);
+  const [aiExtractedStartupName, setAiExtractedStartupName] = useState(null);
 
   useEffect(() => {
     if (pitchDeckId) {
@@ -164,6 +165,7 @@ const ResultsPage = () => {
 
       const data = await response.json();
       setResults(data.results);
+      setAiExtractedStartupName(data.ai_extracted_startup_name);
       setLoading(false);
     } catch (err) {
       console.log('Results not ready yet, will retry in 5 seconds');
@@ -274,7 +276,7 @@ const ResultsPage = () => {
         <Card variant="outlined" sx={{ mb: 3, bgcolor: 'primary.50' }}>
           <CardContent>
             <Typography variant="h6" gutterBottom color="primary">
-              Company Overview
+              {aiExtractedStartupName || 'Company Overview'}
             </Typography>
             <Box sx={{ mb: 2 }}>
               {formatText(results.company_offering || 'No company summary available')}
