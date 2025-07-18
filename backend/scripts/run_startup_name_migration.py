@@ -6,11 +6,20 @@ Handles both database schema migration and prompt insertion
 
 import sys
 import os
-sys.path.append('/home/ramin/halbzeit-ai/review_platform/backend')
-
-from app.db.database import get_db
-from sqlalchemy import text
 import logging
+
+# Add the parent directory to Python path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+backend_dir = os.path.dirname(current_dir)
+sys.path.insert(0, backend_dir)
+
+try:
+    from app.db.database import get_db
+    from sqlalchemy import text
+except ImportError as e:
+    print(f"Import error: {e}")
+    print("Make sure you're running this script from the backend directory")
+    sys.exit(1)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
