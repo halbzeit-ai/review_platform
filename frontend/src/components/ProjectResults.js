@@ -6,7 +6,6 @@ import {
   Card,
   CardContent,
   Chip,
-  LinearProgress,
   Alert,
   CircularProgress,
   Divider,
@@ -316,26 +315,11 @@ const ProjectResults = ({ companyId, deckId }) => {
         </CardContent>
       </Card>
 
-      {/* Overall Score */}
-      <Card variant="outlined" sx={{ mb: 3 }}>
-        <CardContent>
-          <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-            <Typography variant="h6">{t('results.overallScore')}</Typography>
-            <Chip
-              label={`${results.overall_score || results.score || 0}/7`}
-              color={getScoreColor(results.overall_score || results.score || 0)}
-              size="large"
-              sx={{ fontSize: '1.1rem', fontWeight: 'bold' }}
-            />
-          </Box>
-          <LinearProgress
-            variant="determinate"
-            value={(results.overall_score || results.score || 0) * 100 / 7}
-            color={getScoreColor(results.overall_score || results.score || 0)}
-            sx={{ height: 12, borderRadius: 6 }}
-          />
-          {results.classification && (
-            <Box sx={{ mt: 2, p: 2, bgcolor: 'success.50', borderRadius: 1 }}>
+      {/* Healthcare Classification (if available) */}
+      {results.classification && (
+        <Card variant="outlined" sx={{ mb: 3 }}>
+          <CardContent>
+            <Box sx={{ p: 2, bgcolor: 'success.50', borderRadius: 1 }}>
               <Typography variant="body2" color="success.main">
                 <strong>{t('results.healthcareClassification')}:</strong> {results.classification.sector || 'Healthcare'} 
                 {results.classification.confidence && (
@@ -343,9 +327,9 @@ const ProjectResults = ({ companyId, deckId }) => {
                 )}
               </Typography>
             </Box>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Detailed Analysis */}
       <Paper elevation={1} sx={{ p: 3, mb: 3 }}>
@@ -353,12 +337,35 @@ const ProjectResults = ({ companyId, deckId }) => {
           {t('results.detailedAnalysis')}
         </Typography>
         
-        {/* Radar Chart */}
+        {/* Radar Chart with Overall Score */}
         <Card variant="outlined" sx={{ mb: 4 }}>
           <CardContent>
-            <Typography variant="h6" gutterBottom sx={{ textAlign: 'center', mb: 3 }}>
-              {t('results.analysisDimensions')}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Typography 
+                  variant="h4" 
+                  component="div" 
+                  sx={{ 
+                    fontWeight: 'bold',
+                    color: getScoreColor(results.overall_score || results.score || 0) === 'success' ? 'success.main' :
+                           getScoreColor(results.overall_score || results.score || 0) === 'warning' ? 'warning.main' : 'error.main'
+                  }}
+                >
+                  {(results.overall_score || results.score || 0).toFixed(1)}
+                </Typography>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+                    {t('results.overallScore')}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+                    out of 7
+                  </Typography>
+                </Box>
+              </Box>
+              <Typography variant="h6" sx={{ textAlign: 'center', flex: 1 }}>
+                {t('results.analysisDimensions')}
+              </Typography>
+            </Box>
             <Box sx={{ height: 400, width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={prepareRadarData()} margin={{ top: 40, right: 100, bottom: 40, left: 100 }}>
