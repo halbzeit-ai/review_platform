@@ -115,7 +115,6 @@ cd ..
 # Setup backend
 echo ""
 echo "⚙️  Setting up backend..."
-cd backend
 
 echo "📦 Installing backend dependencies..."
 run_command "pip install -r requirements.txt" "Install all backend dependencies from requirements.txt"
@@ -123,18 +122,16 @@ run_command "pip install -r requirements.txt" "Install all backend dependencies 
 echo "🔍 Running type checks..."
 if command_exists mypy; then
     if [ "$DRY_RUN" = true ]; then
-        echo "🔍 Would run: mypy ."
+        echo "🔍 Would run: mypy backend/"
         echo "   Purpose: Check Python type annotations for code quality"
     else
-        mypy . || echo "⚠️  Type check warnings (non-critical)"
+        mypy backend/ || echo "⚠️  Type check warnings (non-critical)"
     fi
 else
     echo "⚠️  mypy not found, skipping type checks"
 fi
 
 echo "✅ Backend setup completed"
-
-cd ..
 
 # Database setup
 echo ""
