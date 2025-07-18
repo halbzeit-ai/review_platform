@@ -60,6 +60,18 @@ const DojoManagement = () => {
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
+
+  // Helper function to estimate remaining time
+  const formatRemainingTime = (bytesUploaded, totalBytes, uploadSpeed) => {
+    if (uploadSpeed === 0 || bytesUploaded === 0) return '';
+    
+    const remainingBytes = totalBytes - bytesUploaded;
+    const remainingSeconds = remainingBytes / uploadSpeed;
+    
+    if (remainingSeconds < 60) return `${Math.round(remainingSeconds)}s remaining`;
+    if (remainingSeconds < 3600) return `${Math.round(remainingSeconds / 60)}m remaining`;
+    return `${Math.round(remainingSeconds / 3600)}h ${Math.round((remainingSeconds % 3600) / 60)}m remaining`;
+  };
   
   const [files, setFiles] = useState([]);
   const [stats, setStats] = useState({});
@@ -74,6 +86,7 @@ const DojoManagement = () => {
   const [processingStatus, setProcessingStatus] = useState('');
   const [uploadSpeed, setUploadSpeed] = useState(0);
   const [uploadStartTime, setUploadStartTime] = useState(null);
+  const [bytesUploaded, setBytesUploaded] = useState(0);
 
   useEffect(() => {
     loadDojoData();
@@ -157,6 +170,7 @@ const DojoManagement = () => {
         if (event.lengthComputable) {
           const percentComplete = Math.round((event.loaded / event.total) * 100);
           setUploadProgress(percentComplete);
+          setBytesUploaded(event.loaded);
           
           // Calculate upload speed
           const currentTime = Date.now();
@@ -187,6 +201,7 @@ const DojoManagement = () => {
               setProcessingStatus('');
               setUploadSpeed(0);
               setUploadStartTime(null);
+              setBytesUploaded(0);
             }, 2000);
           } catch (parseError) {
             throw new Error('Invalid response from server');
@@ -211,6 +226,7 @@ const DojoManagement = () => {
         setProcessingStatus('');
         setUploadSpeed(0);
         setUploadStartTime(null);
+        setBytesUploaded(0);
       });
 
       // Handle timeout
@@ -223,10 +239,14 @@ const DojoManagement = () => {
         setProcessingStatus('');
         setUploadSpeed(0);
         setUploadStartTime(null);
+        setBytesUploaded(0);
       });
 
-      // Set timeout (5 minutes for large files)
-      xhr.timeout = 5 * 60 * 1000;
+      // Set dynamic timeout based on file size
+      // Calculate timeout: minimum 10 minutes, plus 1 minute per 50MB
+      const baseTimeout = 10 * 60 * 1000; // 10 minutes base
+      const fileSizeTimeout = Math.ceil(file.size / (50 * 1024 * 1024)) * 60 * 1000; // 1 minute per 50MB
+      xhr.timeout = Math.max(baseTimeout, fileSizeTimeout);
 
       // Send request
       xhr.open('POST', '/api/dojo/upload');
@@ -243,6 +263,7 @@ const DojoManagement = () => {
       setProcessingStatus('');
       setUploadSpeed(0);
       setUploadStartTime(null);
+      setBytesUploaded(0);
     }
 
     // Clear file input
@@ -443,9 +464,16 @@ const DojoManagement = () => {
                   {processingStatus || (uploadProgress < 100 ? `Uploading... ${uploadProgress}%` : 'Processing files...')}
                 </Typography>
                 {uploadSpeed > 0 && uploadProgress < 100 && (
-                  <Typography variant="caption" color="text.secondary">
-                    {formatUploadSpeed(uploadSpeed)}
-                  </Typography>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      {formatUploadSpeed(uploadSpeed)}
+                    </Typography>
+                    {selectedFile && (
+                      <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                        • {formatRemainingTime(bytesUploaded, selectedFile.size, uploadSpeed)}
+                      </Typography>
+                    )}
+                  </Box>
                 )}
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -475,6 +503,7 @@ const DojoManagement = () => {
                     setProcessingStatus('');
                     setUploadSpeed(0);
                     setUploadStartTime(null);
+                    setBytesUploaded(0);
                     setError('Upload cancelled');
                   }}
                 >
@@ -528,6 +557,12 @@ const DojoManagement = () => {
                 <ListItem sx={{ py: 0.5 }}>
                   <ListItemText 
                     primary="• Processing time depends on number of files" 
+                    primaryTypographyProps={{ variant: 'caption' }}
+                  />
+                </ListItem>
+                <ListItem sx={{ py: 0.5 }}>
+                  <ListItemText 
+                    primary="• Upload timeout adjusts automatically based on file size" 
                     primaryTypographyProps={{ variant: 'caption' }}
                   />
                 </ListItem>
