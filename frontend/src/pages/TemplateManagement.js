@@ -85,7 +85,8 @@ const TemplateManagement = () => {
   const [selectedPromptStage, setSelectedPromptStage] = useState('image_analysis');
   const [promptTexts, setPromptTexts] = useState({
     image_analysis: '',
-    offering_extraction: ''
+    offering_extraction: '',
+    startup_name_extraction: ''
   });
   const [promptLoading, setPromptLoading] = useState(false);
   const [promptError, setPromptError] = useState(null);
@@ -147,7 +148,8 @@ const TemplateManagement = () => {
       const prompts = pipelineData.prompts || {};
       setPromptTexts({
         image_analysis: prompts.image_analysis || '',
-        offering_extraction: prompts.offering_extraction || ''
+        offering_extraction: prompts.offering_extraction || '',
+        startup_name_extraction: prompts.startup_name_extraction || ''
       });
       
       // Load templates for first sector by default
@@ -641,6 +643,12 @@ const TemplateManagement = () => {
         key: 'offering_extraction',
         name: t('labels.companyOfferingPrompt'),
         description: t('pipeline.companyOfferingDescription'),
+        icon: <StorefrontIcon />
+      },
+      {
+        key: 'startup_name_extraction',
+        name: 'Startup Name Extraction',
+        description: 'Extract the startup name from pitch deck content',
         icon: <StorefrontIcon />
       }
     ];

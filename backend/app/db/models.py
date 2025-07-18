@@ -35,6 +35,7 @@ class PitchDeck(Base):
     s3_url = Column(String)  # Legacy field, kept for compatibility
     processing_status = Column(String, default="pending")  # pending, processing, completed, failed
     ai_analysis_results = Column(Text, nullable=True)  # JSON string of AI analysis results
+    ai_extracted_startup_name = Column(String, nullable=True)  # AI-extracted startup name from pitch deck content
     created_at = Column(DateTime, default=datetime.utcnow)
     user = relationship("User")
 
