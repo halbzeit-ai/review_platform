@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
+from datetime import datetime
 import json
 import os
 import logging
@@ -43,7 +44,7 @@ class ProjectUpload(BaseModel):
     filename: str
     file_path: str
     file_size: int
-    upload_date: str
+    upload_date: datetime
     file_type: str
     pages: Optional[int] = None
     processing_status: str = "pending"
