@@ -63,10 +63,13 @@ const DojoManagement = () => {
 
   // Helper function to estimate remaining time
   const formatRemainingTime = (bytesUploaded, totalBytes, uploadSpeed) => {
-    if (uploadSpeed === 0 || bytesUploaded === 0) return '';
+    if (uploadSpeed === 0 || bytesUploaded === 0 || uploadSpeed < 1000) return ''; // Ignore very slow speeds
     
     const remainingBytes = totalBytes - bytesUploaded;
     const remainingSeconds = remainingBytes / uploadSpeed;
+    
+    // Cap at reasonable maximum (24 hours)
+    if (remainingSeconds > 86400) return 'More than 24h remaining';
     
     if (remainingSeconds < 60) return `${Math.round(remainingSeconds)}s remaining`;
     if (remainingSeconds < 3600) return `${Math.round(remainingSeconds / 60)}m remaining`;
