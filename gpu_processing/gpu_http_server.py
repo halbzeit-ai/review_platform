@@ -467,6 +467,12 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
 
 Company offering:"""
                         
+                        # DEBUG: Log the full prompt being sent to the model
+                        logger.info(f"DEBUG: Full extraction prompt for deck {deck_id}:")
+                        logger.info(f"Visual context length: {len(visual_context)} characters")
+                        logger.info(f"Visual used flag: {visual_used}")
+                        logger.info(f"First 500 chars of prompt: {full_extraction_prompt[:500]}...")
+                        
                         # Use ollama to run text extraction
                         import ollama
                         
