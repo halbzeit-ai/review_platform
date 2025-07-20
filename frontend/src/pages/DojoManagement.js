@@ -45,7 +45,8 @@ import {
   Error,
   Pending,
   Storage,
-  DataUsage
+  DataUsage,
+  Refresh
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -109,6 +110,8 @@ const DojoManagement = () => {
   const [extractionPrompt, setExtractionPrompt] = useState('');
   const [experiments, setExperiments] = useState([]);
   const [availableModels, setAvailableModels] = useState({});
+  const [modelsLoading, setModelsLoading] = useState(false);
+  const [gpuStatus, setGpuStatus] = useState(null);
   const [selectedExperiment, setSelectedExperiment] = useState(null);
   const [experimentDetailsOpen, setExperimentDetailsOpen] = useState(false);
   const [experimentDetails, setExperimentDetails] = useState(null);
@@ -323,6 +326,9 @@ const DojoManagement = () => {
 
   const loadAvailableModels = async () => {
     try {
+      setModelsLoading(true);
+      setGpuStatus(null);
+      
       const user = JSON.parse(localStorage.getItem('user'));
       const token = user?.token;
 
@@ -333,28 +339,58 @@ const DojoManagement = () => {
       if (response.ok) {
         const modelsData = await response.json();
         
+        // Check if GPU is available based on the response
+        const hasModels = modelsData.models && modelsData.models.length > 0;
+        setGpuStatus(hasModels ? 'online' : 'offline');
+        
         // Transform the models data to match expected format
+        // All models can be used for both vision and text tasks
+        const modelOptions = modelsData.models ? modelsData.models.map(model => ({ model_name: model.name })) : [];
         const transformedModels = {
-          vision: modelsData.models ? modelsData.models.map(model => ({ model_name: model.name })) : [],
-          text: modelsData.models ? modelsData.models.map(model => ({ model_name: model.name })) : []
+          vision: modelOptions,
+          text: modelOptions
         };
         
         setAvailableModels(transformedModels);
         
-        // Set default models and prompts
-        if (modelsData.vision && modelsData.vision.length > 0) {
-          setSelectedVisionModel(modelsData.vision[0].model_name);
+        // Set default models - prefer models with certain names for vision/text
+        const visionPreferred = modelOptions.find(model => 
+          model.model_name.toLowerCase().includes('vision') || 
+          model.model_name.toLowerCase().includes('llava') ||
+          model.model_name.toLowerCase().includes('minicpm')
+        );
+        const textPreferred = modelOptions.find(model => 
+          model.model_name.toLowerCase().includes('llama') ||
+          model.model_name.toLowerCase().includes('mistral') ||
+          model.model_name.toLowerCase().includes('gemma')
+        );
+        
+        if (visionPreferred) {
+          setSelectedVisionModel(visionPreferred.model_name);
+        } else if (modelOptions.length > 0) {
+          setSelectedVisionModel(modelOptions[0].model_name);
         }
-        if (modelsData.text && modelsData.text.length > 0) {
-          setSelectedTextModel(modelsData.text[0].model_name);
+        
+        if (textPreferred) {
+          setSelectedTextModel(textPreferred.model_name);
+        } else if (modelOptions.length > 0) {
+          setSelectedTextModel(modelOptions[0].model_name);
         }
         
         // Set default prompts
         setVisualAnalysisPrompt('Analyze this pitch deck slide. Focus on identifying the company\'s core offering, value proposition, and main business model. Describe what product or service they provide.');
         setExtractionPrompt('Based on the visual analysis provided, extract the company\'s main offering in 1-2 clear sentences. Focus on what specific product or service they provide to customers.');
+      } else {
+        setGpuStatus('error');
+        throw new Error('Failed to fetch models');
       }
     } catch (err) {
       console.error('Error loading models:', err);
+      setGpuStatus('error');
+      // Set empty models on error
+      setAvailableModels({ vision: [], text: [] });
+    } finally {
+      setModelsLoading(false);
     }
   };
 
@@ -913,12 +949,71 @@ const DojoManagement = () => {
         {/* Tab Panel 1: Extraction Testing Lab */}
         {currentTab === 1 && (
           <Box sx={{ mt: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Extraction Testing Lab
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Test and compare company offering extraction quality using different models and prompts
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+              <Box>
+                <Typography variant="h6" gutterBottom>
+                  Extraction Testing Lab
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Test and compare company offering extraction quality using different models and prompts
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                {gpuStatus && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {gpuStatus === 'online' && (
+                      <>
+                        <CheckCircle color="success" fontSize="small" />
+                        <Typography variant="caption" color="success.main">GPU Online</Typography>
+                      </>
+                    )}
+                    {gpuStatus === 'offline' && (
+                      <>
+                        <Error color="warning" fontSize="small" />
+                        <Typography variant="caption" color="warning.main">GPU Offline</Typography>
+                      </>
+                    )}
+                    {gpuStatus === 'error' && (
+                      <>
+                        <Error color="error" fontSize="small" />
+                        <Typography variant="caption" color="error.main">GPU Connection Error</Typography>
+                      </>
+                    )}
+                  </Box>
+                )}
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={loadAvailableModels}
+                  disabled={modelsLoading}
+                  startIcon={modelsLoading ? <CircularProgress size={16} /> : <Refresh />}
+                >
+                  {modelsLoading ? 'Loading...' : 'Refresh Models'}
+                </Button>
+              </Box>
+            </Box>
+            
+            {/* GPU Status Alert */}
+            {gpuStatus === 'error' && (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                Unable to connect to GPU instance. Model selection and analysis features will not be available.
+                Please check if the GPU instance is running and try refreshing the models.
+              </Alert>
+            )}
+            
+            {gpuStatus === 'offline' && (
+              <Alert severity="warning" sx={{ mb: 3 }}>
+                GPU instance is online but no models are available. You may need to pull models first 
+                in the Model Configuration page.
+              </Alert>
+            )}
+            
+            {availableModels.vision && availableModels.vision.length === 0 && !modelsLoading && (
+              <Alert severity="info" sx={{ mb: 3 }}>
+                No models available for extraction testing. Please ensure the GPU instance is running 
+                and models are installed.
+              </Alert>
+            )}
             
             {/* Step 1: Sample Selection */}
             <Paper sx={{ p: 3, mb: 3, bgcolor: 'grey.50' }}>
@@ -962,9 +1057,33 @@ const DojoManagement = () => {
             {/* Step 2: Visual Analysis */}
             {extractionSample.length > 0 && (
               <Paper sx={{ p: 3, mb: 3, bgcolor: 'grey.50' }}>
-                <Typography variant="h6" gutterBottom>
-                  Step 2: Visual Analysis Manager
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">
+                    Step 2: Visual Analysis Manager
+                  </Typography>
+                  {gpuStatus && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {gpuStatus === 'online' && (
+                        <>
+                          <CheckCircle color="success" fontSize="small" />
+                          <Typography variant="caption" color="success.main">GPU Online</Typography>
+                        </>
+                      )}
+                      {gpuStatus === 'offline' && (
+                        <>
+                          <Error color="warning" fontSize="small" />
+                          <Typography variant="caption" color="warning.main">GPU Offline</Typography>
+                        </>
+                      )}
+                      {gpuStatus === 'error' && (
+                        <>
+                          <Error color="error" fontSize="small" />
+                          <Typography variant="caption" color="error.main">GPU Error</Typography>
+                        </>
+                      )}
+                    </Box>
+                  )}
+                </Box>
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={6}>
                     <FormControl fullWidth sx={{ mb: 2 }}>
@@ -973,12 +1092,24 @@ const DojoManagement = () => {
                         value={selectedVisionModel}
                         onChange={(e) => setSelectedVisionModel(e.target.value)}
                         label="Vision Model"
+                        disabled={modelsLoading || gpuStatus === 'error'}
                       >
-                        {availableModels.vision && availableModels.vision.map((model) => (
-                          <MenuItem key={model.model_name} value={model.model_name}>
-                            {model.model_name}
+                        {modelsLoading ? (
+                          <MenuItem disabled>
+                            <CircularProgress size={16} sx={{ mr: 1 }} />
+                            Loading models...
                           </MenuItem>
-                        ))}
+                        ) : availableModels.vision && availableModels.vision.length > 0 ? (
+                          availableModels.vision.map((model) => (
+                            <MenuItem key={model.model_name} value={model.model_name}>
+                              {model.model_name}
+                            </MenuItem>
+                          ))
+                        ) : (
+                          <MenuItem disabled>
+                            No models available - GPU may be offline
+                          </MenuItem>
+                        )}
                       </Select>
                     </FormControl>
                     
@@ -1030,12 +1161,24 @@ const DojoManagement = () => {
                         value={selectedTextModel}
                         onChange={(e) => setSelectedTextModel(e.target.value)}
                         label="Text Model"
+                        disabled={modelsLoading || gpuStatus === 'error'}
                       >
-                        {availableModels.text && availableModels.text.map((model) => (
-                          <MenuItem key={model.model_name} value={model.model_name}>
-                            {model.model_name}
+                        {modelsLoading ? (
+                          <MenuItem disabled>
+                            <CircularProgress size={16} sx={{ mr: 1 }} />
+                            Loading models...
                           </MenuItem>
-                        ))}
+                        ) : availableModels.text && availableModels.text.length > 0 ? (
+                          availableModels.text.map((model) => (
+                            <MenuItem key={model.model_name} value={model.model_name}>
+                              {model.model_name}
+                            </MenuItem>
+                          ))
+                        ) : (
+                          <MenuItem disabled>
+                            No models available - GPU may be offline
+                          </MenuItem>
+                        )}
                       </Select>
                     </FormControl>
                     
