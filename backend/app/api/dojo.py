@@ -5,18 +5,23 @@ Handles training data uploads and management for GPs
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import os
 import zipfile
 import shutil
 import logging
 from pathlib import Path
 import uuid
+import json
 from datetime import datetime
+from sqlalchemy import func, text
 
 from ..db.database import get_db
 from ..db.models import User, PitchDeck
 from .auth import get_current_user
+
+# Import for extraction testing functionality
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -383,3 +388,351 @@ async def get_dojo_stats(
             status_code=500,
             detail="Failed to get dojo statistics"
         )
+
+
+# ==================== EXTRACTION TESTING FUNCTIONALITY ====================
+
+class ExtractionSampleRequest(BaseModel):
+    sample_size: int = 10
+
+class VisualAnalysisRequest(BaseModel):
+    deck_ids: List[int]
+    vision_model: str
+    analysis_prompt: str
+
+class ExtractionTestRequest(BaseModel):
+    experiment_name: str
+    deck_ids: List[int]
+    text_model: str
+    extraction_prompt: str
+    use_cached_visual: bool = True
+
+@router.post("/extraction-test/sample")
+async def create_extraction_sample(
+    request: ExtractionSampleRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a random sample of dojo decks for extraction testing"""
+    try:
+        # Only GPs can create extraction test samples
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=403,
+                detail="Only GPs can create extraction test samples"
+            )
+        
+        # Get random sample of dojo files
+        sample_decks = db.query(PitchDeck).filter(
+            PitchDeck.data_source == "dojo"
+        ).order_by(func.random()).limit(request.sample_size).all()
+        
+        if not sample_decks:
+            raise HTTPException(
+                status_code=404,
+                detail="No dojo files available for sampling"
+            )
+        
+        sample_data = []
+        for deck in sample_decks:
+            # Check if visual analysis is cached
+            visual_cache_exists = db.execute(text(
+                "SELECT COUNT(*) FROM visual_analysis_cache WHERE pitch_deck_id = :deck_id"
+            ), {"deck_id": deck.id}).scalar()
+            
+            sample_data.append({
+                "id": deck.id,
+                "filename": deck.file_name,
+                "file_path": deck.file_path,
+                "processing_status": deck.processing_status,
+                "has_visual_cache": visual_cache_exists > 0,
+                "created_at": deck.created_at.isoformat() if deck.created_at else None
+            })
+        
+        logger.info(f"Created extraction test sample of {len(sample_data)} decks for {current_user.email}")
+        
+        return {
+            "sample": sample_data,
+            "sample_size": len(sample_data),
+            "requested_size": request.sample_size
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating extraction sample: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to create extraction test sample"
+        )
+
+@router.post("/extraction-test/run-visual-analysis")
+async def run_visual_analysis_batch(
+    request: VisualAnalysisRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Run visual analysis on sample decks and cache results"""
+    try:
+        # Only GPs can run visual analysis
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=403,
+                detail="Only GPs can run visual analysis"
+            )
+        
+        # Validate deck IDs exist and are dojo files
+        decks = db.query(PitchDeck).filter(
+            PitchDeck.id.in_(request.deck_ids),
+            PitchDeck.data_source == "dojo"
+        ).all()
+        
+        if len(decks) != len(request.deck_ids):
+            raise HTTPException(
+                status_code=400,
+                detail="Some deck IDs not found or not dojo files"
+            )
+        
+        # Check which decks already have cached analysis
+        cached_count = 0
+        new_analysis_needed = []
+        
+        for deck in decks:
+            cache_exists = db.execute(text(
+                "SELECT id FROM visual_analysis_cache WHERE pitch_deck_id = :deck_id AND vision_model_used = :model AND prompt_used = :prompt"
+            ), {"deck_id": deck.id, "model": request.vision_model, "prompt": request.analysis_prompt}).scalar()
+            
+            if cache_exists:
+                cached_count += 1
+            else:
+                new_analysis_needed.append(deck)
+        
+        # Start background task for visual analysis
+        if new_analysis_needed:
+            background_tasks.add_task(
+                process_visual_analysis_batch,
+                [deck.id for deck in new_analysis_needed],
+                request.vision_model,
+                request.analysis_prompt,
+                db
+            )
+        
+        logger.info(f"Visual analysis batch started: {len(new_analysis_needed)} new, {cached_count} cached")
+        
+        return {
+            "message": "Visual analysis batch initiated",
+            "total_decks": len(request.deck_ids),
+            "cached_count": cached_count,
+            "new_analysis_count": len(new_analysis_needed),
+            "status": "processing" if new_analysis_needed else "all_cached"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error running visual analysis batch: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to run visual analysis batch"
+        )
+
+@router.post("/extraction-test/run-offering-extraction")
+async def test_offering_extraction(
+    request: ExtractionTestRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Test company offering extraction with different models/prompts"""
+    try:
+        # Only GPs can run extraction tests
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=403,
+                detail="Only GPs can run extraction tests"
+            )
+        
+        # Validate deck IDs exist and are dojo files
+        decks = db.query(PitchDeck).filter(
+            PitchDeck.id.in_(request.deck_ids),
+            PitchDeck.data_source == "dojo"
+        ).all()
+        
+        if len(decks) != len(request.deck_ids):
+            raise HTTPException(
+                status_code=400,
+                detail="Some deck IDs not found or not dojo files"
+            )
+        
+        extraction_results = []
+        
+        for deck in decks:
+            try:
+                # Get visual analysis (cached or fresh)
+                visual_analysis = None
+                if request.use_cached_visual:
+                    # Try to get cached visual analysis
+                    cache_result = db.execute(text(
+                        "SELECT analysis_result_json FROM visual_analysis_cache WHERE pitch_deck_id = :deck_id ORDER BY created_at DESC LIMIT 1"
+                    ), {"deck_id": deck.id}).fetchone()
+                    
+                    if cache_result:
+                        visual_analysis = json.loads(cache_result[0])
+                
+                if not visual_analysis:
+                    # TODO: Integrate with GPU pipeline to get fresh visual analysis
+                    # For now, we'll create a placeholder
+                    visual_analysis = {
+                        "visual_analysis_results": [
+                            {"page_number": 1, "description": "Visual analysis not available", "deck_name": deck.file_name}
+                        ]
+                    }
+                
+                # TODO: Integrate with GPU pipeline for offering extraction
+                # For now, create placeholder extraction result
+                offering_result = f"[PLACEHOLDER] Company offering extracted using {request.text_model} for {deck.file_name}"
+                
+                extraction_results.append({
+                    "deck_id": deck.id,
+                    "filename": deck.file_name,
+                    "offering_extraction": offering_result,
+                    "visual_analysis_used": len(visual_analysis.get("visual_analysis_results", [])) > 0
+                })
+                
+            except Exception as e:
+                logger.error(f"Error extracting offering for deck {deck.id}: {e}")
+                extraction_results.append({
+                    "deck_id": deck.id,
+                    "filename": deck.file_name,
+                    "offering_extraction": f"Error: {str(e)}",
+                    "visual_analysis_used": False
+                })
+        
+        # Store experiment results
+        experiment_data = {
+            "experiment_name": request.experiment_name,
+            "extraction_type": "company_offering",
+            "text_model_used": request.text_model,
+            "extraction_prompt": request.extraction_prompt,
+            "results": extraction_results,
+            "total_decks": len(extraction_results),
+            "successful_extractions": len([r for r in extraction_results if not r["offering_extraction"].startswith("Error:")]),
+            "created_at": datetime.utcnow().isoformat()
+        }
+        
+        # Save experiment to database
+        db.execute(text(
+            "INSERT INTO extraction_experiments (experiment_name, pitch_deck_ids, extraction_type, text_model_used, extraction_prompt, results_json) VALUES (:name, :deck_ids, :type, :model, :prompt, :results)"
+        ), {
+            "name": request.experiment_name,
+            "deck_ids": request.deck_ids,
+            "type": "company_offering", 
+            "model": request.text_model,
+            "prompt": request.extraction_prompt,
+            "results": json.dumps(experiment_data)
+        })
+        db.commit()
+        
+        logger.info(f"Extraction test completed: {request.experiment_name}")
+        
+        return experiment_data
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error running extraction test: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to run extraction test"
+        )
+
+@router.get("/extraction-test/experiments")
+async def get_extraction_experiments(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all extraction experiments for comparison"""
+    try:
+        # Only GPs can view extraction experiments
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=403,
+                detail="Only GPs can view extraction experiments"
+            )
+        
+        experiments = db.execute(text(
+            "SELECT id, experiment_name, extraction_type, text_model_used, created_at, results_json FROM extraction_experiments ORDER BY created_at DESC"
+        )).fetchall()
+        
+        experiment_data = []
+        for exp in experiments:
+            results_data = json.loads(exp[5]) if exp[5] else {}
+            experiment_data.append({
+                "id": exp[0],
+                "experiment_name": exp[1],
+                "extraction_type": exp[2], 
+                "text_model_used": exp[3],
+                "created_at": exp[4].isoformat(),
+                "total_decks": results_data.get("total_decks", 0),
+                "successful_extractions": results_data.get("successful_extractions", 0)
+            })
+        
+        return {
+            "experiments": experiment_data,
+            "total_experiments": len(experiment_data)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting extraction experiments: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to get extraction experiments"
+        )
+
+async def process_visual_analysis_batch(deck_ids: List[int], vision_model: str, analysis_prompt: str, db: Session):
+    """Background task to process visual analysis for multiple decks"""
+    try:
+        logger.info(f"Starting visual analysis batch for {len(deck_ids)} decks")
+        
+        for deck_id in deck_ids:
+            deck = db.query(PitchDeck).filter(PitchDeck.id == deck_id).first()
+            if not deck:
+                continue
+            
+            try:
+                # TODO: Integrate with actual GPU pipeline
+                # For now, create placeholder analysis result
+                analysis_result = {
+                    "visual_analysis_results": [
+                        {
+                            "page_number": 1,
+                            "slide_image_path": f"/path/to/{deck.file_name}_page_1.jpg",
+                            "description": f"[PLACEHOLDER] Visual analysis of {deck.file_name} using {vision_model}",
+                            "deck_name": deck.file_name
+                        }
+                    ]
+                }
+                
+                # Cache the visual analysis result
+                db.execute(text(
+                    "INSERT INTO visual_analysis_cache (pitch_deck_id, analysis_result_json, vision_model_used, prompt_used) VALUES (:deck_id, :result, :model, :prompt) ON CONFLICT (pitch_deck_id, vision_model_used, prompt_used) DO UPDATE SET analysis_result_json = :result, created_at = CURRENT_TIMESTAMP"
+                ), {
+                    "deck_id": deck_id,
+                    "result": json.dumps(analysis_result),
+                    "model": vision_model,
+                    "prompt": analysis_prompt
+                })
+                
+                logger.info(f"Cached visual analysis for deck {deck_id}")
+                
+            except Exception as e:
+                logger.error(f"Error processing visual analysis for deck {deck_id}: {e}")
+                continue
+        
+        db.commit()
+        logger.info(f"Visual analysis batch completed for {len(deck_ids)} decks")
+        
+    except Exception as e:
+        logger.error(f"Error in visual analysis batch processing: {e}")

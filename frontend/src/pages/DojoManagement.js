@@ -27,7 +27,14 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
-  ListItemSecondaryAction
+  ListItemSecondaryAction,
+  Tabs,
+  Tab,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel
 } from '@mui/material';
 import {
   CloudUpload,
@@ -91,9 +98,21 @@ const DojoManagement = () => {
   const [uploadStartTime, setUploadStartTime] = useState(null);
   const [bytesUploaded, setBytesUploaded] = useState(0);
   const [currentXhr, setCurrentXhr] = useState(null);
+  
+  // Extraction testing states
+  const [currentTab, setCurrentTab] = useState(0);
+  const [extractionSample, setExtractionSample] = useState([]);
+  const [visualAnalysisStatus, setVisualAnalysisStatus] = useState('idle');
+  const [selectedVisionModel, setSelectedVisionModel] = useState('');
+  const [visualAnalysisPrompt, setVisualAnalysisPrompt] = useState('');
+  const [selectedTextModel, setSelectedTextModel] = useState('');
+  const [extractionPrompt, setExtractionPrompt] = useState('');
+  const [experiments, setExperiments] = useState([]);
+  const [availableModels, setAvailableModels] = useState({});
 
   useEffect(() => {
     loadDojoData();
+    loadAvailableModels();
   }, []);
 
   const loadDojoData = useCallback(async () => {
@@ -292,6 +311,174 @@ const DojoManagement = () => {
 
     // Clear file input
     event.target.value = '';
+  };
+
+  // ==================== EXTRACTION TESTING FUNCTIONALITY ====================
+
+  const loadAvailableModels = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+
+      const response = await fetch('/api/config/models', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const modelsData = await response.json();
+        
+        // Transform the models data to match expected format
+        const transformedModels = {
+          vision: modelsData.models ? modelsData.models.map(model => ({ model_name: model.name })) : [],
+          text: modelsData.models ? modelsData.models.map(model => ({ model_name: model.name })) : []
+        };
+        
+        setAvailableModels(transformedModels);
+        
+        // Set default models and prompts
+        if (modelsData.vision && modelsData.vision.length > 0) {
+          setSelectedVisionModel(modelsData.vision[0].model_name);
+        }
+        if (modelsData.text && modelsData.text.length > 0) {
+          setSelectedTextModel(modelsData.text[0].model_name);
+        }
+        
+        // Set default prompts
+        setVisualAnalysisPrompt('Analyze this pitch deck slide. Focus on identifying the company\'s core offering, value proposition, and main business model. Describe what product or service they provide.');
+        setExtractionPrompt('Based on the visual analysis provided, extract the company\'s main offering in 1-2 clear sentences. Focus on what specific product or service they provide to customers.');
+      }
+    } catch (err) {
+      console.error('Error loading models:', err);
+    }
+  };
+
+  const createExtractionSample = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+
+      const response = await fetch('/api/dojo/extraction-test/sample', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ sample_size: 10 })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setExtractionSample(data.sample);
+        console.log('Created extraction sample:', data);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Failed to create extraction sample');
+      }
+    } catch (err) {
+      console.error('Error creating extraction sample:', err);
+      setError('Failed to create extraction sample');
+    }
+  };
+
+  const runVisualAnalysis = async () => {
+    try {
+      setVisualAnalysisStatus('running');
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+
+      const deckIds = extractionSample.map(deck => deck.id);
+      
+      const response = await fetch('/api/dojo/extraction-test/run-visual-analysis', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          deck_ids: deckIds,
+          vision_model: selectedVisionModel,
+          analysis_prompt: visualAnalysisPrompt
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setVisualAnalysisStatus('completed');
+        console.log('Visual analysis batch started:', data);
+        // Refresh sample to update cache status
+        setTimeout(createExtractionSample, 2000);
+      } else {
+        setVisualAnalysisStatus('error');
+        const errorData = await response.json();
+        setError(errorData.detail || 'Failed to run visual analysis');
+      }
+    } catch (err) {
+      setVisualAnalysisStatus('error');
+      console.error('Error running visual analysis:', err);
+      setError('Failed to run visual analysis');
+    }
+  };
+
+  const runExtractionTest = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+
+      const deckIds = extractionSample.map(deck => deck.id);
+      const experimentName = `test_${Date.now()}`;
+      
+      const response = await fetch('/api/dojo/extraction-test/run-offering-extraction', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          experiment_name: experimentName,
+          deck_ids: deckIds,
+          text_model: selectedTextModel,
+          extraction_prompt: extractionPrompt,
+          use_cached_visual: true
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Extraction test completed:', data);
+        loadExperiments();
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Failed to run extraction test');
+      }
+    } catch (err) {
+      console.error('Error running extraction test:', err);
+      setError('Failed to run extraction test');
+    }
+  };
+
+  const loadExperiments = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+
+      const response = await fetch('/api/dojo/extraction-test/experiments', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setExperiments(data.experiments);
+      }
+    } catch (err) {
+      console.error('Error loading experiments:', err);
+    }
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setCurrentTab(newValue);
+    if (newValue === 1) { // Extraction Testing Lab tab
+      loadExperiments();
+    }
   };
 
   const handleDeleteFile = async (fileId) => {
@@ -596,69 +783,294 @@ const DojoManagement = () => {
         )}
       </Paper>
 
-      {/* Files Table */}
+      {/* Main Content - Tabs */}
       <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Training Files
-        </Typography>
+        <Tabs value={currentTab} onChange={handleTabChange}>
+          <Tab label="Training Files" />
+          <Tab label="Extraction Testing Lab" />
+        </Tabs>
         
-        {files.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
-            No training files uploaded yet
-          </Typography>
-        ) : (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Filename</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Startup Name</TableCell>
-                  <TableCell>Uploaded</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {files.map((file) => (
-                  <TableRow key={file.id}>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Description sx={{ mr: 1 }} />
-                        {file.filename}
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        icon={getStatusIcon(file.processing_status)}
-                        label={file.processing_status}
-                        color={getStatusColor(file.processing_status)}
+        {/* Tab Panel 0: Files Table */}
+        {currentTab === 0 && (
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Training Files
+            </Typography>
+        
+            {files.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                No training files uploaded yet
+              </Typography>
+            ) : (
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Filename</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Startup Name</TableCell>
+                      <TableCell>Uploaded</TableCell>
+                      <TableCell>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {files.map((file) => (
+                      <TableRow key={file.id}>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Description sx={{ mr: 1 }} />
+                            {file.filename}
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            icon={getStatusIcon(file.processing_status)}
+                            label={file.processing_status}
+                            color={getStatusColor(file.processing_status)}
+                            variant="outlined"
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {file.ai_extracted_startup_name || '-'}
+                        </TableCell>
+                        <TableCell>
+                          {file.created_at ? new Date(file.created_at).toLocaleDateString() : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <IconButton
+                            onClick={() => {
+                              setFileToDelete(file);
+                              setDeleteDialogOpen(true);
+                            }}
+                            color="error"
+                            size="small"
+                          >
+                            <Delete />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </Box>
+        )}
+        
+        {/* Tab Panel 1: Extraction Testing Lab */}
+        {currentTab === 1 && (
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Extraction Testing Lab
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Test and compare company offering extraction quality using different models and prompts
+            </Typography>
+            
+            {/* Step 1: Sample Selection */}
+            <Paper sx={{ p: 3, mb: 3, bgcolor: 'grey.50' }}>
+              <Typography variant="h6" gutterBottom>
+                Step 1: Create Sample
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                <Button 
+                  variant="outlined" 
+                  onClick={createExtractionSample}
+                  disabled={loading}
+                >
+                  Generate Random Sample (10 decks)
+                </Button>
+                <Typography variant="body2" color="text.secondary">
+                  {extractionSample.length > 0 ? `Sample created: ${extractionSample.length} decks` : 'No sample created yet'}
+                </Typography>
+              </Box>
+              
+              {extractionSample.length > 0 && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom>Sample Overview:</Typography>
+                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                    {extractionSample.map((deck, index) => (
+                      <Chip 
+                        key={deck.id}
+                        label={`${index + 1}. ${deck.filename}`}
+                        color={deck.has_visual_cache ? 'success' : 'default'}
                         variant="outlined"
                         size="small"
                       />
-                    </TableCell>
-                    <TableCell>
-                      {file.ai_extracted_startup_name || '-'}
-                    </TableCell>
-                    <TableCell>
-                      {file.created_at ? new Date(file.created_at).toLocaleDateString() : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <IconButton
-                        onClick={() => {
-                          setFileToDelete(file);
-                          setDeleteDialogOpen(true);
-                        }}
-                        color="error"
-                        size="small"
+                    ))}
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                    Green chips have cached visual analysis. Others need visual analysis first.
+                  </Typography>
+                </Box>
+              )}
+            </Paper>
+            
+            {/* Step 2: Visual Analysis */}
+            {extractionSample.length > 0 && (
+              <Paper sx={{ p: 3, mb: 3, bgcolor: 'grey.50' }}>
+                <Typography variant="h6" gutterBottom>
+                  Step 2: Visual Analysis Manager
+                </Typography>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <InputLabel>Vision Model</InputLabel>
+                      <Select
+                        value={selectedVisionModel}
+                        onChange={(e) => setSelectedVisionModel(e.target.value)}
+                        label="Vision Model"
                       >
-                        <Delete />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                        {availableModels.vision && availableModels.vision.map((model) => (
+                          <MenuItem key={model.model_name} value={model.model_name}>
+                            {model.model_name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={3}
+                      label="Visual Analysis Prompt"
+                      value={visualAnalysisPrompt}
+                      onChange={(e) => setVisualAnalysisPrompt(e.target.value)}
+                      placeholder="Analyze this pitch deck slide. Focus on identifying the company's core offering and value proposition..."
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <Button 
+                        variant="contained" 
+                        onClick={runVisualAnalysis}
+                        disabled={!selectedVisionModel || !visualAnalysisPrompt || visualAnalysisStatus === 'running'}
+                        startIcon={visualAnalysisStatus === 'running' ? <CircularProgress size={16} /> : <Assessment />}
+                      >
+                        {visualAnalysisStatus === 'running' ? 'Running Analysis...' : 'Run Visual Analysis'}
+                      </Button>
+                      
+                      {visualAnalysisStatus !== 'idle' && (
+                        <Alert severity={visualAnalysisStatus === 'error' ? 'error' : visualAnalysisStatus === 'completed' ? 'success' : 'info'}>
+                          {visualAnalysisStatus === 'running' && 'Processing visual analysis for sample decks...'}
+                          {visualAnalysisStatus === 'completed' && 'Visual analysis completed and cached!'}
+                          {visualAnalysisStatus === 'error' && 'Visual analysis failed. Check logs for details.'}
+                        </Alert>
+                      )}
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Paper>
+            )}
+            
+            {/* Step 3: Extraction Testing */}
+            {extractionSample.length > 0 && (
+              <Paper sx={{ p: 3, mb: 3, bgcolor: 'grey.50' }}>
+                <Typography variant="h6" gutterBottom>
+                  Step 3: Company Offering Extraction
+                </Typography>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <InputLabel>Text Model</InputLabel>
+                      <Select
+                        value={selectedTextModel}
+                        onChange={(e) => setSelectedTextModel(e.target.value)}
+                        label="Text Model"
+                      >
+                        {availableModels.text && availableModels.text.map((model) => (
+                          <MenuItem key={model.model_name} value={model.model_name}>
+                            {model.model_name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={4}
+                      label="Extraction Prompt"
+                      value={extractionPrompt}
+                      onChange={(e) => setExtractionPrompt(e.target.value)}
+                      placeholder="Based on the visual analysis, extract the company's main offering. Focus on what product or service they provide..."
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <Button 
+                        variant="contained" 
+                        color="secondary"
+                        onClick={runExtractionTest}
+                        disabled={!selectedTextModel || !extractionPrompt}
+                        startIcon={<DataUsage />}
+                      >
+                        Run Extraction Test
+                      </Button>
+                      
+                      <Alert severity="info">
+                        This will test company offering extraction on your sample using the selected model and prompt. Results will be saved for comparison.
+                      </Alert>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Paper>
+            )}
+            
+            {/* Step 4: Experiments Results */}
+            <Paper sx={{ p: 3, bgcolor: 'grey.50' }}>
+              <Typography variant="h6" gutterBottom>
+                Extraction Experiments History
+              </Typography>
+              
+              {experiments.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  No extraction experiments run yet. Complete the steps above to create your first experiment.
+                </Typography>
+              ) : (
+                <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Experiment Name</TableCell>
+                        <TableCell>Text Model</TableCell>
+                        <TableCell>Success Rate</TableCell>
+                        <TableCell>Created</TableCell>
+                        <TableCell>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {experiments.map((experiment) => (
+                        <TableRow key={experiment.id}>
+                          <TableCell>{experiment.experiment_name}</TableCell>
+                          <TableCell>
+                            <Chip label={experiment.text_model_used} size="small" />
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">
+                              {experiment.successful_extractions}/{experiment.total_decks}
+                              <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                                ({Math.round((experiment.successful_extractions / experiment.total_decks) * 100)}%)
+                              </Typography>
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(experiment.created_at).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <Button size="small" variant="outlined">
+                              View Details
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </Paper>
+          </Box>
         )}
       </Paper>
 
