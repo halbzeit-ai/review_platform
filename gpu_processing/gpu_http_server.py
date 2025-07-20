@@ -534,7 +534,7 @@ Company offering:"""
             
             # Request cached visual analysis data
             response = requests.post(
-                f"{production_server}/api/internal/get-cached-visual-analysis",
+                f"{production_server}/api/dojo/internal/get-cached-visual-analysis",
                 json={"deck_ids": deck_ids},
                 timeout=30
             )
