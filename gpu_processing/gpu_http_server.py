@@ -13,7 +13,7 @@ import json
 import asyncio
 from flask import Flask, request, jsonify
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, List
 from pathlib import Path
 
 # Import PDF processing components
