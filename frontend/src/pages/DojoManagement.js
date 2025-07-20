@@ -377,9 +377,8 @@ const DojoManagement = () => {
           setSelectedTextModel(modelOptions[0].model_name);
         }
         
-        // Set default prompts
-        setVisualAnalysisPrompt('Analyze this pitch deck slide. Focus on identifying the company\'s core offering, value proposition, and main business model. Describe what product or service they provide.');
-        setExtractionPrompt('Based on the visual analysis provided, extract the company\'s main offering in 1-2 clear sentences. Focus on what specific product or service they provide to customers.');
+        // Load actual prompts from backend
+        loadPipelinePrompts(token);
       } else {
         setGpuStatus('error');
         throw new Error('Failed to fetch models');
@@ -391,6 +390,39 @@ const DojoManagement = () => {
       setAvailableModels({ vision: [], text: [] });
     } finally {
       setModelsLoading(false);
+    }
+  };
+
+  const loadPipelinePrompts = async (token) => {
+    try {
+      const response = await fetch('/api/pipeline/prompts', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const prompts = data.prompts;
+        
+        // Set the actual prompts from the database
+        if (prompts.image_analysis) {
+          setVisualAnalysisPrompt(prompts.image_analysis);
+        }
+        if (prompts.offering_extraction) {
+          setExtractionPrompt(prompts.offering_extraction);
+        }
+        
+        console.log('Loaded pipeline prompts:', prompts);
+      } else {
+        console.error('Failed to load pipeline prompts');
+        // Fallback to empty prompts so user can enter their own
+        setVisualAnalysisPrompt('');
+        setExtractionPrompt('');
+      }
+    } catch (err) {
+      console.error('Error loading pipeline prompts:', err);
+      // Fallback to empty prompts so user can enter their own
+      setVisualAnalysisPrompt('');
+      setExtractionPrompt('');
     }
   };
 
@@ -1120,7 +1152,7 @@ const DojoManagement = () => {
                       label="Visual Analysis Prompt"
                       value={visualAnalysisPrompt}
                       onChange={(e) => setVisualAnalysisPrompt(e.target.value)}
-                      placeholder="Analyze this pitch deck slide. Focus on identifying the company's core offering and value proposition..."
+                      placeholder="Loading actual prompt from database..."
                     />
                   </Grid>
                   <Grid item xs={12} md={6}>
@@ -1189,7 +1221,7 @@ const DojoManagement = () => {
                       label="Extraction Prompt"
                       value={extractionPrompt}
                       onChange={(e) => setExtractionPrompt(e.target.value)}
-                      placeholder="Based on the visual analysis, extract the company's main offering. Focus on what product or service they provide..."
+                      placeholder="Loading actual prompt from database..."
                     />
                   </Grid>
                   <Grid item xs={12} md={6}>
