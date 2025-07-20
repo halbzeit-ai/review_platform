@@ -295,6 +295,12 @@ async def get_dojo_stats(
             PitchDeck.processing_status == 'failed'
         ).count()
         
+        # Debug: Log actual records to understand the issue
+        all_dojo_files = db.query(PitchDeck).filter(PitchDeck.data_source == "dojo").all()
+        logger.info(f"Debug dojo stats: Found {len(all_dojo_files)} dojo files")
+        for file in all_dojo_files:
+            logger.info(f"  File: {file.file_name} | Status: {file.processing_status} | ID: {file.id}")
+        
         return {
             "total_files": total_files,
             "processed_files": processed_files,
