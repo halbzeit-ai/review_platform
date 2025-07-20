@@ -686,14 +686,72 @@ async def get_extraction_experiments(
             "experiments": experiment_data,
             "total_experiments": len(experiment_data)
         }
+
+@router.get("/extraction-test/experiments/{experiment_id}")
+async def get_experiment_details(
+    experiment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get detailed results for a specific extraction experiment"""
+    try:
+        # Only GPs can view extraction experiment details
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=403,
+                detail="Only GPs can view extraction experiment details"
+            )
+        
+        experiment = db.execute(text(
+            "SELECT id, experiment_name, extraction_type, text_model_used, extraction_prompt, created_at, results_json, pitch_deck_ids FROM extraction_experiments WHERE id = :exp_id"
+        ), {"exp_id": experiment_id}).fetchone()
+        
+        if not experiment:
+            raise HTTPException(
+                status_code=404,
+                detail="Experiment not found"
+            )
+        
+        # Parse results JSON
+        results_data = json.loads(experiment[6]) if experiment[6] else {}
+        
+        # Get deck information for the experiment
+        deck_ids = experiment[7]  # pitch_deck_ids array
+        decks = db.query(PitchDeck).filter(PitchDeck.id.in_(deck_ids)).all()
+        deck_info = {deck.id: {"filename": deck.file_name, "company_name": deck.ai_extracted_startup_name} for deck in decks}
+        
+        # Enhance results with deck information
+        enhanced_results = []
+        for result in results_data.get("results", []):
+            deck_id = result.get("deck_id")
+            enhanced_result = {
+                **result,
+                "deck_info": deck_info.get(deck_id, {"filename": f"deck_{deck_id}", "company_name": None})
+            }
+            enhanced_results.append(enhanced_result)
+        
+        experiment_details = {
+            "id": experiment[0],
+            "experiment_name": experiment[1],
+            "extraction_type": experiment[2],
+            "text_model_used": experiment[3],
+            "extraction_prompt": experiment[4],
+            "created_at": experiment[5].isoformat(),
+            "total_decks": results_data.get("total_decks", 0),
+            "successful_extractions": results_data.get("successful_extractions", 0),
+            "results": enhanced_results,
+            "deck_ids": deck_ids
+        }
+        
+        return experiment_details
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting extraction experiments: {e}")
+        logger.error(f"Error getting experiment details for {experiment_id}: {e}")
         raise HTTPException(
             status_code=500,
-            detail="Failed to get extraction experiments"
+            detail="Failed to get experiment details"
         )
 
 # ==================== INTERNAL API FOR GPU COMMUNICATION ====================

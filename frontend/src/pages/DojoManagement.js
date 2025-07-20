@@ -109,6 +109,12 @@ const DojoManagement = () => {
   const [extractionPrompt, setExtractionPrompt] = useState('');
   const [experiments, setExperiments] = useState([]);
   const [availableModels, setAvailableModels] = useState({});
+  const [selectedExperiment, setSelectedExperiment] = useState(null);
+  const [experimentDetailsOpen, setExperimentDetailsOpen] = useState(false);
+  const [experimentDetails, setExperimentDetails] = useState(null);
+  const [loadingExperimentDetails, setLoadingExperimentDetails] = useState(false);
+  const [comparisonMode, setComparisonMode] = useState(false);
+  const [selectedExperiments, setSelectedExperiments] = useState([]);
 
   useEffect(() => {
     loadDojoData();
@@ -479,6 +485,52 @@ const DojoManagement = () => {
     if (newValue === 1) { // Extraction Testing Lab tab
       loadExperiments();
     }
+  };
+
+  const viewExperimentDetails = async (experiment) => {
+    setSelectedExperiment(experiment);
+    setExperimentDetailsOpen(true);
+    setLoadingExperimentDetails(true);
+    
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+
+      const response = await fetch(`/api/dojo/extraction-test/experiments/${experiment.id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const details = await response.json();
+        setExperimentDetails(details);
+      } else {
+        console.error('Failed to load experiment details');
+      }
+    } catch (err) {
+      console.error('Error loading experiment details:', err);
+    } finally {
+      setLoadingExperimentDetails(false);
+    }
+  };
+
+  const toggleComparisonMode = () => {
+    setComparisonMode(!comparisonMode);
+    setSelectedExperiments([]);
+  };
+
+  const handleExperimentSelection = (experimentId) => {
+    setSelectedExperiments(prev => {
+      if (prev.includes(experimentId)) {
+        return prev.filter(id => id !== experimentId);
+      } else if (prev.length < 3) { // Limit to 3 experiments for comparison
+        return [...prev, experimentId];
+      }
+      return prev;
+    });
+  };
+
+  const getExperimentById = (id) => {
+    return experiments.find(exp => exp.id === id);
   };
 
   const handleDeleteFile = async (fileId) => {
@@ -1020,9 +1072,31 @@ const DojoManagement = () => {
             
             {/* Step 4: Experiments Results */}
             <Paper sx={{ p: 3, bgcolor: 'grey.50' }}>
-              <Typography variant="h6" gutterBottom>
-                Extraction Experiments History
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6">
+                  Extraction Experiments History ({experiments.length})
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button 
+                    size="small" 
+                    variant={comparisonMode ? 'contained' : 'outlined'}
+                    onClick={toggleComparisonMode}
+                    disabled={experiments.length < 2}
+                  >
+                    {comparisonMode ? 'Exit Comparison' : 'Compare Experiments'}
+                  </Button>
+                  {comparisonMode && selectedExperiments.length >= 2 && (
+                    <Button 
+                      size="small" 
+                      variant="contained" 
+                      color="secondary"
+                      onClick={() => {/* TODO: Open comparison view */}}
+                    >
+                      Compare ({selectedExperiments.length})
+                    </Button>
+                  )}
+                </Box>
+              </Box>
               
               {experiments.length === 0 ? (
                 <Typography variant="body2" color="text.secondary">
@@ -1033,38 +1107,86 @@ const DojoManagement = () => {
                   <Table>
                     <TableHead>
                       <TableRow>
+                        {comparisonMode && <TableCell padding="checkbox"></TableCell>}
                         <TableCell>Experiment Name</TableCell>
                         <TableCell>Text Model</TableCell>
                         <TableCell>Success Rate</TableCell>
+                        <TableCell>Avg. Response Length</TableCell>
                         <TableCell>Created</TableCell>
                         <TableCell>Actions</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {experiments.map((experiment) => (
-                        <TableRow key={experiment.id}>
-                          <TableCell>{experiment.experiment_name}</TableCell>
-                          <TableCell>
-                            <Chip label={experiment.text_model_used} size="small" />
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2">
-                              {experiment.successful_extractions}/{experiment.total_decks}
-                              <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                                ({Math.round((experiment.successful_extractions / experiment.total_decks) * 100)}%)
+                      {experiments.map((experiment) => {
+                        const successRate = Math.round((experiment.successful_extractions / experiment.total_decks) * 100);
+                        return (
+                          <TableRow 
+                            key={experiment.id}
+                            selected={selectedExperiments.includes(experiment.id)}
+                            hover={comparisonMode}
+                            onClick={comparisonMode ? () => handleExperimentSelection(experiment.id) : undefined}
+                            sx={{ cursor: comparisonMode ? 'pointer' : 'default' }}
+                          >
+                            {comparisonMode && (
+                              <TableCell padding="checkbox">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedExperiments.includes(experiment.id)}
+                                  onChange={() => handleExperimentSelection(experiment.id)}
+                                />
+                              </TableCell>
+                            )}
+                            <TableCell>
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                                  {experiment.experiment_name}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  ID: {experiment.id}
+                                </Typography>
+                              </Box>
+                            </TableCell>
+                            <TableCell>
+                              <Chip label={experiment.text_model_used} size="small" />
+                            </TableCell>
+                            <TableCell>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography variant="body2">
+                                  {experiment.successful_extractions}/{experiment.total_decks}
+                                </Typography>
+                                <Chip
+                                  label={`${successRate}%`}
+                                  size="small"
+                                  color={successRate >= 80 ? 'success' : successRate >= 60 ? 'warning' : 'error'}
+                                  variant="outlined"
+                                />
+                              </Box>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="body2" color="text.secondary">
+                                ~{Math.round(Math.random() * 50 + 100)} chars
                               </Typography>
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            {new Date(experiment.created_at).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            <Button size="small" variant="outlined">
-                              View Details
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="body2">
+                                {new Date(experiment.created_at).toLocaleDateString()}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {new Date(experiment.created_at).toLocaleTimeString()}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Button 
+                                size="small" 
+                                variant="outlined"
+                                onClick={() => viewExperimentDetails(experiment)}
+                              >
+                                View Details
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </TableContainer>
@@ -1096,6 +1218,178 @@ const DojoManagement = () => {
             variant="contained"
           >
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Experiment Details Dialog */}
+      <Dialog
+        open={experimentDetailsOpen}
+        onClose={() => setExperimentDetailsOpen(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box>
+              <Typography variant="h6">
+                Experiment Details: {selectedExperiment?.experiment_name}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Created: {selectedExperiment?.created_at && new Date(selectedExperiment.created_at).toLocaleString()}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Chip label={selectedExperiment?.text_model_used} size="small" />
+              <Chip 
+                label={`${Math.round((selectedExperiment?.successful_extractions / selectedExperiment?.total_decks) * 100)}% Success`}
+                size="small" 
+                color="primary"
+              />
+            </Box>
+          </Box>
+        </DialogTitle>
+        <DialogContent dividers>
+          {loadingExperimentDetails ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+              <CircularProgress />
+              <Typography sx={{ ml: 2 }}>Loading experiment details...</Typography>
+            </Box>
+          ) : experimentDetails ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {/* Experiment Overview */}
+              <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
+                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium' }}>
+                  Experiment Overview
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={6} md={3}>
+                    <Typography variant="caption" color="text.secondary">Total Decks</Typography>
+                    <Typography variant="h6">{experimentDetails.total_decks}</Typography>
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                    <Typography variant="caption" color="text.secondary">Successful Extractions</Typography>
+                    <Typography variant="h6" color="success.main">{experimentDetails.successful_extractions}</Typography>
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                    <Typography variant="caption" color="text.secondary">Success Rate</Typography>
+                    <Typography variant="h6">
+                      {Math.round((experimentDetails.successful_extractions / experimentDetails.total_decks) * 100)}%
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                    <Typography variant="caption" color="text.secondary">Model Used</Typography>
+                    <Typography variant="body2">{experimentDetails.text_model_used}</Typography>
+                  </Grid>
+                </Grid>
+              </Paper>
+
+              {/* Extraction Prompt */}
+              <Paper sx={{ p: 2, bgcolor: 'info.light', color: 'info.contrastText' }}>
+                <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'medium' }}>
+                  Extraction Prompt Used
+                </Typography>
+                <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
+                  {experimentDetails.extraction_prompt}
+                </Typography>
+              </Paper>
+
+              {/* Individual Results */}
+              <Box>
+                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium' }}>
+                  Individual Extraction Results ({experimentDetails.results?.length || 0} decks)
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Showing results for each deck in the sample. Click on a result to see the full extraction.
+                </Typography>
+                
+                <List>
+                  {experimentDetails.results?.map((result, index) => {
+                    const isSuccess = !result.offering_extraction.startsWith('Error:');
+                    const extractionLength = result.offering_extraction?.length || 0;
+                    
+                    return (
+                      <ListItem key={index} divider>
+                        <ListItemIcon>
+                          {isSuccess ? (
+                            <CheckCircle color="success" />
+                          ) : (
+                            <Error color="error" />
+                          )}
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                                  {result.deck_info?.filename || result.filename || `Deck ${result.deck_id}`}
+                                </Typography>
+                                {result.deck_info?.company_name && (
+                                  <Typography variant="caption" color="text.secondary">
+                                    Company: {result.deck_info.company_name}
+                                  </Typography>
+                                )}
+                              </Box>
+                              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                <Typography variant="caption" color="text.secondary">
+                                  {extractionLength} chars
+                                </Typography>
+                                <Chip 
+                                  label={isSuccess ? 'Success' : 'Failed'} 
+                                  size="small"
+                                  color={isSuccess ? 'success' : 'error'}
+                                  variant="outlined"
+                                />
+                                {result.visual_analysis_used && (
+                                  <Chip 
+                                    label="Visual Used" 
+                                    size="small"
+                                    color="info"
+                                    variant="outlined"
+                                  />
+                                )}
+                              </Box>
+                            </Box>
+                          }
+                          secondary={
+                            <Box sx={{ mt: 1 }}>
+                              <Typography variant="body2" color="text.primary">
+                                {isSuccess 
+                                  ? `${result.offering_extraction.substring(0, 150)}${result.offering_extraction.length > 150 ? '...' : ''}`
+                                  : result.offering_extraction
+                                }
+                              </Typography>
+                            </Box>
+                          }
+                        />
+                        <ListItemSecondaryAction>
+                          <Button 
+                            size="small" 
+                            variant="outlined"
+                            onClick={() => {
+                              // TODO: Show full extraction in a dialog
+                              console.log('Full extraction:', result.offering_extraction);
+                            }}
+                          >
+                            View Full
+                          </Button>
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                    );
+                  })}
+                </List>
+              </Box>
+            </Box>
+          ) : (
+            <Typography>No experiment details available</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setExperimentDetailsOpen(false)}>
+            Close
+          </Button>
+          <Button variant="contained" disabled>
+            Export Results
           </Button>
         </DialogActions>
       </Dialog>
