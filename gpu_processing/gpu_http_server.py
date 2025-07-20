@@ -458,12 +458,14 @@ class GPUHTTPServer:
                             logger.warning(f"No visual analysis available for deck {deck_id}")
                         
                         # Prepare full extraction prompt with visual context
-                        full_extraction_prompt = f"""{extraction_prompt}
+                        full_extraction_prompt = f"""Based ONLY on the pitch deck visual analysis provided below, {extraction_prompt.lower()}
 
-Visual Analysis Context:
+PITCH DECK VISUAL ANALYSIS:
 {visual_context}
 
-Please extract the company offering based on the above information."""
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction".
+
+Company offering:"""
                         
                         # Use ollama to run text extraction
                         import ollama
