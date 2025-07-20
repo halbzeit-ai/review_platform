@@ -87,6 +87,7 @@ const DojoManagement = () => {
   const [uploadSpeed, setUploadSpeed] = useState(0);
   const [uploadStartTime, setUploadStartTime] = useState(null);
   const [bytesUploaded, setBytesUploaded] = useState(0);
+  const [currentXhr, setCurrentXhr] = useState(null);
 
   useEffect(() => {
     loadDojoData();
@@ -132,6 +133,22 @@ const DojoManagement = () => {
     }
   }, [navigate]);
 
+  const cancelUpload = () => {
+    if (currentXhr) {
+      currentXhr.abort();
+      setCurrentXhr(null);
+      setUploading(false);
+      setUploadProgress(0);
+      setSelectedFile(null);
+      setUploadSuccess(false);
+      setProcessingStatus('');
+      setUploadSpeed(0);
+      setUploadStartTime(null);
+      setBytesUploaded(0);
+      setError('Upload cancelled');
+    }
+  };
+
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -164,6 +181,7 @@ const DojoManagement = () => {
 
       // Create XMLHttpRequest to track upload progress
       const xhr = new XMLHttpRequest();
+      setCurrentXhr(xhr);
       
       // Track upload progress
       xhr.upload.addEventListener('progress', (event) => {
@@ -202,6 +220,7 @@ const DojoManagement = () => {
               setUploadSpeed(0);
               setUploadStartTime(null);
               setBytesUploaded(0);
+              setCurrentXhr(null);
             }, 2000);
           } catch (parseError) {
             throw new Error('Invalid response from server');
@@ -227,6 +246,7 @@ const DojoManagement = () => {
         setUploadSpeed(0);
         setUploadStartTime(null);
         setBytesUploaded(0);
+        setCurrentXhr(null);
       });
 
       // Handle timeout
