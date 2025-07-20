@@ -837,6 +837,58 @@ async def get_experiment_details(
 
 # ==================== INTERNAL API FOR GPU COMMUNICATION ====================
 
+@router.post("/internal/cache-visual-analysis")
+async def cache_visual_analysis_from_gpu(
+    request: dict,
+    db: Session = Depends(get_db)
+):
+    """Internal endpoint for GPU to cache visual analysis results immediately"""
+    try:
+        pitch_deck_id = request.get("pitch_deck_id")
+        analysis_result_json = request.get("analysis_result_json")
+        vision_model_used = request.get("vision_model_used")
+        prompt_used = request.get("prompt_used")
+        
+        if not pitch_deck_id:
+            return {
+                "success": False,
+                "error": "pitch_deck_id is required"
+            }
+        
+        if not analysis_result_json:
+            return {
+                "success": False,
+                "error": "analysis_result_json is required"
+            }
+        
+        logger.info(f"GPU caching visual analysis for deck {pitch_deck_id}")
+        
+        # Cache the visual analysis result
+        db.execute(text(
+            "INSERT INTO visual_analysis_cache (pitch_deck_id, analysis_result_json, vision_model_used, prompt_used) VALUES (:deck_id, :result, :model, :prompt) ON CONFLICT (pitch_deck_id, vision_model_used, prompt_used) DO UPDATE SET analysis_result_json = :result, created_at = CURRENT_TIMESTAMP"
+        ), {
+            "deck_id": pitch_deck_id,
+            "result": analysis_result_json,
+            "model": vision_model_used,
+            "prompt": prompt_used
+        })
+        
+        db.commit()
+        
+        logger.info(f"Successfully cached visual analysis for deck {pitch_deck_id}")
+        
+        return {
+            "success": True,
+            "message": f"Cached visual analysis for deck {pitch_deck_id}"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error caching visual analysis from GPU: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
 @router.post("/internal/get-cached-visual-analysis")
 async def get_cached_visual_analysis_for_gpu(
     request: dict,

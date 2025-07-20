@@ -359,6 +359,9 @@ class GPUHTTPServer:
                         batch_results[str(deck_id)] = visual_results
                         processed_decks.append(deck_id)
                         
+                        # Cache result immediately to backend
+                        self._cache_visual_analysis_result(deck_id, visual_results, vision_model, analysis_prompt)
+                        
                         logger.info(f"Completed visual analysis for deck {deck_id}")
                         
                     except Exception as e:
@@ -544,6 +547,38 @@ Please extract the company offering based on the above information."""
         except Exception as e:
             logger.error(f"Error getting cached visual analysis: {e}")
             return {}
+    
+    def _cache_visual_analysis_result(self, deck_id: int, visual_results: Dict, vision_model: str, analysis_prompt: str):
+        """Cache visual analysis result immediately to backend"""
+        try:
+            import requests
+            import json
+            
+            # Get the production server URL from environment or use default
+            production_server = os.getenv("PRODUCTION_SERVER_URL", "http://65.108.32.168")
+            
+            # Prepare the cache data
+            cache_data = {
+                "pitch_deck_id": deck_id,
+                "analysis_result_json": json.dumps(visual_results),
+                "vision_model_used": vision_model,
+                "prompt_used": analysis_prompt
+            }
+            
+            # Make HTTP request to cache visual analysis
+            response = requests.post(
+                f"{production_server}/api/dojo/internal/cache-visual-analysis",
+                json=cache_data,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                logger.info(f"Cached visual analysis via HTTP: deck {deck_id}")
+            else:
+                logger.error(f"Failed to cache visual analysis via HTTP: {response.status_code} - {response.text}")
+            
+        except Exception as e:
+            logger.error(f"Error caching visual analysis via HTTP for deck {deck_id}: {e}")
     
     def _update_database_with_results(self, pitch_deck_id: int, results_filename: str):
         """Update the database via HTTP request to the production server"""
