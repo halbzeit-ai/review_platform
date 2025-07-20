@@ -123,6 +123,8 @@ const DojoManagement = () => {
   const [loadingExperimentDetails, setLoadingExperimentDetails] = useState(false);
   const [comparisonMode, setComparisonMode] = useState(false);
   const [selectedExperiments, setSelectedExperiments] = useState([]);
+  const [fullExtractionDialogOpen, setFullExtractionDialogOpen] = useState(false);
+  const [selectedExtractionResult, setSelectedExtractionResult] = useState(null);
 
   useEffect(() => {
     loadDojoData();
@@ -1650,8 +1652,19 @@ const DojoManagement = () => {
                     const extractionLength = result.offering_extraction?.length || 0;
                     
                     return (
-                      <ListItem key={index} divider>
-                        <ListItemIcon>
+                      <ListItem 
+                        key={index} 
+                        divider
+                        sx={{ 
+                          py: 2,
+                          '& .MuiListItemSecondaryAction-root': {
+                            right: 16,
+                            top: '50%',
+                            transform: 'translateY(-50%)'
+                          }
+                        }}
+                      >
+                        <ListItemIcon sx={{ minWidth: 36 }}>
                           {isSuccess ? (
                             <CheckCircle color="success" />
                           ) : (
@@ -1659,10 +1672,11 @@ const DojoManagement = () => {
                           )}
                         </ListItemIcon>
                         <ListItemText
+                          sx={{ pr: 12 }}
                           primary={
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <Box>
-                                <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                              <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 'medium', mb: 0.5 }}>
                                   {result.deck_info?.filename || result.filename || `Deck ${result.deck_id}`}
                                 </Typography>
                                 {result.deck_info?.company_name && (
@@ -1671,7 +1685,7 @@ const DojoManagement = () => {
                                   </Typography>
                                 )}
                               </Box>
-                              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexShrink: 0 }}>
                                 <Typography variant="caption" color="text.secondary">
                                   {extractionLength} chars
                                 </Typography>
@@ -1693,12 +1707,19 @@ const DojoManagement = () => {
                             </Box>
                           }
                           secondary={
-                            <Box sx={{ mt: 1 }}>
-                              <Typography variant="body2" color="text.primary">
-                                {isSuccess 
-                                  ? `${result.offering_extraction.substring(0, 150)}${result.offering_extraction.length > 150 ? '...' : ''}`
-                                  : result.offering_extraction
-                                }
+                            <Box>
+                              <Typography 
+                                variant="body2" 
+                                color="text.primary"
+                                sx={{ 
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 3,
+                                  WebkitBoxOrient: 'vertical',
+                                  overflow: 'hidden',
+                                  lineHeight: 1.4
+                                }}
+                              >
+                                {result.offering_extraction}
                               </Typography>
                             </Box>
                           }
@@ -1708,8 +1729,8 @@ const DojoManagement = () => {
                             size="small" 
                             variant="outlined"
                             onClick={() => {
-                              // TODO: Show full extraction in a dialog
-                              console.log('Full extraction:', result.offering_extraction);
+                              setSelectedExtractionResult(result);
+                              setFullExtractionDialogOpen(true);
                             }}
                           >
                             View Full
@@ -1731,6 +1752,84 @@ const DojoManagement = () => {
           </Button>
           <Button variant="contained" disabled>
             Export Results
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Full Extraction Dialog */}
+      <Dialog
+        open={fullExtractionDialogOpen}
+        onClose={() => setFullExtractionDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { maxHeight: '80vh' }
+        }}
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box>
+              <Typography variant="h6">
+                Full Extraction Result
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {selectedExtractionResult?.deck_info?.filename || selectedExtractionResult?.filename || `Deck ${selectedExtractionResult?.deck_id}`}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              <Typography variant="caption" color="text.secondary">
+                {selectedExtractionResult?.offering_extraction?.length || 0} characters
+              </Typography>
+              {selectedExtractionResult?.visual_analysis_used && (
+                <Chip 
+                  label="Visual Used" 
+                  size="small"
+                  color="info"
+                  variant="outlined"
+                />
+              )}
+              <Chip 
+                label={selectedExtractionResult?.offering_extraction?.startsWith('Error:') ? 'Failed' : 'Success'} 
+                size="small"
+                color={selectedExtractionResult?.offering_extraction?.startsWith('Error:') ? 'error' : 'success'}
+                variant="outlined"
+              />
+            </Box>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 1 }}>
+            <Typography 
+              variant="body1" 
+              color="text.primary"
+              sx={{ 
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                lineHeight: 1.6,
+                fontFamily: 'monospace',
+                p: 2,
+                bgcolor: 'grey.50',
+                borderRadius: 1,
+                border: 1,
+                borderColor: 'grey.200'
+              }}
+            >
+              {selectedExtractionResult?.offering_extraction || 'No extraction result available'}
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => {
+              if (selectedExtractionResult?.offering_extraction) {
+                navigator.clipboard.writeText(selectedExtractionResult.offering_extraction);
+              }
+            }}
+          >
+            Copy Text
+          </Button>
+          <Button onClick={() => setFullExtractionDialogOpen(false)} variant="contained">
+            Close
           </Button>
         </DialogActions>
       </Dialog>
