@@ -686,6 +686,15 @@ async def get_extraction_experiments(
             "experiments": experiment_data,
             "total_experiments": len(experiment_data)
         }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting extraction experiments: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to get extraction experiments"
+        )
 
 @router.get("/extraction-test/experiments/{experiment_id}")
 async def get_experiment_details(
