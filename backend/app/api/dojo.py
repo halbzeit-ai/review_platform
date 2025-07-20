@@ -280,21 +280,26 @@ async def get_dojo_stats(
                 detail="Only GPs can view dojo statistics"
             )
         
-        # Get stats from database
-        from sqlalchemy import func
-        
-        stats = db.query(
-            func.count(PitchDeck.id).label('total_files'),
-            func.sum(func.case((PitchDeck.processing_status == 'completed', 1), else_=0)).label('processed_files'),
-            func.sum(func.case((PitchDeck.processing_status == 'pending', 1), else_=0)).label('pending_files'),
-            func.sum(func.case((PitchDeck.processing_status == 'failed', 1), else_=0)).label('failed_files')
-        ).filter(PitchDeck.data_source == "dojo").first()
+        # Get counts using separate queries (SQLAlchemy compatibility)
+        total_files = db.query(PitchDeck).filter(PitchDeck.data_source == "dojo").count()
+        processed_files = db.query(PitchDeck).filter(
+            PitchDeck.data_source == "dojo",
+            PitchDeck.processing_status == 'completed'
+        ).count()
+        pending_files = db.query(PitchDeck).filter(
+            PitchDeck.data_source == "dojo",
+            PitchDeck.processing_status == 'pending'
+        ).count()
+        failed_files = db.query(PitchDeck).filter(
+            PitchDeck.data_source == "dojo",
+            PitchDeck.processing_status == 'failed'
+        ).count()
         
         return {
-            "total_files": stats.total_files or 0,
-            "processed_files": stats.processed_files or 0,
-            "pending_files": stats.pending_files or 0,
-            "failed_files": stats.failed_files or 0,
+            "total_files": total_files,
+            "processed_files": processed_files,
+            "pending_files": pending_files,
+            "failed_files": failed_files,
             "directory": DOJO_PATH
         }
         
