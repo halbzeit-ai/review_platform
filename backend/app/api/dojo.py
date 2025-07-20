@@ -285,9 +285,9 @@ async def get_dojo_stats(
         
         stats = db.query(
             func.count(PitchDeck.id).label('total_files'),
-            func.sum(func.case([(PitchDeck.processing_status == 'completed', 1)], else_=0)).label('processed_files'),
-            func.sum(func.case([(PitchDeck.processing_status == 'pending', 1)], else_=0)).label('pending_files'),
-            func.sum(func.case([(PitchDeck.processing_status == 'failed', 1)], else_=0)).label('failed_files')
+            func.sum(func.case((PitchDeck.processing_status == 'completed', 1), else_=0)).label('processed_files'),
+            func.sum(func.case((PitchDeck.processing_status == 'pending', 1), else_=0)).label('pending_files'),
+            func.sum(func.case((PitchDeck.processing_status == 'failed', 1), else_=0)).label('failed_files')
         ).filter(PitchDeck.data_source == "dojo").first()
         
         return {
