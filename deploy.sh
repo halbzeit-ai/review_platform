@@ -151,6 +151,84 @@ fi
 
 echo "✅ Backend setup completed"
 
+# Production server configuration
+if [ "$PRODUCTION" = true ]; then
+    echo ""
+    echo "⚙️  Configuring production server..."
+    
+    # Configure nginx with large file upload support
+    if command_exists nginx; then
+        echo "🌐 Configuring nginx for large file uploads..."
+        cat > /etc/nginx/sites-available/review-platform << 'NGINX_EOF'
+server {
+    listen 80;
+    server_name _;
+    
+    # Frontend
+    location / {
+        root /opt/review-platform/frontend/build;
+        index index.html index.htm;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # API with large file upload support
+    location /api {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Large file upload timeouts for dojo ZIP files (up to 1GB)
+        proxy_connect_timeout 300s;            # 5 minutes connection timeout
+        proxy_send_timeout 1800s;              # 30 minutes send timeout
+        proxy_read_timeout 1800s;              # 30 minutes read timeout
+        client_max_body_size 1G;               # Allow 1GB file uploads
+        client_body_timeout 1800s;             # 30 minutes for request body
+    }
+}
+NGINX_EOF
+        
+        # Enable site
+        ln -sf /etc/nginx/sites-available/review-platform /etc/nginx/sites-enabled/ 2>/dev/null || true
+        rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
+        
+        # Test and reload nginx
+        if nginx -t 2>/dev/null; then
+            systemctl reload nginx 2>/dev/null || true
+            echo "✅ Nginx configured with large file upload support"
+        else
+            echo "⚠️  Nginx configuration test failed"
+        fi
+    fi
+    
+    # Configure systemd service with timeouts
+    echo "🔧 Configuring systemd service with upload timeouts..."
+    cat > /etc/systemd/system/review-platform.service << 'SYSTEMD_EOF'
+[Unit]
+Description=Review Platform API
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/review-platform/backend
+Environment=PATH=/opt/review-platform/venv/bin
+ExecStart=/opt/review-platform/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --timeout-keep-alive 300 --timeout-graceful-shutdown 300
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+SYSTEMD_EOF
+    
+    # Reload systemd and restart service
+    systemctl daemon-reload
+    systemctl restart review-platform 2>/dev/null || systemctl start review-platform
+    systemctl enable review-platform
+    
+    echo "✅ Production server configuration completed"
+fi
+
 # Database setup
 echo ""
 echo "🗄️  Database setup..."
