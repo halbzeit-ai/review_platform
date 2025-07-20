@@ -46,7 +46,9 @@ import {
   Pending,
   Storage,
   DataUsage,
-  Refresh
+  Refresh,
+  Stop,
+  Clear
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -108,6 +110,8 @@ const DojoManagement = () => {
   const [visualAnalysisPrompt, setVisualAnalysisPrompt] = useState('');
   const [selectedTextModel, setSelectedTextModel] = useState('');
   const [extractionPrompt, setExtractionPrompt] = useState('');
+  const [currentAnalysisController, setCurrentAnalysisController] = useState(null);
+  const [clearingCache, setClearingCache] = useState(false);
   const [experiments, setExperiments] = useState([]);
   const [availableModels, setAvailableModels] = useState({});
   const [modelsLoading, setModelsLoading] = useState(false);
@@ -460,6 +464,10 @@ const DojoManagement = () => {
       const user = JSON.parse(localStorage.getItem('user'));
       const token = user?.token;
 
+      // Create AbortController for cancellation
+      const controller = new AbortController();
+      setCurrentAnalysisController(controller);
+
       const deckIds = extractionSample.map(deck => deck.id);
       
       const response = await fetch('/api/dojo/extraction-test/run-visual-analysis', {
@@ -472,7 +480,8 @@ const DojoManagement = () => {
           deck_ids: deckIds,
           vision_model: selectedVisionModel,
           analysis_prompt: visualAnalysisPrompt
-        })
+        }),
+        signal: controller.signal
       });
 
       if (response.ok) {
@@ -487,9 +496,63 @@ const DojoManagement = () => {
         setError(errorData.detail || 'Failed to run visual analysis');
       }
     } catch (err) {
-      setVisualAnalysisStatus('error');
-      console.error('Error running visual analysis:', err);
-      setError('Failed to run visual analysis');
+      if (err.name === 'AbortError') {
+        setVisualAnalysisStatus('cancelled');
+        console.log('Visual analysis cancelled by user');
+        setError('Visual analysis cancelled');
+      } else {
+        setVisualAnalysisStatus('error');
+        console.error('Error running visual analysis:', err);
+        setError('Failed to run visual analysis');
+      }
+    } finally {
+      setCurrentAnalysisController(null);
+    }
+  };
+
+  const stopVisualAnalysis = () => {
+    if (currentAnalysisController) {
+      currentAnalysisController.abort();
+      setCurrentAnalysisController(null);
+      setVisualAnalysisStatus('cancelled');
+      console.log('Visual analysis stopped by user');
+    }
+  };
+
+  const clearVisualAnalysisCache = async () => {
+    try {
+      setClearingCache(true);
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+
+      const deckIds = extractionSample.map(deck => deck.id);
+      
+      const response = await fetch('/api/dojo/extraction-test/clear-cache', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          deck_ids: deckIds
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Cache cleared:', data);
+        // Refresh sample to update cache status
+        createExtractionSample();
+        setError(null);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Failed to clear cache');
+      }
+    } catch (err) {
+      console.error('Error clearing cache:', err);
+      setError('Failed to clear cache');
+    } finally {
+      setClearingCache(false);
     }
   };
 
@@ -1165,11 +1228,39 @@ const DojoManagement = () => {
                       >
                         {visualAnalysisStatus === 'running' ? 'Running Analysis...' : 'Run Visual Analysis'}
                       </Button>
+
+                      {/* Stop Analysis Button */}
+                      {visualAnalysisStatus === 'running' && (
+                        <Button 
+                          variant="outlined" 
+                          color="error"
+                          onClick={stopVisualAnalysis}
+                          startIcon={<Stop />}
+                        >
+                          Stop Analysis
+                        </Button>
+                      )}
+
+                      {/* Clear Cache Button */}
+                      <Button 
+                        variant="outlined" 
+                        color="warning"
+                        onClick={clearVisualAnalysisCache}
+                        disabled={extractionSample.length === 0 || clearingCache}
+                        startIcon={clearingCache ? <CircularProgress size={16} /> : <Clear />}
+                      >
+                        {clearingCache ? 'Clearing Cache...' : 'Clear Visual Cache'}
+                      </Button>
                       
                       {visualAnalysisStatus !== 'idle' && (
-                        <Alert severity={visualAnalysisStatus === 'error' ? 'error' : visualAnalysisStatus === 'completed' ? 'success' : 'info'}>
+                        <Alert severity={
+                          visualAnalysisStatus === 'error' ? 'error' : 
+                          visualAnalysisStatus === 'completed' ? 'success' : 
+                          visualAnalysisStatus === 'cancelled' ? 'warning' : 'info'
+                        }>
                           {visualAnalysisStatus === 'running' && 'Processing visual analysis for sample decks...'}
                           {visualAnalysisStatus === 'completed' && 'Visual analysis completed and cached!'}
+                          {visualAnalysisStatus === 'cancelled' && 'Visual analysis cancelled by user.'}
                           {visualAnalysisStatus === 'error' && 'Visual analysis failed. Check logs for details.'}
                         </Alert>
                       )}

@@ -537,6 +537,69 @@ async def run_visual_analysis_batch(
             detail="Failed to run visual analysis batch"
         )
 
+class ClearCacheRequest(BaseModel):
+    deck_ids: List[int]
+
+@router.post("/extraction-test/clear-cache")
+async def clear_visual_analysis_cache(
+    request: ClearCacheRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Clear visual analysis cache for specified decks"""
+    try:
+        # Only GPs can clear cache
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=403,
+                detail="Only GPs can clear visual analysis cache"
+            )
+        
+        if not request.deck_ids:
+            raise HTTPException(
+                status_code=400,
+                detail="deck_ids is required"
+            )
+        
+        # Validate deck IDs exist and are dojo files
+        decks = db.query(PitchDeck).filter(
+            PitchDeck.id.in_(request.deck_ids),
+            PitchDeck.data_source == "dojo"
+        ).all()
+        
+        if len(decks) != len(request.deck_ids):
+            raise HTTPException(
+                status_code=400,
+                detail="Some deck IDs not found or not dojo files"
+            )
+        
+        # Clear cache entries for these decks
+        deleted_count = 0
+        for deck_id in request.deck_ids:
+            result = db.execute(text(
+                "DELETE FROM visual_analysis_cache WHERE pitch_deck_id = :deck_id"
+            ), {"deck_id": deck_id})
+            deleted_count += result.rowcount
+        
+        db.commit()
+        
+        logger.info(f"Cleared visual analysis cache for {len(request.deck_ids)} decks, deleted {deleted_count} cache entries")
+        
+        return {
+            "message": f"Cleared visual analysis cache for {len(request.deck_ids)} decks",
+            "cleared_decks": len(request.deck_ids),
+            "deleted_cache_entries": deleted_count
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error clearing visual analysis cache: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to clear visual analysis cache"
+        )
+
 @router.post("/extraction-test/run-offering-extraction")
 async def test_offering_extraction(
     request: ExtractionTestRequest,
