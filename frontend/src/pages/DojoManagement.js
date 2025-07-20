@@ -570,13 +570,13 @@ const DojoManagement = () => {
                 </ListItem>
                 <ListItem sx={{ py: 0.5 }}>
                   <ListItemText 
-                    primary="• Files will be processed automatically after upload" 
+                    primary="• Files are stored after upload and require manual processing" 
                     primaryTypographyProps={{ variant: 'caption' }}
                   />
                 </ListItem>
                 <ListItem sx={{ py: 0.5 }}>
                   <ListItemText 
-                    primary="• Processing time depends on number of files" 
+                    primary="• Processing can be triggered multiple times with different parameters" 
                     primaryTypographyProps={{ variant: 'caption' }}
                   />
                 </ListItem>
