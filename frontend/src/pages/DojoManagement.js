@@ -1495,7 +1495,17 @@ const DojoManagement = () => {
                             </TableCell>
                             <TableCell>
                               <Typography variant="body2" color="text.secondary">
-                                ~{Math.round(Math.random() * 50 + 100)} chars
+                                ~{(() => {
+                                  if (!experiment.results || experiment.results.length === 0) return 0;
+                                  const successfulExtractions = experiment.results.filter(
+                                    result => result.offering_extraction && !result.offering_extraction.startsWith('Error:')
+                                  );
+                                  if (successfulExtractions.length === 0) return 0;
+                                  const totalLength = successfulExtractions.reduce(
+                                    (sum, result) => sum + (result.offering_extraction?.length || 0), 0
+                                  );
+                                  return Math.round(totalLength / successfulExtractions.length);
+                                })()} chars
                               </Typography>
                             </TableCell>
                             <TableCell>
