@@ -206,7 +206,7 @@ const DojoManagement = () => {
           try {
             const result = JSON.parse(xhr.responseText);
             setUploadProgress(100);
-            setProcessingStatus('Upload completed successfully! Processing files...');
+            setProcessingStatus('Upload completed successfully! Ready for manual processing.');
             setUploadSuccess(true);
             
             // Show success message briefly, then reload data

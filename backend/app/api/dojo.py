@@ -140,21 +140,17 @@ async def upload_dojo_zip(
         with open(temp_file_path, 'wb') as temp_file:
             temp_file.write(content)
         
-        # Process in background
-        background_tasks.add_task(
-            process_dojo_zip,
-            temp_file_path,
-            current_user.id,
-            db
-        )
+        # Store zip file for manual processing later
+        # Note: Processing is now manual, not automatic
         
         logger.info(f"Dojo zip upload initiated by {current_user.email}: {file.filename} ({file_size} bytes)")
         
         return {
-            "message": "Dojo training data upload initiated",
+            "message": "Dojo training data uploaded successfully",
             "filename": file.filename,
             "size": file_size,
-            "status": "processing"
+            "status": "uploaded",
+            "zip_path": temp_file_path
         }
         
     except HTTPException:
