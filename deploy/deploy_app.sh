@@ -110,10 +110,12 @@ server {
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
         
-        # Increase timeouts for file uploads
-        proxy_connect_timeout 60s;
-        proxy_send_timeout 60s;
-        proxy_read_timeout 60s;
+        # Increase timeouts for large file uploads (dojo ZIP files up to 1GB)
+        proxy_connect_timeout 300s;            # 5 minutes connection timeout
+        proxy_send_timeout 1800s;              # 30 minutes send timeout
+        proxy_read_timeout 1800s;              # 30 minutes read timeout
+        client_max_body_size 1G;               # Allow 1GB file uploads
+        client_body_timeout 1800s;             # 30 minutes for request body
     }
 
     # Static files
@@ -201,7 +203,7 @@ Type=simple
 User=root
 WorkingDirectory=/opt/review-platform/backend
 Environment=PATH=/opt/review-platform/venv/bin
-ExecStart=/opt/review-platform/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+ExecStart=/opt/review-platform/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --timeout-keep-alive 300 --timeout-graceful-shutdown 300
 Restart=always
 
 [Install]
