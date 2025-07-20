@@ -345,7 +345,8 @@ class GPUHTTPServer:
                         analyzer.image_analysis_prompt = analysis_prompt
                         
                         # Full file path for processing
-                        full_pdf_path = str(config.mount_path / file_path)
+                        from pathlib import Path
+                        full_pdf_path = str(Path(config.mount_path) / file_path)
                         
                         # Run visual analysis only
                         analyzer._analyze_visual_content(full_pdf_path, company_id="dojo")
