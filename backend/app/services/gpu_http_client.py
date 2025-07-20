@@ -294,6 +294,164 @@ class GPUHTTPClient:
                 "error": str(e)
             }
     
+    async def run_visual_analysis_for_extraction_testing(self, deck_ids: List[int], vision_model: str, analysis_prompt: str, file_paths: List[str]) -> Dict[str, Any]:
+        """
+        Run visual analysis for extraction testing on multiple decks
+        
+        Args:
+            deck_ids: List of pitch deck IDs
+            vision_model: Vision model to use for analysis
+            analysis_prompt: Custom prompt for visual analysis
+            file_paths: List of PDF file paths relative to shared filesystem
+            
+        Returns:
+            Batch processing results
+        """
+        try:
+            if not self.gpu_host:
+                logger.error("GPU_INSTANCE_HOST not configured")
+                return {
+                    "success": False,
+                    "error": "GPU_INSTANCE_HOST not configured"
+                }
+            
+            logger.info(f"Requesting visual analysis batch for {len(deck_ids)} decks using {vision_model}")
+            
+            payload = {
+                "deck_ids": deck_ids,
+                "vision_model": vision_model,
+                "analysis_prompt": analysis_prompt,
+                "file_paths": file_paths,
+                "extraction_testing": True
+            }
+            
+            async with httpx.AsyncClient(timeout=3600.0) as client:  # 1 hour timeout for batch processing
+                response = await client.post(
+                    f"{self.base_url}/run-visual-analysis-batch",
+                    json=payload,
+                    headers={'Content-Type': 'application/json'}
+                )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    logger.info(f"Successfully processed visual analysis batch")
+                    return {
+                        "success": True,
+                        "processed_decks": data.get("processed_decks", []),
+                        "results": data.get("results", {}),
+                        "message": data.get("message", "Visual analysis batch completed")
+                    }
+                else:
+                    logger.error(f"GPU visual analysis batch failed: {data.get('error')}")
+                    return {
+                        "success": False,
+                        "error": data.get("error", "Unknown GPU processing error")
+                    }
+            else:
+                logger.error(f"HTTP error {response.status_code}: {response.text}")
+                return {
+                    "success": False,
+                    "error": f"HTTP {response.status_code}: {response.text}"
+                }
+                
+        except httpx.TimeoutException:
+            logger.error(f"Timeout processing visual analysis batch")
+            return {
+                "success": False,
+                "error": "Processing timeout (1 hour exceeded)"
+            }
+        except httpx.ConnectError:
+            logger.error("Connection error communicating with GPU instance")
+            return {
+                "success": False,
+                "error": "Connection error communicating with GPU instance"
+            }
+        except Exception as e:
+            logger.error(f"Error processing visual analysis batch: {e}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
+    
+    async def run_offering_extraction(self, deck_ids: List[int], text_model: str, extraction_prompt: str, use_cached_visual: bool = True) -> Dict[str, Any]:
+        """
+        Run company offering extraction for multiple decks using text model
+        
+        Args:
+            deck_ids: List of pitch deck IDs  
+            text_model: Text model to use for extraction
+            extraction_prompt: Custom prompt for extraction
+            use_cached_visual: Whether to use cached visual analysis
+            
+        Returns:
+            Extraction results for all decks
+        """
+        try:
+            if not self.gpu_host:
+                logger.error("GPU_INSTANCE_HOST not configured")
+                return {
+                    "success": False,
+                    "error": "GPU_INSTANCE_HOST not configured"
+                }
+            
+            logger.info(f"Requesting offering extraction for {len(deck_ids)} decks using {text_model}")
+            
+            payload = {
+                "deck_ids": deck_ids,
+                "text_model": text_model,
+                "extraction_prompt": extraction_prompt,
+                "use_cached_visual": use_cached_visual
+            }
+            
+            async with httpx.AsyncClient(timeout=3600.0) as client:  # 1 hour timeout
+                response = await client.post(
+                    f"{self.base_url}/run-offering-extraction",
+                    json=payload,
+                    headers={'Content-Type': 'application/json'}
+                )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    logger.info(f"Successfully completed offering extraction")
+                    return {
+                        "success": True,
+                        "extraction_results": data.get("extraction_results", []),
+                        "message": data.get("message", "Offering extraction completed")
+                    }
+                else:
+                    logger.error(f"GPU offering extraction failed: {data.get('error')}")
+                    return {
+                        "success": False,
+                        "error": data.get("error", "Unknown GPU processing error")
+                    }
+            else:
+                logger.error(f"HTTP error {response.status_code}: {response.text}")
+                return {
+                    "success": False,
+                    "error": f"HTTP {response.status_code}: {response.text}"
+                }
+                
+        except httpx.TimeoutException:
+            logger.error(f"Timeout processing offering extraction")
+            return {
+                "success": False,
+                "error": "Processing timeout (1 hour exceeded)"
+            }
+        except httpx.ConnectError:
+            logger.error("Connection error communicating with GPU instance")
+            return {
+                "success": False,
+                "error": "Connection error communicating with GPU instance"
+            }
+        except Exception as e:
+            logger.error(f"Error processing offering extraction: {e}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
+    
     def get_processing_progress(self, pitch_deck_id: int) -> Dict[str, Any]:
         """
         Get processing progress for a specific pitch deck

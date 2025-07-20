@@ -279,6 +279,269 @@ class GPUHTTPServer:
                     "error": f"Error processing PDF: {str(e)}",
                     "timestamp": datetime.now().isoformat()
                 }), 500
+        
+        @self.app.route('/api/run-visual-analysis-batch', methods=['POST'])
+        def run_visual_analysis_batch():
+            """Run visual analysis batch for extraction testing"""
+            try:
+                data = request.get_json()
+                if not data:
+                    return jsonify({
+                        "success": False,
+                        "error": "No JSON data provided",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                deck_ids = data.get('deck_ids', [])
+                vision_model = data.get('vision_model')
+                analysis_prompt = data.get('analysis_prompt')
+                file_paths = data.get('file_paths', [])
+                
+                if not deck_ids:
+                    return jsonify({
+                        "success": False,
+                        "error": "deck_ids is required",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                if not vision_model:
+                    return jsonify({
+                        "success": False,
+                        "error": "vision_model is required",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                if not analysis_prompt:
+                    return jsonify({
+                        "success": False,
+                        "error": "analysis_prompt is required",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                logger.info(f"Starting visual analysis batch for {len(deck_ids)} decks using {vision_model}")
+                
+                # Process each deck
+                batch_results = {}
+                processed_decks = []
+                
+                for i, deck_id in enumerate(deck_ids):
+                    try:
+                        if i < len(file_paths):
+                            file_path = file_paths[i]
+                        else:
+                            logger.error(f"No file path provided for deck {deck_id}")
+                            continue
+                        
+                        logger.info(f"Processing deck {deck_id}: {file_path}")
+                        
+                        # Use the healthcare template analyzer for visual analysis
+                        from utils.healthcare_template_analyzer import HealthcareTemplateAnalyzer
+                        
+                        # Create analyzer with custom prompt and model
+                        analyzer = HealthcareTemplateAnalyzer(
+                            vision_model=vision_model,
+                            image_analysis_prompt=analysis_prompt
+                        )
+                        
+                        # Full file path for processing
+                        full_pdf_path = str(config.mount_path / file_path)
+                        
+                        # Run visual analysis only
+                        analyzer._analyze_visual_content(full_pdf_path, company_id="dojo")
+                        
+                        # Format results for caching
+                        visual_results = {
+                            "visual_analysis_results": analyzer.visual_analysis_results
+                        }
+                        
+                        batch_results[deck_id] = visual_results
+                        processed_decks.append(deck_id)
+                        
+                        logger.info(f"Completed visual analysis for deck {deck_id}")
+                        
+                    except Exception as e:
+                        logger.error(f"Error processing deck {deck_id}: {e}")
+                        batch_results[deck_id] = {"error": str(e)}
+                        continue
+                
+                logger.info(f"Completed visual analysis batch: {len(processed_decks)}/{len(deck_ids)} successful")
+                
+                return jsonify({
+                    "success": True,
+                    "message": f"Visual analysis batch completed for {len(processed_decks)} decks",
+                    "processed_decks": processed_decks,
+                    "results": batch_results,
+                    "timestamp": datetime.now().isoformat()
+                })
+                
+            except Exception as e:
+                logger.error(f"Error in visual analysis batch: {e}")
+                return jsonify({
+                    "success": False,
+                    "error": f"Error in visual analysis batch: {str(e)}",
+                    "timestamp": datetime.now().isoformat()
+                }), 500
+        
+        @self.app.route('/api/run-offering-extraction', methods=['POST'])
+        def run_offering_extraction():
+            """Run company offering extraction using text model"""
+            try:
+                data = request.get_json()
+                if not data:
+                    return jsonify({
+                        "success": False,
+                        "error": "No JSON data provided",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                deck_ids = data.get('deck_ids', [])
+                text_model = data.get('text_model')
+                extraction_prompt = data.get('extraction_prompt')
+                use_cached_visual = data.get('use_cached_visual', True)
+                
+                if not deck_ids:
+                    return jsonify({
+                        "success": False,
+                        "error": "deck_ids is required",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                if not text_model:
+                    return jsonify({
+                        "success": False,
+                        "error": "text_model is required",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                if not extraction_prompt:
+                    return jsonify({
+                        "success": False,
+                        "error": "extraction_prompt is required",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                logger.info(f"Starting offering extraction for {len(deck_ids)} decks using {text_model}")
+                
+                # Process each deck for extraction
+                extraction_results = []
+                
+                # Get cached visual analysis from production server
+                cached_analysis = self._get_cached_visual_analysis(deck_ids) if use_cached_visual else {}
+                
+                for deck_id in deck_ids:
+                    try:
+                        logger.info(f"Extracting offering for deck {deck_id}")
+                        
+                        # Prepare visual analysis context
+                        visual_context = ""
+                        visual_used = False
+                        
+                        if use_cached_visual and deck_id in cached_analysis:
+                            visual_data = cached_analysis[deck_id]
+                            if visual_data.get("visual_analysis_results"):
+                                # Format visual analysis for text extraction
+                                visual_descriptions = []
+                                for result in visual_data["visual_analysis_results"]:
+                                    page_desc = f"Page {result.get('page_number', 'N/A')}: {result.get('description', 'No description')}"
+                                    visual_descriptions.append(page_desc)
+                                visual_context = "\n".join(visual_descriptions)
+                                visual_used = True
+                                logger.info(f"Using cached visual analysis for deck {deck_id} ({len(visual_descriptions)} pages)")
+                        
+                        if not visual_context:
+                            visual_context = "[No visual analysis available for this pitch deck]"
+                            logger.warning(f"No visual analysis available for deck {deck_id}")
+                        
+                        # Prepare full extraction prompt with visual context
+                        full_extraction_prompt = f"""{extraction_prompt}
+
+Visual Analysis Context:
+{visual_context}
+
+Please extract the company offering based on the above information."""
+                        
+                        # Use ollama to run text extraction
+                        import ollama
+                        
+                        response = ollama.chat(
+                            model=text_model,
+                            messages=[
+                                {
+                                    'role': 'user', 
+                                    'content': full_extraction_prompt
+                                }
+                            ]
+                        )
+                        
+                        offering_result = response['message']['content']
+                        
+                        extraction_results.append({
+                            "deck_id": deck_id,
+                            "offering_extraction": offering_result,
+                            "visual_analysis_used": visual_used,
+                            "text_model_used": text_model
+                        })
+                        
+                        logger.info(f"Completed extraction for deck {deck_id}")
+                        
+                    except Exception as e:
+                        logger.error(f"Error extracting offering for deck {deck_id}: {e}")
+                        extraction_results.append({
+                            "deck_id": deck_id,
+                            "offering_extraction": f"Error: {str(e)}",
+                            "visual_analysis_used": False,
+                            "text_model_used": text_model
+                        })
+                        continue
+                
+                logger.info(f"Completed offering extraction for {len(extraction_results)} decks")
+                
+                return jsonify({
+                    "success": True,
+                    "message": f"Offering extraction completed for {len(deck_ids)} decks",
+                    "extraction_results": extraction_results,
+                    "timestamp": datetime.now().isoformat()
+                })
+                
+            except Exception as e:
+                logger.error(f"Error in offering extraction: {e}")
+                return jsonify({
+                    "success": False,
+                    "error": f"Error in offering extraction: {str(e)}",
+                    "timestamp": datetime.now().isoformat()
+                }), 500
+    
+    def _get_cached_visual_analysis(self, deck_ids: List[int]) -> Dict[int, Dict]:
+        """Get cached visual analysis from production server for extraction testing"""
+        try:
+            import requests
+            
+            # Get the production server URL from environment or use default
+            production_server = os.getenv("PRODUCTION_SERVER_URL", "http://65.108.32.168")
+            
+            # Request cached visual analysis data
+            response = requests.post(
+                f"{production_server}/api/internal/get-cached-visual-analysis",
+                json={"deck_ids": deck_ids},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    cached_data = data.get("cached_analysis", {})
+                    logger.info(f"Retrieved cached visual analysis for {len(cached_data)} decks")
+                    return cached_data
+                else:
+                    logger.error(f"Failed to get cached visual analysis: {data.get('error', 'Unknown error')}")
+                    return {}
+            else:
+                logger.error(f"HTTP error getting cached visual analysis: {response.status_code} - {response.text}")
+                return {}
+            
+        except Exception as e:
+            logger.error(f"Error getting cached visual analysis: {e}")
+            return {}
     
     def _update_database_with_results(self, pitch_deck_id: int, results_filename: str):
         """Update the database via HTTP request to the production server"""

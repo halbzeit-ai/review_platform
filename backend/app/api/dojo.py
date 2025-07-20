@@ -564,47 +564,52 @@ async def test_offering_extraction(
                 detail="Some deck IDs not found or not dojo files"
             )
         
-        extraction_results = []
+        # Use GPU pipeline for offering extraction
+        from ..services.gpu_http_client import gpu_http_client
         
+        # Collect cached visual analysis for context
+        deck_visual_data = {}
         for deck in decks:
-            try:
-                # Get visual analysis (cached or fresh)
-                visual_analysis = None
-                if request.use_cached_visual:
-                    # Try to get cached visual analysis
-                    cache_result = db.execute(text(
-                        "SELECT analysis_result_json FROM visual_analysis_cache WHERE pitch_deck_id = :deck_id ORDER BY created_at DESC LIMIT 1"
-                    ), {"deck_id": deck.id}).fetchone()
-                    
-                    if cache_result:
-                        visual_analysis = json.loads(cache_result[0])
+            if request.use_cached_visual:
+                cache_result = db.execute(text(
+                    "SELECT analysis_result_json FROM visual_analysis_cache WHERE pitch_deck_id = :deck_id ORDER BY created_at DESC LIMIT 1"
+                ), {"deck_id": deck.id}).fetchone()
                 
-                if not visual_analysis:
-                    # TODO: Integrate with GPU pipeline to get fresh visual analysis
-                    # For now, we'll create a placeholder
-                    visual_analysis = {
-                        "visual_analysis_results": [
-                            {"page_number": 1, "description": "Visual analysis not available", "deck_name": deck.file_name}
-                        ]
-                    }
-                
-                # TODO: Integrate with GPU pipeline for offering extraction
-                # For now, create placeholder extraction result
-                offering_result = f"[PLACEHOLDER] Company offering extracted using {request.text_model} for {deck.file_name}"
-                
+                if cache_result:
+                    deck_visual_data[deck.id] = json.loads(cache_result[0])
+                else:
+                    logger.warning(f"No cached visual analysis found for deck {deck.id}")
+        
+        # Call GPU pipeline for offering extraction
+        gpu_result = await gpu_http_client.run_offering_extraction(
+            deck_ids=request.deck_ids,
+            text_model=request.text_model,
+            extraction_prompt=request.extraction_prompt,
+            use_cached_visual=request.use_cached_visual
+        )
+        
+        if gpu_result.get("success"):
+            logger.info("GPU offering extraction completed successfully")
+            extraction_results = gpu_result.get("extraction_results", [])
+            
+            # Enhance results with local deck information
+            for result in extraction_results:
+                deck_id = result.get("deck_id")
+                if deck_id:
+                    deck = next((d for d in decks if d.id == deck_id), None)
+                    if deck:
+                        result["filename"] = deck.file_name
+                        # Check if visual analysis was available
+                        result["visual_analysis_used"] = deck_id in deck_visual_data
+        else:
+            logger.error(f"GPU offering extraction failed: {gpu_result.get('error', 'Unknown error')}")
+            # Fallback to placeholder results
+            extraction_results = []
+            for deck in decks:
                 extraction_results.append({
                     "deck_id": deck.id,
                     "filename": deck.file_name,
-                    "offering_extraction": offering_result,
-                    "visual_analysis_used": len(visual_analysis.get("visual_analysis_results", [])) > 0
-                })
-                
-            except Exception as e:
-                logger.error(f"Error extracting offering for deck {deck.id}: {e}")
-                extraction_results.append({
-                    "deck_id": deck.id,
-                    "filename": deck.file_name,
-                    "offering_extraction": f"Error: {str(e)}",
+                    "offering_extraction": f"Error: GPU processing failed - {gpu_result.get('error', 'Unknown error')}",
                     "visual_analysis_used": False
                 })
         
@@ -691,48 +696,122 @@ async def get_extraction_experiments(
             detail="Failed to get extraction experiments"
         )
 
-async def process_visual_analysis_batch(deck_ids: List[int], vision_model: str, analysis_prompt: str, db: Session):
-    """Background task to process visual analysis for multiple decks"""
+# ==================== INTERNAL API FOR GPU COMMUNICATION ====================
+
+@router.post("/internal/get-cached-visual-analysis")
+async def get_cached_visual_analysis_for_gpu(
+    request: dict,
+    db: Session = Depends(get_db)
+):
+    """Internal endpoint for GPU to retrieve cached visual analysis"""
     try:
-        logger.info(f"Starting visual analysis batch for {len(deck_ids)} decks")
+        deck_ids = request.get("deck_ids", [])
+        if not deck_ids:
+            return {
+                "success": False,
+                "error": "deck_ids is required"
+            }
         
+        logger.info(f"GPU requesting cached visual analysis for {len(deck_ids)} decks")
+        
+        cached_analysis = {}
         for deck_id in deck_ids:
-            deck = db.query(PitchDeck).filter(PitchDeck.id == deck_id).first()
-            if not deck:
-                continue
-            
             try:
-                # TODO: Integrate with actual GPU pipeline
-                # For now, create placeholder analysis result
-                analysis_result = {
-                    "visual_analysis_results": [
-                        {
-                            "page_number": 1,
-                            "slide_image_path": f"/path/to/{deck.file_name}_page_1.jpg",
-                            "description": f"[PLACEHOLDER] Visual analysis of {deck.file_name} using {vision_model}",
-                            "deck_name": deck.file_name
-                        }
-                    ]
-                }
+                cache_result = db.execute(text(
+                    "SELECT analysis_result_json FROM visual_analysis_cache WHERE pitch_deck_id = :deck_id ORDER BY created_at DESC LIMIT 1"
+                ), {"deck_id": deck_id}).fetchone()
                 
-                # Cache the visual analysis result
-                db.execute(text(
-                    "INSERT INTO visual_analysis_cache (pitch_deck_id, analysis_result_json, vision_model_used, prompt_used) VALUES (:deck_id, :result, :model, :prompt) ON CONFLICT (pitch_deck_id, vision_model_used, prompt_used) DO UPDATE SET analysis_result_json = :result, created_at = CURRENT_TIMESTAMP"
-                ), {
-                    "deck_id": deck_id,
-                    "result": json.dumps(analysis_result),
-                    "model": vision_model,
-                    "prompt": analysis_prompt
-                })
-                
-                logger.info(f"Cached visual analysis for deck {deck_id}")
-                
+                if cache_result:
+                    cached_analysis[deck_id] = json.loads(cache_result[0])
+                    logger.debug(f"Found cached visual analysis for deck {deck_id}")
+                else:
+                    logger.debug(f"No cached visual analysis found for deck {deck_id}")
+                    
             except Exception as e:
-                logger.error(f"Error processing visual analysis for deck {deck_id}: {e}")
+                logger.error(f"Error retrieving cached visual analysis for deck {deck_id}: {e}")
                 continue
         
-        db.commit()
-        logger.info(f"Visual analysis batch completed for {len(deck_ids)} decks")
+        logger.info(f"Retrieved cached visual analysis for {len(cached_analysis)}/{len(deck_ids)} decks")
+        
+        return {
+            "success": True,
+            "cached_analysis": cached_analysis,
+            "total_requested": len(deck_ids),
+            "total_found": len(cached_analysis)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in get_cached_visual_analysis_for_gpu: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+async def process_visual_analysis_batch(deck_ids: List[int], vision_model: str, analysis_prompt: str, db: Session):
+    """Background task to process visual analysis for multiple decks using GPU pipeline"""
+    try:
+        logger.info(f"Starting visual analysis batch for {len(deck_ids)} decks using GPU pipeline")
+        
+        # Get deck information and file paths
+        decks = db.query(PitchDeck).filter(PitchDeck.id.in_(deck_ids)).all()
+        if not decks:
+            logger.error("No decks found for visual analysis batch")
+            return
+        
+        # Prepare file paths for GPU processing
+        file_paths = []
+        deck_id_to_deck = {}
+        for deck in decks:
+            deck_id_to_deck[deck.id] = deck
+            file_paths.append(deck.file_path)
+        
+        # Import GPU HTTP client
+        from ..services.gpu_http_client import gpu_http_client
+        
+        # Call GPU pipeline for visual analysis batch
+        result = await gpu_http_client.run_visual_analysis_for_extraction_testing(
+            deck_ids=deck_ids,
+            vision_model=vision_model,
+            analysis_prompt=analysis_prompt,
+            file_paths=file_paths
+        )
+        
+        if result.get("success"):
+            logger.info("GPU visual analysis batch completed successfully")
+            
+            # Cache results from GPU processing
+            batch_results = result.get("results", {})
+            for deck_id in deck_ids:
+                try:
+                    if str(deck_id) in batch_results:
+                        deck_result = batch_results[str(deck_id)]
+                        
+                        if "error" in deck_result:
+                            logger.error(f"GPU processing error for deck {deck_id}: {deck_result['error']}")
+                            continue
+                        
+                        # Cache the visual analysis result
+                        db.execute(text(
+                            "INSERT INTO visual_analysis_cache (pitch_deck_id, analysis_result_json, vision_model_used, prompt_used) VALUES (:deck_id, :result, :model, :prompt) ON CONFLICT (pitch_deck_id, vision_model_used, prompt_used) DO UPDATE SET analysis_result_json = :result, created_at = CURRENT_TIMESTAMP"
+                        ), {
+                            "deck_id": deck_id,
+                            "result": json.dumps(deck_result),
+                            "model": vision_model,
+                            "prompt": analysis_prompt
+                        })
+                        
+                        logger.info(f"Cached GPU visual analysis result for deck {deck_id}")
+                    else:
+                        logger.warning(f"No result returned for deck {deck_id}")
+                        
+                except Exception as e:
+                    logger.error(f"Error caching visual analysis for deck {deck_id}: {e}")
+                    continue
+            
+            db.commit()
+            logger.info(f"Visual analysis batch caching completed for {len(deck_ids)} decks")
+        else:
+            logger.error(f"GPU visual analysis batch failed: {result.get('error', 'Unknown error')}")
         
     except Exception as e:
         logger.error(f"Error in visual analysis batch processing: {e}")
