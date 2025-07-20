@@ -172,10 +172,10 @@ const DojoManagement = () => {
           setUploadProgress(percentComplete);
           setBytesUploaded(event.loaded);
           
-          // Calculate upload speed
+          // Calculate upload speed (only after meaningful elapsed time to avoid inflated speeds)
           const currentTime = Date.now();
           const elapsedTime = (currentTime - uploadStartTime) / 1000; // in seconds
-          if (elapsedTime > 0) {
+          if (elapsedTime > 2 && event.loaded > 0) { // Wait at least 2 seconds for stable measurement
             const speed = event.loaded / elapsedTime; // bytes per second
             setUploadSpeed(speed);
           }
