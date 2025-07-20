@@ -11,8 +11,8 @@ CPU_SERVER = "http://65.108.32.168"
 GPU_SERVER = "http://135.181.63.133:8001"
 
 def test_fixed_extraction():
-    """Test extraction with the URL fix"""
-    print("=== TESTING EXTRACTION WITH URL FIX ===")
+    """Test extraction with the URL and type mismatch fix"""
+    print("=== TESTING EXTRACTION WITH FIXES ===")
     
     # Use deck IDs we know have cached visual analysis
     test_deck_ids = [62, 70, 104]
@@ -67,17 +67,17 @@ def test_fixed_extraction():
         print(f"❌ Exception: {e}")
 
 def main():
-    print("🔧 TESTING EXTRACTION URL FIX")
-    print("=" * 50)
+    print("🔧 TESTING EXTRACTION FIXES (URL + TYPE MISMATCH)")
+    print("=" * 60)
     
     test_fixed_extraction()
     
-    print("\n" + "=" * 50)
+    print("\n" + "=" * 60)
     print("🎯 RESULTS:")
-    print("If 'Visual analysis used: True' and results are specific:")
-    print("  ✅ FIX SUCCESSFUL!")
-    print("If still generic or 'Visual analysis used: False':")
-    print("  ❌ Additional debugging needed")
+    print("If 'Visual analysis used: True' and results are healthcare-specific:")
+    print("  ✅ BOTH FIXES SUCCESSFUL!")
+    print("If still 'Visual analysis used: False':")
+    print("  ❌ Additional issues remain")
 
 if __name__ == "__main__":
     main()
