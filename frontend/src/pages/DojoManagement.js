@@ -63,7 +63,7 @@ const DojoManagement = () => {
 
   // Helper function to estimate remaining time
   const formatRemainingTime = (bytesUploaded, totalBytes, uploadSpeed) => {
-    if (uploadSpeed === 0 || bytesUploaded === 0 || uploadSpeed < 1000) return ''; // Ignore very slow speeds
+    if (uploadSpeed === 0 || bytesUploaded === 0 || uploadSpeed < 100) return ''; // Ignore very slow speeds (100 B/s)
     
     const remainingBytes = totalBytes - bytesUploaded;
     const remainingSeconds = remainingBytes / uploadSpeed;
@@ -193,10 +193,10 @@ const DojoManagement = () => {
           setUploadProgress(percentComplete);
           setBytesUploaded(event.loaded);
           
-          // Calculate upload speed (only after meaningful elapsed time to avoid inflated speeds)
+          // Calculate upload speed (more responsive calculation)
           const currentTime = Date.now();
           const elapsedTime = (currentTime - uploadStartTime) / 1000; // in seconds
-          if (elapsedTime > 2 && event.loaded > 0) { // Wait at least 2 seconds for stable measurement
+          if (elapsedTime > 0.5 && event.loaded > 0) { // Start calculating after 0.5 seconds
             const speed = event.loaded / elapsedTime; // bytes per second
             setUploadSpeed(speed);
           }
