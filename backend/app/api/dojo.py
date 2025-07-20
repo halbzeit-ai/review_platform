@@ -32,6 +32,72 @@ def ensure_dojo_directory():
     os.makedirs(DOJO_PATH, exist_ok=True)
     logger.info(f"Dojo directory ensured at: {DOJO_PATH}")
 
+async def extract_dojo_zip_only(zip_file_path: str, uploaded_by: int, db: Session):
+    """Extract dojo zip file and create database entries (no AI processing)"""
+    try:
+        logger.info(f"Extracting dojo zip file: {zip_file_path}")
+        
+        # Extract zip file
+        extract_dir = os.path.join(DOJO_PATH, f"extract_{uuid.uuid4().hex}")
+        os.makedirs(extract_dir, exist_ok=True)
+        
+        with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_dir)
+        
+        # Find all PDF files in extracted content
+        pdf_files = []
+        for root, dirs, files in os.walk(extract_dir):
+            for file in files:
+                if file.lower().endswith('.pdf'):
+                    pdf_files.append(os.path.join(root, file))
+        
+        logger.info(f"Found {len(pdf_files)} PDF files in dojo upload")
+        
+        # Process each PDF file (create DB entries only, no AI processing)
+        processed_count = 0
+        for pdf_path in pdf_files:
+            try:
+                # Generate unique filename
+                original_name = os.path.basename(pdf_path)
+                unique_name = f"{uuid.uuid4().hex}_{original_name}"
+                
+                # Move to dojo directory
+                final_path = os.path.join(DOJO_PATH, unique_name)
+                shutil.move(pdf_path, final_path)
+                
+                # Create database record (ready for manual processing)
+                pitch_deck = PitchDeck(
+                    user_id=uploaded_by,
+                    company_id="dojo",
+                    file_name=original_name,
+                    file_path=f"dojo/{unique_name}",
+                    data_source="dojo",
+                    processing_status="pending"  # Ready for manual AI processing
+                )
+                db.add(pitch_deck)
+                processed_count += 1
+                
+            except Exception as e:
+                logger.error(f"Error processing PDF {pdf_path}: {e}")
+                continue
+        
+        # Commit all database changes
+        db.commit()
+        
+        # Clean up
+        shutil.rmtree(extract_dir, ignore_errors=True)
+        os.remove(zip_file_path)
+        
+        logger.info(f"Successfully extracted {processed_count} PDF files from dojo upload")
+        
+    except Exception as e:
+        logger.error(f"Error extracting dojo zip file: {e}")
+        # Clean up on error
+        if os.path.exists(extract_dir):
+            shutil.rmtree(extract_dir, ignore_errors=True)
+        if os.path.exists(zip_file_path):
+            os.remove(zip_file_path)
+
 async def process_dojo_zip(zip_file_path: str, uploaded_by: int, db: Session):
     """Background task to process uploaded dojo zip file"""
     try:
@@ -140,8 +206,13 @@ async def upload_dojo_zip(
         with open(temp_file_path, 'wb') as temp_file:
             temp_file.write(content)
         
-        # Store zip file for manual processing later
-        # Note: Processing is now manual, not automatic
+        # Extract ZIP file immediately (but don't do AI processing)
+        background_tasks.add_task(
+            extract_dojo_zip_only,
+            temp_file_path,
+            current_user.id,
+            db
+        )
         
         logger.info(f"Dojo zip upload initiated by {current_user.email}: {file.filename} ({file_size} bytes)")
         
@@ -149,8 +220,7 @@ async def upload_dojo_zip(
             "message": "Dojo training data uploaded successfully",
             "filename": file.filename,
             "size": file_size,
-            "status": "uploaded",
-            "zip_path": temp_file_path
+            "status": "extracting"
         }
         
     except HTTPException:
