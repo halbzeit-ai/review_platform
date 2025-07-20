@@ -337,11 +337,12 @@ class GPUHTTPServer:
                         # Use the healthcare template analyzer for visual analysis
                         from utils.healthcare_template_analyzer import HealthcareTemplateAnalyzer
                         
-                        # Create analyzer with custom prompt and model
-                        analyzer = HealthcareTemplateAnalyzer(
-                            vision_model=vision_model,
-                            image_analysis_prompt=analysis_prompt
-                        )
+                        # Create analyzer - it will use configured models and prompts from database
+                        analyzer = HealthcareTemplateAnalyzer()
+                        
+                        # Override the vision model and prompt for this specific analysis
+                        analyzer.vision_model = vision_model
+                        analyzer.image_analysis_prompt = analysis_prompt
                         
                         # Full file path for processing
                         full_pdf_path = str(config.mount_path / file_path)
