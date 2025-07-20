@@ -45,8 +45,8 @@ def test_gpu_cache_retrieval():
                     print(f"PROCESSING DECK {deck_id} (GPU server logic)")
                     print(f"{'='*50}")
                     
-                    if deck_id in cached_data:
-                        visual_data = cached_data[deck_id]
+                    if str(deck_id) in cached_data:
+                        visual_data = cached_data[str(deck_id)]
                         print(f"✅ Deck {deck_id} found in cached data")
                         
                         if visual_data.get("visual_analysis_results"):
@@ -125,7 +125,7 @@ def test_key_types_matching():
                     
                     # Check if deck_ids match
                     for deck_id in deck_ids:
-                        if deck_id in cached_data:
+                        if str(deck_id) in cached_data:
                             print(f"  ✅ {deck_id} ({type(deck_id)}) found")
                         else:
                             print(f"  ❌ {deck_id} ({type(deck_id)}) NOT found")
