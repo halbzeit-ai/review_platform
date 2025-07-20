@@ -394,6 +394,7 @@ async def get_dojo_stats(
 
 class ExtractionSampleRequest(BaseModel):
     sample_size: int = 10
+    existing_ids: Optional[List[int]] = None  # Re-check status for existing deck IDs
 
 class VisualAnalysisRequest(BaseModel):
     deck_ids: List[int]
@@ -422,10 +423,18 @@ async def create_extraction_sample(
                 detail="Only GPs can create extraction test samples"
             )
         
-        # Get random sample of dojo files
-        sample_decks = db.query(PitchDeck).filter(
-            PitchDeck.data_source == "dojo"
-        ).order_by(func.random()).limit(request.sample_size).all()
+        # Get sample of dojo files - either existing IDs or random sample
+        if request.existing_ids:
+            # Re-check status for existing deck IDs
+            sample_decks = db.query(PitchDeck).filter(
+                PitchDeck.id.in_(request.existing_ids),
+                PitchDeck.data_source == "dojo"
+            ).all()
+        else:
+            # Get random sample of dojo files
+            sample_decks = db.query(PitchDeck).filter(
+                PitchDeck.data_source == "dojo"
+            ).order_by(func.random()).limit(request.sample_size).all()
         
         if not sample_decks:
             raise HTTPException(

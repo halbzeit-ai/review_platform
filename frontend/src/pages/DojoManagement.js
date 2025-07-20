@@ -112,6 +112,7 @@ const DojoManagement = () => {
   const [extractionPrompt, setExtractionPrompt] = useState('');
   const [currentAnalysisController, setCurrentAnalysisController] = useState(null);
   const [clearingCache, setClearingCache] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState({ completed: 0, total: 0 });
   const [experiments, setExperiments] = useState([]);
   const [availableModels, setAvailableModels] = useState({});
   const [modelsLoading, setModelsLoading] = useState(false);
@@ -486,10 +487,25 @@ const DojoManagement = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setVisualAnalysisStatus('completed');
         console.log('Visual analysis batch started:', data);
-        // Refresh sample to update cache status
-        setTimeout(createExtractionSample, 2000);
+        
+        // Initialize progress tracking
+        const total = extractionSample.length;
+        setAnalysisProgress({ completed: 0, total });
+        
+        // Start polling for progress updates
+        const pollInterval = setInterval(async () => {
+          const progress = await checkAnalysisProgress();
+          if (progress && (progress.completed === progress.total || visualAnalysisStatus === 'cancelled')) {
+            clearInterval(pollInterval);
+            if (progress.completed === progress.total) {
+              setVisualAnalysisStatus('completed');
+            }
+          }
+        }, 3000); // Check every 3 seconds
+        
+        // Store interval ID so we can clear it if stopped
+        controller.pollInterval = pollInterval;
       } else {
         setVisualAnalysisStatus('error');
         const errorData = await response.json();
@@ -506,12 +522,57 @@ const DojoManagement = () => {
         setError('Failed to run visual analysis');
       }
     } finally {
+      // Clear polling interval if it exists
+      if (currentAnalysisController && currentAnalysisController.pollInterval) {
+        clearInterval(currentAnalysisController.pollInterval);
+      }
       setCurrentAnalysisController(null);
     }
   };
 
+  const checkAnalysisProgress = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+
+      // Re-fetch the current sample to get updated cache status
+      const response = await fetch('/api/dojo/extraction-test/sample', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          sample_size: extractionSample.length,
+          existing_ids: extractionSample.map(deck => deck.id) // Get status for existing sample
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setExtractionSample(data.sample);
+        
+        // Count completed vs total
+        const completed = data.sample.filter(deck => deck.has_visual_cache).length;
+        const total = data.sample.length;
+        
+        setAnalysisProgress({ completed, total });
+        
+        return { completed, total };
+      }
+    } catch (err) {
+      console.error('Error checking analysis progress:', err);
+    }
+    return null;
+  };
+
   const stopVisualAnalysis = () => {
     if (currentAnalysisController) {
+      // Clear polling interval
+      if (currentAnalysisController.pollInterval) {
+        clearInterval(currentAnalysisController.pollInterval);
+      }
+      // Abort the HTTP request
       currentAnalysisController.abort();
       setCurrentAnalysisController(null);
       setVisualAnalysisStatus('cancelled');
@@ -1258,7 +1319,11 @@ const DojoManagement = () => {
                           visualAnalysisStatus === 'completed' ? 'success' : 
                           visualAnalysisStatus === 'cancelled' ? 'warning' : 'info'
                         }>
-                          {visualAnalysisStatus === 'running' && 'Processing visual analysis for sample decks...'}
+                          {visualAnalysisStatus === 'running' && (
+                            analysisProgress.total > 0 
+                              ? `Processing visual analysis: ${analysisProgress.completed}/${analysisProgress.total} decks analyzed`
+                              : 'Processing visual analysis for sample decks...'
+                          )}
                           {visualAnalysisStatus === 'completed' && 'Visual analysis completed and cached!'}
                           {visualAnalysisStatus === 'cancelled' && 'Visual analysis cancelled by user.'}
                           {visualAnalysisStatus === 'error' && 'Visual analysis failed. Check logs for details.'}
