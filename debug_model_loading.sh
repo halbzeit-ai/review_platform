@@ -6,11 +6,17 @@ echo "Date: $(date)"
 echo ""
 
 # Check if this is CPU or GPU server
-if [ -d "/home/ramin/halbzeit-ai/review_platform/backend" ]; then
+if [ -d "backend" ] || [ -d "/opt/review-platform/backend" ]; then
     echo "=== CPU SERVER DIAGNOSTICS ==="
     
     echo "1. Backend Configuration:"
-    cd /home/ramin/halbzeit-ai/review_platform/backend
+    # Find the backend directory
+    if [ -d "backend" ]; then
+        BACKEND_DIR="backend"
+    else
+        BACKEND_DIR="/opt/review-platform/backend"
+    fi
+    cd "$BACKEND_DIR"
     python3 -c "
 try:
     from app.core.config import settings
@@ -28,7 +34,7 @@ except Exception as e:
     echo "3. Testing GPU HTTP Client Connection:"
     python3 -c "
 import sys
-sys.path.append('/home/ramin/halbzeit-ai/review_platform/backend')
+sys.path.append('$BACKEND_DIR')
 try:
     from app.services.gpu_http_client import gpu_http_client
     print(f'  GPU Host: {gpu_http_client.gpu_host}')
@@ -84,7 +90,7 @@ except:
         fi
     done
 
-elif [ -d "/home/ramin/halbzeit-ai/review_platform/gpu_processing" ]; then
+elif [ -d "gpu_processing" ] || [ -d "/opt/review-platform/gpu_processing" ]; then
     echo "=== GPU SERVER DIAGNOSTICS ==="
     
     echo "1. GPU HTTP Server Status:"
@@ -97,7 +103,13 @@ elif [ -d "/home/ramin/halbzeit-ai/review_platform/gpu_processing" ]; then
     
     echo ""
     echo "2. Server Configuration:"
-    cd /home/ramin/halbzeit-ai/review_platform/gpu_processing
+    # Find the gpu_processing directory
+    if [ -d "gpu_processing" ]; then
+        GPU_DIR="gpu_processing"
+    else
+        GPU_DIR="/opt/review-platform/gpu_processing"
+    fi
+    cd "$GPU_DIR"
     python3 -c "
 try:
     import os
