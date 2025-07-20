@@ -356,14 +356,14 @@ class GPUHTTPServer:
                             "visual_analysis_results": analyzer.visual_analysis_results
                         }
                         
-                        batch_results[deck_id] = visual_results
+                        batch_results[str(deck_id)] = visual_results
                         processed_decks.append(deck_id)
                         
                         logger.info(f"Completed visual analysis for deck {deck_id}")
                         
                     except Exception as e:
                         logger.error(f"Error processing deck {deck_id}: {e}")
-                        batch_results[deck_id] = {"error": str(e)}
+                        batch_results[str(deck_id)] = {"error": str(e)}
                         continue
                 
                 logger.info(f"Completed visual analysis batch: {len(processed_decks)}/{len(deck_ids)} successful")
