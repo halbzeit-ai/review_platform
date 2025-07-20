@@ -265,11 +265,12 @@ const DojoManagement = () => {
         setBytesUploaded(0);
       });
 
-      // Set dynamic timeout based on file size
-      // Calculate timeout: minimum 10 minutes, plus 1 minute per 50MB
-      const baseTimeout = 10 * 60 * 1000; // 10 minutes base
-      const fileSizeTimeout = Math.ceil(file.size / (50 * 1024 * 1024)) * 60 * 1000; // 1 minute per 50MB
-      xhr.timeout = Math.max(baseTimeout, fileSizeTimeout);
+      // Set dynamic timeout based on file size - more generous for large files  
+      // Base timeout of 15 minutes plus 2 minutes per 100MB, capped at 1 hour
+      const baseTimeout = 15 * 60 * 1000; // 15 minutes base
+      const fileSizeTimeout = Math.ceil(file.size / (100 * 1024 * 1024)) * 2 * 60 * 1000; // 2 minutes per 100MB
+      const totalTimeout = baseTimeout + fileSizeTimeout;
+      xhr.timeout = Math.min(totalTimeout, 60 * 60 * 1000); // Cap at 1 hour
 
       // Send request
       xhr.open('POST', '/api/dojo/upload');
