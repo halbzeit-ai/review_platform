@@ -204,6 +204,31 @@ const TemplateManagement = () => {
     }
   };
 
+  const handleEditSectorTemplate = async (sector) => {
+    try {
+      // Load templates for this sector
+      await loadSectorTemplates(sector);
+      
+      // Get the default template for this sector
+      const templatesResponse = await getSectorTemplates(sector.id);
+      const templatesData = templatesResponse.data || templatesResponse;
+      const templates = Array.isArray(templatesData) ? templatesData : [];
+      
+      // Find the default template or get the first one
+      const defaultTemplate = templates.find(t => t.is_default) || templates[0];
+      
+      if (defaultTemplate) {
+        // Load and show template details for editing
+        await loadTemplateDetails(defaultTemplate);
+      } else {
+        setError('No template found for this sector');
+      }
+    } catch (err) {
+      console.error('Error editing sector template:', err);
+      setError(err.response?.data?.detail || err.message || 'Failed to load sector template for editing');
+    }
+  };
+
   const handleCustomizeTemplate = async (templateId, customizationData) => {
     try {
       await customizeTemplate({
@@ -307,10 +332,9 @@ const TemplateManagement = () => {
     </div>
   );
 
-  const SectorCard = ({ sector, onSelect }) => (
+  const SectorCard = ({ sector, onSelect, onEdit }) => (
     <Card 
       sx={{ 
-        cursor: 'pointer',
         transition: 'all 0.2s',
         '&:hover': { 
           transform: 'translateY(-2px)',
@@ -319,9 +343,8 @@ const TemplateManagement = () => {
         border: selectedSector?.id === sector.id ? 2 : 1,
         borderColor: selectedSector?.id === sector.id ? 'primary.main' : 'grey.300'
       }}
-      onClick={() => onSelect(sector)}
     >
-      <CardContent>
+      <CardContent sx={{ cursor: 'pointer' }} onClick={() => onSelect(sector)}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           {sectorIcons[sector.name] || <SettingsIcon />}
           <Typography variant="h6" sx={{ ml: 1 }}>
@@ -363,6 +386,19 @@ const TemplateManagement = () => {
           />
         </Box>
       </CardContent>
+      
+      <CardActions>
+        <Button 
+          size="small" 
+          startIcon={<EditIcon />}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(sector);
+          }}
+        >
+          Edit Template
+        </Button>
+      </CardActions>
     </Card>
   );
 
@@ -814,6 +850,7 @@ const TemplateManagement = () => {
                 <SectorCard 
                   sector={sector} 
                   onSelect={loadSectorTemplates}
+                  onEdit={handleEditSectorTemplate}
                 />
               </Grid>
             ))}
