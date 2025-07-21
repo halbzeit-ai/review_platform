@@ -259,6 +259,35 @@ const TemplateManagement = () => {
     }
   };
 
+  const handleCreateNewTemplate = () => {
+    // Create a new empty template structure
+    const newTemplate = {
+      id: null, // No base template
+      name: 'New Healthcare Template',
+      chapters: [
+        {
+          id: Date.now(),
+          name: 'New Chapter',
+          questions: [
+            {
+              id: Date.now() + 1,
+              question_text: '',
+              scoring_criteria: ''
+            }
+          ]
+        }
+      ]
+    };
+    
+    // Set up the template for editing
+    setSelectedTemplate(newTemplate);
+    setTemplateDetails({
+      template: newTemplate,
+      chapters: newTemplate.chapters
+    });
+    setTemplateDialogOpen(true);
+  };
+
   // Pipeline prompt management functions
   const handlePromptStageChange = async (stageName) => {
     try {
@@ -478,14 +507,10 @@ const TemplateManagement = () => {
       const newChapter = {
         id: Date.now(), // Temporary ID
         name: 'New Chapter',
-        description: '',
-        weight: 1.0,
         questions: [{
           id: Date.now() + 1,
           question_text: '',
-          scoring_criteria: '',
-          weight: 1.0,
-          healthcare_focus: ''
+          scoring_criteria: ''
         }]
       };
       
@@ -511,9 +536,7 @@ const TemplateManagement = () => {
       const newQuestion = {
         id: Date.now(),
         question_text: '',
-        scoring_criteria: '',
-        weight: 1.0,
-        healthcare_focus: ''
+        scoring_criteria: ''
       };
       
       const updatedChapters = [...editedTemplate.chapters];
@@ -542,13 +565,34 @@ const TemplateManagement = () => {
       try {
         setSaving(true);
         
-        if (!editedTemplate?.name || !selectedTemplate?.id) {
-          throw new Error('Template name and base template are required');
+        if (!editedTemplate?.name) {
+          throw new Error('Template name is required');
+        }
+        
+        // For new templates, we need to use a base template ID
+        // If no base template, we'll use the first available template from the first sector
+        let baseTemplateId = selectedTemplate?.id;
+        if (!baseTemplateId && sectors.length > 0) {
+          // Get the first available template from the first sector as base
+          const firstSector = sectors[0];
+          const templatesResponse = await getSectorTemplates(firstSector.id);
+          const templatesData = templatesResponse.data || templatesResponse;
+          const templates = Array.isArray(templatesData) ? templatesData : [];
+          const defaultTemplate = templates.find(t => t.is_default) || templates[0];
+          if (defaultTemplate) {
+            baseTemplateId = defaultTemplate.id;
+          } else {
+            throw new Error('No base template available to create new template from');
+          }
+        }
+        
+        if (!baseTemplateId) {
+          throw new Error('Base template is required');
         }
         
         // Prepare customization data for API
         const customizationData = {
-          base_template_id: selectedTemplate.id,
+          base_template_id: baseTemplateId,
           customization_name: editedTemplate.name,
           customized_chapters: {},
           customized_questions: {},
@@ -559,8 +603,6 @@ const TemplateManagement = () => {
         editedTemplate.chapters.forEach((chapter, chapterIndex) => {
           customizationData.customized_chapters[chapter.id || chapterIndex] = {
             name: chapter.name,
-            description: chapter.description,
-            weight: chapter.weight,
             order_index: chapterIndex
           };
           
@@ -569,12 +611,8 @@ const TemplateManagement = () => {
             customizationData.customized_questions[questionKey] = {
               question_text: question.question_text,
               scoring_criteria: question.scoring_criteria,
-              healthcare_focus: question.healthcare_focus,
-              weight: question.weight,
               order_index: questionIndex
             };
-            
-            customizationData.customized_weights[questionKey] = question.weight;
           });
         });
         
@@ -665,32 +703,12 @@ const TemplateManagement = () => {
               
               {editedTemplate.chapters.map((chapter, chapterIndex) => (
                 <Paper key={chapter.id} sx={{ p: 2, mb: 2, border: 1, borderColor: 'grey.300' }}>
-                  <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                    <TextField
-                      label="Chapter Name"
-                      value={chapter.name}
-                      onChange={(e) => updateChapter(chapterIndex, 'name', e.target.value)}
-                      size="small"
-                      sx={{ flex: 1 }}
-                    />
-                    <TextField
-                      label="Weight"
-                      type="number"
-                      value={chapter.weight}
-                      onChange={(e) => updateChapter(chapterIndex, 'weight', parseFloat(e.target.value))}
-                      size="small"
-                      sx={{ width: 100 }}
-                    />
-                  </Box>
-                  
                   <TextField
-                    label="Chapter Description"
-                    value={chapter.description}
-                    onChange={(e) => updateChapter(chapterIndex, 'description', e.target.value)}
-                    multiline
-                    rows={2}
-                    fullWidth
+                    label="Chapter Name"
+                    value={chapter.name}
+                    onChange={(e) => updateChapter(chapterIndex, 'name', e.target.value)}
                     size="small"
+                    fullWidth
                     sx={{ mb: 2 }}
                   />
 
@@ -731,26 +749,6 @@ const TemplateManagement = () => {
                             rows={2}
                             size="small"
                             placeholder="How should this question be scored? (e.g., 1-5 scale based on...)"
-                          />
-                        </Grid>
-                        <Grid item xs={6}>
-                          <TextField
-                            label="Weight"
-                            type="number"
-                            value={question.weight}
-                            onChange={(e) => updateQuestion(chapterIndex, questionIndex, 'weight', parseFloat(e.target.value))}
-                            size="small"
-                            fullWidth
-                          />
-                        </Grid>
-                        <Grid item xs={6}>
-                          <TextField
-                            label="Healthcare Focus"
-                            value={question.healthcare_focus}
-                            onChange={(e) => updateQuestion(chapterIndex, questionIndex, 'healthcare_focus', e.target.value)}
-                            size="small"
-                            fullWidth
-                            placeholder="e.g., Regulatory, Clinical, Market"
                           />
                         </Grid>
                       </Grid>
@@ -1070,7 +1068,7 @@ const TemplateManagement = () => {
                   borderColor: 'primary.main',
                   minHeight: 200
                 }}
-                onClick={() => setCustomizeDialogOpen(true)}
+                onClick={handleCreateNewTemplate}
               >
                 <Box sx={{ textAlign: 'center', p: 3 }}>
                   <AddIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
