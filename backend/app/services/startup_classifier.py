@@ -50,6 +50,12 @@ class StartupClassifier:
             
         except Exception as e:
             logger.error(f"Error loading healthcare sectors: {e}")
+            # Rollback any failed transaction
+            try:
+                self.db.rollback()
+            except:
+                pass
+                
             # Return some basic fallback sectors if database doesn't exist
             return [
                 {
@@ -57,8 +63,18 @@ class StartupClassifier:
                     "name": "healthtech",
                     "display_name": "HealthTech",
                     "description": "General health technology solutions",
-                    "keywords": ["health", "medical", "healthcare", "digital health", "telemedicine"],
+                    "keywords": ["health", "medical", "healthcare", "digital health", "telemedicine", "ai", "artificial intelligence", "medical imaging", "diagnostics"],
                     "subcategories": ["Digital Health", "Telemedicine", "Health Apps"],
+                    "confidence_threshold": 0.3,
+                    "regulatory_requirements": []
+                },
+                {
+                    "id": 2,
+                    "name": "medtech",
+                    "display_name": "MedTech",
+                    "description": "Medical devices and equipment",
+                    "keywords": ["device", "medical device", "equipment", "surgical", "implant", "monitoring"],
+                    "subcategories": ["Medical Devices", "Surgical Equipment"],
                     "confidence_threshold": 0.3,
                     "regulatory_requirements": []
                 }
@@ -70,7 +86,7 @@ class StartupClassifier:
             # Try to get from model configuration
             query = text("""
             SELECT model_name FROM model_configs 
-            WHERE model_type = 'text' AND is_active = 1 
+            WHERE model_type = 'text' AND is_active = TRUE 
             LIMIT 1
             """)
             
@@ -84,6 +100,11 @@ class StartupClassifier:
                 
         except Exception as e:
             logger.warning(f"Could not get classification model: {e}")
+            # Rollback any failed transaction
+            try:
+                self.db.rollback()
+            except:
+                pass
             return "gemma3:12b"
     
     def _keyword_based_classification(self, company_offering: str) -> List[Dict[str, Any]]:
@@ -206,7 +227,12 @@ Ensure the confidence score reflects how certain you are about the classificatio
             return result[0] if result else None
             
         except Exception as e:
-            logger.error(f"Error getting default template: {e}")
+            logger.warning(f"Could not get default template (table may not exist): {e}")
+            # Rollback any failed transaction
+            try:
+                self.db.rollback()
+            except:
+                pass
             return None
     
     async def classify(self, company_offering: str, manual_classification: Optional[str] = None) -> Dict[str, Any]:
