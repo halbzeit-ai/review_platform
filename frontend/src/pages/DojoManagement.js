@@ -650,9 +650,20 @@ const DojoManagement = () => {
       if (response.ok) {
         const data = await response.json();
         console.log('Cache cleared:', data);
-        // Refresh sample to update cache status
-        createExtractionSample();
+        
+        // Clear the current sample since cache was cleared
+        setExtractionSample([]);
+        
+        // Refresh cached count if using cached selection
+        if (selectFromCached) {
+          loadCachedDecksCount();
+        }
+        
+        // Clear any existing errors
         setError(null);
+        
+        // Show success message
+        console.log('Visual analysis cache cleared successfully');
       } else {
         const errorData = await response.json();
         setError(errorData.detail || 'Failed to clear cache');

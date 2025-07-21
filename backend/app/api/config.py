@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 import os
+from datetime import datetime
 
 from ..db.models import User, ModelConfig
 from ..db.database import get_db
@@ -147,6 +148,7 @@ async def set_active_model(
         db.query(ModelConfig).filter(
             ModelConfig.model_type == request.model_type
         ).update({"is_active": False})
+        db.flush()  # Flush to ensure deactivation is committed
         
         # Set the new active model
         existing_config = db.query(ModelConfig).filter(
@@ -155,8 +157,11 @@ async def set_active_model(
         ).first()
         
         if existing_config:
+            logger.info(f"Activating existing model config: {existing_config.id}")
             existing_config.is_active = True
+            existing_config.updated_at = datetime.utcnow()
         else:
+            logger.info(f"Creating new model config for {request.model_name} ({request.model_type})")
             new_config = ModelConfig(
                 model_name=request.model_name,
                 model_type=request.model_type,
