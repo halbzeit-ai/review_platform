@@ -864,17 +864,26 @@ async def get_experiment_details(
         decks = db.query(PitchDeck).filter(PitchDeck.id.in_(deck_ids)).all()
         deck_info = {}
         for deck in decks:
-            # Extract page count from ai_analysis_results if available
+            # Extract page count from visual_analysis_cache
             page_count = None
-            if deck.ai_analysis_results:
-                try:
-                    analysis_data = json.loads(deck.ai_analysis_results)
+            try:
+                # Query visual_analysis_cache for this deck
+                cache_result = db.execute(text("""
+                    SELECT analysis_result_json 
+                    FROM visual_analysis_cache 
+                    WHERE pitch_deck_id = :deck_id
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                """), {"deck_id": deck.id}).fetchone()
+                
+                if cache_result and cache_result[0]:
+                    analysis_data = json.loads(cache_result[0])
                     # Check various possible fields for page count
                     page_count = (analysis_data.get("page_count") or 
                                 analysis_data.get("total_pages_analyzed") or 
                                 analysis_data.get("total_pages"))
-                except:
-                    pass
+            except Exception as e:
+                logger.debug(f"Could not get page count for deck {deck.id}: {e}")
             
             deck_info[deck.id] = {
                 "filename": deck.file_name, 
