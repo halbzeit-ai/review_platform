@@ -204,6 +204,17 @@ const TemplateManagement = () => {
     }
   };
 
+  const loadMyCustomizations = async () => {
+    try {
+      const customizationsResponse = await getMyCustomizations();
+      const customizationsData = customizationsResponse.data || customizationsResponse;
+      setCustomizations(Array.isArray(customizationsData) ? customizationsData : []);
+    } catch (err) {
+      console.error('Error loading customizations:', err);
+      setError(err.response?.data?.detail || err.message || 'Failed to load customizations');
+    }
+  };
+
   const handleEditSectorTemplate = async (sector) => {
     try {
       // Load templates for this sector
@@ -447,170 +458,332 @@ const TemplateManagement = () => {
     </Card>
   );
 
-  const TemplateDetailsDialog = () => (
-    <Dialog 
-      open={templateDialogOpen} 
-      onClose={() => setTemplateDialogOpen(false)}
-      maxWidth="md"
-      fullWidth
-    >
-      <DialogTitle>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6">
-            {selectedTemplate?.name}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {templateDetails?.template?.sector_display_name}
-          </Typography>
-        </Box>
-      </DialogTitle>
+  const TemplateDetailsDialog = () => {
+    const [editedTemplate, setEditedTemplate] = useState(null);
+    const [saving, setSaving] = useState(false);
+
+    // Initialize edited template when dialog opens
+    useEffect(() => {
+      if (templateDialogOpen && templateDetails) {
+        setEditedTemplate({
+          ...templateDetails,
+          chapters: templateDetails.chapters || []
+        });
+      }
+    }, [templateDialogOpen, templateDetails]);
+
+    const addChapter = () => {
+      if (!editedTemplate) return;
       
-      <DialogContent>
-        {templateDetails && templateDetails.template && (
-          <Box>
-            <Typography variant="body2" sx={{ mb: 3 }}>
-              {templateDetails.template.description || 'No description available'}
-            </Typography>
-            
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
-              {(templateDetails.template.specialized_analysis || []).map((analysis, index) => (
-                <Chip 
-                  key={index} 
-                  label={analysis.replace('_', ' ')} 
-                  size="small" 
-                  color="secondary"
-                />
-              ))}
-            </Box>
+      const newChapter = {
+        id: Date.now(), // Temporary ID
+        name: 'New Chapter',
+        description: '',
+        weight: 1.0,
+        questions: [{
+          id: Date.now() + 1,
+          question_text: '',
+          scoring_criteria: '',
+          weight: 1.0,
+          healthcare_focus: ''
+        }]
+      };
+      
+      setEditedTemplate({
+        ...editedTemplate,
+        chapters: [...editedTemplate.chapters, newChapter]
+      });
+    };
 
-            {/* Keywords Section */}
-            {selectedSector && selectedSector.keywords && (
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" sx={{ mb: 1 }}>
-                  Sector Keywords ({selectedSector.keywords.length})
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selectedSector.keywords.map((keyword, index) => (
-                    <Chip 
-                      key={index} 
-                      label={keyword}
-                      size="small" 
-                      variant="outlined"
-                      color="primary"
-                    />
-                  ))}
-                </Box>
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                  These keywords help identify companies in this sector during classification
-                </Typography>
-              </Box>
-            )}
+    const updateChapter = (chapterIndex, field, value) => {
+      const updatedChapters = [...editedTemplate.chapters];
+      updatedChapters[chapterIndex] = {
+        ...updatedChapters[chapterIndex],
+        [field]: value
+      };
+      setEditedTemplate({
+        ...editedTemplate,
+        chapters: updatedChapters
+      });
+    };
 
-            {/* Subcategories Section */}
-            {selectedSector && selectedSector.subcategories && (
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" sx={{ mb: 1 }}>
-                  Subcategories ({selectedSector.subcategories.length})
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selectedSector.subcategories.map((subcategory, index) => (
-                    <Chip 
-                      key={index} 
-                      label={subcategory}
-                      size="small" 
-                      variant="outlined"
-                      color="info"
-                    />
-                  ))}
-                </Box>
-              </Box>
-            )}
+    const addQuestion = (chapterIndex) => {
+      const newQuestion = {
+        id: Date.now(),
+        question_text: '',
+        scoring_criteria: '',
+        weight: 1.0,
+        healthcare_focus: ''
+      };
+      
+      const updatedChapters = [...editedTemplate.chapters];
+      updatedChapters[chapterIndex].questions.push(newQuestion);
+      
+      setEditedTemplate({
+        ...editedTemplate,
+        chapters: updatedChapters
+      });
+    };
+
+    const updateQuestion = (chapterIndex, questionIndex, field, value) => {
+      const updatedChapters = [...editedTemplate.chapters];
+      updatedChapters[chapterIndex].questions[questionIndex] = {
+        ...updatedChapters[chapterIndex].questions[questionIndex],
+        [field]: value
+      };
+      
+      setEditedTemplate({
+        ...editedTemplate,
+        chapters: updatedChapters
+      });
+    };
+
+    const saveTemplate = async () => {
+      try {
+        setSaving(true);
+        
+        if (!editedTemplate?.name || !selectedTemplate?.id) {
+          throw new Error('Template name and base template are required');
+        }
+        
+        // Prepare customization data for API
+        const customizationData = {
+          base_template_id: selectedTemplate.id,
+          customization_name: editedTemplate.name,
+          customized_chapters: {},
+          customized_questions: {},
+          customized_weights: {}
+        };
+        
+        // Process chapters and questions into the format expected by the API
+        editedTemplate.chapters.forEach((chapter, chapterIndex) => {
+          customizationData.customized_chapters[chapter.id || chapterIndex] = {
+            name: chapter.name,
+            description: chapter.description,
+            weight: chapter.weight,
+            order_index: chapterIndex
+          };
+          
+          chapter.questions.forEach((question, questionIndex) => {
+            const questionKey = `${chapter.id || chapterIndex}_${question.id || questionIndex}`;
+            customizationData.customized_questions[questionKey] = {
+              question_text: question.question_text,
+              scoring_criteria: question.scoring_criteria,
+              healthcare_focus: question.healthcare_focus,
+              weight: question.weight,
+              order_index: questionIndex
+            };
             
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Analysis Chapters ({templateDetails.chapters ? templateDetails.chapters.length : 0})
+            customizationData.customized_weights[questionKey] = question.weight;
+          });
+        });
+        
+        // Call API to save template customization
+        console.log('Saving template customization:', customizationData);
+        const response = await customizeTemplate(customizationData);
+        
+        console.log('Template saved successfully:', response.data);
+        
+        // Close dialog and refresh data
+        setTemplateDialogOpen(false);
+        
+        // Optional: Show success message
+        setError(null); // Clear any previous errors
+        
+        // Optional: Refresh customizations list if on that tab
+        if (activeTab === 2) {
+          loadMyCustomizations();
+        }
+        
+      } catch (error) {
+        console.error('Error saving template:', error);
+        setError('Failed to save template: ' + (error.response?.data?.detail || error.message));
+      } finally {
+        setSaving(false);
+      }
+    };
+
+    return (
+      <Dialog 
+        open={templateDialogOpen} 
+        onClose={() => setTemplateDialogOpen(false)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{ sx: { maxHeight: '90vh' } }}
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6">
+              Edit Template: {selectedTemplate?.name}
             </Typography>
-            
-            {(!templateDetails.chapters || templateDetails.chapters.length === 0) ? (
-              <Alert severity="info" sx={{ mb: 2 }}>
-                No chapters configured for this template. This template needs to be set up with analysis chapters and questions.
-              </Alert>
-            ) : (
-              (templateDetails.chapters || []).map((chapter, index) => (
-              <Accordion key={chapter.id} sx={{ mb: 1 }}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                    <Typography variant="subtitle1" sx={{ flexGrow: 1 }}>
-                      {chapter.name}
-                    </Typography>
-                    <Chip 
-                      label={`Weight: ${chapter.weight}`}
+            <Typography variant="caption" color="text.secondary">
+              {templateDetails?.template?.sector_display_name}
+            </Typography>
+          </Box>
+        </DialogTitle>
+        
+        <DialogContent sx={{ pb: 1 }}>
+          {editedTemplate && (
+            <Box>
+              {/* Keywords Section */}
+              {selectedSector && selectedSector.keywords && (
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" sx={{ mb: 1 }}>
+                    Sector Keywords ({selectedSector.keywords.length})
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selectedSector.keywords.map((keyword, index) => (
+                      <Chip 
+                        key={index} 
+                        label={keyword}
+                        size="small" 
+                        variant="outlined"
+                        color="primary"
+                      />
+                    ))}
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                    These keywords help identify companies in this sector during classification
+                  </Typography>
+                </Box>
+              )}
+
+              {/* Chapters Section */}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6">
+                  Analysis Chapters ({editedTemplate.chapters.length})
+                </Typography>
+                <Button 
+                  startIcon={<AddIcon />} 
+                  onClick={addChapter}
+                  size="small"
+                  variant="outlined"
+                >
+                  Add Chapter
+                </Button>
+              </Box>
+              
+              {editedTemplate.chapters.map((chapter, chapterIndex) => (
+                <Paper key={chapter.id} sx={{ p: 2, mb: 2, border: 1, borderColor: 'grey.300' }}>
+                  <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                    <TextField
+                      label="Chapter Name"
+                      value={chapter.name}
+                      onChange={(e) => updateChapter(chapterIndex, 'name', e.target.value)}
                       size="small"
-                      variant="outlined"
-                      sx={{ mr: 1 }}
+                      sx={{ flex: 1 }}
                     />
-                    <Chip 
-                      label={`${chapter.questions.length} questions`}
+                    <TextField
+                      label="Weight"
+                      type="number"
+                      value={chapter.weight}
+                      onChange={(e) => updateChapter(chapterIndex, 'weight', parseFloat(e.target.value))}
                       size="small"
-                      color="info"
+                      sx={{ width: 100 }}
                     />
                   </Box>
-                </AccordionSummary>
-                
-                <AccordionDetails>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {chapter.description}
-                  </Typography>
                   
-                  <List dense>
-                    {chapter.questions.map((question, qIndex) => (
-                      <ListItem key={question.id} sx={{ pl: 0 }}>
-                        <ListItemText
-                          primary={question.question_text}
-                          secondary={
-                            <Box>
-                              <Typography variant="caption" color="text.secondary">
-                                {question.scoring_criteria}
-                              </Typography>
-                              <br />
-                              <Typography variant="caption" color="primary">
-                                {t('labels.healthcareFocus')}: {question.healthcare_focus}
-                              </Typography>
-                            </Box>
-                          }
-                        />
-                        <ListItemSecondaryAction>
-                          <Chip 
-                            label={`Weight: ${question.weight}`}
+                  <TextField
+                    label="Chapter Description"
+                    value={chapter.description}
+                    onChange={(e) => updateChapter(chapterIndex, 'description', e.target.value)}
+                    multiline
+                    rows={2}
+                    fullWidth
+                    size="small"
+                    sx={{ mb: 2 }}
+                  />
+
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="subtitle2">
+                      Questions ({chapter.questions.length})
+                    </Typography>
+                    <Button 
+                      startIcon={<AddIcon />} 
+                      onClick={() => addQuestion(chapterIndex)}
+                      size="small"
+                      variant="text"
+                    >
+                      Add Question
+                    </Button>
+                  </Box>
+
+                  {chapter.questions.map((question, questionIndex) => (
+                    <Paper key={question.id} sx={{ p: 2, mb: 1, bgcolor: 'grey.50' }}>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12}>
+                          <TextField
+                            label="Question"
+                            value={question.question_text}
+                            onChange={(e) => updateQuestion(chapterIndex, questionIndex, 'question_text', e.target.value)}
+                            fullWidth
                             size="small"
-                            variant="outlined"
+                            placeholder="Enter the analysis question..."
                           />
-                        </ListItemSecondaryAction>
-                      </ListItem>
-                    ))}
-                  </List>
-                </AccordionDetails>
-              </Accordion>
-            )))}
-          </Box>
-        )}
-      </DialogContent>
-      
-      <DialogActions>
-        <Button onClick={() => setTemplateDialogOpen(false)}>
-          Close
-        </Button>
-        <Button 
-          variant="contained" 
-          onClick={() => {
-            setTemplateDialogOpen(false);
-            setCustomizeDialogOpen(true);
-          }}
-        >
-          Customize Template
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
+                        </Grid>
+                        <Grid item xs={12}>
+                          <TextField
+                            label="Scoring Criteria"
+                            value={question.scoring_criteria}
+                            onChange={(e) => updateQuestion(chapterIndex, questionIndex, 'scoring_criteria', e.target.value)}
+                            fullWidth
+                            multiline
+                            rows={2}
+                            size="small"
+                            placeholder="How should this question be scored? (e.g., 1-5 scale based on...)"
+                          />
+                        </Grid>
+                        <Grid item xs={6}>
+                          <TextField
+                            label="Weight"
+                            type="number"
+                            value={question.weight}
+                            onChange={(e) => updateQuestion(chapterIndex, questionIndex, 'weight', parseFloat(e.target.value))}
+                            size="small"
+                            fullWidth
+                          />
+                        </Grid>
+                        <Grid item xs={6}>
+                          <TextField
+                            label="Healthcare Focus"
+                            value={question.healthcare_focus}
+                            onChange={(e) => updateQuestion(chapterIndex, questionIndex, 'healthcare_focus', e.target.value)}
+                            size="small"
+                            fullWidth
+                            placeholder="e.g., Regulatory, Clinical, Market"
+                          />
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  ))}
+                </Paper>
+              ))}
+
+              {editedTemplate.chapters.length === 0 && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  No chapters yet. Click "Add Chapter" to create your first analysis chapter.
+                </Alert>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setTemplateDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button 
+            variant="contained" 
+            onClick={saveTemplate}
+            disabled={saving}
+            startIcon={saving ? <CircularProgress size={16} /> : null}
+          >
+            {saving ? 'Saving...' : 'Save Template'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
 
   const PerformanceMetricsPanel = () => (
     <Box>
