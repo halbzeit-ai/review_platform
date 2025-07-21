@@ -70,9 +70,7 @@ const TemplateManagement = () => {
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState(0);
-  const [sectors, setSectors] = useState([]);
   const [templates, setTemplates] = useState([]);
-  const [selectedSector, setSelectedSector] = useState(null);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [templateDetails, setTemplateDetails] = useState(null);
   const [performanceMetrics, setPerformanceMetrics] = useState(null);
@@ -136,7 +134,29 @@ const TemplateManagement = () => {
       const metricsData = metricsResponse.data || metricsResponse;
       const pipelineData = pipelineResponse.data || pipelineResponse;
       
-      setSectors(Array.isArray(sectorsData) ? sectorsData : []);
+      // Load all templates from all sectors
+      const allTemplates = [];
+      if (Array.isArray(sectorsData)) {
+        for (const sector of sectorsData) {
+          try {
+            const templatesResponse = await getSectorTemplates(sector.id);
+            const templatesData = templatesResponse.data || templatesResponse;
+            if (Array.isArray(templatesData)) {
+              // Add sector info to each template for context
+              const templatesWithSector = templatesData.map(template => ({
+                ...template,
+                sector_name: sector.display_name,
+                sector_id: sector.id
+              }));
+              allTemplates.push(...templatesWithSector);
+            }
+          } catch (err) {
+            console.error(`Error loading templates for sector ${sector.id}:`, err);
+          }
+        }
+      }
+      
+      setTemplates(allTemplates);
       setPerformanceMetrics(metricsData);
       setPipelinePrompts(pipelineData.prompts || {});
       
@@ -148,10 +168,6 @@ const TemplateManagement = () => {
         startup_name_extraction: prompts.startup_name_extraction || ''
       });
       
-      // Load templates for first sector by default
-      if (sectorsData && sectorsData.length > 0) {
-        await loadSectorTemplates(sectorsData[0]);
-      }
     } catch (err) {
       console.error('Error loading initial data:', err);
       if (err.response?.status === 401 || err.response?.status === 403) {
@@ -166,26 +182,6 @@ const TemplateManagement = () => {
     }
   }, [navigate]);
 
-  const loadSectorTemplates = async (sector) => {
-    try {
-      setSelectedSector(sector);
-      const templatesResponse = await getSectorTemplates(sector.id);
-      const templatesData = templatesResponse.data || templatesResponse;
-      setTemplates(Array.isArray(templatesData) ? templatesData : []);
-      
-      // Update breadcrumbs
-      setBreadcrumbs([
-        { label: t('navigation.dashboard'), path: '/dashboard' },
-        { label: t('configuration.title'), path: '/configuration' },
-        { label: t('templates.title'), path: '/templates' },
-        { label: sector.display_name, path: null }
-      ]);
-    } catch (err) {
-      console.error('Error loading sector templates:', err);
-      setError(err.response?.data?.detail || err.message || 'Failed to load templates');
-      setTemplates([]);
-    }
-  };
 
   const loadTemplateDetails = async (template) => {
     try {
@@ -201,31 +197,30 @@ const TemplateManagement = () => {
   };
 
 
-  const handleEditSectorTemplate = async (sector) => {
+  const handleEditTemplate = async (template) => {
     try {
-      // Load templates for this sector
-      await loadSectorTemplates(sector);
-      
-      // Get the default template for this sector
-      const templatesResponse = await getSectorTemplates(sector.id);
-      const templatesData = templatesResponse.data || templatesResponse;
-      const templates = Array.isArray(templatesData) ? templatesData : [];
-      
-      // Find the default template or get the first one
-      const defaultTemplate = templates.find(t => t.is_default) || templates[0];
-      
-      if (defaultTemplate) {
-        // Load template details and set as selected template for customization
-        const detailsResponse = await getTemplateDetails(defaultTemplate.id);
-        const details = detailsResponse.data || detailsResponse;
-        setSelectedTemplate({...defaultTemplate, chapters: details.chapters || []});
-        setCustomizeDialogOpen(true);
-      } else {
-        setError('No template found for this sector');
-      }
+      // Load template details and open customize dialog
+      const detailsResponse = await getTemplateDetails(template.id);
+      const details = detailsResponse.data || detailsResponse;
+      setSelectedTemplate({...template, chapters: details.chapters || []});
+      setCustomizeDialogOpen(true);
     } catch (err) {
-      console.error('Error editing sector template:', err);
-      setError(err.response?.data?.detail || err.message || 'Failed to load sector template for editing');
+      console.error('Error loading template for editing:', err);
+      setError(err.response?.data?.detail || err.message || 'Failed to load template for editing');
+    }
+  };
+
+  const handleDuplicateTemplate = async (template) => {
+    try {
+      // Load template details and open customize dialog with duplicate name
+      const detailsResponse = await getTemplateDetails(template.id);
+      const details = detailsResponse.data || detailsResponse;
+      setSelectedTemplate({...template, chapters: details.chapters || []});
+      setCustomizationName(`Copy of ${template.name}`);
+      setCustomizeDialogOpen(true);
+    } catch (err) {
+      console.error('Error duplicating template:', err);
+      setError(err.response?.data?.detail || err.message || 'Failed to duplicate template');
     }
   };
 
@@ -1068,20 +1063,61 @@ const TemplateManagement = () => {
       {/* Main Content */}
       <Paper sx={{ width: '100%' }}>
         <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
-          <Tab label={t('tabs.healthcareSectors')} />
+          <Tab label="Healthcare Templates" />
           <Tab label={t('tabs.performanceMetrics')} />
           <Tab label={t('tabs.obligatoryExtractions')} />
         </Tabs>
 
         <TabPanel value={activeTab} index={0}>
           <Grid container spacing={3}>
-            {sectors.map((sector) => (
-              <Grid item xs={12} md={6} lg={4} key={sector.id}>
-                <SectorCard 
-                  sector={sector} 
-                  onSelect={loadSectorTemplates}
-                  onEdit={handleEditSectorTemplate}
-                />
+            {templates.map((template) => (
+              <Grid item xs={12} md={6} lg={4} key={template.id}>
+                <Card>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                      <Typography variant="h6">
+                        {template.name}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        {template.is_default && (
+                          <Chip label="Default" size="small" color="primary" />
+                        )}
+                        <Badge badgeContent={template.usage_count} color="secondary">
+                          <AssessmentIcon />
+                        </Badge>
+                      </Box>
+                    </Box>
+                    
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      {template.description}
+                    </Typography>
+                    
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                      Sector: {template.sector_name}
+                    </Typography>
+                    
+                    <Typography variant="caption" color="text.secondary">
+                      Version {template.template_version} • Used {template.usage_count} times
+                    </Typography>
+                  </CardContent>
+                  
+                  <CardActions>
+                    <Button 
+                      size="small" 
+                      startIcon={<EditIcon />}
+                      onClick={() => handleEditTemplate(template)}
+                    >
+                      Edit
+                    </Button>
+                    <Button 
+                      size="small" 
+                      startIcon={<CopyIcon />}
+                      onClick={() => handleDuplicateTemplate(template)}
+                    >
+                      Duplicate
+                    </Button>
+                  </CardActions>
+                </Card>
               </Grid>
             ))}
             <Grid item xs={12} md={6} lg={4}>
@@ -1111,7 +1147,7 @@ const TemplateManagement = () => {
                     Add New Template
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Create a custom healthcare template
+                    Create a new healthcare template
                   </Typography>
                 </Box>
               </Card>
