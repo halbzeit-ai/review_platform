@@ -869,7 +869,10 @@ async def get_experiment_details(
             if deck.ai_analysis_results:
                 try:
                     analysis_data = json.loads(deck.ai_analysis_results)
-                    page_count = analysis_data.get("page_count", None)
+                    # Check various possible fields for page count
+                    page_count = (analysis_data.get("page_count") or 
+                                analysis_data.get("total_pages_analyzed") or 
+                                analysis_data.get("total_pages"))
                 except:
                     pass
             

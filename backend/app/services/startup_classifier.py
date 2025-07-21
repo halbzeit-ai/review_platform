@@ -140,21 +140,28 @@ class StartupClassifier:
     def _create_classification_prompt(self, company_offering: str, top_candidates: List[Dict[str, Any]]) -> str:
         """Create classification prompt for AI model"""
         
-        # Build sector descriptions for prompt
-        sector_descriptions = []
-        for candidate in top_candidates:
-            sector = candidate["sector"]
-            sector_descriptions.append(f"""
-{sector["display_name"]}:
-- Description: {sector["description"]}
-- Subcategories: {", ".join(sector["subcategories"])}
-- Keywords: {", ".join(sector["keywords"][:10])}  # First 10 keywords
-""")
-        
-        # Add all sectors for completeness
+        # Add all sectors for completeness (primary classification basis)
         all_sectors = []
         for sector in self.sectors:
-            all_sectors.append(f"- {sector['display_name']}: {sector['description']}")
+            all_sectors.append(f"""- {sector['display_name']}: {sector['description']}
+  Subcategories: {", ".join(sector['subcategories'])}""")
+        
+        # Build keyword context if available (supportive information)
+        keyword_context = ""
+        if top_candidates:
+            sector_descriptions = []
+            for candidate in top_candidates:
+                sector = candidate["sector"]
+                sector_descriptions.append(f"""
+{sector["display_name"]}:
+- Matched keywords: {", ".join(candidate["matched_keywords"])}
+- Keyword relevance score: {candidate["score"]:.2f}""")
+            keyword_context = f"""
+
+Keyword Analysis Results (supportive context):
+{chr(10).join(sector_descriptions)}
+
+Note: These keyword matches are provided as additional context. Base your classification primarily on the company offering description and sector definitions above."""
         
         prompt = f"""
 You are a healthcare venture capital analyst. Your task is to classify a startup based on their company offering into one of the healthcare sectors below.
@@ -162,10 +169,7 @@ You are a healthcare venture capital analyst. Your task is to classify a startup
 Company Offering: "{company_offering}"
 
 Healthcare Sectors:
-{chr(10).join(all_sectors)}
-
-Top Candidate Sectors (based on keyword analysis):
-{chr(10).join(sector_descriptions)}
+{chr(10).join(all_sectors)}{keyword_context}
 
 Analyze the company offering and classify it into the most appropriate healthcare sector. Consider:
 1. The primary business focus and target market
@@ -256,22 +260,11 @@ Ensure the confidence score reflects how certain you are about the classificatio
                         "recommended_template": template_id
                     }
             
-            # Step 1: Keyword-based pre-filtering
+            # Step 1: Keyword-based pre-filtering (optional enhancement)
             top_candidates = self._keyword_based_classification(company_offering)
             
-            if not top_candidates:
-                logger.warning("No keyword matches found for company offering")
-                return {
-                    "primary_sector": "unknown",
-                    "subcategory": "",
-                    "confidence_score": 0.0,
-                    "reasoning": "No matching keywords found in any healthcare sector",
-                    "secondary_sector": None,
-                    "keywords_matched": [],
-                    "recommended_template": None
-                }
-            
-            # Step 2: AI-based classification
+            # Step 2: AI-based classification (primary method)
+            # Always run AI classification with all sectors, keywords are just supportive
             prompt = self._create_classification_prompt(company_offering, top_candidates)
             
             # Call AI model via GPU HTTP client
@@ -283,20 +276,32 @@ Ensure the confidence score reflects how certain you are about the classificatio
             
             if not response.get("success"):
                 logger.error(f"GPU classification failed: {response.get('error')}")
-                # Fallback to keyword-based classification
-                best_candidate = top_candidates[0]
-                sector = best_candidate["sector"]
-                template_id = self._get_default_template_id(sector["id"])
-                
-                return {
-                    "primary_sector": sector["name"],
-                    "subcategory": sector["subcategories"][0] if sector["subcategories"] else "",
-                    "confidence_score": min(best_candidate["score"], 0.5),
-                    "reasoning": f"GPU classification failed, using keyword match. Error: {response.get('error')}. Matched keywords: {', '.join(best_candidate['matched_keywords'])}",
-                    "secondary_sector": None,
-                    "keywords_matched": best_candidate["matched_keywords"],
-                    "recommended_template": template_id
-                }
+                # Fallback to keyword-based classification if available
+                if top_candidates:
+                    best_candidate = top_candidates[0]
+                    sector = best_candidate["sector"]
+                    template_id = self._get_default_template_id(sector["id"])
+                    
+                    return {
+                        "primary_sector": sector["name"],
+                        "subcategory": sector["subcategories"][0] if sector["subcategories"] else "",
+                        "confidence_score": min(best_candidate["score"], 0.5),
+                        "reasoning": f"GPU classification failed, using keyword match. Error: {response.get('error')}. Matched keywords: {', '.join(best_candidate['matched_keywords'])}",
+                        "secondary_sector": None,
+                        "keywords_matched": best_candidate["matched_keywords"],
+                        "recommended_template": template_id
+                    }
+                else:
+                    # No keywords and GPU failed - return unknown
+                    return {
+                        "primary_sector": "unknown",
+                        "subcategory": "",
+                        "confidence_score": 0.0,
+                        "reasoning": f"GPU classification failed and no keyword matches found. Error: {response.get('error')}",
+                        "secondary_sector": None,
+                        "keywords_matched": [],
+                        "recommended_template": None
+                    }
             
             # Parse AI response
             ai_response_text = response.get('response', '')
@@ -304,39 +309,63 @@ Ensure the confidence score reflects how certain you are about the classificatio
             ai_result = self._parse_ai_response(ai_response_text)
             
             if not ai_result:
-                # Fallback to keyword-based classification
-                best_candidate = top_candidates[0]
-                sector = best_candidate["sector"]
-                template_id = self._get_default_template_id(sector["id"])
-                
-                return {
-                    "primary_sector": sector["name"],
-                    "subcategory": sector["subcategories"][0] if sector["subcategories"] else "",
-                    "confidence_score": min(best_candidate["score"], 0.7),
-                    "reasoning": f"Keyword-based classification (AI parsing failed). Matched keywords: {', '.join(best_candidate['matched_keywords'])}",
-                    "secondary_sector": None,
-                    "keywords_matched": best_candidate["matched_keywords"],
-                    "recommended_template": template_id
-                }
+                # Fallback to keyword-based classification if available
+                if top_candidates:
+                    best_candidate = top_candidates[0]
+                    sector = best_candidate["sector"]
+                    template_id = self._get_default_template_id(sector["id"])
+                    
+                    return {
+                        "primary_sector": sector["name"],
+                        "subcategory": sector["subcategories"][0] if sector["subcategories"] else "",
+                        "confidence_score": min(best_candidate["score"], 0.7),
+                        "reasoning": f"Keyword-based classification (AI parsing failed). Matched keywords: {', '.join(best_candidate['matched_keywords'])}",
+                        "secondary_sector": None,
+                        "keywords_matched": best_candidate["matched_keywords"],
+                        "recommended_template": template_id
+                    }
+                else:
+                    # No keywords and AI parsing failed - return unknown
+                    return {
+                        "primary_sector": "unknown",
+                        "subcategory": "",
+                        "confidence_score": 0.0,
+                        "reasoning": "AI classification response could not be parsed and no keyword matches found",
+                        "secondary_sector": None,
+                        "keywords_matched": [],
+                        "recommended_template": None
+                    }
             
             # Step 3: Validate and enhance AI result
             primary_sector = self._find_sector_by_name(ai_result.get("primary_sector", ""))
             
             if not primary_sector:
-                # Fallback to best keyword match
-                best_candidate = top_candidates[0]
-                sector = best_candidate["sector"]
-                template_id = self._get_default_template_id(sector["id"])
-                
-                return {
-                    "primary_sector": sector["name"],
-                    "subcategory": sector["subcategories"][0] if sector["subcategories"] else "",
-                    "confidence_score": min(best_candidate["score"], 0.6),
-                    "reasoning": f"AI classification failed validation, using keyword match. Matched keywords: {', '.join(best_candidate['matched_keywords'])}",
-                    "secondary_sector": None,
-                    "keywords_matched": best_candidate["matched_keywords"],
-                    "recommended_template": template_id
-                }
+                # Fallback to best keyword match if available
+                if top_candidates:
+                    best_candidate = top_candidates[0]
+                    sector = best_candidate["sector"]
+                    template_id = self._get_default_template_id(sector["id"])
+                    
+                    return {
+                        "primary_sector": sector["name"],
+                        "subcategory": sector["subcategories"][0] if sector["subcategories"] else "",
+                        "confidence_score": min(best_candidate["score"], 0.6),
+                        "reasoning": f"AI classification failed validation, using keyword match. Matched keywords: {', '.join(best_candidate['matched_keywords'])}",
+                        "secondary_sector": None,
+                        "keywords_matched": best_candidate["matched_keywords"],
+                        "recommended_template": template_id
+                    }
+                else:
+                    # No keywords and AI validation failed - return unknown
+                    return {
+                        "primary_sector": "unknown",
+                        "subcategory": "",
+                        "confidence_score": 0.0,
+                        "reasoning": f"AI classified as '{ai_result.get('primary_sector', '')}' but this sector was not found in database, and no keyword matches available",
+                        "secondary_sector": None,
+                        "keywords_matched": [],
+                        "recommended_template": None
+                    }
             
             # Get template for primary sector
             template_id = self._get_default_template_id(primary_sector["id"])
