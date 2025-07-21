@@ -298,33 +298,33 @@ const ConfigPage = () => {
           </Alert>
         )}
 
-        {/* Active Models Overview */}
+        {/* Active Models Overview - Compact */}
         <Typography variant="h6" gutterBottom>
           Active Models by Type
         </Typography>
-        <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid container spacing={1} sx={{ mb: 3 }}>
           {MODEL_TYPES.map((modelType) => (
-            <Grid item xs={12} md={6} lg={3} key={modelType.key}>
+            <Grid item xs={6} md={3} key={modelType.key}>
               <Card variant="outlined" sx={{ 
                 bgcolor: activeModels[modelType.key] ? 'success.50' : 'grey.50',
                 borderColor: activeModels[modelType.key] ? 'success.main' : 'grey.300'
               }}>
-                <CardContent>
-                  <Box display="flex" alignItems="center" gap={1} mb={1}>
+                <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+                  <Box display="flex" alignItems="center" gap={0.5} mb={0.5}>
                     {modelType.icon}
-                    <Typography variant="subtitle2" fontWeight="bold">
+                    <Typography variant="body2" fontWeight="bold" fontSize={"0.875rem"}>
                       {modelType.label}
                     </Typography>
                   </Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5, lineHeight: 1.2 }}>
                     {activeModels[modelType.key] || 'No model selected'}
                   </Typography>
                   {activeModels[modelType.key] && (
                     <Chip 
-                      label={t('modelConfig.labels.active')} 
+                      label="Active" 
                       color="success" 
                       size="small"
-                      icon={<CheckCircle />}
+                      sx={{ height: 20, fontSize: '0.7rem' }}
                     />
                   )}
                 </CardContent>
@@ -453,50 +453,6 @@ const ConfigPage = () => {
         )}
       </Paper>
 
-      {/* Available Models from Ollama */}
-      {availableModels.length > 0 && (
-        <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            {t('modelConfig.sections.popularModels')}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" paragraph>
-            {t('modelConfig.messages.modelDescription')}
-          </Typography>
-          
-          <Grid container spacing={2}>
-            {availableModels.map((model) => (
-              <Grid item xs={12} md={6} lg={4} key={model.name}>
-                <Card variant="outlined">
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      {model.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" paragraph>
-                      {model.description || 'No description available'}
-                    </Typography>
-                    <Box display="flex" justifyContent="space-between" alignItems="center">
-                      <Typography variant="caption">
-                        {model.size || 'Size unknown'}
-                      </Typography>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<Download />}
-                        onClick={() => {
-                          setNewModelName(model.name);
-                          setPullDialog(true);
-                        }}
-                      >
-                        Pull
-                      </Button>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </Paper>
-      )}
 
       {/* Pull Model Dialog */}
       <Dialog open={pullDialog} onClose={() => setPullDialog(false)} maxWidth="sm" fullWidth>
