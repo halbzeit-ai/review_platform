@@ -878,10 +878,10 @@ async def get_experiment_details(
                 
                 if cache_result and cache_result[0]:
                     analysis_data = json.loads(cache_result[0])
-                    # Check various possible fields for page count
-                    page_count = (analysis_data.get("page_count") or 
-                                analysis_data.get("total_pages_analyzed") or 
-                                analysis_data.get("total_pages"))
+                    # Page count is the length of visual_analysis_results array
+                    visual_results = analysis_data.get("visual_analysis_results", [])
+                    if isinstance(visual_results, list):
+                        page_count = len(visual_results)
             except Exception as e:
                 logger.debug(f"Could not get page count for deck {deck.id}: {e}")
             
