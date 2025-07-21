@@ -490,7 +490,8 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                                     'role': 'user', 
                                     'content': full_extraction_prompt
                                 }
-                            ]
+                            ],
+                            options={'num_ctx': 32768, 'temperature': 0.3}
                         )
                         
                         offering_result = response['message']['content']
