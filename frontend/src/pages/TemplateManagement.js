@@ -356,28 +356,9 @@ const TemplateManagement = () => {
           {sector.description}
         </Typography>
         
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
-          {sector.subcategories.slice(0, 3).map((subcategory, index) => (
-            <Chip 
-              key={index} 
-              label={subcategory} 
-              size="small" 
-              variant="outlined"
-            />
-          ))}
-          {sector.subcategories.length > 3 && (
-            <Chip 
-              label={`+${sector.subcategories.length - 3} more`}
-              size="small"
-              variant="outlined"
-              color="primary"
-            />
-          )}
-        </Box>
-        
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="caption" color="text.secondary">
-            {sector.keywords.length} keywords
+            {sector.subcategories.length} subcategories
           </Typography>
           <Chip 
             label={`${(sector.confidence_threshold * 100).toFixed(0)}% threshold`}
@@ -501,6 +482,49 @@ const TemplateManagement = () => {
                 />
               ))}
             </Box>
+
+            {/* Keywords Section */}
+            {selectedSector && selectedSector.keywords && (
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 1 }}>
+                  Sector Keywords ({selectedSector.keywords.length})
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {selectedSector.keywords.map((keyword, index) => (
+                    <Chip 
+                      key={index} 
+                      label={keyword}
+                      size="small" 
+                      variant="outlined"
+                      color="primary"
+                    />
+                  ))}
+                </Box>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                  These keywords help identify companies in this sector during classification
+                </Typography>
+              </Box>
+            )}
+
+            {/* Subcategories Section */}
+            {selectedSector && selectedSector.subcategories && (
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 1 }}>
+                  Subcategories ({selectedSector.subcategories.length})
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {selectedSector.subcategories.map((subcategory, index) => (
+                    <Chip 
+                      key={index} 
+                      label={subcategory}
+                      size="small" 
+                      variant="outlined"
+                      color="info"
+                    />
+                  ))}
+                </Box>
+              </Box>
+            )}
             
             <Typography variant="h6" sx={{ mb: 2 }}>
               Analysis Chapters ({templateDetails.chapters ? templateDetails.chapters.length : 0})
@@ -854,6 +878,38 @@ const TemplateManagement = () => {
                 />
               </Grid>
             ))}
+            <Grid item xs={12} md={6} lg={4}>
+              <Card 
+                sx={{ 
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  '&:hover': { 
+                    transform: 'translateY(-2px)',
+                    boxShadow: 3,
+                    bgcolor: 'action.hover'
+                  },
+                  border: 2,
+                  borderStyle: 'dashed',
+                  borderColor: 'primary.main',
+                  minHeight: 200
+                }}
+                onClick={() => setCustomizeDialogOpen(true)}
+              >
+                <Box sx={{ textAlign: 'center', p: 3 }}>
+                  <AddIcon sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
+                  <Typography variant="h6" color="primary.main">
+                    Add New Template
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Create a custom healthcare template
+                  </Typography>
+                </Box>
+              </Card>
+            </Grid>
           </Grid>
         </TabPanel>
 
