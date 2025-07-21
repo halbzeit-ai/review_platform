@@ -862,7 +862,22 @@ async def get_experiment_details(
         # Get deck information for the experiment
         deck_ids = experiment[7]  # pitch_deck_ids array
         decks = db.query(PitchDeck).filter(PitchDeck.id.in_(deck_ids)).all()
-        deck_info = {deck.id: {"filename": deck.file_name, "company_name": deck.ai_extracted_startup_name} for deck in decks}
+        deck_info = {}
+        for deck in decks:
+            # Extract page count from ai_analysis_results if available
+            page_count = None
+            if deck.ai_analysis_results:
+                try:
+                    analysis_data = json.loads(deck.ai_analysis_results)
+                    page_count = analysis_data.get("page_count", None)
+                except:
+                    pass
+            
+            deck_info[deck.id] = {
+                "filename": deck.file_name, 
+                "company_name": deck.ai_extracted_startup_name,
+                "page_count": page_count
+            }
         
         # Parse classification results if available
         classification_data = {}

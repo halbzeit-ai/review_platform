@@ -1765,13 +1765,6 @@ const DojoManagement = () => {
                           }
                         }}
                       >
-                        <ListItemIcon sx={{ minWidth: 36 }}>
-                          {isSuccess ? (
-                            <CheckCircle color="success" />
-                          ) : (
-                            <Error color="error" />
-                          )}
-                        </ListItemIcon>
                         <ListItemText
                           sx={{ pr: 12 }}
                           primary={
@@ -1806,20 +1799,9 @@ const DojoManagement = () => {
                                 <Typography variant="caption" color="text.secondary">
                                   {extractionLength} chars
                                 </Typography>
-                                <Chip 
-                                  label={isSuccess ? 'Success' : 'Failed'} 
-                                  size="small"
-                                  color={isSuccess ? 'success' : 'error'}
-                                  variant="outlined"
-                                />
-                                {result.visual_analysis_used && (
-                                  <Chip 
-                                    label="Visual Used" 
-                                    size="small"
-                                    color="info"
-                                    variant="outlined"
-                                  />
-                                )}
+                                <Typography variant="caption" color="text.secondary">
+                                  • {result.deck_info?.page_count || 'N/A'} pages
+                                </Typography>
                               </Box>
                             </Box>
                           }
@@ -1914,20 +1896,9 @@ const DojoManagement = () => {
               <Typography variant="caption" color="text.secondary">
                 {selectedExtractionResult?.offering_extraction?.length || 0} characters
               </Typography>
-              {selectedExtractionResult?.visual_analysis_used && (
-                <Chip 
-                  label="Visual Used" 
-                  size="small"
-                  color="info"
-                  variant="outlined"
-                />
-              )}
-              <Chip 
-                label={selectedExtractionResult?.offering_extraction?.startsWith('Error:') ? 'Failed' : 'Success'} 
-                size="small"
-                color={selectedExtractionResult?.offering_extraction?.startsWith('Error:') ? 'error' : 'success'}
-                variant="outlined"
-              />
+              <Typography variant="caption" color="text.secondary">
+                • {selectedExtractionResult?.deck_info?.page_count || 'N/A'} pages
+              </Typography>
             </Box>
           </Box>
         </DialogTitle>
