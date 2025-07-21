@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -20,36 +20,17 @@ import {
   Link,
   Alert,
   CircularProgress,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  ListItemSecondaryAction,
   Divider,
   Badge
 } from '@mui/material';
 import {
-  ExpandMore as ExpandMoreIcon,
   Edit as EditIcon,
   FileCopy as CopyIcon,
   Add as AddIcon,
   Assessment as AssessmentIcon,
-  Science as ScienceIcon,
-  LocalHospital as LocalHospitalIcon,
-  Psychology as PsychologyIcon,
-  Computer as ComputerIcon,
-  Analytics as AnalyticsIcon,
-  FitnessCenter as FitnessIcon,
-  Storefront as StorefrontIcon,
-  Settings as SettingsIcon,
-  Visibility as VisibilityIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import PromptEditor from '../components/PromptEditor';
 
 import { 
   getHealthcareSectors, 
@@ -57,12 +38,7 @@ import {
   getTemplateDetails,
   getPerformanceMetrics,
   customizeTemplate,
-  getMyCustomizations,
-  getPipelinePrompts,
-  getPipelinePromptByStage,
-  updatePipelinePrompt,
-  resetPipelinePrompt,
-  getPipelineStages
+  getPipelinePrompts
 } from '../services/api';
 
 const TemplateManagement = () => {
@@ -77,16 +53,6 @@ const TemplateManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Pipeline configuration state
-  const [pipelinePrompts, setPipelinePrompts] = useState({});
-  const [selectedPromptStage, setSelectedPromptStage] = useState('image_analysis');
-  const [promptTexts, setPromptTexts] = useState({
-    image_analysis: '',
-    offering_extraction: '',
-    startup_name_extraction: ''
-  });
-  const [promptLoading, setPromptLoading] = useState(false);
-  const [promptError, setPromptError] = useState(null);
   
   
   
@@ -95,27 +61,16 @@ const TemplateManagement = () => {
   const [customizeDialogOpen, setCustomizeDialogOpen] = useState(false);
   const [customizationName, setCustomizationName] = useState('');
   
-  const [breadcrumbs, setBreadcrumbs] = useState([
+  const breadcrumbs = [
     { label: t('navigation.dashboard'), path: '/dashboard' },
     { label: t('configuration.title'), path: '/configuration' },
     { label: t('templates.title'), path: '/templates' }
-  ]);
+  ];
 
-  // Sector icons mapping
-  const sectorIcons = {
-    'digital_therapeutics': <PsychologyIcon />,
-    'healthcare_infrastructure': <ComputerIcon />,
-    'telemedicine': <LocalHospitalIcon />,
-    'diagnostics_devices': <ScienceIcon />,
-    'biotech_pharma': <ScienceIcon />,
-    'health_data_ai': <AnalyticsIcon />,
-    'consumer_health': <FitnessIcon />,
-    'healthcare_marketplaces': <StorefrontIcon />
-  };
 
   useEffect(() => {
     loadInitialData();
-  }, []);
+  }, [loadInitialData]);
 
 
 
@@ -132,7 +87,6 @@ const TemplateManagement = () => {
       // Extract data from API responses
       const sectorsData = sectorsResponse.data || sectorsResponse;
       const metricsData = metricsResponse.data || metricsResponse;
-      const pipelineData = pipelineResponse.data || pipelineResponse;
       
       // Load all templates from all sectors
       const allTemplates = [];
@@ -158,15 +112,6 @@ const TemplateManagement = () => {
       
       setTemplates(allTemplates);
       setPerformanceMetrics(metricsData);
-      setPipelinePrompts(pipelineData.prompts || {});
-      
-      // Set initial prompt texts for all stages
-      const prompts = pipelineData.prompts || {};
-      setPromptTexts({
-        image_analysis: prompts.image_analysis || '',
-        offering_extraction: prompts.offering_extraction || '',
-        startup_name_extraction: prompts.startup_name_extraction || ''
-      });
       
     } catch (err) {
       console.error('Error loading initial data:', err);
@@ -183,18 +128,6 @@ const TemplateManagement = () => {
   }, [navigate]);
 
 
-  const loadTemplateDetails = async (template) => {
-    try {
-      setSelectedTemplate(template);
-      const detailsResponse = await getTemplateDetails(template.id);
-      const details = detailsResponse.data || detailsResponse;
-      setTemplateDetails(details);
-      setTemplateDialogOpen(true);
-    } catch (err) {
-      console.error('Error loading template details:', err);
-      setError(err.response?.data?.detail || err.message || 'Failed to load template details');
-    }
-  };
 
 
   const handleEditTemplate = async (template) => {
@@ -224,23 +157,6 @@ const TemplateManagement = () => {
     }
   };
 
-  const handleCustomizeTemplate = async (templateId, customizationData) => {
-    try {
-      await customizeTemplate({
-        base_template_id: templateId,
-        customization_name: customizationData.name,
-        customized_chapters: customizationData.chapters,
-        customized_questions: customizationData.questions,
-        customized_weights: customizationData.weights
-      });
-      
-      // Refresh sectors data to show updated templates
-      await loadInitialData();
-      setCustomizeDialogOpen(false);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
 
   const handleCreateNewTemplate = () => {
     // Create a new empty template structure
@@ -305,83 +221,6 @@ const TemplateManagement = () => {
     setTemplateDialogOpen(true);
   };
 
-  // Pipeline prompt management functions
-  const handlePromptStageChange = async (stageName) => {
-    try {
-      setSelectedPromptStage(stageName);
-      setPromptLoading(true);
-      setPromptError(null);
-      
-      const response = await getPipelinePromptByStage(stageName);
-      const promptData = response.data || response;
-      const newPromptText = promptData.prompt_text || '';
-      setPromptTexts(prev => ({
-        ...prev,
-        [stageName]: newPromptText
-      }));
-      
-    } catch (err) {
-      console.error('Error loading prompt:', err);
-      setPromptError(err.response?.data?.detail || err.message || 'Failed to load prompt');
-    } finally {
-      setPromptLoading(false);
-    }
-  };
-
-  const handleSavePrompt = async () => {
-    try {
-      setPromptLoading(true);
-      setPromptError(null);
-      
-      const currentPromptText = promptTexts[selectedPromptStage];
-      await updatePipelinePrompt(selectedPromptStage, currentPromptText);
-      
-      // Update local state
-      setPipelinePrompts(prev => ({
-        ...prev,
-        [selectedPromptStage]: currentPromptText
-      }));
-      
-      setError(null);
-      // Show success message briefly
-      setTimeout(() => setPromptError(null), 3000);
-      
-    } catch (err) {
-      console.error('Error saving prompt:', err);
-      setPromptError(err.response?.data?.detail || err.message || 'Failed to save prompt');
-    } finally {
-      setPromptLoading(false);
-    }
-  };
-
-  const handleResetPrompt = async () => {
-    try {
-      setPromptLoading(true);
-      setPromptError(null);
-      
-      const response = await resetPipelinePrompt(selectedPromptStage);
-      const resetData = response.data || response;
-      
-      // Update local state with reset prompt
-      const newPromptText = resetData.default_prompt || '';
-      setPromptTexts(prev => ({
-        ...prev,
-        [selectedPromptStage]: newPromptText
-      }));
-      setPipelinePrompts(prev => ({
-        ...prev,
-        [selectedPromptStage]: newPromptText
-      }));
-      
-      setError(null);
-      
-    } catch (err) {
-      console.error('Error resetting prompt:', err);
-      setPromptError(err.response?.data?.detail || err.message || 'Failed to reset prompt');
-    } finally {
-      setPromptLoading(false);
-    }
-  };
 
   const TabPanel = ({ children, value, index }) => (
     <div hidden={value !== index}>
@@ -389,120 +228,7 @@ const TemplateManagement = () => {
     </div>
   );
 
-  const SectorCard = ({ sector, onSelect, onEdit }) => (
-    <Card 
-      sx={{ 
-        transition: 'all 0.2s',
-        '&:hover': { 
-          transform: 'translateY(-2px)',
-          boxShadow: 3 
-        },
-        border: selectedSector?.id === sector.id ? 2 : 1,
-        borderColor: selectedSector?.id === sector.id ? 'primary.main' : 'grey.300'
-      }}
-    >
-      <CardContent sx={{ cursor: 'pointer' }} onClick={() => onSelect(sector)}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          {sectorIcons[sector.name] || <SettingsIcon />}
-          <Typography variant="h6" sx={{ ml: 1 }}>
-            {sector.display_name}
-          </Typography>
-        </Box>
-        
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {sector.description}
-        </Typography>
-        
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="caption" color="text.secondary">
-            {sector.subcategories.length} subcategories
-          </Typography>
-          <Chip 
-            label={`${(sector.confidence_threshold * 100).toFixed(0)}% threshold`}
-            size="small"
-            color="info"
-          />
-        </Box>
-      </CardContent>
-      
-      <CardActions>
-        <Button 
-          size="small" 
-          startIcon={<EditIcon />}
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit(sector);
-          }}
-        >
-          Edit Template
-        </Button>
-      </CardActions>
-    </Card>
-  );
 
-  const TemplateCard = ({ template, onEdit, onCustomize, onPreview }) => (
-    <Card sx={{ height: '100%' }}>
-      <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-          <Typography variant="h6">
-            {template.name}
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            {template.is_default && (
-              <Chip label={t('labels.default')} size="small" color="primary" />
-            )}
-            <Badge badgeContent={template.usage_count} color="secondary">
-              <AssessmentIcon />
-            </Badge>
-          </Box>
-        </Box>
-        
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {template.description}
-        </Typography>
-        
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
-          {template.specialized_analysis.map((analysis, index) => (
-            <Chip 
-              key={index} 
-              label={analysis.replace('_', ' ')} 
-              size="small" 
-              variant="outlined"
-              color="secondary"
-            />
-          ))}
-        </Box>
-        
-        <Typography variant="caption" color="text.secondary">
-          Version {template.template_version} • Used {template.usage_count} times
-        </Typography>
-      </CardContent>
-      
-      <CardActions>
-        <Button 
-          size="small" 
-          startIcon={<VisibilityIcon />}
-          onClick={() => onPreview(template)}
-        >
-          Preview
-        </Button>
-        <Button 
-          size="small" 
-          startIcon={<EditIcon />}
-          onClick={() => onEdit(template)}
-        >
-          Edit
-        </Button>
-        <Button 
-          size="small" 
-          startIcon={<CopyIcon />}
-          onClick={() => onCustomize(template)}
-        >
-          {t('buttons.customize')}
-        </Button>
-      </CardActions>
-    </Card>
-  );
 
   const TemplateDetailsDialog = () => {
     const [editedTemplate, setEditedTemplate] = useState(null);
@@ -517,7 +243,7 @@ const TemplateManagement = () => {
           chapters: templateDetails.chapters || []
         });
       }
-    }, [templateDialogOpen, templateDetails, selectedTemplate]);
+    }, [templateDialogOpen, templateDetails]);
 
     const addChapter = () => {
       if (!editedTemplate) return;
@@ -588,19 +314,27 @@ const TemplateManagement = () => {
         }
         
         // For new templates, we need to use a base template ID
-        // If no base template, we'll use the first available template from the first sector
+        // If no base template, we'll use the first available template as base
         let baseTemplateId = selectedTemplate?.id;
-        if (!baseTemplateId && sectors.length > 0) {
-          // Get the first available template from the first sector as base
-          const firstSector = sectors[0];
-          const templatesResponse = await getSectorTemplates(firstSector.id);
-          const templatesData = templatesResponse.data || templatesResponse;
-          const templates = Array.isArray(templatesData) ? templatesData : [];
-          const defaultTemplate = templates.find(t => t.is_default) || templates[0];
-          if (defaultTemplate) {
-            baseTemplateId = defaultTemplate.id;
-          } else {
-            throw new Error('No base template available to create new template from');
+        if (!baseTemplateId && templates.length > 0) {
+          // Use the first available template as base
+          const firstTemplate = templates[0];
+          baseTemplateId = firstTemplate.id;
+        } else if (!baseTemplateId) {
+          // If no templates exist, we need to get one from the first sector
+          const sectorsResponse = await getHealthcareSectors();
+          const sectorsData = sectorsResponse.data || sectorsResponse;
+          if (Array.isArray(sectorsData) && sectorsData.length > 0) {
+            const firstSector = sectorsData[0];
+            const templatesResponse = await getSectorTemplates(firstSector.id);
+            const templatesData = templatesResponse.data || templatesResponse;
+            const sectorTemplates = Array.isArray(templatesData) ? templatesData : [];
+            const defaultTemplate = sectorTemplates.find(t => t.is_default) || sectorTemplates[0];
+            if (defaultTemplate) {
+              baseTemplateId = defaultTemplate.id;
+            } else {
+              throw new Error('No base template available to create new template from');
+            }
           }
         }
         
@@ -695,28 +429,6 @@ const TemplateManagement = () => {
                 sx={{ mb: 3 }}
               />
 
-              {/* Keywords Section */}
-              {selectedSector && selectedSector.keywords && (
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="h6" sx={{ mb: 1 }}>
-                    Sector Keywords ({selectedSector.keywords.length})
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {selectedSector.keywords.map((keyword, index) => (
-                      <Chip 
-                        key={index} 
-                        label={keyword}
-                        size="small" 
-                        variant="outlined"
-                        color="primary"
-                      />
-                    ))}
-                  </Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                    These keywords help identify companies in this sector during classification
-                  </Typography>
-                </Box>
-              )}
 
               {/* Chapters Section */}
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -894,119 +606,7 @@ const TemplateManagement = () => {
     </Box>
   );
 
-  const PipelineSettingsContent = () => {
-    const extractionTypes = [
-      {
-        key: 'image_analysis',
-        name: t('labels.imageAnalysisPrompt'),
-        description: t('pipeline.imageAnalysisDescription'),
-        icon: <VisibilityIcon />
-      },
-      {
-        key: 'offering_extraction',
-        name: t('labels.companyOfferingPrompt'),
-        description: t('pipeline.companyOfferingDescription'),
-        icon: <StorefrontIcon />
-      },
-      {
-        key: 'startup_name_extraction',
-        name: 'Startup Name Extraction',
-        description: 'Extract the startup name from pitch deck content',
-        icon: <StorefrontIcon />
-      }
-    ];
 
-    return (
-      <Box>
-        <Typography variant="h5" sx={{ mb: 3 }}>
-          {t('pipeline.title')}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-          {t('pipeline.description')}
-        </Typography>
-
-        <Grid container spacing={3}>
-          {/* Extraction Type Selector */}
-          <Grid item xs={12} md={3}>
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                Extraction Types
-              </Typography>
-              <List>
-                {extractionTypes.map((type) => (
-                  <ListItem
-                    key={type.key}
-                    button
-                    selected={selectedPromptStage === type.key}
-                    onClick={() => setSelectedPromptStage(type.key)}
-                    sx={{
-                      borderRadius: 1,
-                      mb: 1,
-                      '&.Mui-selected': {
-                        backgroundColor: 'primary.50',
-                        borderLeft: 3,
-                        borderLeftColor: 'primary.main'
-                      }
-                    }}
-                  >
-                    <ListItemIcon sx={{ minWidth: 40 }}>
-                      {type.icon}
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={type.name}
-                      secondary={type.key === 'image_analysis' ? 'Vision AI' : 'Text Processing'}
-                    />
-                  </ListItem>
-                ))}
-              </List>
-            </Paper>
-          </Grid>
-
-          {/* Prompt Editor */}
-          <Grid item xs={12} md={9}>
-            <Paper sx={{ p: 3 }}>
-              {(() => {
-                const currentType = extractionTypes.find(t => t.key === selectedPromptStage);
-                return (
-                  <>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      {currentType?.icon}
-                      <Typography variant="h6" sx={{ ml: 1 }}>
-                        {currentType?.name}
-                      </Typography>
-                    </Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                      {currentType?.description}
-                    </Typography>
-
-                    <PromptEditor
-                      initialPrompt={promptTexts[selectedPromptStage]}
-                      stageName={selectedPromptStage}
-                      onSave={(newText) => {
-                        setPromptTexts(prev => ({
-                          ...prev,
-                          [selectedPromptStage]: newText
-                        }));
-                        setPipelinePrompts(prev => ({
-                          ...prev,
-                          [selectedPromptStage]: newText
-                        }));
-                      }}
-                    />
-
-                    <Alert severity="info" sx={{ mt: 2 }}>
-                      Changes to prompts will affect all new PDF processing. 
-                      Existing analyses will not be reprocessed.
-                    </Alert>
-                  </>
-                );
-              })()}
-            </Paper>
-          </Grid>
-        </Grid>
-      </Box>
-    );
-  };
 
   if (loading) {
     return (
@@ -1161,7 +761,12 @@ const TemplateManagement = () => {
         </TabPanel>
 
         <TabPanel value={activeTab} index={2}>
-          <PipelineSettingsContent />
+          <Box>
+            <Typography variant="h6">Pipeline Configuration</Typography>
+            <Typography variant="body2" color="text.secondary">
+              Pipeline configuration is managed separately.
+            </Typography>
+          </Box>
         </TabPanel>
       </Paper>
 
