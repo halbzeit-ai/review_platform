@@ -8,6 +8,7 @@ import logging
 import re
 from typing import Dict, List, Optional, Any
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
 
@@ -22,13 +23,13 @@ class StartupClassifier:
     def _load_healthcare_sectors(self) -> List[Dict[str, Any]]:
         """Load healthcare sectors from database"""
         try:
-            query = """
+            query = text("""
             SELECT id, name, display_name, description, keywords, subcategories, 
                    confidence_threshold, regulatory_requirements
             FROM healthcare_sectors
             WHERE is_active = TRUE
             ORDER BY display_name
-            """
+            """)
             
             result = self.db.execute(query).fetchall()
             
@@ -49,17 +50,29 @@ class StartupClassifier:
             
         except Exception as e:
             logger.error(f"Error loading healthcare sectors: {e}")
-            return []
+            # Return some basic fallback sectors if database doesn't exist
+            return [
+                {
+                    "id": 1,
+                    "name": "healthtech",
+                    "display_name": "HealthTech",
+                    "description": "General health technology solutions",
+                    "keywords": ["health", "medical", "healthcare", "digital health", "telemedicine"],
+                    "subcategories": ["Digital Health", "Telemedicine", "Health Apps"],
+                    "confidence_threshold": 0.3,
+                    "regulatory_requirements": []
+                }
+            ]
     
     def _get_classification_model(self) -> str:
         """Get the active classification model from configuration"""
         try:
             # Try to get from model configuration
-            query = """
+            query = text("""
             SELECT model_name FROM model_configs 
             WHERE model_type = 'text' AND is_active = 1 
             LIMIT 1
-            """
+            """)
             
             result = self.db.execute(query).fetchone()
             
@@ -183,13 +196,13 @@ Ensure the confidence score reflects how certain you are about the classificatio
     def _get_default_template_id(self, sector_id: int) -> Optional[int]:
         """Get default template ID for a sector"""
         try:
-            query = """
+            query = text("""
             SELECT id FROM analysis_templates 
-            WHERE healthcare_sector_id = ? AND is_default = TRUE AND is_active = TRUE
+            WHERE healthcare_sector_id = :sector_id AND is_default = TRUE AND is_active = TRUE
             LIMIT 1
-            """
+            """)
             
-            result = self.db.execute(query, (sector_id,)).fetchone()
+            result = self.db.execute(query, {"sector_id": sector_id}).fetchone()
             return result[0] if result else None
             
         except Exception as e:

@@ -1012,9 +1012,10 @@ async def enrich_experiment_with_classification(
             
             try:
                 # Run classification
-                classification = classifier.classify_startup(company_offering)
+                classification = await classifier.classify(company_offering)
                 
-                if classification.get("success", False):
+                # Check if classification was successful (has primary_sector)
+                if classification.get("primary_sector") and classification.get("primary_sector") != "unknown":
                     successful_classifications += 1
                     classification_results.append({
                         "deck_id": deck_id,
@@ -1025,6 +1026,7 @@ async def enrich_experiment_with_classification(
                         "primary_sector": classification.get("primary_sector"),
                         "secondary_sector": classification.get("secondary_sector"),
                         "keywords_matched": classification.get("keywords_matched", []),
+                        "reasoning": classification.get("reasoning", ""),
                         "error": None
                     })
                 else:
@@ -1036,7 +1038,8 @@ async def enrich_experiment_with_classification(
                         "confidence_score": 0.0,
                         "primary_sector": None,
                         "secondary_sector": None,
-                        "error": classification.get("error", "Classification failed")
+                        "reasoning": classification.get("reasoning", "Classification failed"),
+                        "error": classification.get("reasoning", "Classification failed")
                     })
                     
             except Exception as e:
