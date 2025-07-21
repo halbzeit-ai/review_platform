@@ -435,20 +435,23 @@ async def create_extraction_sample(
             # Get random sample of dojo files
             if request.cached_only:
                 # Only get decks that have cached visual analysis
-                sample_decks = db.execute(text("""
-                    SELECT DISTINCT pd.* FROM pitch_decks pd
+                # Use a subquery to get distinct deck IDs first, then join with main table
+                sample_deck_ids = db.execute(text("""
+                    SELECT DISTINCT pd.id FROM pitch_decks pd
                     INNER JOIN visual_analysis_cache vac ON pd.id = vac.pitch_deck_id
                     WHERE pd.data_source = 'dojo'
-                    ORDER BY RANDOM()
-                    LIMIT :limit
-                """), {"limit": request.sample_size}).fetchall()
+                """)).fetchall()
                 
-                # Convert to PitchDeck objects
-                sample_decks = [
-                    db.query(PitchDeck).filter(PitchDeck.id == row[0]).first()
-                    for row in sample_decks
-                ]
-                sample_decks = [deck for deck in sample_decks if deck is not None]
+                if sample_deck_ids:
+                    # Get the actual deck IDs as a list
+                    deck_ids = [row[0] for row in sample_deck_ids]
+                    
+                    # Now get random sample from these IDs using SQLAlchemy ORM
+                    sample_decks = db.query(PitchDeck).filter(
+                        PitchDeck.id.in_(deck_ids)
+                    ).order_by(func.random()).limit(request.sample_size).all()
+                else:
+                    sample_decks = []
             else:
                 # Get random sample from all dojo files
                 sample_decks = db.query(PitchDeck).filter(
