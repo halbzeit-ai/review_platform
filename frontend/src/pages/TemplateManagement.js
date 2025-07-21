@@ -96,6 +96,7 @@ const TemplateManagement = () => {
   // Dialog states
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [customizeDialogOpen, setCustomizeDialogOpen] = useState(false);
+  const [customizationName, setCustomizationName] = useState('');
   
   const [breadcrumbs, setBreadcrumbs] = useState([
     { label: t('navigation.dashboard'), path: '/dashboard' },
@@ -229,8 +230,11 @@ const TemplateManagement = () => {
       const defaultTemplate = templates.find(t => t.is_default) || templates[0];
       
       if (defaultTemplate) {
-        // Load and show template details for editing
-        await loadTemplateDetails(defaultTemplate);
+        // Load template details and set as selected template for customization
+        const detailsResponse = await getTemplateDetails(defaultTemplate.id);
+        const details = detailsResponse.data || detailsResponse;
+        setSelectedTemplate({...defaultTemplate, chapters: details.chapters || []});
+        setCustomizeDialogOpen(true);
       } else {
         setError('No template found for this sector');
       }
@@ -285,6 +289,44 @@ const TemplateManagement = () => {
       template: newTemplate,
       chapters: newTemplate.chapters
     });
+    setTemplateDialogOpen(true);
+  };
+
+  const handleSaveCustomization = () => {
+    if (!customizationName.trim()) {
+      setError('Please enter a customization name');
+      return;
+    }
+
+    // Create a template based on the selected template with the custom name
+    const customTemplate = {
+      id: selectedTemplate?.id || null,
+      name: customizationName,
+      chapters: selectedTemplate?.chapters || [
+        {
+          id: Date.now(),
+          name: 'New Chapter',
+          questions: [
+            {
+              id: Date.now() + 1,
+              question_text: '',
+              scoring_criteria: ''
+            }
+          ]
+        }
+      ]
+    };
+
+    // Set up the template for editing
+    setSelectedTemplate(customTemplate);
+    setTemplateDetails({
+      template: customTemplate,
+      chapters: customTemplate.chapters
+    });
+    
+    // Close customize dialog and open template editor
+    setCustomizeDialogOpen(false);
+    setCustomizationName('');
     setTemplateDialogOpen(true);
   };
 
@@ -1015,7 +1057,7 @@ const TemplateManagement = () => {
         <Button 
           variant="contained" 
           startIcon={<AddIcon />}
-          onClick={() => setCustomizeDialogOpen(true)}
+          onClick={handleCreateNewTemplate}
         >
           {t('buttons.createCustomTemplate')}
         </Button>
@@ -1183,6 +1225,8 @@ const TemplateManagement = () => {
             fullWidth
             label={t('labels.customizationName')}
             placeholder={t('labels.placeholderCustomTemplate')}
+            value={customizationName}
+            onChange={(e) => setCustomizationName(e.target.value)}
             sx={{ mb: 2 }}
           />
           <Typography variant="body2" color="text.secondary">
@@ -1193,7 +1237,7 @@ const TemplateManagement = () => {
           <Button onClick={() => setCustomizeDialogOpen(false)}>
             {t('buttons.cancel')}
           </Button>
-          <Button variant="contained">
+          <Button variant="contained" onClick={handleSaveCustomization}>
             {t('buttons.saveCustomization')}
           </Button>
         </DialogActions>
