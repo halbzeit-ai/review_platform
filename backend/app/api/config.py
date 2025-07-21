@@ -148,7 +148,6 @@ async def set_active_model(
         db.query(ModelConfig).filter(
             ModelConfig.model_type == request.model_type
         ).update({"is_active": False})
-        db.flush()  # Flush to ensure deactivation is committed
         
         # Set the new active model
         existing_config = db.query(ModelConfig).filter(
@@ -173,9 +172,14 @@ async def set_active_model(
         
         return {"message": f"Successfully set {request.model_name} as active {request.model_type} model"}
         
+    except HTTPException:
+        # Re-raise HTTPExceptions as-is
+        db.rollback()
+        raise
     except Exception as e:
         logger.error(f"Error setting active model: {e}")
-        raise HTTPException(status_code=500, detail="Failed to set active model")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to set active model: {str(e)}")
 
 @router.post("/pull-model")
 async def pull_model(
