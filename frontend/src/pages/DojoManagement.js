@@ -127,6 +127,10 @@ const DojoManagement = () => {
   const [selectedExperiments, setSelectedExperiments] = useState([]);
   const [fullExtractionDialogOpen, setFullExtractionDialogOpen] = useState(false);
   const [selectedExtractionResult, setSelectedExtractionResult] = useState(null);
+  
+  // Classification state
+  const [classificationLoading, setClassificationLoading] = useState(false);
+  const [classificationResults, setClassificationResults] = useState({});
   const [selectFromCached, setSelectFromCached] = useState(false);
   const [cachedDecksCount, setCachedDecksCount] = useState(0);
   const [loadingCachedCount, setLoadingCachedCount] = useState(false);
@@ -767,6 +771,52 @@ const DojoManagement = () => {
 
   const getExperimentById = (id) => {
     return experiments.find(exp => exp.id === id);
+  };
+
+  // Classification enrichment function
+  const runClassificationEnrichment = async (experimentId) => {
+    setClassificationLoading(true);
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+
+      const response = await fetch('/api/dojo/extraction-test/run-classification', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          experiment_id: experimentId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to run classification enrichment');
+      }
+
+      const data = await response.json();
+      
+      // Store classification results
+      setClassificationResults(prev => ({
+        ...prev,
+        [experimentId]: data
+      }));
+
+      // Refresh experiments list to show updated status
+      await loadExperiments();
+      
+      // If experiment details is open for this experiment, refresh it
+      if (selectedExperiment?.id === experimentId) {
+        await viewExperimentDetails(selectedExperiment);
+      }
+
+    } catch (err) {
+      console.error('Error running classification:', err);
+      setError(err.message || 'Failed to run classification');
+    } finally {
+      setClassificationLoading(false);
+    }
   };
 
   const handleDeleteFile = async (fileId) => {
@@ -1418,6 +1468,7 @@ const DojoManagement = () => {
                         <TableCell>Experiment Name</TableCell>
                         <TableCell>Text Model</TableCell>
                         <TableCell>Success Rate</TableCell>
+                        <TableCell>Classification</TableCell>
                         <TableCell>Avg. Response Length</TableCell>
                         <TableCell>Created</TableCell>
                         <TableCell>Actions</TableCell>
@@ -1470,6 +1521,29 @@ const DojoManagement = () => {
                               </Box>
                             </TableCell>
                             <TableCell>
+                              {experiment.classification_enabled ? (
+                                experiment.classification_completed_at ? (
+                                  <Chip 
+                                    label="Classified" 
+                                    size="small" 
+                                    color="success" 
+                                    variant="outlined"
+                                  />
+                                ) : (
+                                  <Chip 
+                                    label="In Progress" 
+                                    size="small" 
+                                    color="warning" 
+                                    variant="outlined"
+                                  />
+                                )
+                              ) : (
+                                <Typography variant="caption" color="text.secondary">
+                                  Not classified
+                                </Typography>
+                              )}
+                            </TableCell>
+                            <TableCell>
                               <Typography variant="body2" color="text.secondary">
                                 ~{(() => {
                                   if (!experiment.results || experiment.results.length === 0) return 0;
@@ -1493,13 +1567,27 @@ const DojoManagement = () => {
                               </Typography>
                             </TableCell>
                             <TableCell>
-                              <Button 
-                                size="small" 
-                                variant="outlined"
-                                onClick={() => viewExperimentDetails(experiment)}
-                              >
-                                View Details
-                              </Button>
+                              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                <Button 
+                                  size="small" 
+                                  variant="outlined"
+                                  onClick={() => viewExperimentDetails(experiment)}
+                                >
+                                  View Details
+                                </Button>
+                                {!experiment.classification_completed_at && (
+                                  <Button 
+                                    size="small" 
+                                    variant="contained"
+                                    color="secondary"
+                                    onClick={() => runClassificationEnrichment(experiment.id)}
+                                    disabled={classificationLoading}
+                                    sx={{ minWidth: 'auto', px: 1 }}
+                                  >
+                                    {classificationLoading ? '...' : 'Classify'}
+                                  </Button>
+                                )}
+                              </Box>
                             </TableCell>
                           </TableRow>
                         );
@@ -1598,6 +1686,41 @@ const DojoManagement = () => {
                     <Typography variant="caption" color="text.secondary">Model Used</Typography>
                     <Typography variant="body2">{experimentDetails.text_model_used}</Typography>
                   </Grid>
+                  {experimentDetails.classification_enabled && (
+                    <Grid item xs={12}>
+                      <Divider sx={{ my: 1 }} />
+                      <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'medium' }}>
+                        Classification Results
+                      </Typography>
+                      <Grid container spacing={2}>
+                        <Grid item xs={6} md={3}>
+                          <Typography variant="caption" color="text.secondary">Classified</Typography>
+                          <Typography variant="h6" color="success.main">
+                            {experimentDetails.classification_statistics?.successful_classifications || 0}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6} md={3}>
+                          <Typography variant="caption" color="text.secondary">Classification Rate</Typography>
+                          <Typography variant="h6">
+                            {Math.round((experimentDetails.classification_statistics?.success_rate || 0) * 100)}%
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6} md={3}>
+                          <Typography variant="caption" color="text.secondary">Avg. Confidence</Typography>
+                          <Typography variant="h6">
+                            {(experimentDetails.classification_statistics?.average_confidence || 0).toFixed(2)}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={6} md={3}>
+                          <Typography variant="caption" color="text.secondary">Top Sector</Typography>
+                          <Typography variant="body2">
+                            {Object.entries(experimentDetails.classification_statistics?.sector_distribution || {})
+                              .sort(([,a], [,b]) => b - a)[0]?.[0] || 'None'}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    </Grid>
+                  )}
                 </Grid>
               </Paper>
 
@@ -1624,6 +1747,10 @@ const DojoManagement = () => {
                   {experimentDetails.results?.map((result, index) => {
                     const isSuccess = !result.offering_extraction.startsWith('Error:');
                     const extractionLength = result.offering_extraction?.length || 0;
+                    
+                    // Get classification data from the experiment's classification results
+                    const classificationData = experimentDetails.classification_results_json && 
+                      JSON.parse(experimentDetails.classification_results_json)[result.deck_id];
                     
                     return (
                       <ListItem 
@@ -1658,6 +1785,22 @@ const DojoManagement = () => {
                                     Company: {result.deck_info.company_name}
                                   </Typography>
                                 )}
+                                {classificationData && (
+                                  <Box sx={{ mt: 0.5, display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                                    <Chip 
+                                      label={classificationData.primary_sector || 'Unknown'}
+                                      size="small"
+                                      color="secondary"
+                                      variant="filled"
+                                      sx={{ fontSize: '0.65rem', height: '20px' }}
+                                    />
+                                    {classificationData.confidence_score && (
+                                      <Typography variant="caption" color="text.secondary">
+                                        {Math.round(classificationData.confidence_score * 100)}% confidence
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                )}
                               </Box>
                               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexShrink: 0 }}>
                                 <Typography variant="caption" color="text.secondary">
@@ -1690,11 +1833,28 @@ const DojoManagement = () => {
                                   WebkitLineClamp: 3,
                                   WebkitBoxOrient: 'vertical',
                                   overflow: 'hidden',
-                                  lineHeight: 1.4
+                                  lineHeight: 1.4,
+                                  mb: classificationData?.reasoning ? 1 : 0
                                 }}
                               >
                                 {result.offering_extraction}
                               </Typography>
+                              {classificationData?.reasoning && (
+                                <Typography 
+                                  variant="caption" 
+                                  color="text.secondary"
+                                  sx={{ 
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden',
+                                    lineHeight: 1.3,
+                                    fontStyle: 'italic'
+                                  }}
+                                >
+                                  Classification reasoning: {classificationData.reasoning}
+                                </Typography>
+                              )}
                             </Box>
                           }
                         />
@@ -1773,6 +1933,61 @@ const DojoManagement = () => {
         </DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 1 }}>
+            {/* Classification Information (if available) */}
+            {(() => {
+              const classificationData = experimentDetails?.classification_results_json && 
+                selectedExtractionResult?.deck_id &&
+                JSON.parse(experimentDetails.classification_results_json)[selectedExtractionResult.deck_id];
+                
+              return classificationData && (
+                <Box sx={{ mb: 3, p: 2, bgcolor: 'info.light', borderRadius: 1, border: 1, borderColor: 'info.main' }}>
+                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 'medium', color: 'info.contrastText' }}>
+                    Classification Results
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={6}>
+                      <Typography variant="body2" color="info.contrastText" sx={{ mb: 1 }}>
+                        <strong>Primary Sector:</strong> {classificationData.primary_sector || 'Unknown'}
+                      </Typography>
+                      {classificationData.subcategory && (
+                        <Typography variant="body2" color="info.contrastText" sx={{ mb: 1 }}>
+                          <strong>Subcategory:</strong> {classificationData.subcategory}
+                        </Typography>
+                      )}
+                      {classificationData.confidence_score && (
+                        <Typography variant="body2" color="info.contrastText" sx={{ mb: 1 }}>
+                          <strong>Confidence:</strong> {Math.round(classificationData.confidence_score * 100)}%
+                        </Typography>
+                      )}
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      {classificationData.secondary_sector && (
+                        <Typography variant="body2" color="info.contrastText" sx={{ mb: 1 }}>
+                          <strong>Secondary Sector:</strong> {classificationData.secondary_sector}
+                        </Typography>
+                      )}
+                      {classificationData.keywords_matched && classificationData.keywords_matched.length > 0 && (
+                        <Typography variant="body2" color="info.contrastText" sx={{ mb: 1 }}>
+                          <strong>Keywords Matched:</strong> {classificationData.keywords_matched.join(', ')}
+                        </Typography>
+                      )}
+                    </Grid>
+                    {classificationData.reasoning && (
+                      <Grid item xs={12}>
+                        <Typography variant="body2" color="info.contrastText" sx={{ fontStyle: 'italic' }}>
+                          <strong>Reasoning:</strong> {classificationData.reasoning}
+                        </Typography>
+                      </Grid>
+                    )}
+                  </Grid>
+                </Box>
+              );
+            })()}
+            
+            {/* Extraction Results */}
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'medium' }}>
+              Company Offering Extraction
+            </Typography>
             <Typography 
               variant="body1" 
               color="text.primary"
