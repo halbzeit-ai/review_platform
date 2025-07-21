@@ -458,7 +458,16 @@ class GPUHTTPServer:
                             logger.warning(f"No visual analysis available for deck {deck_id}")
                         
                         # Prepare full extraction prompt with visual context
-                        full_extraction_prompt = f"""{extraction_prompt}
+                        # Check if user's prompt mentions visual analysis, if not add context
+                        if "visual analysis" in extraction_prompt.lower():
+                            # User already mentions visual analysis in their prompt, just add the context
+                            full_extraction_prompt = f"""{extraction_prompt}
+
+PITCH DECK VISUAL ANALYSIS:
+{visual_context}"""
+                        else:
+                            # User doesn't mention visual analysis, so provide full context
+                            full_extraction_prompt = f"""Based on the pitch deck visual analysis provided below, {extraction_prompt}
 
 PITCH DECK VISUAL ANALYSIS:
 {visual_context}
