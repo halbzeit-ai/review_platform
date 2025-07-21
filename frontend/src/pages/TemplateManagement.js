@@ -531,13 +531,14 @@ const TemplateManagement = () => {
 
     // Initialize edited template when dialog opens
     useEffect(() => {
-      if (templateDialogOpen && templateDetails) {
+      if (templateDialogOpen && templateDetails && selectedTemplate) {
         setEditedTemplate({
-          ...templateDetails,
+          name: selectedTemplate.name, // Use name from selectedTemplate
+          template: templateDetails.template,
           chapters: templateDetails.chapters || []
         });
       }
-    }, [templateDialogOpen, templateDetails]);
+    }, [templateDialogOpen, templateDetails, selectedTemplate]);
 
     const addChapter = () => {
       if (!editedTemplate) return;
@@ -701,6 +702,19 @@ const TemplateManagement = () => {
         <DialogContent sx={{ pb: 1 }}>
           {editedTemplate && (
             <Box>
+              {/* Template Name Section */}
+              <TextField
+                label="Template Name"
+                value={editedTemplate.name || ''}
+                onChange={(e) => setEditedTemplate({
+                  ...editedTemplate,
+                  name: e.target.value
+                })}
+                fullWidth
+                size="small"
+                sx={{ mb: 3 }}
+              />
+
               {/* Keywords Section */}
               {selectedSector && selectedSector.keywords && (
                 <Box sx={{ mb: 3 }}>
