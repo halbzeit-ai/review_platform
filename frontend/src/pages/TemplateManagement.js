@@ -283,13 +283,9 @@ const TemplateManagement = () => {
       ]
     };
     
-    // Set up the template for editing
+    // Set the template and open customize dialog to get name first
     setSelectedTemplate(newTemplate);
-    setTemplateDetails({
-      template: newTemplate,
-      chapters: newTemplate.chapters
-    });
-    setTemplateDialogOpen(true);
+    setCustomizeDialogOpen(true);
   };
 
   const handleSaveCustomization = () => {
@@ -1215,16 +1211,19 @@ const TemplateManagement = () => {
         fullWidth
       >
         <DialogTitle>
-          {t('labels.customizeTemplateTitle')}: {selectedTemplate?.name}
+          {selectedTemplate?.id ? `${t('labels.customizeTemplateTitle')}: ${selectedTemplate?.name}` : 'Create New Template'}
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ mb: 2 }}>
-            Create a customized version of this template with your own questions, weights, and analysis focus.
+            {selectedTemplate?.id 
+              ? 'Create a customized version of this template with your own questions and analysis focus.'
+              : 'Create a new healthcare analysis template with your own chapters and questions.'
+            }
           </Typography>
           <TextField
             fullWidth
-            label={t('labels.customizationName')}
-            placeholder={t('labels.placeholderCustomTemplate')}
+            label={selectedTemplate?.id ? t('labels.customizationName') : 'Template Name'}
+            placeholder={selectedTemplate?.id ? t('labels.placeholderCustomTemplate') : 'My Healthcare Template'}
             value={customizationName}
             onChange={(e) => setCustomizationName(e.target.value)}
             sx={{ mb: 2 }}
@@ -1234,11 +1233,14 @@ const TemplateManagement = () => {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCustomizeDialogOpen(false)}>
+          <Button onClick={() => {
+            setCustomizeDialogOpen(false);
+            setCustomizationName('');
+          }}>
             {t('buttons.cancel')}
           </Button>
           <Button variant="contained" onClick={handleSaveCustomization}>
-            {t('buttons.saveCustomization')}
+            {selectedTemplate?.id ? t('buttons.saveCustomization') : 'Create Template'}
           </Button>
         </DialogActions>
       </Dialog>
