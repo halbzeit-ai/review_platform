@@ -197,13 +197,16 @@ Ensure the confidence score reflects how certain you are about the classificatio
             json_match = re.search(r'\{.*\}', response, re.DOTALL)
             if json_match:
                 json_str = json_match.group(0)
-                return json.loads(json_str)
+                parsed = json.loads(json_str)
+                logger.info(f"Successfully parsed AI JSON: {list(parsed.keys())}")
+                return parsed
             else:
-                logger.warning("No JSON found in AI response")
+                logger.warning(f"No JSON found in AI response: {response[:100]}...")
                 return {}
                 
         except json.JSONDecodeError as e:
             logger.error(f"Error parsing AI response JSON: {e}")
+            logger.error(f"Response was: {response[:200]}...")
             return {}
     
     def _find_sector_by_name(self, sector_name: str) -> Optional[Dict[str, Any]]:
@@ -296,7 +299,9 @@ Ensure the confidence score reflects how certain you are about the classificatio
                 }
             
             # Parse AI response
-            ai_result = self._parse_ai_response(response.get('response', ''))
+            ai_response_text = response.get('response', '')
+            logger.info(f"GPU classification response: {ai_response_text[:200]}...")
+            ai_result = self._parse_ai_response(ai_response_text)
             
             if not ai_result:
                 # Fallback to keyword-based classification
@@ -346,7 +351,7 @@ Ensure the confidence score reflects how certain you are about the classificatio
             if confidence < primary_sector["confidence_threshold"]:
                 confidence = primary_sector["confidence_threshold"]
             
-            return {
+            final_result = {
                 "primary_sector": primary_sector["name"],
                 "subcategory": subcategory,
                 "confidence_score": confidence,
@@ -355,6 +360,9 @@ Ensure the confidence score reflects how certain you are about the classificatio
                 "keywords_matched": ai_result.get("keywords_matched", []),
                 "recommended_template": template_id
             }
+            
+            logger.info(f"Final classification result: sector={final_result['primary_sector']}, confidence={final_result['confidence_score']}")
+            return final_result
             
         except Exception as e:
             logger.error(f"Error in startup classification: {e}")
