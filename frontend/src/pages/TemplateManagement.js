@@ -37,8 +37,7 @@ import {
   getSectorTemplates, 
   getTemplateDetails,
   getPerformanceMetrics,
-  customizeTemplate,
-  getPipelinePrompts
+  customizeTemplate
 } from '../services/api';
 
 const TemplateManagement = () => {
@@ -78,10 +77,9 @@ const TemplateManagement = () => {
   const loadInitialData = useCallback(async () => {
     try {
       setLoading(true);
-      const [sectorsResponse, metricsResponse, pipelineResponse] = await Promise.all([
+      const [sectorsResponse, metricsResponse] = await Promise.all([
         getHealthcareSectors(),
-        getPerformanceMetrics(),
-        getPipelinePrompts()
+        getPerformanceMetrics()
       ]);
       
       // Extract data from API responses
