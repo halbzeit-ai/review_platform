@@ -911,7 +911,8 @@ async def get_experiment_details(
             "deck_ids": deck_ids,
             "classification_enabled": bool(experiment[8]),
             "classification_completed_at": experiment[10].isoformat() if experiment[10] else None,
-            "classification_statistics": classification_data.get("statistics", {}) if classification_data else {}
+            "classification_statistics": classification_data.get("statistics", {}) if classification_data else {},
+            "classification_results_json": json.dumps(classification_data.get("classification_by_deck", {})) if classification_data else None
         }
         
         return experiment_details
@@ -1075,9 +1076,23 @@ async def enrich_experiment_with_classification(
             "sector_distribution": sector_distribution
         }
         
+        # Format classification results for frontend (keyed by deck_id)
+        classification_by_deck = {}
+        for result in classification_results:
+            deck_id = result["deck_id"]
+            classification_by_deck[str(deck_id)] = {
+                "primary_sector": result.get("primary_sector"),
+                "secondary_sector": result.get("secondary_sector"),
+                "confidence_score": result.get("confidence_score", 0.0),
+                "reasoning": result.get("reasoning", ""),
+                "keywords_matched": result.get("keywords_matched", []),
+                "classification_error": result.get("error")
+            }
+        
         # Store classification results
         classification_data = {
             "classification_results": classification_results,
+            "classification_by_deck": classification_by_deck,
             "statistics": statistics,
             "model_used": request.classification_model or classifier.classification_model,
             "classified_at": datetime.utcnow().isoformat()
@@ -1093,7 +1108,7 @@ async def enrich_experiment_with_classification(
             WHERE id = :experiment_id
         """), {
             "experiment_id": request.experiment_id,
-            "classification_results": json.dumps(classification_data),
+            "classification_results": json.dumps(classification_data),  # Store full data including statistics
             "model_used": request.classification_model or classifier.classification_model
         })
         
