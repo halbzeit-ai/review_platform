@@ -8,7 +8,6 @@ import logging
 import re
 from typing import Dict, List, Optional, Any
 from sqlalchemy.orm import Session
-import ollama
 
 logger = logging.getLogger(__name__)
 
@@ -233,15 +232,32 @@ Ensure the confidence score reflects how certain you are about the classificatio
             # Step 2: AI-based classification
             prompt = self._create_classification_prompt(company_offering, top_candidates)
             
-            # Call AI model
-            response = ollama.generate(
-                model=self.classification_model,
-                prompt=prompt,
-                options={'num_ctx': 8192, 'temperature': 0.3}
+            # Call AI model via GPU HTTP client
+            from ..services.gpu_http_client import gpu_http_client
+            response = await gpu_http_client.run_classification(
+                model_name=self.classification_model,
+                prompt=prompt
             )
             
+            if not response.get("success"):
+                logger.error(f"GPU classification failed: {response.get('error')}")
+                # Fallback to keyword-based classification
+                best_candidate = top_candidates[0]
+                sector = best_candidate["sector"]
+                template_id = self._get_default_template_id(sector["id"])
+                
+                return {
+                    "primary_sector": sector["name"],
+                    "subcategory": sector["subcategories"][0] if sector["subcategories"] else "",
+                    "confidence_score": min(best_candidate["score"], 0.5),
+                    "reasoning": f"GPU classification failed, using keyword match. Error: {response.get('error')}. Matched keywords: {', '.join(best_candidate['matched_keywords'])}",
+                    "secondary_sector": None,
+                    "keywords_matched": best_candidate["matched_keywords"],
+                    "recommended_template": template_id
+                }
+            
             # Parse AI response
-            ai_result = self._parse_ai_response(response['response'])
+            ai_result = self._parse_ai_response(response.get('response', ''))
             
             if not ai_result:
                 # Fallback to keyword-based classification

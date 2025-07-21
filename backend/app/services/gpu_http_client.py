@@ -452,6 +452,84 @@ class GPUHTTPClient:
                 "error": str(e)
             }
     
+    async def run_classification(self, model_name: str, prompt: str) -> Dict[str, Any]:
+        """
+        Run classification using the GPU instance
+        
+        Args:
+            model_name: Name of the model to use for classification
+            prompt: Classification prompt
+            
+        Returns:
+            Classification results or error information
+        """
+        try:
+            if not self.gpu_host:
+                logger.error("GPU_INSTANCE_HOST not configured")
+                return {
+                    "success": False,
+                    "error": "GPU_INSTANCE_HOST not configured"
+                }
+            
+            logger.info(f"Requesting classification using model {model_name}")
+            
+            payload = {
+                "model": model_name,
+                "prompt": prompt,
+                "options": {
+                    "num_ctx": 8192,
+                    "temperature": 0.3
+                }
+            }
+            
+            async with httpx.AsyncClient(timeout=300.0) as client:  # 5 minute timeout
+                response = await client.post(
+                    f"{self.base_url}/run-classification",
+                    json=payload,
+                    headers={'Content-Type': 'application/json'}
+                )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    logger.info("Successfully completed classification")
+                    return {
+                        "success": True,
+                        "response": data.get("response", ""),
+                        "message": data.get("message", "Classification completed")
+                    }
+                else:
+                    logger.error(f"GPU classification failed: {data.get('error')}")
+                    return {
+                        "success": False,
+                        "error": data.get("error", "Unknown GPU classification error")
+                    }
+            else:
+                logger.error(f"HTTP error {response.status_code}: {response.text}")
+                return {
+                    "success": False,
+                    "error": f"HTTP {response.status_code}: {response.text}"
+                }
+                
+        except httpx.TimeoutException:
+            logger.error("Timeout processing classification")
+            return {
+                "success": False,
+                "error": "Classification timeout (5 minutes exceeded)"
+            }
+        except httpx.ConnectError:
+            logger.error("Connection error communicating with GPU instance")
+            return {
+                "success": False,
+                "error": "Connection error communicating with GPU instance"
+            }
+        except Exception as e:
+            logger.error(f"Error processing classification: {e}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
+
     def get_processing_progress(self, pitch_deck_id: int) -> Dict[str, Any]:
         """
         Get processing progress for a specific pitch deck

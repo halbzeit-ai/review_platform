@@ -531,6 +531,62 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                     "error": f"Error in offering extraction: {str(e)}",
                     "timestamp": datetime.now().isoformat()
                 }), 500
+        
+        @self.app.route('/api/run-classification', methods=['POST'])
+        def run_classification():
+            """Run classification using text model"""
+            try:
+                data = request.get_json()
+                if not data:
+                    return jsonify({
+                        "success": False,
+                        "error": "No JSON data provided",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                model = data.get('model')
+                prompt = data.get('prompt')
+                options = data.get('options', {})
+                
+                if not model:
+                    return jsonify({
+                        "success": False,
+                        "error": "model is required",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                if not prompt:
+                    return jsonify({
+                        "success": False,
+                        "error": "prompt is required",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                logger.info(f"Starting classification using model {model}")
+                
+                # Use ollama.generate for text generation
+                response = ollama.generate(
+                    model=model,
+                    prompt=prompt,
+                    options=options
+                )
+                
+                logger.info("Classification completed successfully")
+                
+                return jsonify({
+                    "success": True,
+                    "response": response['response'],
+                    "message": "Classification completed successfully",
+                    "timestamp": datetime.now().isoformat()
+                })
+                
+            except Exception as e:
+                logger.error(f"Error in classification: {e}")
+                return jsonify({
+                    "success": False,
+                    "error": f"Error in classification: {str(e)}",
+                    "timestamp": datetime.now().isoformat()
+                }), 500
     
     def _get_cached_visual_analysis(self, deck_ids: List[int]) -> Dict[int, Dict]:
         """Get cached visual analysis from production server for extraction testing"""
