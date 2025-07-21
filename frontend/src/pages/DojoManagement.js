@@ -807,227 +807,7 @@ const DojoManagement = () => {
         </Alert>
       )}
 
-      {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Storage sx={{ mr: 2, color: 'primary.main' }} />
-                <Box>
-                  <Typography variant="h4" color="primary">
-                    {stats.total_files || 0}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Total Files
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
 
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <CheckCircle sx={{ mr: 2, color: 'success.main' }} />
-                <Box>
-                  <Typography variant="h4" color="success.main">
-                    {stats.processed_files || 0}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Processed
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Pending sx={{ mr: 2, color: 'warning.main' }} />
-                <Box>
-                  <Typography variant="h4" color="warning.main">
-                    {stats.pending_files || 0}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Pending
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Error sx={{ mr: 2, color: 'error.main' }} />
-                <Box>
-                  <Typography variant="h4" color="error.main">
-                    {stats.failed_files || 0}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Failed
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Upload Section */}
-      <Paper sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom>
-          Upload Training Data
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Upload a ZIP file containing PDF pitch decks for AI training (max 1GB)
-        </Typography>
-
-        {uploading ? (
-          <Box sx={{ width: '100%', mb: 2 }}>
-            {/* File Info */}
-            {selectedFile && (
-              <Box sx={{ mb: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                  Uploading: {selectedFile.name}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Size: {formatFileSize(selectedFile.size)}
-                </Typography>
-              </Box>
-            )}
-
-            {/* Progress Bar */}
-            <Box sx={{ width: '100%', mb: 1 }}>
-              <LinearProgress 
-                variant="determinate" 
-                value={uploadProgress} 
-                sx={{ height: 8, borderRadius: 4 }}
-              />
-            </Box>
-
-            {/* Progress Info */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Box>
-                <Typography variant="body2" color={uploadSuccess ? 'success.main' : 'text.secondary'}>
-                  {processingStatus || (uploadProgress < 100 ? `Uploading... ${uploadProgress}%` : 'Processing files...')}
-                </Typography>
-                {uploadSpeed > 0 && uploadProgress < 100 && (
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">
-                      {formatUploadSpeed(uploadSpeed)}
-                    </Typography>
-                    {selectedFile && (
-                      <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                        • {formatRemainingTime(bytesUploaded, selectedFile.size, uploadSpeed)}
-                      </Typography>
-                    )}
-                  </Box>
-                )}
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                {uploadSuccess ? (
-                  <CheckCircle color="success" sx={{ mr: 1 }} />
-                ) : (
-                  <CircularProgress size={16} sx={{ mr: 1 }} />
-                )}
-                <Typography variant="caption" color={uploadSuccess ? 'success.main' : 'text.secondary'}>
-                  {uploadSuccess ? 'Success' : (uploadProgress < 100 ? 'Uploading' : 'Processing')}
-                </Typography>
-              </Box>
-            </Box>
-
-            {/* Cancel Button - only show if upload is in progress and not completed */}
-            {!uploadSuccess && (
-              <Box sx={{ mt: 2 }}>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  size="small"
-                  onClick={() => {
-                    setUploading(false);
-                    setUploadProgress(0);
-                    setSelectedFile(null);
-                    setUploadSuccess(false);
-                    setProcessingStatus('');
-                    setUploadSpeed(0);
-                    setUploadStartTime(null);
-                    setBytesUploaded(0);
-                    setError('Upload cancelled');
-                  }}
-                >
-                  Cancel Upload
-                </Button>
-              </Box>
-            )}
-          </Box>
-        ) : (
-          <Box>
-            <Button
-              variant="contained"
-              component="label"
-              startIcon={<CloudUpload />}
-              disabled={uploading}
-              sx={{ mb: 2 }}
-            >
-              Select ZIP File
-              <input
-                type="file"
-                hidden
-                accept=".zip"
-                onChange={handleFileUpload}
-              />
-            </Button>
-
-            {/* Upload Guidelines */}
-            <Box sx={{ mt: 2, p: 2, bgcolor: 'info.light', borderRadius: 1, color: 'info.contrastText' }}>
-              <Typography variant="caption" sx={{ fontWeight: 'medium' }}>
-                Upload Guidelines:
-              </Typography>
-              <List dense sx={{ mt: 1 }}>
-                <ListItem sx={{ py: 0.5 }}>
-                  <ListItemText 
-                    primary="• Only ZIP files containing PDF pitch decks" 
-                    primaryTypographyProps={{ variant: 'caption' }}
-                  />
-                </ListItem>
-                <ListItem sx={{ py: 0.5 }}>
-                  <ListItemText 
-                    primary="• Maximum file size: 1GB" 
-                    primaryTypographyProps={{ variant: 'caption' }}
-                  />
-                </ListItem>
-                <ListItem sx={{ py: 0.5 }}>
-                  <ListItemText 
-                    primary="• Files are stored after upload and require manual processing" 
-                    primaryTypographyProps={{ variant: 'caption' }}
-                  />
-                </ListItem>
-                <ListItem sx={{ py: 0.5 }}>
-                  <ListItemText 
-                    primary="• Processing can be triggered multiple times with different parameters" 
-                    primaryTypographyProps={{ variant: 'caption' }}
-                  />
-                </ListItem>
-                <ListItem sx={{ py: 0.5 }}>
-                  <ListItemText 
-                    primary="• Upload timeout adjusts automatically based on file size" 
-                    primaryTypographyProps={{ variant: 'caption' }}
-                  />
-                </ListItem>
-              </List>
-            </Box>
-          </Box>
-        )}
-      </Paper>
 
       {/* Main Content - Tabs */}
       <Paper sx={{ p: 3 }}>
@@ -1039,6 +819,116 @@ const DojoManagement = () => {
         {/* Tab Panel 0: Files Table */}
         {currentTab === 0 && (
           <Box sx={{ mt: 3 }}>
+            {/* Upload Section inside Training Files Tab */}
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Upload Training Data
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Upload a ZIP file containing PDF pitch decks for AI training (max 1GB)
+                </Typography>
+
+                {uploading ? (
+                  <Box sx={{ width: '100%', mb: 2 }}>
+                    {/* File Info */}
+                    {selectedFile && (
+                      <Box sx={{ mb: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                          Uploading: {selectedFile.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Size: {formatFileSize(selectedFile.size)}
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {/* Progress Bar */}
+                    <Box sx={{ width: '100%', mb: 1 }}>
+                      <LinearProgress 
+                        variant="determinate" 
+                        value={uploadProgress} 
+                        sx={{ height: 8, borderRadius: 4 }}
+                      />
+                    </Box>
+
+                    {/* Progress Info */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Box>
+                        <Typography variant="body2" color={uploadSuccess ? 'success.main' : 'text.secondary'}>
+                          {processingStatus || (uploadProgress < 100 ? `Uploading... ${uploadProgress}%` : 'Processing files...')}
+                        </Typography>
+                        {uploadSpeed > 0 && uploadProgress < 100 && (
+                          <Box>
+                            <Typography variant="caption" color="text.secondary">
+                              {formatUploadSpeed(uploadSpeed)}
+                            </Typography>
+                            {selectedFile && (
+                              <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                                • {formatRemainingTime(bytesUploaded, selectedFile.size, uploadSpeed)}
+                              </Typography>
+                            )}
+                          </Box>
+                        )}
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        {uploadSuccess ? (
+                          <CheckCircle color="success" sx={{ mr: 1 }} />
+                        ) : (
+                          <CircularProgress size={16} sx={{ mr: 1 }} />
+                        )}
+                        <Typography variant="caption" color={uploadSuccess ? 'success.main' : 'text.secondary'}>
+                          {uploadSuccess ? 'Success' : (uploadProgress < 100 ? 'Uploading' : 'Processing')}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {/* Cancel Button - only show if upload is in progress and not completed */}
+                    {!uploadSuccess && (
+                      <Box sx={{ mt: 2 }}>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          onClick={() => {
+                            setUploading(false);
+                            setUploadProgress(0);
+                            setSelectedFile(null);
+                            setUploadSuccess(false);
+                            setProcessingStatus('');
+                            setUploadSpeed(0);
+                            setUploadStartTime(null);
+                            setBytesUploaded(0);
+                            setError('Upload cancelled');
+                          }}
+                        >
+                          Cancel Upload
+                        </Button>
+                      </Box>
+                    )}
+                  </Box>
+                ) : (
+                  <Box>
+                    <Button
+                      variant="contained"
+                      component="label"
+                      startIcon={<CloudUpload />}
+                      disabled={uploading}
+                      sx={{ mb: 2 }}
+                    >
+                      Select ZIP File
+                      <input
+                        type="file"
+                        hidden
+                        accept=".zip"
+                        onChange={handleFileUpload}
+                      />
+                    </Button>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+
             <Typography variant="h6" gutterBottom>
               Training Files
             </Typography>
