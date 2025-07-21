@@ -34,7 +34,9 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel
+  InputLabel,
+  Checkbox,
+  FormControlLabel
 } from '@mui/material';
 import {
   CloudUpload,
@@ -125,11 +127,21 @@ const DojoManagement = () => {
   const [selectedExperiments, setSelectedExperiments] = useState([]);
   const [fullExtractionDialogOpen, setFullExtractionDialogOpen] = useState(false);
   const [selectedExtractionResult, setSelectedExtractionResult] = useState(null);
+  const [selectFromCached, setSelectFromCached] = useState(false);
+  const [cachedDecksCount, setCachedDecksCount] = useState(0);
+  const [loadingCachedCount, setLoadingCachedCount] = useState(false);
 
   useEffect(() => {
     loadDojoData();
     loadAvailableModels();
   }, []);
+
+  // Load cached decks count when checkbox is checked
+  useEffect(() => {
+    if (selectFromCached) {
+      loadCachedDecksCount();
+    }
+  }, [selectFromCached]);
 
   const loadDojoData = useCallback(async () => {
     try {
@@ -433,6 +445,33 @@ const DojoManagement = () => {
     }
   };
 
+  const loadCachedDecksCount = async () => {
+    try {
+      setLoadingCachedCount(true);
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+
+      const response = await fetch('/api/dojo/extraction-test/cached-count', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCachedDecksCount(data.cached_count || 0);
+      } else {
+        setCachedDecksCount(0);
+      }
+    } catch (err) {
+      console.error('Error loading cached decks count:', err);
+      setCachedDecksCount(0);
+    } finally {
+      setLoadingCachedCount(false);
+    }
+  };
+
   const createExtractionSample = async () => {
     try {
       const user = JSON.parse(localStorage.getItem('user'));
@@ -444,7 +483,10 @@ const DojoManagement = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ sample_size: 10 })
+        body: JSON.stringify({ 
+          sample_size: 10,
+          cached_only: selectFromCached
+        })
       });
 
       if (response.ok) {
@@ -1068,13 +1110,55 @@ const DojoManagement = () => {
               <Typography variant="h6" gutterBottom>
                 Step 1: Create Sample
               </Typography>
+              
+              {/* Cached Selection Option */}
+              <Box sx={{ mb: 2 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={selectFromCached}
+                      onChange={(e) => setSelectFromCached(e.target.checked)}
+                    />
+                  }
+                  label={
+                    <Box>
+                      <Typography variant="body2">
+                        Select from cached decks only
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Prioritize decks with existing visual analysis for faster demo
+                      </Typography>
+                    </Box>
+                  }
+                />
+                {selectFromCached && (
+                  <Box sx={{ ml: 4, mt: 1 }}>
+                    {loadingCachedCount ? (
+                      <Typography variant="caption" color="info.main">
+                        🔄 Loading available cached decks...
+                      </Typography>
+                    ) : cachedDecksCount === 0 ? (
+                      <Alert severity="warning" size="small" sx={{ maxWidth: 400 }}>
+                        <Typography variant="caption">
+                          ⚠️ No cached decks available. Run visual analysis first or uncheck this option.
+                        </Typography>
+                      </Alert>
+                    ) : (
+                      <Typography variant="caption" color="success.main">
+                        ✅ {cachedDecksCount} cached decks available for quick sampling
+                      </Typography>
+                    )}
+                  </Box>
+                )}
+              </Box>
+              
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                 <Button 
                   variant="outlined" 
                   onClick={createExtractionSample}
                   disabled={loading}
                 >
-                  Generate Random Sample (10 decks)
+                  Generate Random Sample {selectFromCached ? '(Cached Only)' : '(Up to 10 decks)'}
                 </Button>
                 <Typography variant="body2" color="text.secondary">
                   {extractionSample.length > 0 ? `Sample created: ${extractionSample.length} decks` : 'No sample created yet'}

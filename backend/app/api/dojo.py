@@ -395,6 +395,7 @@ async def get_dojo_stats(
 class ExtractionSampleRequest(BaseModel):
     sample_size: int = 10
     existing_ids: Optional[List[int]] = None  # Re-check status for existing deck IDs
+    cached_only: bool = False  # Filter to only decks with cached visual analysis
 
 class VisualAnalysisRequest(BaseModel):
     deck_ids: List[int]
@@ -432,9 +433,27 @@ async def create_extraction_sample(
             ).all()
         else:
             # Get random sample of dojo files
-            sample_decks = db.query(PitchDeck).filter(
-                PitchDeck.data_source == "dojo"
-            ).order_by(func.random()).limit(request.sample_size).all()
+            if request.cached_only:
+                # Only get decks that have cached visual analysis
+                sample_decks = db.execute(text("""
+                    SELECT DISTINCT pd.* FROM pitch_decks pd
+                    INNER JOIN visual_analysis_cache vac ON pd.id = vac.pitch_deck_id
+                    WHERE pd.data_source = 'dojo'
+                    ORDER BY RANDOM()
+                    LIMIT :limit
+                """), {"limit": request.sample_size}).fetchall()
+                
+                # Convert to PitchDeck objects
+                sample_decks = [
+                    db.query(PitchDeck).filter(PitchDeck.id == row[0]).first()
+                    for row in sample_decks
+                ]
+                sample_decks = [deck for deck in sample_decks if deck is not None]
+            else:
+                # Get random sample from all dojo files
+                sample_decks = db.query(PitchDeck).filter(
+                    PitchDeck.data_source == "dojo"
+                ).order_by(func.random()).limit(request.sample_size).all()
         
         if not sample_decks:
             raise HTTPException(
@@ -473,6 +492,43 @@ async def create_extraction_sample(
         raise HTTPException(
             status_code=500,
             detail="Failed to create extraction test sample"
+        )
+
+@router.get("/extraction-test/cached-count")
+async def get_cached_decks_count(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get count of dojo decks with cached visual analysis"""
+    try:
+        # Only GPs can access cached count
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=403,
+                detail="Only GPs can access cached decks count"
+            )
+        
+        # Count decks with cached visual analysis
+        cached_count = db.execute(text("""
+            SELECT COUNT(DISTINCT pd.id) FROM pitch_decks pd
+            INNER JOIN visual_analysis_cache vac ON pd.id = vac.pitch_deck_id
+            WHERE pd.data_source = 'dojo'
+        """)).scalar()
+        
+        logger.info(f"Cached decks count requested by {current_user.email}: {cached_count}")
+        
+        return {
+            "cached_count": cached_count,
+            "total_dojo_decks": db.query(PitchDeck).filter(PitchDeck.data_source == "dojo").count()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting cached decks count: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to get cached decks count"
         )
 
 @router.post("/extraction-test/run-visual-analysis")
