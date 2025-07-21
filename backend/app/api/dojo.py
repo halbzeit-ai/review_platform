@@ -842,9 +842,13 @@ async def get_experiment_details(
                 detail="Only GPs can view extraction experiment details"
             )
         
-        experiment = db.execute(text(
-            "SELECT id, experiment_name, extraction_type, text_model_used, extraction_prompt, created_at, results_json, pitch_deck_ids FROM extraction_experiments WHERE id = :exp_id"
-        ), {"exp_id": experiment_id}).fetchone()
+        experiment = db.execute(text("""
+            SELECT id, experiment_name, extraction_type, text_model_used, extraction_prompt, 
+                   created_at, results_json, pitch_deck_ids, classification_enabled, 
+                   classification_results_json, classification_completed_at
+            FROM extraction_experiments 
+            WHERE id = :exp_id
+        """), {"exp_id": experiment_id}).fetchone()
         
         if not experiment:
             raise HTTPException(
@@ -860,7 +864,20 @@ async def get_experiment_details(
         decks = db.query(PitchDeck).filter(PitchDeck.id.in_(deck_ids)).all()
         deck_info = {deck.id: {"filename": deck.file_name, "company_name": deck.ai_extracted_startup_name} for deck in decks}
         
-        # Enhance results with deck information
+        # Parse classification results if available
+        classification_data = {}
+        classification_results = []
+        if experiment[8] and experiment[9]:  # classification_enabled and classification_results_json
+            try:
+                classification_data = json.loads(experiment[9])
+                classification_results = classification_data.get("classification_results", [])
+            except json.JSONDecodeError:
+                logger.warning(f"Failed to parse classification results for experiment {experiment_id}")
+        
+        # Create a lookup for classification results by deck_id
+        classification_lookup = {result.get("deck_id"): result for result in classification_results}
+        
+        # Enhance results with deck information and classification data
         enhanced_results = []
         for result in results_data.get("results", []):
             deck_id = result.get("deck_id")
@@ -868,6 +885,17 @@ async def get_experiment_details(
                 **result,
                 "deck_info": deck_info.get(deck_id, {"filename": f"deck_{deck_id}", "company_name": None})
             }
+            
+            # Add classification data if available
+            if deck_id in classification_lookup:
+                classification = classification_lookup[deck_id]
+                enhanced_result.update({
+                    "primary_sector": classification.get("primary_sector"),
+                    "secondary_sector": classification.get("secondary_sector"),
+                    "confidence_score": classification.get("confidence_score"),
+                    "classification_error": classification.get("error")
+                })
+            
             enhanced_results.append(enhanced_result)
         
         experiment_details = {
@@ -880,7 +908,10 @@ async def get_experiment_details(
             "total_decks": results_data.get("total_decks", 0),
             "successful_extractions": results_data.get("successful_extractions", 0),
             "results": enhanced_results,
-            "deck_ids": deck_ids
+            "deck_ids": deck_ids,
+            "classification_enabled": bool(experiment[8]),
+            "classification_completed_at": experiment[10].isoformat() if experiment[10] else None,
+            "classification_statistics": classification_data.get("statistics", {}) if classification_data else {}
         }
         
         return experiment_details
@@ -892,6 +923,195 @@ async def get_experiment_details(
         raise HTTPException(
             status_code=500,
             detail="Failed to get experiment details"
+        )
+
+# ==================== CLASSIFICATION ENRICHMENT ====================
+
+class ClassificationEnrichmentRequest(BaseModel):
+    experiment_id: int
+    classification_model: Optional[str] = None  # Optional: use default if not specified
+
+@router.post("/extraction-test/run-classification")
+async def enrich_experiment_with_classification(
+    request: ClassificationEnrichmentRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Enrich existing extraction experiment with startup classifications"""
+    try:
+        # Only GPs can run classification enrichment
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=403,
+                detail="Only GPs can run classification enrichment"
+            )
+        
+        # Get the experiment
+        experiment = db.execute(text("""
+            SELECT id, experiment_name, extraction_type, text_model_used, 
+                   extraction_prompt, created_at, results_json, pitch_deck_ids,
+                   classification_enabled, classification_results_json,
+                   classification_completed_at
+            FROM extraction_experiments 
+            WHERE id = :experiment_id
+        """), {"experiment_id": request.experiment_id}).fetchone()
+        
+        if not experiment:
+            raise HTTPException(
+                status_code=404,
+                detail="Experiment not found"
+            )
+        
+        # Parse existing results
+        results_data = json.loads(experiment[6]) if experiment[6] else {}
+        results = results_data.get("results", [])
+        
+        if not results:
+            raise HTTPException(
+                status_code=400,
+                detail="Experiment has no extraction results to classify"
+            )
+        
+        # Check if classification already completed
+        if experiment[8] and experiment[10]:  # classification_enabled and classification_completed_at
+            logger.info(f"Experiment {request.experiment_id} already has classification results")
+            existing_classification = json.loads(experiment[9]) if experiment[9] else {}
+            return {
+                "message": "Classification already completed",
+                "experiment_id": request.experiment_id,
+                "classification_results": existing_classification.get("classification_results", []),
+                "completed_at": experiment[10].isoformat() if experiment[10] else None,
+                "statistics": existing_classification.get("statistics", {})
+            }
+        
+        # Initialize startup classifier
+        from ..services.startup_classifier import StartupClassifier
+        classifier = StartupClassifier(db)
+        
+        # Process each result for classification
+        classification_results = []
+        successful_classifications = 0
+        
+        for result in results:
+            deck_id = result.get("deck_id")
+            company_offering = result.get("offering_extraction", "")
+            
+            # Skip if extraction failed
+            if not company_offering or company_offering.startswith("Error:") or company_offering.startswith("No visual analysis"):
+                classification_results.append({
+                    "deck_id": deck_id,
+                    "filename": result.get("filename", f"deck_{deck_id}"),
+                    "company_offering": company_offering,
+                    "classification": None,
+                    "confidence_score": 0.0,
+                    "primary_sector": None,
+                    "secondary_sector": None,
+                    "error": "No valid company offering to classify"
+                })
+                continue
+            
+            try:
+                # Run classification
+                classification = classifier.classify_startup(company_offering)
+                
+                if classification.get("success", False):
+                    successful_classifications += 1
+                    classification_results.append({
+                        "deck_id": deck_id,
+                        "filename": result.get("filename", f"deck_{deck_id}"),
+                        "company_offering": company_offering,
+                        "classification": classification,
+                        "confidence_score": classification.get("confidence_score", 0.0),
+                        "primary_sector": classification.get("primary_sector"),
+                        "secondary_sector": classification.get("secondary_sector"),
+                        "keywords_matched": classification.get("keywords_matched", []),
+                        "error": None
+                    })
+                else:
+                    classification_results.append({
+                        "deck_id": deck_id,
+                        "filename": result.get("filename", f"deck_{deck_id}"),
+                        "company_offering": company_offering,
+                        "classification": None,
+                        "confidence_score": 0.0,
+                        "primary_sector": None,
+                        "secondary_sector": None,
+                        "error": classification.get("error", "Classification failed")
+                    })
+                    
+            except Exception as e:
+                logger.error(f"Error classifying deck {deck_id}: {e}")
+                classification_results.append({
+                    "deck_id": deck_id,
+                    "filename": result.get("filename", f"deck_{deck_id}"),
+                    "company_offering": company_offering,
+                    "classification": None,
+                    "confidence_score": 0.0,
+                    "primary_sector": None,
+                    "secondary_sector": None,
+                    "error": f"Classification error: {str(e)}"
+                })
+        
+        # Calculate statistics
+        sector_distribution = {}
+        total_confidence = 0
+        for result in classification_results:
+            if result["primary_sector"]:
+                sector = result["primary_sector"]
+                sector_distribution[sector] = sector_distribution.get(sector, 0) + 1
+                total_confidence += result["confidence_score"]
+        
+        avg_confidence = total_confidence / successful_classifications if successful_classifications > 0 else 0
+        
+        statistics = {
+            "total_decks": len(classification_results),
+            "successful_classifications": successful_classifications,
+            "failed_classifications": len(classification_results) - successful_classifications,
+            "success_rate": successful_classifications / len(classification_results) if classification_results else 0,
+            "average_confidence": round(avg_confidence, 3),
+            "sector_distribution": sector_distribution
+        }
+        
+        # Store classification results
+        classification_data = {
+            "classification_results": classification_results,
+            "statistics": statistics,
+            "model_used": request.classification_model or classifier.classification_model,
+            "classified_at": datetime.utcnow().isoformat()
+        }
+        
+        # Update experiment with classification results
+        db.execute(text("""
+            UPDATE extraction_experiments 
+            SET classification_enabled = TRUE,
+                classification_results_json = :classification_results,
+                classification_model_used = :model_used,
+                classification_completed_at = CURRENT_TIMESTAMP
+            WHERE id = :experiment_id
+        """), {
+            "experiment_id": request.experiment_id,
+            "classification_results": json.dumps(classification_data),
+            "model_used": request.classification_model or classifier.classification_model
+        })
+        
+        db.commit()
+        
+        logger.info(f"Classification enrichment completed for experiment {request.experiment_id}: {successful_classifications}/{len(classification_results)} successful")
+        
+        return {
+            "message": "Classification enrichment completed successfully",
+            "experiment_id": request.experiment_id,
+            "classification_results": classification_results,
+            "statistics": statistics
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error running classification enrichment: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to run classification enrichment"
         )
 
 # ==================== INTERNAL API FOR GPU COMMUNICATION ====================
