@@ -477,7 +477,7 @@ class GPUHTTPClient:
                 "model": model_name,
                 "prompt": prompt,
                 "options": {
-                    "num_ctx": 8192,
+                    "num_ctx": 32768,
                     "temperature": 0.3
                 }
             }
