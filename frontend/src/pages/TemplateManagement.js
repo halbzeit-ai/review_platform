@@ -76,7 +76,6 @@ const TemplateManagement = () => {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [templateDetails, setTemplateDetails] = useState(null);
   const [performanceMetrics, setPerformanceMetrics] = useState(null);
-  const [customizations, setCustomizations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
@@ -126,23 +125,19 @@ const TemplateManagement = () => {
   const loadInitialData = useCallback(async () => {
     try {
       setLoading(true);
-      const [sectorsResponse, metricsResponse, customizationsResponse, pipelineResponse] = await Promise.all([
+      const [sectorsResponse, metricsResponse, pipelineResponse] = await Promise.all([
         getHealthcareSectors(),
         getPerformanceMetrics(),
-        getMyCustomizations(),
         getPipelinePrompts()
       ]);
       
       // Extract data from API responses
       const sectorsData = sectorsResponse.data || sectorsResponse;
       const metricsData = metricsResponse.data || metricsResponse;
-      const customizationsData = customizationsResponse.data || customizationsResponse;
       const pipelineData = pipelineResponse.data || pipelineResponse;
-      
       
       setSectors(Array.isArray(sectorsData) ? sectorsData : []);
       setPerformanceMetrics(metricsData);
-      setCustomizations(Array.isArray(customizationsData) ? customizationsData : []);
       setPipelinePrompts(pipelineData.prompts || {});
       
       // Set initial prompt texts for all stages
@@ -205,16 +200,6 @@ const TemplateManagement = () => {
     }
   };
 
-  const loadMyCustomizations = async () => {
-    try {
-      const customizationsResponse = await getMyCustomizations();
-      const customizationsData = customizationsResponse.data || customizationsResponse;
-      setCustomizations(Array.isArray(customizationsData) ? customizationsData : []);
-    } catch (err) {
-      console.error('Error loading customizations:', err);
-      setError(err.response?.data?.detail || err.message || 'Failed to load customizations');
-    }
-  };
 
   const handleEditSectorTemplate = async (sector) => {
     try {
@@ -254,9 +239,8 @@ const TemplateManagement = () => {
         customized_weights: customizationData.weights
       });
       
-      // Reload customizations
-      const customizationsData = await getMyCustomizations();
-      setCustomizations(customizationsData);
+      // Refresh sectors data to show updated templates
+      await loadInitialData();
       setCustomizeDialogOpen(false);
     } catch (err) {
       setError(err.message);
@@ -664,13 +648,14 @@ const TemplateManagement = () => {
         // Close dialog and refresh data
         setTemplateDialogOpen(false);
         
-        // Optional: Show success message
-        setError(null); // Clear any previous errors
+        // Clear any previous errors and show success
+        setError(null);
         
-        // Optional: Refresh customizations list if on that tab
-        if (activeTab === 2) {
-          loadMyCustomizations();
-        }
+        // Refresh sectors data to show the newly saved template
+        await loadInitialData();
+        
+        // Show success message
+        console.log('✅ Template saved and sectors refreshed successfully');
         
       } catch (error) {
         console.error('Error saving template:', error);
@@ -1084,8 +1069,6 @@ const TemplateManagement = () => {
       <Paper sx={{ width: '100%' }}>
         <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
           <Tab label={t('tabs.healthcareSectors')} />
-          <Tab label={t('tabs.templateLibrary')} />
-          <Tab label={t('tabs.myCustomizations')} />
           <Tab label={t('tabs.performanceMetrics')} />
           <Tab label={t('tabs.obligatoryExtractions')} />
         </Tabs>
@@ -1136,80 +1119,12 @@ const TemplateManagement = () => {
           </Grid>
         </TabPanel>
 
+
         <TabPanel value={activeTab} index={1}>
-          {selectedSector && (
-            <Box>
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                {selectedSector.display_name} Templates
-              </Typography>
-              <Grid container spacing={3}>
-                {templates.map((template) => (
-                  <Grid item xs={12} md={6} lg={4} key={template.id}>
-                    <TemplateCard 
-                      template={template}
-                      onEdit={loadTemplateDetails}
-                      onCustomize={(template) => {
-                        setSelectedTemplate(template);
-                        setCustomizeDialogOpen(true);
-                      }}
-                      onPreview={loadTemplateDetails}
-                    />
-                  </Grid>
-                ))}
-              </Grid>
-            </Box>
-          )}
-        </TabPanel>
-
-        <TabPanel value={activeTab} index={2}>
-          <Box>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              My Template Customizations
-            </Typography>
-            {customizations.length === 0 ? (
-              <Typography variant="body2" color="text.secondary">
-                No customizations yet. Create your first custom template!
-              </Typography>
-            ) : (
-              <Grid container spacing={3}>
-                {customizations.map((customization) => (
-                  <Grid item xs={12} md={6} lg={4} key={customization.id}>
-                    <Card>
-                      <CardContent>
-                        <Typography variant="h6">
-                          {customization.customization_name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Based on: {customization.template_name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Sector: {customization.sector_name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Created: {new Date(customization.created_at).toLocaleDateString()}
-                        </Typography>
-                      </CardContent>
-                      <CardActions>
-                        <Button size="small" startIcon={<EditIcon />}>
-                          Edit
-                        </Button>
-                        <Button size="small" startIcon={<CopyIcon />}>
-                          Duplicate
-                        </Button>
-                      </CardActions>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
-            )}
-          </Box>
-        </TabPanel>
-
-        <TabPanel value={activeTab} index={3}>
           <PerformanceMetricsPanel />
         </TabPanel>
 
-        <TabPanel value={activeTab} index={4}>
+        <TabPanel value={activeTab} index={2}>
           <PipelineSettingsContent />
         </TabPanel>
       </Paper>
