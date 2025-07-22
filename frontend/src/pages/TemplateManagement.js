@@ -75,7 +75,7 @@ const TemplateManagement = () => {
   const [error, setError] = useState(null);
   
   // Classification settings state
-  const [useClassification, setUseClassification] = useState(false);
+  const [useClassification, setUseClassification] = useState(true);  // Default to single template mode
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   
   
@@ -712,12 +712,12 @@ const TemplateManagement = () => {
               label={
                 <Box>
                   <Typography variant="body1">
-                    {useClassification ? 'Use Healthcare Sector Classification' : 'Use Single Template'}
+                    {useClassification ? 'Use Single Template' : 'Use Healthcare Sector Classification'}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     {useClassification 
-                      ? 'Automatically classify startups into healthcare sectors and use sector-specific templates'
-                      : 'Apply the selected template to all pitch decks'
+                      ? 'Apply the selected template to all pitch decks'
+                      : 'Automatically classify startups into healthcare sectors and use sector-specific templates'
                     }
                   </Typography>
                 </Box>
@@ -726,8 +726,8 @@ const TemplateManagement = () => {
           </Card>
         </Grid>
 
-        {/* Single Template Selection (when classification is OFF) */}
-        {!useClassification && (
+        {/* Single Template Selection (when classification is ON) */}
+        {useClassification && (
           <Grid item xs={12} md={6}>
             <Card sx={{ p: 3 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>
@@ -778,8 +778,8 @@ const TemplateManagement = () => {
           </Grid>
         )}
 
-        {/* Classification Overview (when classification is ON) */}
-        {useClassification && (
+        {/* Classification Overview (when classification is OFF) */}
+        {!useClassification && (
           <Grid item xs={12}>
             <Card sx={{ p: 3 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>
@@ -789,38 +789,36 @@ const TemplateManagement = () => {
                 When classification is enabled, pitch decks will be automatically categorized into the following healthcare sectors:
               </Typography>
               
-              <Grid container spacing={2}>
-                {sectors.map((sector) => (
-                  <Grid item xs={12} sm={6} md={4} key={sector.id}>
-                    <Card variant="outlined" sx={{ p: 2, height: '100%' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <AssessmentIcon color="primary" sx={{ mr: 1, fontSize: 20 }} />
-                        <Typography variant="subtitle2">
-                          {sector.display_name}
-                        </Typography>
-                      </Box>
-                      <Typography variant="caption" color="text.secondary">
-                        {sector.description}
-                      </Typography>
-                      {/* Show template associated with this sector */}
-                      {(() => {
-                        const sectorTemplate = templates.find(t => t.sector_id === sector.id && !t.is_customization);
-                        return sectorTemplate ? (
-                          <Box sx={{ mt: 1 }}>
-                            <Chip 
-                              label={sectorTemplate.name} 
-                              size="small" 
-                              variant="outlined" 
-                            />
+              {/* Simple list instead of cards */}
+              <List>
+                {sectors.map((sector) => {
+                  const sectorTemplate = templates.find(t => t.sector_id === sector.id && !t.is_customization);
+                  return (
+                    <ListItem key={sector.id} sx={{ py: 1 }}>
+                      <ListItemIcon>
+                        <AssessmentIcon color="primary" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={sector.display_name}
+                        secondary={
+                          <Box>
+                            <Typography variant="body2" color="text.secondary">
+                              {sector.description}
+                            </Typography>
+                            {sectorTemplate && (
+                              <Typography variant="caption" color="primary">
+                                Template: {sectorTemplate.name}
+                              </Typography>
+                            )}
                           </Box>
-                        ) : null;
-                      })()}
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
+                        }
+                      />
+                    </ListItem>
+                  );
+                })}
+              </List>
 
-              <Alert severity="info" sx={{ mt: 3 }}>
+              <Alert severity="info" sx={{ mt: 2 }}>
                 <Typography variant="body2">
                   <strong>How it works:</strong> The system will analyze the company offering text from each pitch deck, 
                   classify it into the most appropriate healthcare sector, and then apply the corresponding sector-specific 
@@ -831,32 +829,6 @@ const TemplateManagement = () => {
           </Grid>
         )}
 
-        {/* Action Buttons */}
-        <Grid item xs={12}>
-          <Card sx={{ p: 3, bgcolor: 'action.hover' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Box>
-                <Typography variant="h6">
-                  Ready to Analyze
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {useClassification 
-                    ? `Classification mode is enabled. Pitch decks will be automatically classified into ${sectors.length} healthcare sectors.`
-                    : `Single template mode. All pitch decks will use: ${templates.find(t => t.id === selectedTemplateId)?.name || 'No template selected'}`
-                  }
-                </Typography>
-              </Box>
-              <Button
-                variant="contained"
-                startIcon={<PlayArrowIcon />}
-                disabled={!useClassification && !selectedTemplateId}
-                sx={{ ml: 2 }}
-              >
-                Start Analysis
-              </Button>
-            </Box>
-          </Card>
-        </Grid>
       </Grid>
     </Box>
   );
