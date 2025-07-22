@@ -21,23 +21,34 @@ import {
   Alert,
   CircularProgress,
   Divider,
-  Badge
+  Badge,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon
 } from '@mui/material';
 import {
   Edit as EditIcon,
   FileCopy as CopyIcon,
   Add as AddIcon,
   Assessment as AssessmentIcon,
+  Visibility as VisibilityIcon,
+  Storefront as StorefrontIcon,
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import PromptEditor from '../components/PromptEditor';
 
 import { 
   getHealthcareSectors, 
   getSectorTemplates, 
   getTemplateDetails,
   getPerformanceMetrics,
-  customizeTemplate
+  customizeTemplate,
+  getPipelinePrompts,
+  getPipelinePromptByStage,
+  updatePipelinePrompt,
+  resetPipelinePrompt
 } from '../services/api';
 
 const TemplateManagement = () => {
@@ -60,6 +71,15 @@ const TemplateManagement = () => {
   const [customizeDialogOpen, setCustomizeDialogOpen] = useState(false);
   const [customizationName, setCustomizationName] = useState('');
   
+  // Pipeline configuration state
+  const [pipelinePrompts, setPipelinePrompts] = useState({});
+  const [selectedPromptStage, setSelectedPromptStage] = useState('image_analysis');
+  const [promptTexts, setPromptTexts] = useState({
+    image_analysis: '',
+    offering_extraction: '',
+    startup_name_extraction: ''
+  });
+  
   const breadcrumbs = [
     { label: t('navigation.dashboard'), path: '/dashboard' },
     { label: t('configuration.title'), path: '/configuration' },
@@ -69,14 +89,16 @@ const TemplateManagement = () => {
   const loadInitialData = useCallback(async () => {
     try {
       setLoading(true);
-      const [sectorsResponse, metricsResponse] = await Promise.all([
+      const [sectorsResponse, metricsResponse, pipelineResponse] = await Promise.all([
         getHealthcareSectors(),
-        getPerformanceMetrics()
+        getPerformanceMetrics(),
+        getPipelinePrompts()
       ]);
       
       // Extract data from API responses
       const sectorsData = sectorsResponse.data || sectorsResponse;
       const metricsData = metricsResponse.data || metricsResponse;
+      const pipelineData = pipelineResponse.data || pipelineResponse;
       
       // Load all templates from all sectors
       const allTemplates = [];
@@ -102,6 +124,15 @@ const TemplateManagement = () => {
       
       setTemplates(allTemplates);
       setPerformanceMetrics(metricsData);
+      setPipelinePrompts(pipelineData.prompts || {});
+      
+      // Set initial prompt texts for all stages
+      const prompts = pipelineData.prompts || {};
+      setPromptTexts({
+        image_analysis: prompts.image_analysis || '',
+        offering_extraction: prompts.offering_extraction || '',
+        startup_name_extraction: prompts.startup_name_extraction || ''
+      });
       
     } catch (err) {
       console.error('Error loading initial data:', err);
@@ -212,6 +243,63 @@ const TemplateManagement = () => {
     setTemplateDialogOpen(true);
   };
 
+  // Pipeline prompt management functions
+  const handlePromptStageChange = async (stageName) => {
+    try {
+      setSelectedPromptStage(stageName);
+      const response = await getPipelinePromptByStage(stageName);
+      const promptData = response.data || response;
+      const newPromptText = promptData.prompt_text || '';
+      setPromptTexts(prev => ({
+        ...prev,
+        [stageName]: newPromptText
+      }));
+    } catch (err) {
+      console.error('Error loading prompt:', err);
+      setError(err.response?.data?.detail || err.message || 'Failed to load prompt');
+    }
+  };
+
+  const handleSavePrompt = async () => {
+    try {
+      const currentPromptText = promptTexts[selectedPromptStage];
+      await updatePipelinePrompt(selectedPromptStage, currentPromptText);
+      
+      // Update local state
+      setPipelinePrompts(prev => ({
+        ...prev,
+        [selectedPromptStage]: currentPromptText
+      }));
+      
+      setError(null);
+    } catch (err) {
+      console.error('Error saving prompt:', err);
+      setError(err.response?.data?.detail || err.message || 'Failed to save prompt');
+    }
+  };
+
+  const handleResetPrompt = async () => {
+    try {
+      const response = await resetPipelinePrompt(selectedPromptStage);
+      const resetData = response.data || response;
+      
+      // Update local state with reset prompt
+      const newPromptText = resetData.default_prompt || '';
+      setPromptTexts(prev => ({
+        ...prev,
+        [selectedPromptStage]: newPromptText
+      }));
+      setPipelinePrompts(prev => ({
+        ...prev,
+        [selectedPromptStage]: newPromptText
+      }));
+      
+      setError(null);
+    } catch (err) {
+      console.error('Error resetting prompt:', err);
+      setError(err.response?.data?.detail || err.message || 'Failed to reset prompt');
+    }
+  };
 
   const TabPanel = ({ children, value, index }) => (
     <div hidden={value !== index}>
@@ -597,6 +685,119 @@ const TemplateManagement = () => {
     </Box>
   );
 
+  const PipelineSettingsContent = () => {
+    const extractionTypes = [
+      {
+        key: 'image_analysis',
+        name: t('labels.imageAnalysisPrompt'),
+        description: t('pipeline.imageAnalysisDescription'),
+        icon: <VisibilityIcon />
+      },
+      {
+        key: 'offering_extraction',
+        name: t('labels.companyOfferingPrompt'),
+        description: t('pipeline.companyOfferingDescription'),
+        icon: <StorefrontIcon />
+      },
+      {
+        key: 'startup_name_extraction',
+        name: 'Startup Name Extraction',
+        description: 'Extract the startup name from pitch deck content',
+        icon: <StorefrontIcon />
+      }
+    ];
+
+    return (
+      <Box>
+        <Typography variant="h5" sx={{ mb: 3 }}>
+          {t('pipeline.title')}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+          {t('pipeline.description')}
+        </Typography>
+
+        <Grid container spacing={3}>
+          {/* Extraction Type Selector */}
+          <Grid item xs={12} md={3}>
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Extraction Types
+              </Typography>
+              <List>
+                {extractionTypes.map((type) => (
+                  <ListItem
+                    key={type.key}
+                    button
+                    selected={selectedPromptStage === type.key}
+                    onClick={() => setSelectedPromptStage(type.key)}
+                    sx={{
+                      borderRadius: 1,
+                      mb: 1,
+                      '&.Mui-selected': {
+                        backgroundColor: 'primary.50',
+                        borderLeft: 3,
+                        borderLeftColor: 'primary.main'
+                      }
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 40 }}>
+                      {type.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={type.name}
+                      secondary={type.key === 'image_analysis' ? 'Vision AI' : 'Text Processing'}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Paper>
+          </Grid>
+
+          {/* Prompt Editor */}
+          <Grid item xs={12} md={9}>
+            <Paper sx={{ p: 3 }}>
+              {(() => {
+                const currentType = extractionTypes.find(t => t.key === selectedPromptStage);
+                return (
+                  <>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      {currentType?.icon}
+                      <Typography variant="h6" sx={{ ml: 1 }}>
+                        {currentType?.name}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                      {currentType?.description}
+                    </Typography>
+
+                    <PromptEditor
+                      initialPrompt={promptTexts[selectedPromptStage]}
+                      stageName={selectedPromptStage}
+                      onSave={(newText) => {
+                        setPromptTexts(prev => ({
+                          ...prev,
+                          [selectedPromptStage]: newText
+                        }));
+                        setPipelinePrompts(prev => ({
+                          ...prev,
+                          [selectedPromptStage]: newText
+                        }));
+                      }}
+                    />
+
+                    <Alert severity="info" sx={{ mt: 2 }}>
+                      Changes to prompts will affect all new PDF processing. 
+                      Existing analyses will not be reprocessed.
+                    </Alert>
+                  </>
+                );
+              })()}
+            </Paper>
+          </Grid>
+        </Grid>
+      </Box>
+    );
+  };
 
 
   if (loading) {
@@ -752,12 +953,7 @@ const TemplateManagement = () => {
         </TabPanel>
 
         <TabPanel value={activeTab} index={2}>
-          <Box>
-            <Typography variant="h6">Pipeline Configuration</Typography>
-            <Typography variant="body2" color="text.secondary">
-              Pipeline configuration is managed separately.
-            </Typography>
-          </Box>
+          <PipelineSettingsContent />
         </TabPanel>
       </Paper>
 
