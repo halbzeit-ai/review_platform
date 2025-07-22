@@ -48,6 +48,7 @@ class ProjectUpload(BaseModel):
     file_type: str
     pages: Optional[int] = None
     processing_status: str = "pending"
+    visual_analysis_completed: bool = False
 
 class ProjectUploadsResponse(BaseModel):
     company_id: str
@@ -314,7 +315,8 @@ async def get_project_uploads(
             if os.path.exists(full_path):
                 file_size = os.path.getsize(full_path)
             
-            # Try to get page count from analysis results
+            # Check for visual analysis completion and get page count
+            visual_analysis_completed = False
             if results_file_path:
                 try:
                     if results_file_path.startswith('/'):
@@ -325,12 +327,30 @@ async def get_project_uploads(
                     if os.path.exists(results_full_path):
                         with open(results_full_path, 'r') as f:
                             results_data = json.load(f)
-                            # Try to get page count from visual analysis results
+                            # Check if visual analysis results exist
                             visual_results = results_data.get("visual_analysis_results", [])
                             if visual_results:
+                                visual_analysis_completed = True
                                 pages = len(visual_results)
                 except Exception as e:
                     logger.warning(f"Could not extract page count from results file: {e}")
+            
+            # Alternative check: Look for slide images in project storage
+            if not visual_analysis_completed:
+                try:
+                    # Extract deck name from filename
+                    deck_name = os.path.splitext(filename)[0]
+                    # Check if slide images directory exists and has images
+                    slide_images_dir = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id, "analysis", deck_name)
+                    if os.path.exists(slide_images_dir):
+                        # Count slide image files
+                        slide_files = [f for f in os.listdir(slide_images_dir) if f.startswith('slide_') and f.endswith('.jpg')]
+                        if slide_files:
+                            visual_analysis_completed = True
+                            if not pages:  # Only set pages if we don't have it from results file
+                                pages = len(slide_files)
+                except Exception as e:
+                    logger.warning(f"Could not check slide images for deck {deck_id}: {e}")
             
             uploads.append(ProjectUpload(
                 id=deck_id,
@@ -340,7 +360,8 @@ async def get_project_uploads(
                 upload_date=created_at,
                 file_type=file_type,
                 pages=pages,
-                processing_status=processing_status
+                processing_status=processing_status,
+                visual_analysis_completed=visual_analysis_completed
             ))
         
         return ProjectUploadsResponse(

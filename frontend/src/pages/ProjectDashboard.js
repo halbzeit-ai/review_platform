@@ -157,7 +157,7 @@ const ProjectDashboard = () => {
             e.stopPropagation();
             handleViewDeckAnalysis(deck);
           }}
-          disabled={!deck.results_file_path}
+          disabled={!deck.visual_analysis_completed && !deck.results_file_path}
         >
           {t('project.actions.deckViewer')}
         </Button>

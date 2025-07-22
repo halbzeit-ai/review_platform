@@ -268,7 +268,7 @@ function StartupDashboard() {
                         }
                         secondary={`${t('startup.decksSection.columns.uploadDate')}: ${new Date(deck.created_at).toLocaleDateString()}`}
                       />
-                      {deck.processing_status === 'completed' && (
+                      {(deck.processing_status === 'completed' || deck.visual_analysis_completed) && (
                         <Button
                           variant="outlined"
                           size="small"
@@ -276,7 +276,7 @@ function StartupDashboard() {
                           onClick={() => handleViewResults(deck.id)}
                           sx={{ ml: 1 }}
                         >
-                          {t('startup.decksSection.viewResults')}
+                          {deck.processing_status === 'completed' ? t('startup.decksSection.viewResults') : 'View Deck'}
                         </Button>
                       )}
                     </ListItem>
