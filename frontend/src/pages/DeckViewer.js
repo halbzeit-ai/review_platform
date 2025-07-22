@@ -57,6 +57,22 @@ const DeckViewer = () => {
     loadDeckAnalysis();
   }, [companyId, deckId]);
 
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (e.key === 'ArrowLeft' && currentSlide > 0) {
+        handleSlideChange(currentSlide - 1);
+      } else if (e.key === 'ArrowRight' && currentSlide < slides.length - 1) {
+        handleSlideChange(currentSlide + 1);
+      } else if (e.key === 'f' || e.key === 'F') {
+        handleZoomFit();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [currentSlide, slides.length]);
+
   const loadDeckAnalysis = async () => {
     try {
       setLoading(true);
@@ -164,32 +180,45 @@ const DeckViewer = () => {
       }}
       onClick={() => handleSlideChange(index)}
     >
-      <CardContent sx={{ p: 2 }}>
+      <CardContent sx={{ p: 1.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
             Slide {slide.page_number}
           </Typography>
         </Box>
         
         {imageUrls[slide.page_number] && (
-          <CardMedia
-            component="img"
-            height="80"
-            image={imageUrls[slide.page_number]}
-            alt={`Slide ${slide.page_number}`}
-            sx={{ objectFit: 'contain', mb: 1 }}
-          />
+          <Box sx={{ 
+            width: '100%', 
+            aspectRatio: '16/9', 
+            mb: 1,
+            overflow: 'hidden',
+            borderRadius: 1,
+            backgroundColor: 'grey.100'
+          }}>
+            <CardMedia
+              component="img"
+              image={imageUrls[slide.page_number]}
+              alt={`Slide ${slide.page_number}`}
+              sx={{ 
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain'
+              }}
+            />
+          </Box>
         )}
         
         <Typography variant="body2" color="text.secondary" sx={{ 
-          fontSize: '0.8rem',
+          fontSize: '0.75rem',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           display: '-webkit-box',
           WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical'
+          WebkitBoxOrient: 'vertical',
+          lineHeight: 1.2
         }}>
-          {slide.description.substring(0, 100)}...
+          {slide.description.substring(0, 80)}...
         </Typography>
       </CardContent>
     </Card>
@@ -296,12 +325,12 @@ const DeckViewer = () => {
       <Grid container spacing={3}>
         {/* Slide Navigation */}
         <Grid item xs={12} md={3}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Slides
+          <Paper sx={{ p: 2, height: 'fit-content', maxHeight: '80vh', overflow: 'auto' }}>
+            <Typography variant="h6" sx={{ mb: 2, fontSize: '1.1rem' }}>
+              Slides ({slides.length})
             </Typography>
             
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               {slides.map((slide, index) => (
                 <SlideNavigationCard 
                   key={slide.page_number} 
@@ -344,13 +373,23 @@ const DeckViewer = () => {
                   </Box>
                   
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <IconButton onClick={handleZoomOut} size="small">
+                    <IconButton 
+                      onClick={handleZoomOut} 
+                      size="small"
+                      disabled={imageZoom === 'fit' || imageZoom <= 0.5}
+                      title="Zoom Out"
+                    >
                       <ZoomOutIcon />
                     </IconButton>
-                    <Typography variant="body2" sx={{ minWidth: '60px', textAlign: 'center' }}>
+                    <Typography variant="body2" sx={{ minWidth: '70px', textAlign: 'center' }}>
                       {imageZoom === 'fit' ? 'Fit' : `${Math.round(imageZoom * 100)}%`}
                     </Typography>
-                    <IconButton onClick={handleZoomIn} size="small">
+                    <IconButton 
+                      onClick={handleZoomIn} 
+                      size="small"
+                      disabled={imageZoom === 'fit' ? false : imageZoom >= 3}
+                      title="Zoom In"
+                    >
                       <ZoomInIcon />
                     </IconButton>
                     <Button 
@@ -358,6 +397,7 @@ const DeckViewer = () => {
                       size="small" 
                       variant="outlined"
                       sx={{ ml: 1, fontSize: '0.75rem', minWidth: 'auto', px: 1 }}
+                      title="Fit to Container (Press F)"
                     >
                       Fit
                     </Button>
@@ -368,33 +408,50 @@ const DeckViewer = () => {
 
                 {/* Slide Image */}
                 <Box sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'center', 
-                  alignItems: 'center',
+                  position: 'relative',
+                  width: '100%',
+                  aspectRatio: '16/9',
                   mb: 3,
                   overflow: imageZoom === 'fit' ? 'hidden' : 'auto',
-                  maxHeight: '600px',
-                  minHeight: '300px',
                   backgroundColor: 'grey.50',
-                  borderRadius: 1
+                  borderRadius: 1,
+                  border: '1px solid',
+                  borderColor: 'grey.200'
                 }}>
                   {imageUrls[currentSlideData.page_number] ? (
                     <img
                       src={imageUrls[currentSlideData.page_number]}
                       alt={`Slide ${currentSlideData.page_number}`}
                       style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: imageZoom === 'fit' 
+                          ? 'translate(-50%, -50%)' 
+                          : `translate(-50%, -50%) scale(${imageZoom})`,
                         maxWidth: imageZoom === 'fit' ? '100%' : 'none',
                         maxHeight: imageZoom === 'fit' ? '100%' : 'none',
-                        width: imageZoom === 'fit' ? 'auto' : 'auto',
+                        width: imageZoom === 'fit' ? 'auto' : '100%',
                         height: imageZoom === 'fit' ? 'auto' : 'auto',
-                        objectFit: imageZoom === 'fit' ? 'contain' : 'none',
-                        transform: imageZoom === 'fit' ? 'none' : `scale(${imageZoom})`,
+                        objectFit: 'contain',
                         transition: 'transform 0.2s ease-in-out',
-                        transformOrigin: 'center center'
+                        cursor: imageZoom !== 'fit' ? 'grab' : 'default'
                       }}
                     />
                   ) : (
-                    <Skeleton variant="rectangular" width={400} height={300} />
+                    <Box sx={{ 
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)'
+                    }}>
+                      <Skeleton 
+                        variant="rectangular" 
+                        width={400} 
+                        height={225} 
+                        sx={{ borderRadius: 1 }} 
+                      />
+                    </Box>
                   )}
                 </Box>
 
