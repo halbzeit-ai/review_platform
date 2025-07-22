@@ -45,6 +45,7 @@ import {
   getTemplateDetails,
   getPerformanceMetrics,
   customizeTemplate,
+  getMyCustomizations,
   getPipelinePrompts,
   getPipelinePromptByStage,
   updatePipelinePrompt,
@@ -89,16 +90,18 @@ const TemplateManagement = () => {
   const loadInitialData = useCallback(async () => {
     try {
       setLoading(true);
-      const [sectorsResponse, metricsResponse, pipelineResponse] = await Promise.all([
+      const [sectorsResponse, metricsResponse, pipelineResponse, customizationsResponse] = await Promise.all([
         getHealthcareSectors(),
         getPerformanceMetrics(),
-        getPipelinePrompts()
+        getPipelinePrompts(),
+        getMyCustomizations()
       ]);
       
       // Extract data from API responses
       const sectorsData = sectorsResponse.data || sectorsResponse;
       const metricsData = metricsResponse.data || metricsResponse;
       const pipelineData = pipelineResponse.data || pipelineResponse;
+      const customizationsData = customizationsResponse.data || customizationsResponse;
       
       // Load all templates from all sectors
       const allTemplates = [];
@@ -120,6 +123,26 @@ const TemplateManagement = () => {
             console.error(`Error loading templates for sector ${sector.id}:`, err);
           }
         }
+      }
+      
+      // Add customizations to the template list
+      if (Array.isArray(customizationsData)) {
+        const customizationTemplates = customizationsData.map(customization => ({
+          id: `custom_${customization.id}`, // Prefix with custom_ to distinguish from base templates
+          name: customization.customization_name,
+          description: `Custom template based on ${customization.template_name}`,
+          template_version: '1.0',
+          specialized_analysis: [],
+          is_active: true,
+          is_default: false,
+          usage_count: 0,
+          sector_name: customization.sector_name,
+          sector_id: null,
+          base_template_id: customization.base_template_id,
+          customization_id: customization.id,
+          is_customization: true
+        }));
+        allTemplates.push(...customizationTemplates);
       }
       
       setTemplates(allTemplates);
@@ -154,11 +177,38 @@ const TemplateManagement = () => {
 
   const handleEditTemplate = async (template) => {
     try {
-      // Load template details and open customize dialog
-      const detailsResponse = await getTemplateDetails(template.id);
-      const details = detailsResponse.data || detailsResponse;
-      setSelectedTemplate({...template, chapters: details.chapters || []});
-      setCustomizeDialogOpen(true);
+      if (template.is_customization) {
+        // For customizations, we need to reconstruct the template structure
+        // Since customizations store data differently, we'll create a basic structure
+        const customTemplate = {
+          ...template,
+          chapters: [
+            {
+              id: Date.now(),
+              name: 'Custom Chapter',
+              questions: [
+                {
+                  id: Date.now() + 1,
+                  question_text: 'Custom question',
+                  scoring_criteria: 'Custom scoring criteria'
+                }
+              ]
+            }
+          ]
+        };
+        setSelectedTemplate(customTemplate);
+        setTemplateDetails({
+          template: customTemplate,
+          chapters: customTemplate.chapters
+        });
+      } else {
+        // For regular templates, load details normally
+        const detailsResponse = await getTemplateDetails(template.id);
+        const details = detailsResponse.data || detailsResponse;
+        setSelectedTemplate({...template, chapters: details.chapters || []});
+        setTemplateDetails(details);
+      }
+      setTemplateDialogOpen(true);
     } catch (err) {
       console.error('Error loading template for editing:', err);
       setError(err.response?.data?.detail || err.message || 'Failed to load template for editing');
