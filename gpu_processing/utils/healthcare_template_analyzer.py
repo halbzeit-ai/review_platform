@@ -861,6 +861,12 @@ class HealthcareTemplateAnalyzer:
         start_time = time.time()
         logger.info(f"Starting healthcare template analysis of PDF: {pdf_path}")
         
+        # Log model configuration at start of analysis
+        logger.info(f"🤖 AI Model Configuration:")
+        logger.info(f"   📷 Vision Model (slide analysis): {self.vision_model}")
+        logger.info(f"   📝 Text Model (offering extraction, name extraction, classification, chapters, questions, specialized analysis): {self.text_model}")
+        logger.info(f"   🎯 Scoring Model (question scoring): {self.scoring_model}")
+        
         # Clear state from previous analysis sessions
         self.visual_analysis_results = []
         self.company_offering = ""
