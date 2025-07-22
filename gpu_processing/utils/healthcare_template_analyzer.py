@@ -198,69 +198,301 @@ class HealthcareTemplateAnalyzer:
         return default_prompt
     
     def _classify_startup(self, company_offering: str) -> Dict[str, Any]:
-        """Classify startup using backend API"""
+        """Classify startup using direct PostgreSQL access and local AI processing"""
         try:
-            # Try to use backend API
-            response = requests.post(
-                f"{self.backend_base_url}/api/healthcare-templates/classify",
-                json={"company_offering": company_offering},
-                headers={"Content-Type": "application/json"}
+            # Get healthcare sectors from PostgreSQL database
+            healthcare_sectors = self._get_healthcare_sectors()
+            
+            if not healthcare_sectors:
+                logger.warning("No healthcare sectors found in database")
+                return self._fallback_classification(company_offering)
+            
+            # Perform classification using local AI models
+            return self._perform_local_classification(company_offering, healthcare_sectors)
+                
+        except Exception as e:
+            logger.error(f"Error in local classification: {e}")
+            return self._fallback_classification(company_offering)
+    
+    def _get_healthcare_sectors(self) -> List[Dict[str, Any]]:
+        """Get healthcare sectors from PostgreSQL database"""
+        try:
+            conn = psycopg2.connect(self.database_url)
+            cursor = conn.cursor()
+            
+            # Get healthcare sectors with their associated data
+            cursor.execute("""
+                SELECT id, name, display_name, description, keywords, sector_focus
+                FROM healthcare_sectors 
+                WHERE is_active = true 
+                ORDER BY id
+            """)
+            
+            sectors = []
+            for row in cursor.fetchall():
+                sector_id, name, display_name, description, keywords, sector_focus = row
+                
+                # Parse keywords if they exist
+                keywords_list = []
+                if keywords:
+                    try:
+                        import json
+                        keywords_list = json.loads(keywords) if isinstance(keywords, str) else keywords
+                    except:
+                        keywords_list = [keywords] if isinstance(keywords, str) else []
+                
+                sectors.append({
+                    "id": sector_id,
+                    "name": name,
+                    "display_name": display_name,
+                    "description": description or "",
+                    "keywords": keywords_list,
+                    "sector_focus": sector_focus or ""
+                })
+            
+            conn.close()
+            logger.info(f"Retrieved {len(sectors)} healthcare sectors from database")
+            return sectors
+            
+        except Exception as e:
+            logger.error(f"Error fetching healthcare sectors: {e}")
+            return []
+    
+    def _perform_local_classification(self, company_offering: str, healthcare_sectors: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Perform classification using local AI models and healthcare sector data"""
+        try:
+            # Create classification prompt with all available sectors
+            sector_descriptions = []
+            for sector in healthcare_sectors:
+                sector_info = f"- {sector['name']}: {sector['description']}"
+                if sector['keywords']:
+                    sector_info += f" (Keywords: {', '.join(sector['keywords'])})"
+                sector_descriptions.append(sector_info)
+            
+            classification_prompt = f"""
+            You are a healthcare venture capital analyst. Classify the following startup offering into the most appropriate healthcare sector.
+            
+            Available healthcare sectors:
+            {chr(10).join(sector_descriptions)}
+            
+            Company Offering: {company_offering}
+            
+            Analyze the offering and determine:
+            1. Primary healthcare sector (use the exact sector name from the list above)
+            2. Confidence score (0.0 to 1.0)
+            3. Brief reasoning for the classification
+            4. Any secondary sector if applicable
+            5. Keywords that matched from the offering
+            
+            Respond in JSON format:
+            {{
+                "primary_sector": "exact_sector_name",
+                "confidence_score": 0.0-1.0,
+                "reasoning": "explanation",
+                "secondary_sector": "sector_name_or_null",
+                "keywords_matched": ["keyword1", "keyword2"]
+            }}
+            """
+            
+            # Use text model for classification
+            response = ollama.generate(
+                model=self.text_model,
+                prompt=classification_prompt,
+                options={'num_ctx': 16384, 'temperature': 0.2}  # Low temperature for consistent classification
             )
             
-            if response.status_code == 200:
-                return response.json()
+            # Parse JSON response
+            import json
+            classification_text = response['response'].strip()
+            
+            # Extract JSON from response (handle cases where model adds extra text)
+            start_idx = classification_text.find('{')
+            end_idx = classification_text.rfind('}') + 1
+            if start_idx >= 0 and end_idx > start_idx:
+                json_str = classification_text[start_idx:end_idx]
+                classification_result = json.loads(json_str)
+                
+                # Find recommended template for the primary sector
+                recommended_template = None
+                for sector in healthcare_sectors:
+                    if sector['name'] == classification_result.get('primary_sector'):
+                        # Try to get template associated with this sector
+                        template_id = self._get_template_for_sector(sector['id'])
+                        recommended_template = template_id
+                        break
+                
+                # Add recommended template and subcategory
+                classification_result['recommended_template'] = recommended_template
+                classification_result['subcategory'] = classification_result.get('primary_sector', 'General Healthcare')
+                
+                logger.info(f"Local classification completed: {classification_result['primary_sector']} "
+                           f"(confidence: {classification_result.get('confidence_score', 0):.2f})")
+                
+                return classification_result
             else:
-                logger.error(f"Backend classification failed: {response.status_code}")
+                logger.error("Could not parse JSON from classification response")
                 return self._fallback_classification(company_offering)
                 
         except Exception as e:
-            logger.error(f"Error calling backend classification: {e}")
+            logger.error(f"Error in local classification: {e}")
             return self._fallback_classification(company_offering)
     
+    def _get_template_for_sector(self, sector_id: int) -> Optional[int]:
+        """Get recommended template ID for a healthcare sector"""
+        try:
+            conn = psycopg2.connect(self.database_url)
+            cursor = conn.cursor()
+            
+            # Get templates associated with this sector
+            cursor.execute("""
+                SELECT id FROM analysis_templates 
+                WHERE healthcare_sector_id = %s AND is_active = true 
+                ORDER BY is_default DESC, usage_count DESC 
+                LIMIT 1
+            """, (sector_id,))
+            
+            result = cursor.fetchone()
+            conn.close()
+            
+            return result[0] if result else None
+            
+        except Exception as e:
+            logger.error(f"Error getting template for sector {sector_id}: {e}")
+            return None
+    
     def _fallback_classification(self, company_offering: str) -> Dict[str, Any]:
-        """Fallback classification - healthcare sectors not migrated to PostgreSQL"""
-        logger.warning("Healthcare sectors not available in PostgreSQL, using default classification")
+        """Fallback classification when database access fails"""
+        logger.warning("Using fallback classification")
         
         # Ultimate fallback
         return {
             "primary_sector": "consumer_health",
             "subcategory": "Health Optimization Tools",
             "confidence_score": 0.3,
-            "reasoning": "Default classification - healthcare sectors not migrated to PostgreSQL",
+            "reasoning": "Fallback classification - unable to access healthcare sectors from database",
             "secondary_sector": None,
             "keywords_matched": [],
             "recommended_template": None
         }
     
     def _load_template_config(self, template_id: Optional[int] = None) -> Dict[str, Any]:
-        """Load template configuration from database"""
+        """Load template configuration from PostgreSQL database"""
         try:
             if not template_id:
-                # Healthcare templates not migrated to PostgreSQL yet
-                logger.warning("Healthcare templates not available in PostgreSQL, using fallback")
-            
-            if not template_id:
-                logger.warning("No template ID found, using fallback configuration")
+                logger.warning("No template ID provided, using fallback configuration")
                 return self._get_fallback_template_config()
             
-            # Load template details
-            try:
-                response = requests.get(
-                    f"{self.backend_base_url}/api/healthcare-templates/templates/{template_id}"
-                )
-                
-                if response.status_code == 200:
-                    return response.json()
-                else:
-                    logger.error(f"Failed to load template {template_id}: {response.status_code}")
-                    return self._get_fallback_template_config()
-                    
-            except Exception as e:
-                logger.error(f"Error loading template from API: {e}")
-                return self._get_fallback_template_config()
+            # Load template details from PostgreSQL
+            return self._load_template_from_database(template_id)
                 
         except Exception as e:
             logger.error(f"Error loading template configuration: {e}")
+            return self._get_fallback_template_config()
+    
+    def _load_template_from_database(self, template_id: int) -> Dict[str, Any]:
+        """Load template configuration directly from PostgreSQL database"""
+        try:
+            conn = psycopg2.connect(self.database_url)
+            cursor = conn.cursor()
+            
+            # Load template basic info
+            cursor.execute("""
+                SELECT t.id, t.name, t.description, t.specialized_analysis, 
+                       hs.name as sector_name, hs.display_name as sector_display_name
+                FROM analysis_templates t
+                LEFT JOIN healthcare_sectors hs ON t.healthcare_sector_id = hs.id
+                WHERE t.id = %s AND t.is_active = true
+            """, (template_id,))
+            
+            template_row = cursor.fetchone()
+            if not template_row:
+                logger.warning(f"Template {template_id} not found in database")
+                conn.close()
+                return self._get_fallback_template_config()
+            
+            # Parse template data
+            t_id, name, description, specialized_analysis, sector_name, sector_display = template_row
+            
+            # Parse specialized analysis if it exists
+            specialized_list = []
+            if specialized_analysis:
+                try:
+                    import json
+                    specialized_list = json.loads(specialized_analysis) if isinstance(specialized_analysis, str) else specialized_analysis
+                except:
+                    specialized_list = []
+            
+            # Load template chapters and questions
+            cursor.execute("""
+                SELECT tc.id, tc.chapter_id, tc.name, tc.description, tc.weight, tc.order_index,
+                       tc.is_required, tc.enabled
+                FROM template_chapters tc
+                WHERE tc.template_id = %s AND tc.enabled = true
+                ORDER BY tc.order_index
+            """, (template_id,))
+            
+            chapters = []
+            for chapter_row in cursor.fetchall():
+                chapter_db_id, chapter_id, chapter_name, chapter_desc, weight, order_idx, is_required, enabled = chapter_row
+                
+                # Load questions for this chapter
+                cursor.execute("""
+                    SELECT cq.id, cq.question_id, cq.question_text, cq.weight, cq.order_index,
+                           cq.enabled, cq.scoring_criteria, cq.healthcare_focus
+                    FROM chapter_questions cq
+                    WHERE cq.chapter_id = %s AND cq.enabled = true
+                    ORDER BY cq.order_index
+                """, (chapter_db_id,))
+                
+                questions = []
+                for question_row in cursor.fetchall():
+                    q_id, q_question_id, q_text, q_weight, q_order, q_enabled, q_criteria, q_focus = question_row
+                    
+                    questions.append({
+                        "id": q_id,
+                        "question_id": q_question_id,
+                        "question_text": q_text,
+                        "weight": float(q_weight) if q_weight else 1.0,
+                        "order_index": q_order,
+                        "enabled": q_enabled,
+                        "scoring_criteria": q_criteria or "",
+                        "healthcare_focus": q_focus or ""
+                    })
+                
+                chapters.append({
+                    "id": chapter_db_id,
+                    "chapter_id": chapter_id,
+                    "name": chapter_name,
+                    "description": chapter_desc or "",
+                    "weight": float(weight) if weight else 1.0,
+                    "order_index": order_idx,
+                    "is_required": is_required,
+                    "enabled": enabled,
+                    "questions": questions
+                })
+            
+            conn.close()
+            
+            # Format template config in expected structure
+            template_config = {
+                "template": {
+                    "id": t_id,
+                    "name": name,
+                    "description": description or "",
+                    "specialized_analysis": specialized_list,
+                    "healthcare_sector": {
+                        "name": sector_name,
+                        "display_name": sector_display
+                    }
+                },
+                "chapters": chapters
+            }
+            
+            logger.info(f"Loaded template '{name}' with {len(chapters)} chapters from database")
+            return template_config
+            
+        except Exception as e:
+            logger.error(f"Error loading template from database: {e}")
             return self._get_fallback_template_config()
     
     def _get_fallback_template_config(self) -> Dict[str, Any]:
