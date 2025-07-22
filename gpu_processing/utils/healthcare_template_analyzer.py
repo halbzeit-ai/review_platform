@@ -54,6 +54,12 @@ class HealthcareTemplateAnalyzer:
         self.text_model = self.get_model_by_type("text") or "gemma3:12b"
         self.scoring_model = self.get_model_by_type("scoring") or "phi4:latest"
         
+        # Log model configuration
+        logger.info(f"🤖 AI Model Configuration:")
+        logger.info(f"   📷 Vision Model (slide analysis): {self.vision_model}")
+        logger.info(f"   📝 Text Model (chapters/questions): {self.text_model}")
+        logger.info(f"   🎯 Scoring Model (question scoring): {self.scoring_model}")
+        
         # Analysis results storage
         self.visual_analysis_results = []
         self.company_offering = ""
@@ -295,6 +301,7 @@ class HealthcareTemplateAnalyzer:
             """
             
             # Use text model for classification
+            logger.info(f"🏥 Performing healthcare classification using text model: {self.text_model}")
             response = ollama.generate(
                 model=self.text_model,
                 prompt=classification_prompt,
@@ -893,6 +900,15 @@ class HealthcareTemplateAnalyzer:
             processing_time = time.time() - start_time
             logger.info(f"Healthcare template analysis completed in {processing_time:.2f} seconds")
             
+            # Log model usage summary
+            logger.info(f"🎉 Analysis Complete - Model Usage Summary:")
+            logger.info(f"   📷 Vision Model: {self.vision_model} (slide analysis)")
+            logger.info(f"   📝 Text Model: {self.text_model} (chapters, questions, classification)")
+            logger.info(f"   🎯 Scoring Model: {self.scoring_model} (question scoring)")
+            logger.info(f"   📊 Total slides analyzed: {len(self.visual_analysis_results)}")
+            logger.info(f"   📚 Template chapters processed: {len(self.chapter_results)}")
+            logger.info(f"   ❓ Total questions analyzed: {len(self.question_results)}")
+            
             return self._format_healthcare_results(processing_time)
             
         except Exception as e:
@@ -933,6 +949,7 @@ class HealthcareTemplateAnalyzer:
                 
                 # Get AI analysis of the page
                 logger.info(f"🔍 Analyzing page {page_number + 1} with prompt: {self.image_analysis_prompt[:100]}...")
+                logger.info(f"   📷 Using vision model: {self.vision_model}")
                 page_analysis = get_information_for_image(
                     image_bytes, 
                     self.image_analysis_prompt, 
@@ -975,6 +992,7 @@ class HealthcareTemplateAnalyzer:
         offering_prompt = f"{self.offering_extraction_prompt}\n\nPitch deck content: {{pitch_deck_content}}"
         
         try:
+            logger.info(f"📝 Generating company offering using text model: {self.text_model}")
             response = ollama.generate(
                 model=self.text_model,
                 prompt=offering_prompt.format(pitch_deck_content=full_pitchdeck_text),
@@ -1006,6 +1024,7 @@ class HealthcareTemplateAnalyzer:
             # Use the startup name extraction prompt from database
             startup_name_prompt = f"{self.startup_name_extraction_prompt}\n\nPitch deck content: {{pitch_deck_content}}"
             
+            logger.info(f"🏢 Extracting startup name using text model: {self.text_model}")
             response = ollama.generate(
                 model=self.text_model,
                 prompt=startup_name_prompt.format(pitch_deck_content=full_pitchdeck_text),
@@ -1060,7 +1079,8 @@ class HealthcareTemplateAnalyzer:
             chapter_id = chapter["chapter_id"]
             chapter_name = chapter["name"]
             
-            logger.info(f"Analyzing chapter: {chapter_name}")
+            logger.info(f"📚 Analyzing chapter: {chapter_name}")
+            logger.info(f"   📝 Using text model for chapter analysis: {self.text_model}")
             
             # Process each question in the chapter
             chapter_questions = chapter.get("questions", [])
@@ -1090,6 +1110,7 @@ class HealthcareTemplateAnalyzer:
                 """
                 
                 try:
+                    logger.info(f"   ❓ Processing question: {question_text[:50]}...")
                     response = ollama.generate(
                         model=self.text_model,
                         prompt=question_prompt,
@@ -1174,6 +1195,7 @@ class HealthcareTemplateAnalyzer:
         """
         
         try:
+            logger.info(f"   🎯 Scoring question using scoring model: {self.scoring_model}")
             response = ollama.generate(
                 model=self.scoring_model,
                 prompt=scoring_prompt,
@@ -1249,6 +1271,7 @@ class HealthcareTemplateAnalyzer:
         """
         
         try:
+            logger.info(f"🔬 Generating clinical validation analysis using text model: {self.text_model}")
             response = ollama.generate(
                 model=self.text_model,
                 prompt=prompt.format(pitch_deck_content=pitch_deck_text),
@@ -1281,6 +1304,7 @@ class HealthcareTemplateAnalyzer:
         """
         
         try:
+            logger.info(f"🏛️ Generating regulatory pathway analysis using text model: {self.text_model}")
             response = ollama.generate(
                 model=self.text_model,
                 prompt=prompt.format(pitch_deck_content=pitch_deck_text),
@@ -1312,6 +1336,7 @@ class HealthcareTemplateAnalyzer:
         """
         
         try:
+            logger.info(f"🧬 Generating scientific hypothesis analysis using text model: {self.text_model}")
             response = ollama.generate(
                 model=self.text_model,
                 prompt=prompt.format(pitch_deck_content=pitch_deck_text),
