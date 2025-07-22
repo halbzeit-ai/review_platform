@@ -83,9 +83,24 @@ class HealthcareTemplateAnalyzer:
     
     def get_model_by_type(self, model_type: str) -> Optional[str]:
         """Get the active model for a specific type from PostgreSQL database"""
+        logger.info(f"🔍 Querying PostgreSQL for {model_type} model configuration...")
+        logger.info(f"   Database URL: {self.database_url}")
+        
         try:
             conn = psycopg2.connect(self.database_url)
             cursor = conn.cursor()
+            
+            # First, check if model_configs table exists and has data
+            cursor.execute("SELECT COUNT(*) FROM model_configs")
+            count = cursor.fetchone()[0]
+            logger.info(f"   Found {count} model configurations in database")
+            
+            # Check all active models
+            cursor.execute("SELECT model_name, model_type FROM model_configs WHERE is_active = true")
+            active_models = cursor.fetchall()
+            logger.info(f"   Active models: {active_models}")
+            
+            # Query for specific model type
             cursor.execute(
                 "SELECT model_name FROM model_configs WHERE model_type = %s AND is_active = true LIMIT 1", 
                 (model_type,)
@@ -94,11 +109,16 @@ class HealthcareTemplateAnalyzer:
             conn.close()
             
             if result:
-                logger.info(f"Using configured {model_type} model: {result[0]}")
+                logger.info(f"✅ Using configured {model_type} model: {result[0]}")
                 return result[0]
+            else:
+                logger.warning(f"❌ No active {model_type} model found in database")
+                
         except Exception as e:
-            logger.warning(f"Could not get {model_type} model from PostgreSQL: {e}")
+            logger.error(f"❌ Could not get {model_type} model from PostgreSQL: {e}")
+            logger.error(f"   Exception type: {type(e).__name__}")
         
+        logger.info(f"⚠️  Falling back to default for {model_type} model")
         return None
     
     def _get_company_info_from_path(self, pdf_path: str) -> tuple:
