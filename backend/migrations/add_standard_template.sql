@@ -1,8 +1,8 @@
 -- Add Standard Seven-Chapter Template
 -- This template reflects the default review structure used in the pitch deck analyzer
 
--- First, let's assume we're using the first healthcare sector (you can adjust the ID as needed)
--- We'll create a general "Standard Review" sector if it doesn't exist
+-- First, let's create a general "Standard Review" sector if it doesn't exist
+-- Using ON CONFLICT to handle if the sector already exists
 
 INSERT INTO healthcare_sectors (name, display_name, description, keywords, subcategories, confidence_threshold, regulatory_requirements, is_active)
 VALUES (
@@ -14,7 +14,10 @@ VALUES (
     0.7,
     '{"requirements": [], "notes": "General template with no specific regulatory requirements"}',
     TRUE
-) ON CONFLICT (name) DO NOTHING;
+) ON CONFLICT (name) DO UPDATE SET
+    display_name = EXCLUDED.display_name,
+    description = EXCLUDED.description,
+    is_active = EXCLUDED.is_active;
 
 -- Get the sector ID (this will work in PostgreSQL)
 DO $$
@@ -26,26 +29,34 @@ BEGIN
     -- Get or create the standard review sector
     SELECT id INTO sector_id FROM healthcare_sectors WHERE name = 'standard_review';
     
-    -- Insert the standard template
-    INSERT INTO analysis_templates (
-        healthcare_sector_id,
-        name,
-        description,
-        template_version,
-        specialized_analysis,
-        is_active,
-        is_default,
-        usage_count
-    ) VALUES (
-        sector_id,
-        'Standard Seven-Chapter Review',
-        'The standard seven-chapter review template used for comprehensive startup analysis',
-        '1.0',
-        '["problem_analysis", "solution_approach", "product_market_fit", "monetization", "financials", "use_of_funds", "organization"]',
-        TRUE,
-        TRUE,
-        0
-    ) RETURNING id INTO template_id;
+    -- Check if template already exists
+    SELECT id INTO template_id FROM analysis_templates 
+    WHERE healthcare_sector_id = sector_id AND name = 'Standard Seven-Chapter Review';
+    
+    -- Only insert if template doesn't exist
+    IF template_id IS NULL THEN
+        -- Insert the standard template
+        INSERT INTO analysis_templates (
+            healthcare_sector_id,
+            name,
+            description,
+            template_version,
+            specialized_analysis,
+            is_active,
+            is_default,
+            usage_count
+        ) VALUES (
+            sector_id,
+            'Standard Seven-Chapter Review',
+            'The standard seven-chapter review template used for comprehensive startup analysis',
+            '1.0',
+            '["problem_analysis", "solution_approach", "product_market_fit", "monetization", "financials", "use_of_funds", "organization"]',
+            TRUE,
+            TRUE,
+            0
+        ) RETURNING id INTO template_id;
+        
+        RAISE NOTICE 'Created new template with ID: %', template_id;
 
     -- Chapter 1: Problem Analysis
     INSERT INTO template_chapters (
@@ -193,5 +204,9 @@ BEGIN
      'Score based on team structure appropriateness (1-5 scale)', 'general'),
     (chapter_id, 'org_gaps', 'What skills are missing in the management team?', 1.0, 4, TRUE,
      'Score based on skill gap awareness and planning (1-5 scale)', 'general');
+
+    ELSE
+        RAISE NOTICE 'Template already exists with ID: %', template_id;
+    END IF;
 
 END $$;
