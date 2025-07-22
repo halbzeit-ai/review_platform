@@ -66,14 +66,6 @@ const TemplateManagement = () => {
     { label: t('templates.title'), path: '/templates' }
   ];
 
-
-  useEffect(() => {
-    loadInitialData();
-  }, [loadInitialData]);
-
-
-
-
   const loadInitialData = useCallback(async () => {
     try {
       setLoading(true);
@@ -125,8 +117,9 @@ const TemplateManagement = () => {
     }
   }, [navigate]);
 
-
-
+  useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
 
   const handleEditTemplate = async (template) => {
     try {
