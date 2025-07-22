@@ -433,23 +433,23 @@ async def get_performance_metrics(
         return {
             "template_performance": [
                 {
-                    "template_name": row[0],
-                    "usage_count": row[1] or 0,
-                    "avg_confidence": row[2] or 0.0,
-                    "avg_rating": row[3] or 0.0
+                    "template_name": row[0] or "Unknown Template",
+                    "usage_count": int(row[1] or 0),
+                    "avg_confidence": float(row[2] or 0.0),
+                    "avg_rating": float(row[3] or 0.0)
                 }
                 for row in template_result
             ],
             "classification_accuracy": {
-                "total_classifications": accuracy_result[0] or 0,
-                "accurate_classifications": accuracy_result[1] or 0,
-                "inaccurate_classifications": accuracy_result[2] or 0,
-                "accuracy_percentage": (accuracy_result[1] / accuracy_result[0] * 100) if accuracy_result[0] > 0 else 0
+                "total_classifications": int(accuracy_result[0] or 0),
+                "accurate_classifications": int(accuracy_result[1] or 0),
+                "inaccurate_classifications": int(accuracy_result[2] or 0),
+                "accuracy_percentage": float((accuracy_result[1] or 0) / (accuracy_result[0] or 1) * 100) if (accuracy_result[0] or 0) > 0 else 0.0
             },
             "sector_distribution": [
                 {
-                    "sector_name": row[0],
-                    "classification_count": row[1] or 0
+                    "sector_name": row[0] or "Unknown Sector",
+                    "classification_count": int(row[1] or 0)
                 }
                 for row in sector_result
             ]
