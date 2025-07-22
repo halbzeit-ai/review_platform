@@ -25,7 +25,14 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListItemIcon
+  ListItemIcon,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormControlLabel,
+  Switch,
+  FormHelperText
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -34,6 +41,8 @@ import {
   Assessment as AssessmentIcon,
   Visibility as VisibilityIcon,
   Storefront as StorefrontIcon,
+  Category as CategoryIcon,
+  PlayArrow as PlayArrowIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -61,8 +70,13 @@ const TemplateManagement = () => {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [templateDetails, setTemplateDetails] = useState(null);
   const [performanceMetrics, setPerformanceMetrics] = useState(null);
+  const [sectors, setSectors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Classification settings state
+  const [useClassification, setUseClassification] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
   
   
   
@@ -102,6 +116,9 @@ const TemplateManagement = () => {
       const metricsData = metricsResponse.data || metricsResponse;
       const pipelineData = pipelineResponse.data || pipelineResponse;
       const customizationsData = customizationsResponse.data || customizationsResponse;
+      
+      // Store sectors for classification tab
+      setSectors(sectorsData);
       
       // Load all templates from all sectors
       const allTemplates = [];
@@ -148,6 +165,14 @@ const TemplateManagement = () => {
       setTemplates(allTemplates);
       setPerformanceMetrics(metricsData);
       setPipelinePrompts(pipelineData.prompts || {});
+      
+      // Set default selected template to "Standard Seven-Chapter Review"
+      const standardTemplate = allTemplates.find(t => t.name === 'Standard Seven-Chapter Review');
+      if (standardTemplate) {
+        setSelectedTemplateId(standardTemplate.id);
+      } else if (allTemplates.length > 0) {
+        setSelectedTemplateId(allTemplates[0].id);
+      }
       
       // Set initial prompt texts for all stages
       const prompts = pipelineData.prompts || {};
@@ -656,6 +681,186 @@ const TemplateManagement = () => {
     );
   };
 
+  const ClassificationPanel = () => (
+    <Box>
+      <Typography variant="h6" sx={{ mb: 3 }}>
+        Classification Settings
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+        Choose how to analyze pitch decks: use a single template or classify into healthcare sectors first.
+      </Typography>
+
+      <Grid container spacing={4}>
+        {/* Classification Mode Selection */}
+        <Grid item xs={12}>
+          <Card sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <CategoryIcon sx={{ mr: 1 }} />
+              <Typography variant="h6">
+                Classification Mode
+              </Typography>
+            </Box>
+            
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={useClassification}
+                  onChange={(e) => setUseClassification(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label={
+                <Box>
+                  <Typography variant="body1">
+                    {useClassification ? 'Use Healthcare Sector Classification' : 'Use Single Template'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {useClassification 
+                      ? 'Automatically classify startups into healthcare sectors and use sector-specific templates'
+                      : 'Apply the selected template to all pitch decks'
+                    }
+                  </Typography>
+                </Box>
+              }
+            />
+          </Card>
+        </Grid>
+
+        {/* Single Template Selection (when classification is OFF) */}
+        {!useClassification && (
+          <Grid item xs={12} md={6}>
+            <Card sx={{ p: 3 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Template Selection
+              </Typography>
+              <FormControl fullWidth>
+                <InputLabel>Select Template</InputLabel>
+                <Select
+                  value={selectedTemplateId}
+                  onChange={(e) => setSelectedTemplateId(e.target.value)}
+                  label="Select Template"
+                >
+                  {templates.map((template) => (
+                    <MenuItem key={template.id} value={template.id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                        <Typography>{template.name}</Typography>
+                        {template.is_default && (
+                          <Chip label="Default" size="small" color="primary" sx={{ ml: 1 }} />
+                        )}
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Select>
+                <FormHelperText>
+                  This template will be applied to all pitch deck analyses
+                </FormHelperText>
+              </FormControl>
+
+              {selectedTemplateId && (
+                <Box sx={{ mt: 2 }}>
+                  {(() => {
+                    const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
+                    return selectedTemplate ? (
+                      <Alert severity="info">
+                        <Typography variant="body2">
+                          <strong>Selected:</strong> {selectedTemplate.name}
+                          <br />
+                          <strong>Sector:</strong> {selectedTemplate.sector_name}
+                          <br />
+                          <strong>Description:</strong> {selectedTemplate.description}
+                        </Typography>
+                      </Alert>
+                    ) : null;
+                  })()}
+                </Box>
+              )}
+            </Card>
+          </Grid>
+        )}
+
+        {/* Classification Overview (when classification is ON) */}
+        {useClassification && (
+          <Grid item xs={12}>
+            <Card sx={{ p: 3 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Healthcare Sector Classification
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                When classification is enabled, pitch decks will be automatically categorized into the following healthcare sectors:
+              </Typography>
+              
+              <Grid container spacing={2}>
+                {sectors.map((sector) => (
+                  <Grid item xs={12} sm={6} md={4} key={sector.id}>
+                    <Card variant="outlined" sx={{ p: 2, height: '100%' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <AssessmentIcon color="primary" sx={{ mr: 1, fontSize: 20 }} />
+                        <Typography variant="subtitle2">
+                          {sector.display_name}
+                        </Typography>
+                      </Box>
+                      <Typography variant="caption" color="text.secondary">
+                        {sector.description}
+                      </Typography>
+                      {/* Show template associated with this sector */}
+                      {(() => {
+                        const sectorTemplate = templates.find(t => t.sector_id === sector.id && !t.is_customization);
+                        return sectorTemplate ? (
+                          <Box sx={{ mt: 1 }}>
+                            <Chip 
+                              label={sectorTemplate.name} 
+                              size="small" 
+                              variant="outlined" 
+                            />
+                          </Box>
+                        ) : null;
+                      })()}
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+
+              <Alert severity="info" sx={{ mt: 3 }}>
+                <Typography variant="body2">
+                  <strong>How it works:</strong> The system will analyze the company offering text from each pitch deck, 
+                  classify it into the most appropriate healthcare sector, and then apply the corresponding sector-specific 
+                  analysis template automatically.
+                </Typography>
+              </Alert>
+            </Card>
+          </Grid>
+        )}
+
+        {/* Action Buttons */}
+        <Grid item xs={12}>
+          <Card sx={{ p: 3, bgcolor: 'action.hover' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box>
+                <Typography variant="h6">
+                  Ready to Analyze
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {useClassification 
+                    ? `Classification mode is enabled. Pitch decks will be automatically classified into ${sectors.length} healthcare sectors.`
+                    : `Single template mode. All pitch decks will use: ${templates.find(t => t.id === selectedTemplateId)?.name || 'No template selected'}`
+                  }
+                </Typography>
+              </Box>
+              <Button
+                variant="contained"
+                startIcon={<PlayArrowIcon />}
+                disabled={!useClassification && !selectedTemplateId}
+                sx={{ ml: 2 }}
+              >
+                Start Analysis
+              </Button>
+            </Box>
+          </Card>
+        </Grid>
+      </Grid>
+    </Box>
+  );
+
   const PerformanceMetricsPanel = () => (
     <Box>
       <Typography variant="h6" sx={{ mb: 3 }}>
@@ -906,6 +1111,7 @@ const TemplateManagement = () => {
       <Paper sx={{ width: '100%' }}>
         <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
           <Tab label="Healthcare Templates" />
+          <Tab label="Classifications" />
           <Tab label={t('tabs.performanceMetrics')} />
           <Tab label={t('tabs.obligatoryExtractions')} />
         </Tabs>
@@ -999,10 +1205,14 @@ const TemplateManagement = () => {
 
 
         <TabPanel value={activeTab} index={1}>
-          <PerformanceMetricsPanel />
+          <ClassificationPanel />
         </TabPanel>
 
         <TabPanel value={activeTab} index={2}>
+          <PerformanceMetricsPanel />
+        </TabPanel>
+
+        <TabPanel value={activeTab} index={3}>
           <PipelineSettingsContent />
         </TabPanel>
       </Paper>
