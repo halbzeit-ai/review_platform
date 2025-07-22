@@ -123,7 +123,7 @@ BEGIN
         ) VALUES 
         (chapter_id, 'monetization_payer', 'Who will pay for it?', 1.0, 1, TRUE,
          'Score based on payer identification clarity (1-5 scale)', 'general'),
-        (chapter_id, 'monetization_decision', 'What does the buyer\'s decision-making structure look like?', 1.0, 2, TRUE,
+        (chapter_id, 'monetization_decision', 'What does the buyer''s decision-making structure look like?', 1.0, 2, TRUE,
          'Score based on sales process understanding (1-5 scale)', 'general'),
         (chapter_id, 'monetization_pricing', 'How did you design the pricing and why exactly like this?', 1.0, 3, TRUE,
          'Score based on pricing strategy rationale (1-5 scale)', 'general'),
