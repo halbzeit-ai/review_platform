@@ -1068,6 +1068,8 @@ class HealthcareTemplateAnalyzer:
                 You are a healthcare venture capital analyst reviewing a pitch deck. 
                 
                 Question: {question_text}
+
+                Healthcare focus: {healthcare_focus}
                 
                 Based on the pitch deck content below, provide a single paragraph answering this question.
                 Focus on healthcare-specific considerations and clinical relevance.
@@ -1079,7 +1081,7 @@ class HealthcareTemplateAnalyzer:
                     response = ollama.generate(
                         model=self.text_model,
                         prompt=question_prompt,
-                        options={'num_ctx': 32768, 'temperature': 0.7}
+                        options={'num_ctx': 32768, 'temperature': 0.1}
                     )
                     
                     question_response = response['response']
@@ -1164,7 +1166,7 @@ class HealthcareTemplateAnalyzer:
             response = ollama.generate(
                 model=self.scoring_model,
                 prompt=scoring_prompt,
-                options={'num_ctx': 16384, 'temperature': 0.1}
+                options={'num_ctx': 32768, 'temperature': 0.1}
             )
             
             score_text = response['response'].strip()
@@ -1254,7 +1256,7 @@ class HealthcareTemplateAnalyzer:
             response = ollama.generate(
                 model=self.text_model,
                 prompt=prompt.format(pitch_deck_content=pitch_deck_text),
-                options={'num_ctx': 16384, 'temperature': 0.5}
+                options={'num_ctx': 32768, 'temperature': 0.1}
             )
             
             self.specialized_results["clinical_validation"] = response['response']
@@ -1286,7 +1288,7 @@ class HealthcareTemplateAnalyzer:
             response = ollama.generate(
                 model=self.text_model,
                 prompt=prompt.format(pitch_deck_content=pitch_deck_text),
-                options={'num_ctx': 16384, 'temperature': 0.5}
+                options={'num_ctx': 32768, 'temperature': 0.1}
             )
             
             self.specialized_results["regulatory_pathway"] = response['response']
@@ -1317,7 +1319,7 @@ class HealthcareTemplateAnalyzer:
             response = ollama.generate(
                 model=self.text_model,
                 prompt=prompt.format(pitch_deck_content=pitch_deck_text),
-                options={'num_ctx': 16384, 'temperature': 0.5}
+                options={'num_ctx': 32768, 'temperature': 0.1}
             )
             
             self.specialized_results["scientific_hypothesis"] = response['response']
