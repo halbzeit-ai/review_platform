@@ -580,6 +580,18 @@ const ProjectResults = ({ companyId, deckId }) => {
                                 <Box sx={{ fontSize: '0.9rem' }}>
                                   {formatText(question.response)}
                                 </Box>
+                                
+                                {/* Debug: Show scoring response */}
+                                {question.scoring_response && (
+                                  <Box sx={{ mt: 1.5, p: 1.5, bgcolor: 'warning.50', borderRadius: 1, border: '1px solid', borderColor: 'warning.200' }}>
+                                    <Typography variant="caption" color="warning.dark" fontWeight="bold" sx={{ fontSize: '0.75rem' }}>
+                                      🐛 Debug - Scoring Response:
+                                    </Typography>
+                                    <Typography variant="body2" color="warning.dark" sx={{ fontSize: '0.8rem', mt: 0.5, fontFamily: 'monospace' }}>
+                                      {question.scoring_response}
+                                    </Typography>
+                                  </Box>
+                                )}
                               </Box>
                               
                               {question.healthcare_focus && (

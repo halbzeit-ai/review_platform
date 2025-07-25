@@ -7,6 +7,7 @@ import os
 import json
 import time
 import logging
+import re
 import psycopg2
 from typing import Dict, List, Optional, Any
 from PIL import Image
@@ -1085,7 +1086,7 @@ class HealthcareTemplateAnalyzer:
                     chapter_responses.append(question_response)
                     
                     # Generate score for this question
-                    score = self._score_question(question_text, scoring_criteria, question_response, full_pitchdeck_text)
+                    score, scoring_response = self._score_question(question_text, scoring_criteria, question_response, full_pitchdeck_text)
                     chapter_scores.append(score)
                     
                     # Store question result
@@ -1094,7 +1095,8 @@ class HealthcareTemplateAnalyzer:
                         "response": question_response,
                         "score": score,
                         "scoring_criteria": scoring_criteria,
-                        "healthcare_focus": healthcare_focus
+                        "healthcare_focus": healthcare_focus,
+                        "scoring_response": scoring_response  # Add scoring response for debugging
                     }
                     
                 except Exception as e:
@@ -1110,14 +1112,18 @@ class HealthcareTemplateAnalyzer:
                 # Build detailed question structure for this chapter
                 chapter_question_details = []
                 for i, question in enumerate(chapter_questions):
+                    question_id = question["question_id"]
+                    question_result = self.question_results.get(question_id, {})
+                    
                     question_detail = {
                         "id": question.get("id"),
-                        "question_id": question["question_id"],
+                        "question_id": question_id,
                         "question_text": question["question_text"],
                         "response": chapter_responses[i] if i < len(chapter_responses) else "",
                         "score": chapter_scores[i] if i < len(chapter_scores) else 0,
                         "scoring_criteria": question.get("scoring_criteria", ""),
-                        "healthcare_focus": question.get("healthcare_focus", "")
+                        "healthcare_focus": question.get("healthcare_focus", ""),
+                        "scoring_response": question_result.get("scoring_response", "")  # Add scoring response for debugging
                     }
                     chapter_question_details.append(question_detail)
                 
@@ -1130,8 +1136,8 @@ class HealthcareTemplateAnalyzer:
                     "code_version": "v2.0-with-questions-array"  # Debug marker
                 }
     
-    def _score_question(self, question_text: str, scoring_criteria: str, response: str, pitch_deck_text: str) -> int:
-        """Score a specific question response"""
+    def _score_question(self, question_text: str, scoring_criteria: str, response: str, pitch_deck_text: str) -> tuple[int, str]:
+        """Score a specific question response and return both score and scoring response"""
         scoring_prompt = f"""
         You are a healthcare venture capital analyst scoring a pitch deck analysis.
         
@@ -1162,16 +1168,31 @@ class HealthcareTemplateAnalyzer:
             )
             
             score_text = response['response'].strip()
+            
+            # Try to extract numeric score from the response
             try:
-                score = int(score_text.split()[0])
-                return max(0, min(7, score))
+                # Handle various formats like "**2**", "2", "Score: 2", etc.
+                # First try to find a number in markdown bold format
+                bold_match = re.search(r'\*\*(\d+)\*\*', score_text)
+                if bold_match:
+                    score = int(bold_match.group(1))
+                else:
+                    # Try to find any digit in the response
+                    number_match = re.search(r'\d+', score_text)
+                    if number_match:
+                        score = int(number_match.group())
+                    else:
+                        # Fallback to original parsing
+                        score = int(score_text.split()[0])
+                
+                return max(0, min(7, score)), score_text
             except (ValueError, IndexError):
-                logger.warning(f"Could not parse score: {score_text}")
-                return 3  # Default middle score
+                logger.warning(f"Could not parse score from response: {score_text}")
+                return 3, score_text  # Default middle score, but still return response for debugging
                 
         except Exception as e:
             logger.error(f"Error scoring question: {e}")
-            return 0
+            return 0, f"Error during scoring: {str(e)}"
     
     def _generate_specialized_analysis(self):
         """Generate specialized analysis based on template configuration"""
