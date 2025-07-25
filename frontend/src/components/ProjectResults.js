@@ -561,13 +561,23 @@ const ProjectResults = ({ companyId, deckId }) => {
                                   size="small"
                                   sx={{ minWidth: 36, fontSize: '0.75rem' }}
                                 />
-                                <Typography variant="body2" fontWeight="bold" sx={{ 
-                                  fontSize: '0.9rem', 
-                                  lineHeight: 1.4,
-                                  flex: 1
-                                }}>
-                                  {question.question_text}
-                                </Typography>
+                                <Box sx={{ flex: 1 }}>
+                                  <Typography variant="body2" fontWeight="bold" sx={{ 
+                                    fontSize: '0.9rem', 
+                                    lineHeight: 1.4
+                                  }}>
+                                    {question.question_text}
+                                  </Typography>
+                                  {question.healthcare_focus && (
+                                    <Typography variant="body2" color="info.main" sx={{ 
+                                      fontSize: '0.85rem', 
+                                      mt: 0.5,
+                                      fontStyle: 'italic'
+                                    }}>
+                                      {question.healthcare_focus}
+                                    </Typography>
+                                  )}
+                                </Box>
                                 <Chip
                                   label={`${question.score}/7`}
                                   color={getScoreColor(question.score)}
@@ -593,17 +603,6 @@ const ProjectResults = ({ companyId, deckId }) => {
                                   </Box>
                                 )}
                               </Box>
-                              
-                              {question.healthcare_focus && (
-                                <Box sx={{ mt: 1.5, p: 1.5, bgcolor: 'info.50', borderRadius: 1, ml: 5 }}>
-                                  <Typography variant="caption" color="info.main" fontWeight="bold" sx={{ fontSize: '0.75rem' }}>
-                                    {t('results.healthcareFocus')}:
-                                  </Typography>
-                                  <Typography variant="body2" color="info.main" sx={{ fontSize: '0.85rem', mt: 0.5 }}>
-                                    {question.healthcare_focus}
-                                  </Typography>
-                                </Box>
-                              )}
                             </CardContent>
                           </Card>
                         ))}
