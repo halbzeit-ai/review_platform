@@ -205,7 +205,7 @@ const ProjectResults = ({ companyId, deckId }) => {
                   display: 'flex',
                   alignItems: 'flex-start'
                 }}>
-                  <ListItemIcon sx={{ minWidth: 20, mt: 0.5 }}>
+                  <ListItemIcon sx={{ minWidth: 20, mt: 0.6 }}>
                     <Box sx={{ 
                       width: isNested ? 3 : 4, 
                       height: isNested ? 3 : 4, 
@@ -576,7 +576,7 @@ const ProjectResults = ({ companyId, deckId }) => {
                                 />
                               </Box>
                               
-                              <Box sx={{ pl: 1, borderLeft: 3, borderColor: 'primary.main', ml: 5 }}>
+                              <Box sx={{ pl: 1, ml: 5 }}>
                                 <Box sx={{ fontSize: '0.9rem' }}>
                                   {formatText(question.response)}
                                 </Box>
