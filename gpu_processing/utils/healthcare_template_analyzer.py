@@ -577,7 +577,7 @@ class HealthcareTemplateAnalyzer:
                         {
                             "id": 5,
                             "question_id": "solution_description",
-                            "question_text": "What exactly does your solution look like?",
+                            "question_text": "What exactly does the startup's solution look like?",
                             "scoring_criteria": "Clear, detailed solution description with implementation approach",
                             "healthcare_focus": "Clinical mechanism, therapeutic approach, or healthcare delivery method"
                         },
@@ -605,7 +605,7 @@ class HealthcareTemplateAnalyzer:
                         {
                             "id": 9,
                             "question_id": "quantified_advantage",
-                            "question_text": "Can you quantify your advantage?",
+                            "question_text": "Can the startup quantify their advantage?",
                             "scoring_criteria": "Quantitative metrics demonstrating competitive advantage",
                             "healthcare_focus": "Clinical efficacy data, cost savings, or improved health outcomes"
                         }
@@ -621,28 +621,28 @@ class HealthcareTemplateAnalyzer:
                         {
                             "id": 10,
                             "question_id": "paying_customers",
-                            "question_text": "Do you have paying customers?",
+                            "question_text": "Does the startup have paying customers?",
                             "scoring_criteria": "Evidence of paying customers with revenue generation",
                             "healthcare_focus": "Healthcare providers, patients, or payers actually purchasing the solution"
                         },
                         {
                             "id": 11,
                             "question_id": "pilot_customers",
-                            "question_text": "Do you have non-paying but convinced pilot customers?",
+                            "question_text": "Does the startup have non-paying but convinced pilot customers?",
                             "scoring_criteria": "Pilot customers demonstrating product validation and commitment",
                             "healthcare_focus": "Healthcare institutions, clinicians, or patients engaged in pilots"
                         },
                         {
                             "id": 12,
                             "question_id": "customer_acquisition",
-                            "question_text": "How did you find them?",
+                            "question_text": "How did the startup find pilot customers?",
                             "scoring_criteria": "Clear customer acquisition strategy with repeatable process",
                             "healthcare_focus": "Healthcare-specific acquisition channels and relationship building"
                         },
                         {
                             "id": 13,
                             "question_id": "customer_satisfaction",
-                            "question_text": "What do users & payers love about your solution?",
+                            "question_text": "What do users & payers love about the startup's solution?",
                             "scoring_criteria": "Specific customer feedback highlighting value proposition",
                             "healthcare_focus": "Clinical outcomes, workflow improvements, or patient satisfaction"
                         },
@@ -672,7 +672,7 @@ class HealthcareTemplateAnalyzer:
                         {
                             "id": 16,
                             "question_id": "payer_vs_user",
-                            "question_text": "Is it the users or someone else?",
+                            "question_text": "Are the users paying themselves or someone else?",
                             "scoring_criteria": "Clear distinction between users and payers with rationale",
                             "healthcare_focus": "Healthcare stakeholder payment dynamics and reimbursement models"
                         },
@@ -686,21 +686,21 @@ class HealthcareTemplateAnalyzer:
                         {
                             "id": 18,
                             "question_id": "sales_cycle",
-                            "question_text": "How much time elapses between initial contact and payment?",
+                            "question_text": "How much time elapses between startup's initial contact with the customer and payment?",
                             "scoring_criteria": "Clear sales cycle timeline with key milestones",
                             "healthcare_focus": "Healthcare-specific sales cycles including regulatory and compliance considerations"
                         },
                         {
                             "id": 19,
                             "question_id": "pricing_strategy",
-                            "question_text": "How did you design the pricing and why?",
+                            "question_text": "How did did the startup design their pricing and why?",
                             "scoring_criteria": "Pricing strategy with market research and value-based rationale",
                             "healthcare_focus": "Healthcare pricing models, reimbursement alignment, and value-based care"
                         },
                         {
                             "id": 20,
                             "question_id": "unit_economics",
-                            "question_text": "What are your margins and unit economics?",
+                            "question_text": "What are the startup's margins and unit economics?",
                             "scoring_criteria": "Clear unit economics with margin analysis and scalability",
                             "healthcare_focus": "Healthcare-specific cost structure and regulatory compliance costs"
                         }
@@ -716,35 +716,35 @@ class HealthcareTemplateAnalyzer:
                         {
                             "id": 21,
                             "question_id": "monthly_burn",
-                            "question_text": "What is your current monthly burn?",
+                            "question_text": "What is the startup's current monthly burn?",
                             "scoring_criteria": "Current burn rate with detailed breakdown",
                             "healthcare_focus": "Healthcare-specific operational costs and regulatory compliance expenses"
                         },
                         {
                             "id": 22,
                             "question_id": "monthly_sales",
-                            "question_text": "What are your monthly sales?",
+                            "question_text": "What are the startup's monthly sales?",
                             "scoring_criteria": "Monthly revenue with growth trends and predictability",
                             "healthcare_focus": "Healthcare revenue recognition and reimbursement timing"
                         },
                         {
                             "id": 23,
                             "question_id": "financial_fluctuations",
-                            "question_text": "Are there major fluctuations and why?",
+                            "question_text": "Are there major fluctuations in revenues and why?",
                             "scoring_criteria": "Understanding of financial volatility with explanations",
                             "healthcare_focus": "Healthcare-specific seasonality, reimbursement cycles, or regulatory impacts"
                         },
                         {
                             "id": 24,
                             "question_id": "annual_burn",
-                            "question_text": "How much money did you burn last year?",
+                            "question_text": "How much money did the startup burn last year?",
                             "scoring_criteria": "Historical burn rate with efficiency analysis",
                             "healthcare_focus": "Healthcare development costs, clinical trials, or regulatory expenses"
                         },
                         {
                             "id": 25,
                             "question_id": "funding_requirements",
-                            "question_text": "How much funding are you looking for and why exactly this amount?",
+                            "question_text": "How much funding is the startup looking for and why exactly this amount?",
                             "scoring_criteria": "Specific funding amount with detailed justification and milestones",
                             "healthcare_focus": "Healthcare-specific funding needs for clinical trials, regulatory approval, or market access"
                         }
@@ -760,28 +760,28 @@ class HealthcareTemplateAnalyzer:
                         {
                             "id": 26,
                             "question_id": "fund_allocation",
-                            "question_text": "What will you do with the money?",
+                            "question_text": "What will the startup do with the money?",
                             "scoring_criteria": "Detailed fund allocation with specific use cases and timelines",
                             "healthcare_focus": "Healthcare-specific investments in clinical development, regulatory processes, or market access"
                         },
                         {
                             "id": 27,
                             "question_id": "priority_deficits",
-                            "question_text": "Is there a ranked list of deficits to address?",
+                            "question_text": "Is there a ranked list of deficits regarding the startup's business setup to address?",
                             "scoring_criteria": "Prioritized list of organizational gaps with investment rationale",
                             "healthcare_focus": "Healthcare-specific capabilities like clinical expertise, regulatory affairs, or quality systems"
                         },
                         {
                             "id": 28,
                             "question_id": "investment_strategy",
-                            "question_text": "Can you tell us about your investment strategy?",
+                            "question_text": "Can the startup explain its strategy how to invest the funds?",
                             "scoring_criteria": "Clear investment strategy with risk management and milestone planning",
                             "healthcare_focus": "Healthcare development strategy including clinical phases and regulatory pathways"
                         },
                         {
                             "id": 29,
                             "question_id": "future_state",
-                            "question_text": "What will your company look like at the end of this investment period?",
+                            "question_text": "What will the startup look like at the end of this investment period?",
                             "scoring_criteria": "Clear vision of future state with specific metrics and capabilities",
                             "healthcare_focus": "Healthcare milestones including clinical data, regulatory approvals, or market penetration"
                         }
@@ -797,35 +797,35 @@ class HealthcareTemplateAnalyzer:
                         {
                             "id": 30,
                             "question_id": "team_experience",
-                            "question_text": "Who are you and what experience do you have?",
+                            "question_text": "Who are the people behind the startup and what experience do they have?",
                             "scoring_criteria": "Team backgrounds with relevant experience and track record",
                             "healthcare_focus": "Healthcare industry experience, clinical expertise, or regulatory knowledge"
                         },
                         {
                             "id": 31,
                             "question_id": "organizational_maturity",
-                            "question_text": "How can your organizational maturity be described/quantified?",
+                            "question_text": "How can the startup's organizational maturity be described and quantified?",
                             "scoring_criteria": "Organizational structure, processes, and governance maturity",
                             "healthcare_focus": "Healthcare-specific organizational requirements like quality systems or clinical governance"
                         },
                         {
                             "id": 32,
                             "question_id": "team_composition",
-                            "question_text": "How many people are you / pie chart of people per unit?",
+                            "question_text": "How many people are working in the startup and how are they allocated per unit?",
                             "scoring_criteria": "Team size and composition with functional distribution",
                             "healthcare_focus": "Healthcare-specific roles including clinical, regulatory, and quality assurance"
                         },
                         {
                             "id": 33,
                             "question_id": "skill_gaps",
-                            "question_text": "What skills are missing in the management team?",
+                            "question_text": "What skills are missing in the startup's management team?",
                             "scoring_criteria": "Identified skill gaps with plans for addressing them",
                             "healthcare_focus": "Healthcare-specific expertise gaps in clinical development, regulatory affairs, or commercial strategy"
                         },
                         {
                             "id": 34,
                             "question_id": "urgent_hiring",
-                            "question_text": "What are the most urgent positions that need to be filled?",
+                            "question_text": "What are the most urgent positions in the startup that need to be filled?",
                             "scoring_criteria": "Prioritized hiring needs with impact on business objectives",
                             "healthcare_focus": "Critical healthcare roles for clinical development, regulatory compliance, or market access"
                         }
