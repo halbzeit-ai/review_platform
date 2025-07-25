@@ -60,23 +60,82 @@ const ProjectResults = ({ companyId, deckId }) => {
     }
   };
 
-  // Helper function to format text content
+  // Helper function to format text content with proper markdown parsing
   const formatText = (text) => {
     if (!text) return '';
     
-    // Split into paragraphs
-    const paragraphs = text.split('\n\n');
+    // Split into lines for better parsing
+    const lines = text.split('\n');
+    const elements = [];
+    let currentKey = 0;
     
-    return paragraphs.map((paragraph, index) => {
-      // Handle bold text (**text**)
-      let formattedParagraph = paragraph.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
       
-      // Handle numbered lists (1. text, 2. text, etc.)
-      if (paragraph.match(/^\d+\.\s/)) {
-        const items = paragraph.split('\n').filter(line => line.match(/^\d+\.\s/));
-        return (
-          <List key={index} dense sx={{ my: 0.5, pl: 2 }}>
-            {items.map((item, itemIndex) => (
+      // Skip empty lines
+      if (!line) {
+        continue;
+      }
+      
+      // Handle headers (####, ###, ##, #)
+      if (line.startsWith('####')) {
+        elements.push(
+          <Typography key={currentKey++} variant="subtitle1" sx={{ 
+            mt: 1.5, mb: 0.8, fontWeight: 'bold', color: 'primary.dark', fontSize: '1rem' 
+          }}>
+            {line.replace(/^####\s*/, '')}
+          </Typography>
+        );
+        continue;
+      }
+      
+      if (line.startsWith('###')) {
+        elements.push(
+          <Typography key={currentKey++} variant="h6" sx={{ 
+            mt: 2, mb: 1, fontWeight: 'bold', color: 'primary.main' 
+          }}>
+            {line.replace(/^###\s*/, '')}
+          </Typography>
+        );
+        continue;
+      }
+      
+      if (line.startsWith('##')) {
+        elements.push(
+          <Typography key={currentKey++} variant="h5" sx={{ 
+            mt: 2.5, mb: 1.2, fontWeight: 'bold', color: 'primary.main' 
+          }}>
+            {line.replace(/^##\s*/, '')}
+          </Typography>
+        );
+        continue;
+      }
+      
+      if (line.startsWith('#') && !line.startsWith('##')) {
+        elements.push(
+          <Typography key={currentKey++} variant="h4" sx={{ 
+            mt: 3, mb: 1.5, fontWeight: 'bold', color: 'primary.main' 
+          }}>
+            {line.replace(/^#\s*/, '')}
+          </Typography>
+        );
+        continue;
+      }
+      
+      // Handle numbered lists
+      if (line.match(/^\d+\.\s/)) {
+        const listItems = [];
+        let j = i;
+        
+        // Collect consecutive numbered items
+        while (j < lines.length && lines[j].trim().match(/^\d+\.\s/)) {
+          listItems.push(lines[j].trim());
+          j++;
+        }
+        
+        elements.push(
+          <List key={currentKey++} dense sx={{ my: 0.8, pl: 2 }}>
+            {listItems.map((item, itemIndex) => (
               <ListItem key={itemIndex} sx={{ py: 0.2, pl: 0 }}>
                 <ListItemIcon sx={{ minWidth: 32 }}>
                   <Chip 
@@ -90,47 +149,9 @@ const ProjectResults = ({ companyId, deckId }) => {
                   primary={
                     <Typography variant="body1" sx={{ fontSize: '0.9rem', lineHeight: 1.4 }}>
                       <span dangerouslySetInnerHTML={{ 
-                        __html: item.replace(/^\d+\.\s*/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
-                      }} />
-                    </Typography>
-                  } 
-                />
-              </ListItem>
-            ))}
-          </List>
-        );
-      }
-      
-      // Handle bullet points and checkmark items
-      if (paragraph.trim().startsWith('*') || paragraph.trim().startsWith('-') || paragraph.includes('✓') || paragraph.includes('✔')) {
-        const items = paragraph.split('\n').filter(line => 
-          line.trim().startsWith('*') || 
-          line.trim().startsWith('-') || 
-          line.includes('✓') || 
-          line.includes('✔')
-        );
-        return (
-          <List key={index} dense sx={{ my: 0.5, pl: 2 }}>
-            {items.map((item, itemIndex) => (
-              <ListItem key={itemIndex} sx={{ py: 0.1, pl: 0 }}>
-                <ListItemIcon sx={{ minWidth: 20 }}>
-                  <Box sx={{ 
-                    width: 4, 
-                    height: 4, 
-                    borderRadius: '50%', 
-                    bgcolor: 'text.secondary',
-                    mt: 1
-                  }} />
-                </ListItemIcon>
-                <ListItemText 
-                  primary={
-                    <Typography variant="body1" sx={{ fontSize: '0.9rem', lineHeight: 1.4 }}>
-                      <span dangerouslySetInnerHTML={{ 
                         __html: item
-                          .replace(/^[\*\-]\s*/, '')
-                          .replace(/✓\s*/, '')
-                          .replace(/✔\s*/, '')
-                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+                          .replace(/^\d+\.\s*/, '')
+                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                       }} />
                     </Typography>
                   } 
@@ -139,51 +160,112 @@ const ProjectResults = ({ companyId, deckId }) => {
             ))}
           </List>
         );
+        
+        i = j - 1; // Skip processed lines
+        continue;
       }
       
-      // Handle headers (### text and # text)
-      if (paragraph.startsWith('###')) {
-        return (
-          <Typography key={index} variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 'bold', color: 'primary.main' }}>
-            {paragraph.replace(/^###\s*/, '').replace(/^#\s*/, '')}
+      // Handle bullet points and dashes
+      if (line.startsWith('*') || line.startsWith('-') || line.startsWith('•')) {
+        const listItems = [];
+        let j = i;
+        
+        // Collect consecutive bullet items (including nested ones)
+        while (j < lines.length && lines[j].trim() && 
+               (lines[j].trim().startsWith('*') || 
+                lines[j].trim().startsWith('-') || 
+                lines[j].trim().startsWith('•') ||
+                lines[j].startsWith('  ') || 
+                lines[j].startsWith('\t'))) {
+          if (lines[j].trim()) {
+            listItems.push(lines[j].trim());
+          }
+          j++;
+        }
+        
+        elements.push(
+          <List key={currentKey++} dense sx={{ my: 0.8, pl: 2 }}>
+            {listItems.map((item, itemIndex) => {
+              // Check if this is a nested item
+              const isNested = item.startsWith('  ') || item.startsWith('\t') || 
+                              (!item.startsWith('*') && !item.startsWith('-') && !item.startsWith('•'));
+              
+              return (
+                <ListItem key={itemIndex} sx={{ 
+                  py: 0.1, 
+                  pl: isNested ? 3 : 0,
+                  display: 'flex',
+                  alignItems: 'flex-start'
+                }}>
+                  <ListItemIcon sx={{ minWidth: 20, mt: 0.5 }}>
+                    <Box sx={{ 
+                      width: isNested ? 3 : 4, 
+                      height: isNested ? 3 : 4, 
+                      borderRadius: '50%', 
+                      bgcolor: isNested ? 'text.disabled' : 'text.secondary'
+                    }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={
+                      <Typography variant="body1" sx={{ fontSize: '0.9rem', lineHeight: 1.4 }}>
+                        <span dangerouslySetInnerHTML={{ 
+                          __html: item
+                            .replace(/^[*\-•]\s*/, '')
+                            .replace(/^\s+/, '')
+                            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        }} />
+                      </Typography>
+                    } 
+                  />
+                </ListItem>
+              );
+            })}
+          </List>
+        );
+        
+        i = j - 1; // Skip processed lines
+        continue;
+      }
+      
+      // Handle regular paragraphs
+      const paragraphLines = [];
+      let j = i;
+      
+      // Collect consecutive non-header, non-list lines
+      while (j < lines.length && lines[j].trim() && 
+             !lines[j].trim().startsWith('#') &&
+             !lines[j].trim().match(/^\d+\.\s/) &&
+             !lines[j].trim().startsWith('*') &&
+             !lines[j].trim().startsWith('-') &&
+             !lines[j].trim().startsWith('•')) {
+        paragraphLines.push(lines[j].trim());
+        j++;
+      }
+      
+      if (paragraphLines.length > 0) {
+        const paragraphText = paragraphLines.join(' ');
+        elements.push(
+          <Typography key={currentKey++} variant="body1" paragraph sx={{ 
+            lineHeight: 1.6, 
+            fontSize: '0.9rem',
+            color: 'text.primary',
+            mb: 1.2,
+            textAlign: 'justify'
+          }}>
+            <span dangerouslySetInnerHTML={{ 
+              __html: paragraphText
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/✓\s*/g, '')
+                .replace(/✔\s*/g, '')
+            }} />
           </Typography>
         );
+        
+        i = j - 1; // Skip processed lines
       }
-      
-      // Handle subheaders (## text and # text)
-      if (paragraph.startsWith('##')) {
-        return (
-          <Typography key={index} variant="h5" sx={{ mt: 2, mb: 1, fontWeight: 'bold', color: 'primary.main' }}>
-            {paragraph.replace(/^##\s*/, '').replace(/^#\s*/, '')}
-          </Typography>
-        );
-      }
-      
-      // Handle single hash headers (# text)
-      if (paragraph.startsWith('#') && !paragraph.startsWith('##')) {
-        return (
-          <Typography key={index} variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 'bold', color: 'primary.main' }}>
-            {paragraph.replace(/^#\s*/, '')}
-          </Typography>
-        );
-      }
-      
-      // Regular paragraph
-      return (
-        <Typography key={index} variant="body1" paragraph sx={{ 
-          lineHeight: 1.6, 
-          fontSize: '0.9rem',
-          color: 'text.primary',
-          mb: 1.2
-        }}>
-          <span dangerouslySetInnerHTML={{ 
-            __html: formattedParagraph
-              .replace(/✓\s*/g, '')
-              .replace(/✔\s*/g, '')
-          }} />
-        </Typography>
-      );
-    });
+    }
+    
+    return elements;
   };
 
   const getScoreColor = (score) => {

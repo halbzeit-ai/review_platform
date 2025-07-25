@@ -67,7 +67,7 @@ const ResultsPage = () => {
                 <ListItemText 
                   primary={
                     <span dangerouslySetInnerHTML={{ 
-                      __html: item.replace(/^[\*\-]\s*/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+                      __html: item.replace(/^[*\-]\s*/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
                     }} />
                   } 
                 />
