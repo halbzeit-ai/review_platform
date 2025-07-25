@@ -165,8 +165,9 @@ const ProjectResults = ({ companyId, deckId }) => {
         continue;
       }
       
-      // Handle bullet points and dashes
-      if (line.startsWith('*') || line.startsWith('-') || line.startsWith('•')) {
+      // Handle bullet points and dashes (including indented ones)
+      if (line.startsWith('*') || line.startsWith('-') || line.startsWith('•') || 
+          /^\s+[-*•]\s/.test(lines[i])) {
         const listItems = [];
         let j = i;
         
@@ -175,25 +176,32 @@ const ProjectResults = ({ companyId, deckId }) => {
                (lines[j].trim().startsWith('*') || 
                 lines[j].trim().startsWith('-') || 
                 lines[j].trim().startsWith('•') ||
-                lines[j].startsWith('  ') || 
-                lines[j].startsWith('\t'))) {
+                /^\s+[-*•]\s/.test(lines[j]) ||
+                (j > i && lines[j].startsWith('  ') && !lines[j].trim().startsWith('#') && !lines[j].trim().match(/^\d+\.\s/)))) {
           if (lines[j].trim()) {
-            listItems.push(lines[j].trim());
+            listItems.push({
+              content: lines[j],
+              trimmed: lines[j].trim(),
+              indentLevel: lines[j].length - lines[j].trimStart().length
+            });
           }
           j++;
         }
         
         elements.push(
-          <List key={currentKey++} dense sx={{ my: 0.8, pl: 2 }}>
-            {listItems.map((item, itemIndex) => {
-              // Check if this is a nested item
-              const isNested = item.startsWith('  ') || item.startsWith('\t') || 
-                              (!item.startsWith('*') && !item.startsWith('-') && !item.startsWith('•'));
+          <List key={currentKey++} dense sx={{ my: 0.8, pl: 1 }}>
+            {listItems.map((itemObj, itemIndex) => {
+              const item = itemObj.trimmed;
+              const indentLevel = itemObj.indentLevel;
+              
+              // Determine nesting level based on indentation
+              const nestLevel = Math.floor(indentLevel / 2); // 2 spaces = 1 nest level
+              const isNested = nestLevel > 0;
               
               return (
                 <ListItem key={itemIndex} sx={{ 
                   py: 0.1, 
-                  pl: isNested ? 3 : 0,
+                  pl: nestLevel * 2,  // Progressive indentation
                   display: 'flex',
                   alignItems: 'flex-start'
                 }}>
@@ -237,7 +245,8 @@ const ProjectResults = ({ companyId, deckId }) => {
              !lines[j].trim().match(/^\d+\.\s/) &&
              !lines[j].trim().startsWith('*') &&
              !lines[j].trim().startsWith('-') &&
-             !lines[j].trim().startsWith('•')) {
+             !lines[j].trim().startsWith('•') &&
+             !/^\s+[-*•]\s/.test(lines[j])) {
         paragraphLines.push(lines[j].trim());
         j++;
       }
