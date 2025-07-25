@@ -1133,7 +1133,8 @@ class HealthcareTemplateAnalyzer:
                     "name": chapter_name,
                     "description": chapter.get("description", ""),
                     "questions": chapter_question_details,  # New structured format
-                    "average_score": average_score,
+                    "weighted_score": average_score,  # Frontend expects this field name
+                    "average_score": average_score,  # Keep for backward compatibility
                     "total_questions": len(chapter_questions),
                     "code_version": "v2.0-with-questions-array"  # Debug marker
                 }
