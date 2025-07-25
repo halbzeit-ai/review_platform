@@ -478,7 +478,6 @@ class HealthcareTemplateAnalyzer:
                         "id": q_id,
                         "question_id": q_question_id,
                         "question_text": q_text,
-                        "weight": float(q_weight) if q_weight else 1.0,
                         "order_index": q_order,
                         "enabled": q_enabled,
                         "scoring_criteria": q_criteria or "",
@@ -490,7 +489,6 @@ class HealthcareTemplateAnalyzer:
                     "chapter_id": chapter_id,
                     "name": chapter_name,
                     "description": chapter_desc or "",
-                    "weight": float(weight) if weight else 1.0,
                     "order_index": order_idx,
                     "is_required": is_required,
                     "enabled": enabled,
@@ -536,14 +534,12 @@ class HealthcareTemplateAnalyzer:
                     "chapter_id": "problem_analysis",
                     "name": "Problem Analysis",
                     "description": "Analysis of the problem being addressed and target market",
-                    "weight": 1.8,
                     "order_index": 1,
                     "questions": [
                         {
                             "id": 1,
                             "question_id": "target_problem",
                             "question_text": "Who has the problem?",
-                            "weight": 2.0,
                             "scoring_criteria": "Clear identification of target audience with specific demographics and characteristics",
                             "healthcare_focus": "Understanding the patient population and healthcare stakeholders affected"
                         },
@@ -551,7 +547,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 2,
                             "question_id": "problem_nature",
                             "question_text": "What exactly is the nature of the problem?",
-                            "weight": 2.2,
                             "scoring_criteria": "Detailed problem description with root cause analysis",
                             "healthcare_focus": "Medical or healthcare-specific problem definition with clinical significance"
                         },
@@ -559,7 +554,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 3,
                             "question_id": "pain_points",
                             "question_text": "What are the pain points?",
-                            "weight": 2.0,
                             "scoring_criteria": "Specific pain points with impact assessment",
                             "healthcare_focus": "Clinical pain points affecting patient outcomes or healthcare delivery"
                         },
@@ -567,7 +561,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 4,
                             "question_id": "problem_quantification",
                             "question_text": "Can the problem be quantified?",
-                            "weight": 1.8,
                             "scoring_criteria": "Quantitative data supporting problem scope and impact",
                             "healthcare_focus": "Clinical metrics, patient numbers, or healthcare cost implications"
                         }
@@ -578,14 +571,12 @@ class HealthcareTemplateAnalyzer:
                     "chapter_id": "solution_approach",
                     "name": "Solution Approach",
                     "description": "Analysis of the proposed solution and competitive landscape",
-                    "weight": 2.0,
                     "order_index": 2,
                     "questions": [
                         {
                             "id": 5,
                             "question_id": "solution_description",
                             "question_text": "What exactly does your solution look like?",
-                            "weight": 2.2,
                             "scoring_criteria": "Clear, detailed solution description with implementation approach",
                             "healthcare_focus": "Clinical mechanism, therapeutic approach, or healthcare delivery method"
                         },
@@ -593,7 +584,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 6,
                             "question_id": "differentiation",
                             "question_text": "What distinguishes it from existing solutions?",
-                            "weight": 2.0,
                             "scoring_criteria": "Clear competitive differentiation with unique value proposition",
                             "healthcare_focus": "Clinical advantages, regulatory benefits, or improved patient outcomes"
                         },
@@ -601,7 +591,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 7,
                             "question_id": "current_solutions",
                             "question_text": "How does the customer solve the problem currently?",
-                            "weight": 1.8,
                             "scoring_criteria": "Understanding of current alternatives and their limitations",
                             "healthcare_focus": "Current standard of care, existing treatments, or workflow solutions"
                         },
@@ -609,7 +598,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 8,
                             "question_id": "competitive_landscape",
                             "question_text": "Are there competitors and what does their solution & positioning look like?",
-                            "weight": 1.9,
                             "scoring_criteria": "Comprehensive competitive analysis with positioning comparison",
                             "healthcare_focus": "Competitive healthcare solutions, regulatory status, and market positioning"
                         },
@@ -617,7 +605,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 9,
                             "question_id": "quantified_advantage",
                             "question_text": "Can you quantify your advantage?",
-                            "weight": 1.8,
                             "scoring_criteria": "Quantitative metrics demonstrating competitive advantage",
                             "healthcare_focus": "Clinical efficacy data, cost savings, or improved health outcomes"
                         }
@@ -628,14 +615,12 @@ class HealthcareTemplateAnalyzer:
                     "chapter_id": "product_market_fit",
                     "name": "Product Market Fit",
                     "description": "Analysis of customer validation and market adoption",
-                    "weight": 2.1,
                     "order_index": 3,
                     "questions": [
                         {
                             "id": 10,
                             "question_id": "paying_customers",
                             "question_text": "Do you have paying customers?",
-                            "weight": 2.5,
                             "scoring_criteria": "Evidence of paying customers with revenue generation",
                             "healthcare_focus": "Healthcare providers, patients, or payers actually purchasing the solution"
                         },
@@ -643,7 +628,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 11,
                             "question_id": "pilot_customers",
                             "question_text": "Do you have non-paying but convinced pilot customers?",
-                            "weight": 2.0,
                             "scoring_criteria": "Pilot customers demonstrating product validation and commitment",
                             "healthcare_focus": "Healthcare institutions, clinicians, or patients engaged in pilots"
                         },
@@ -651,7 +635,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 12,
                             "question_id": "customer_acquisition",
                             "question_text": "How did you find them?",
-                            "weight": 1.8,
                             "scoring_criteria": "Clear customer acquisition strategy with repeatable process",
                             "healthcare_focus": "Healthcare-specific acquisition channels and relationship building"
                         },
@@ -659,7 +642,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 13,
                             "question_id": "customer_satisfaction",
                             "question_text": "What do users & payers love about your solution?",
-                            "weight": 2.0,
                             "scoring_criteria": "Specific customer feedback highlighting value proposition",
                             "healthcare_focus": "Clinical outcomes, workflow improvements, or patient satisfaction"
                         },
@@ -667,7 +649,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 14,
                             "question_id": "churn_analysis",
                             "question_text": "What is the churn and the reasons for it?",
-                            "weight": 1.9,
                             "scoring_criteria": "Churn metrics with root cause analysis and mitigation strategies",
                             "healthcare_focus": "Healthcare-specific retention challenges and solutions"
                         }
@@ -678,14 +659,12 @@ class HealthcareTemplateAnalyzer:
                     "chapter_id": "monetization",
                     "name": "Monetization",
                     "description": "Analysis of revenue model and pricing strategy",
-                    "weight": 1.9,
                     "order_index": 4,
                     "questions": [
                         {
                             "id": 15,
                             "question_id": "payer_identification",
                             "question_text": "Who will pay for it?",
-                            "weight": 2.2,
                             "scoring_criteria": "Clear identification of paying customers and decision makers",
                             "healthcare_focus": "Healthcare payers, insurance, providers, or patients as payment sources"
                         },
@@ -693,7 +672,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 16,
                             "question_id": "payer_vs_user",
                             "question_text": "Is it the users or someone else?",
-                            "weight": 1.8,
                             "scoring_criteria": "Clear distinction between users and payers with rationale",
                             "healthcare_focus": "Healthcare stakeholder payment dynamics and reimbursement models"
                         },
@@ -701,7 +679,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 17,
                             "question_id": "decision_making",
                             "question_text": "What does the buyer's decision-making structure look like?",
-                            "weight": 2.0,
                             "scoring_criteria": "Understanding of decision-making process and key stakeholders",
                             "healthcare_focus": "Healthcare procurement, clinical committees, or administrative approval processes"
                         },
@@ -709,7 +686,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 18,
                             "question_id": "sales_cycle",
                             "question_text": "How much time elapses between initial contact and payment?",
-                            "weight": 1.8,
                             "scoring_criteria": "Clear sales cycle timeline with key milestones",
                             "healthcare_focus": "Healthcare-specific sales cycles including regulatory and compliance considerations"
                         },
@@ -717,7 +693,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 19,
                             "question_id": "pricing_strategy",
                             "question_text": "How did you design the pricing and why?",
-                            "weight": 2.0,
                             "scoring_criteria": "Pricing strategy with market research and value-based rationale",
                             "healthcare_focus": "Healthcare pricing models, reimbursement alignment, and value-based care"
                         },
@@ -725,7 +700,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 20,
                             "question_id": "unit_economics",
                             "question_text": "What are your margins and unit economics?",
-                            "weight": 2.1,
                             "scoring_criteria": "Clear unit economics with margin analysis and scalability",
                             "healthcare_focus": "Healthcare-specific cost structure and regulatory compliance costs"
                         }
@@ -736,14 +710,12 @@ class HealthcareTemplateAnalyzer:
                     "chapter_id": "financials",
                     "name": "Financials",
                     "description": "Analysis of financial metrics and funding requirements",
-                    "weight": 2.0,
                     "order_index": 5,
                     "questions": [
                         {
                             "id": 21,
                             "question_id": "monthly_burn",
                             "question_text": "What is your current monthly burn?",
-                            "weight": 2.2,
                             "scoring_criteria": "Current burn rate with detailed breakdown",
                             "healthcare_focus": "Healthcare-specific operational costs and regulatory compliance expenses"
                         },
@@ -751,7 +723,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 22,
                             "question_id": "monthly_sales",
                             "question_text": "What are your monthly sales?",
-                            "weight": 2.2,
                             "scoring_criteria": "Monthly revenue with growth trends and predictability",
                             "healthcare_focus": "Healthcare revenue recognition and reimbursement timing"
                         },
@@ -759,7 +730,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 23,
                             "question_id": "financial_fluctuations",
                             "question_text": "Are there major fluctuations and why?",
-                            "weight": 1.8,
                             "scoring_criteria": "Understanding of financial volatility with explanations",
                             "healthcare_focus": "Healthcare-specific seasonality, reimbursement cycles, or regulatory impacts"
                         },
@@ -767,7 +737,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 24,
                             "question_id": "annual_burn",
                             "question_text": "How much money did you burn last year?",
-                            "weight": 1.9,
                             "scoring_criteria": "Historical burn rate with efficiency analysis",
                             "healthcare_focus": "Healthcare development costs, clinical trials, or regulatory expenses"
                         },
@@ -775,7 +744,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 25,
                             "question_id": "funding_requirements",
                             "question_text": "How much funding are you looking for and why exactly this amount?",
-                            "weight": 2.3,
                             "scoring_criteria": "Specific funding amount with detailed justification and milestones",
                             "healthcare_focus": "Healthcare-specific funding needs for clinical trials, regulatory approval, or market access"
                         }
@@ -786,14 +754,12 @@ class HealthcareTemplateAnalyzer:
                     "chapter_id": "use_of_funds",
                     "name": "Use of Funds",
                     "description": "Analysis of investment strategy and future plans",
-                    "weight": 1.8,
                     "order_index": 6,
                     "questions": [
                         {
                             "id": 26,
                             "question_id": "fund_allocation",
                             "question_text": "What will you do with the money?",
-                            "weight": 2.2,
                             "scoring_criteria": "Detailed fund allocation with specific use cases and timelines",
                             "healthcare_focus": "Healthcare-specific investments in clinical development, regulatory processes, or market access"
                         },
@@ -801,7 +767,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 27,
                             "question_id": "priority_deficits",
                             "question_text": "Is there a ranked list of deficits to address?",
-                            "weight": 2.0,
                             "scoring_criteria": "Prioritized list of organizational gaps with investment rationale",
                             "healthcare_focus": "Healthcare-specific capabilities like clinical expertise, regulatory affairs, or quality systems"
                         },
@@ -809,7 +774,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 28,
                             "question_id": "investment_strategy",
                             "question_text": "Can you tell us about your investment strategy?",
-                            "weight": 1.9,
                             "scoring_criteria": "Clear investment strategy with risk management and milestone planning",
                             "healthcare_focus": "Healthcare development strategy including clinical phases and regulatory pathways"
                         },
@@ -817,7 +781,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 29,
                             "question_id": "future_state",
                             "question_text": "What will your company look like at the end of this investment period?",
-                            "weight": 2.1,
                             "scoring_criteria": "Clear vision of future state with specific metrics and capabilities",
                             "healthcare_focus": "Healthcare milestones including clinical data, regulatory approvals, or market penetration"
                         }
@@ -828,14 +791,12 @@ class HealthcareTemplateAnalyzer:
                     "chapter_id": "organization",
                     "name": "Organization",
                     "description": "Analysis of team, experience, and organizational maturity",
-                    "weight": 1.7,
                     "order_index": 7,
                     "questions": [
                         {
                             "id": 30,
                             "question_id": "team_experience",
                             "question_text": "Who are you and what experience do you have?",
-                            "weight": 2.2,
                             "scoring_criteria": "Team backgrounds with relevant experience and track record",
                             "healthcare_focus": "Healthcare industry experience, clinical expertise, or regulatory knowledge"
                         },
@@ -843,7 +804,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 31,
                             "question_id": "organizational_maturity",
                             "question_text": "How can your organizational maturity be described/quantified?",
-                            "weight": 1.8,
                             "scoring_criteria": "Organizational structure, processes, and governance maturity",
                             "healthcare_focus": "Healthcare-specific organizational requirements like quality systems or clinical governance"
                         },
@@ -851,7 +811,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 32,
                             "question_id": "team_composition",
                             "question_text": "How many people are you / pie chart of people per unit?",
-                            "weight": 1.7,
                             "scoring_criteria": "Team size and composition with functional distribution",
                             "healthcare_focus": "Healthcare-specific roles including clinical, regulatory, and quality assurance"
                         },
@@ -859,7 +818,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 33,
                             "question_id": "skill_gaps",
                             "question_text": "What skills are missing in the management team?",
-                            "weight": 2.0,
                             "scoring_criteria": "Identified skill gaps with plans for addressing them",
                             "healthcare_focus": "Healthcare-specific expertise gaps in clinical development, regulatory affairs, or commercial strategy"
                         },
@@ -867,7 +825,6 @@ class HealthcareTemplateAnalyzer:
                             "id": 34,
                             "question_id": "urgent_hiring",
                             "question_text": "What are the most urgent positions that need to be filled?",
-                            "weight": 2.1,
                             "scoring_criteria": "Prioritized hiring needs with impact on business objectives",
                             "healthcare_focus": "Critical healthcare roles for clinical development, regulatory compliance, or market access"
                         }
@@ -1109,13 +1066,9 @@ class HealthcareTemplateAnalyzer:
                 question_prompt = f"""
                 You are a healthcare venture capital analyst reviewing a pitch deck. 
                 
-                Healthcare Focus: {healthcare_focus}
-                
                 Question: {question_text}
                 
-                Scoring Criteria: {scoring_criteria}
-                
-                Based on the pitch deck content below, provide a detailed analysis answering this question.
+                Based on the pitch deck content below, provide a single paragraph answering this question.
                 Focus on healthcare-specific considerations and clinical relevance.
                 
                 Pitch deck content: {full_pitchdeck_text}
@@ -1140,7 +1093,6 @@ class HealthcareTemplateAnalyzer:
                         "question_text": question_text,
                         "response": question_response,
                         "score": score,
-                        "weight": question.get("weight", 1.0),
                         "scoring_criteria": scoring_criteria,
                         "healthcare_focus": healthcare_focus
                     }
@@ -1152,9 +1104,8 @@ class HealthcareTemplateAnalyzer:
             
             # Calculate chapter-level results
             if chapter_scores:
-                # Calculate weighted average score
-                weights = [q.get("weight", 1.0) for q in chapter_questions]
-                weighted_score = sum(s * w for s, w in zip(chapter_scores, weights)) / sum(weights)
+                # Calculate simple average score
+                average_score = sum(chapter_scores) / len(chapter_scores)
                 
                 # Build detailed question structure for this chapter
                 chapter_question_details = []
@@ -1165,7 +1116,6 @@ class HealthcareTemplateAnalyzer:
                         "question_text": question["question_text"],
                         "response": chapter_responses[i] if i < len(chapter_responses) else "",
                         "score": chapter_scores[i] if i < len(chapter_scores) else 0,
-                        "weight": question.get("weight", 1.0),
                         "scoring_criteria": question.get("scoring_criteria", ""),
                         "healthcare_focus": question.get("healthcare_focus", "")
                     }
@@ -1175,8 +1125,7 @@ class HealthcareTemplateAnalyzer:
                     "name": chapter_name,
                     "description": chapter.get("description", ""),
                     "questions": chapter_question_details,  # New structured format
-                    "weighted_score": weighted_score,
-                    "weight": chapter.get("weight", 1.0),
+                    "average_score": average_score,
                     "total_questions": len(chapter_questions),
                     "code_version": "v2.0-with-questions-array"  # Debug marker
                 }
@@ -1361,13 +1310,11 @@ class HealthcareTemplateAnalyzer:
         # Calculate overall score
         if self.chapter_results:
             chapter_scores = []
-            chapter_weights = []
             
             for chapter_id, chapter_data in self.chapter_results.items():
-                chapter_scores.append(chapter_data["weighted_score"])
-                chapter_weights.append(chapter_data["weight"])
+                chapter_scores.append(chapter_data["average_score"])
             
-            overall_score = sum(s * w for s, w in zip(chapter_scores, chapter_weights)) / sum(chapter_weights)
+            overall_score = sum(chapter_scores) / len(chapter_scores)
         else:
             overall_score = 0.0
         
