@@ -58,7 +58,7 @@ function LanguageSwitcher() {
 
     return (
         <>
-            <Tooltip title={t('language.switch')}>
+            <Tooltip title={t('languages.switch')}>
                 <IconButton
                     onClick={handleClick}
                     size="small"

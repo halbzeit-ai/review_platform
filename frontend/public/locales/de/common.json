@@ -45,10 +45,20 @@
     "connectionError": "Verbindungsfehler",
     "never": "Nie"
   },
-  "language": {
+  "languages": {
     "current": "Deutsch",
     "switch": "Sprache wechseln",
     "german": "Deutsch",
     "english": "English"
-  }
+  },
+  "actions": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "saving": "Speichern...",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "upload": "Hochladen",
+    "download": "Herunterladen"
+  },
+  "loading": "Laden..."
 }

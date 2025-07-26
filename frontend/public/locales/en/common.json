@@ -45,10 +45,20 @@
     "connectionError": "Connection error",
     "never": "Never"
   },
-  "language": {
+  "languages": {
     "current": "English",
     "switch": "Switch Language",
     "german": "Deutsch",
     "english": "English"
-  }
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "edit": "Edit",
+    "delete": "Delete",
+    "upload": "Upload",
+    "download": "Download"
+  },
+  "loading": "Loading..."
 }

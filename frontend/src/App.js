@@ -17,6 +17,7 @@ import DojoManagement from './pages/DojoManagement';
 import ProjectDashboard from './pages/ProjectDashboard';
 import DeckViewer from './pages/DeckViewer';
 import ProjectResultsPage from './pages/ProjectResultsPage';
+import Profile from './pages/Profile';
 import StartupDashboardRedirect from './components/StartupDashboardRedirect';
 import DashboardRedirect from './components/DashboardRedirect';
 
@@ -42,6 +43,7 @@ function App() {
           <Route path="/project/:companyId" element={<ProjectDashboard />} />
           <Route path="/project/:companyId/deck-viewer/:deckId" element={<DeckViewer />} />
           <Route path="/project/:companyId/results/:deckId" element={<ProjectResultsPage />} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

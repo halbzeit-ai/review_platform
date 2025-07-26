@@ -15,6 +15,8 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
     password_hash = Column(String)
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
     company_name = Column(String)
     role = Column(String)  # "startup" or "gp"
     preferred_language = Column(String, default="de")  # "de" or "en", German default

@@ -34,12 +34,17 @@ function Navigation() {
             </Button>
           </>
         ) : (
-          <Button color="inherit" onClick={() => {
-            localStorage.removeItem('user');
-            window.location.href = '/login';
-          }}>
-            {t('navigation.logout')}
-          </Button>
+          <>
+            <Button color="inherit" onClick={() => navigate('/profile')}>
+              {t('navigation.profile')}
+            </Button>
+            <Button color="inherit" onClick={() => {
+              localStorage.removeItem('user');
+              window.location.href = '/login';
+            }}>
+              {t('navigation.logout')}
+            </Button>
+          </>
         )}
       </Toolbar>
     </AppBar>

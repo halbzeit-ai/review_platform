@@ -40,6 +40,12 @@ class ResetPasswordData(BaseModel):
     token: str
     new_password: str
 
+class UpdateProfileData(BaseModel):
+    first_name: str = None
+    last_name: str = None
+    company_name: str = None
+    preferred_language: str = None
+
 @router.post("/register")
 async def register(data: RegisterData, db: Session = Depends(get_db)):
     # Check if user already exists
@@ -450,6 +456,76 @@ async def get_all_users(current_user: User = Depends(get_current_user), db: Sess
     
     users = db.query(User).all()
     return [{"email": user.email, "company_name": user.company_name, "role": user.role, "created_at": user.created_at, "last_login": user.last_login, "is_verified": user.is_verified} for user in users]
+
+@router.get("/profile")
+async def get_profile(current_user: User = Depends(get_current_user)):
+    """Get current user's profile information"""
+    return JSONResponse(
+        status_code=200,
+        content={
+            "email": current_user.email,
+            "first_name": current_user.first_name,
+            "last_name": current_user.last_name,
+            "company_name": current_user.company_name,
+            "role": current_user.role,
+            "preferred_language": current_user.preferred_language or "de",
+            "is_verified": current_user.is_verified,
+            "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
+            "last_login": current_user.last_login.isoformat() if current_user.last_login else None
+        }
+    )
+
+@router.put("/profile")
+async def update_profile(
+    data: UpdateProfileData, 
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """Update current user's profile information"""
+    updated_fields = []
+    
+    # Update first_name if provided
+    if data.first_name is not None:
+        current_user.first_name = data.first_name.strip() if data.first_name.strip() else None
+        updated_fields.append("first_name")
+    
+    # Update last_name if provided
+    if data.last_name is not None:
+        current_user.last_name = data.last_name.strip() if data.last_name.strip() else None
+        updated_fields.append("last_name")
+    
+    # Update company_name if provided
+    if data.company_name is not None:
+        current_user.company_name = data.company_name.strip() if data.company_name.strip() else None
+        updated_fields.append("company_name")
+    
+    # Update preferred_language if provided
+    if data.preferred_language is not None:
+        if data.preferred_language not in ["de", "en"]:
+            raise HTTPException(status_code=400, detail="Invalid language. Must be 'de' or 'en'")
+        current_user.preferred_language = data.preferred_language
+        updated_fields.append("preferred_language")
+    
+    # Commit changes if any fields were updated
+    if updated_fields:
+        db.commit()
+    
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": "Profile updated successfully",
+            "updated_fields": updated_fields,
+            "profile": {
+                "email": current_user.email,
+                "first_name": current_user.first_name,
+                "last_name": current_user.last_name,
+                "company_name": current_user.company_name,
+                "role": current_user.role,
+                "preferred_language": current_user.preferred_language or "de",
+                "is_verified": current_user.is_verified
+            }
+        }
+    )
 
 @router.post("/forgot-password")
 async def forgot_password(data: ForgotPasswordData, db: Session = Depends(get_db)):
