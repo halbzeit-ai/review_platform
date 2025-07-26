@@ -187,17 +187,16 @@ export const formatMarkdownText = (text) => {
       continue;
     }
     
-    // Handle regular paragraphs
+    // Handle regular paragraphs and standalone bold text
     const paragraphLines = [];
     let j = i;
     
     // Collect consecutive non-header, non-list lines
+    // Exclude lines that start with single * or - (bullet points) but include ** (bold text)
     while (j < lines.length && lines[j].trim() && 
            !lines[j].trim().startsWith('#') &&
            !lines[j].trim().match(/^\d+\.\s/) &&
-           !lines[j].trim().startsWith('*') &&
-           !lines[j].trim().startsWith('-') &&
-           !lines[j].trim().startsWith('•') &&
+           !lines[j].trim().match(/^[-*•]\s/) && // Only exclude single bullet markers, not **
            !/^\s+[-*•]\s/.test(lines[j])) {
       paragraphLines.push(lines[j].trim());
       j++;
@@ -205,13 +204,19 @@ export const formatMarkdownText = (text) => {
     
     if (paragraphLines.length > 0) {
       const paragraphText = paragraphLines.join(' ');
+      
+      // Check if this is a standalone bold line (like **Slide Overview**)
+      const isStandaloneBold = paragraphLines.length === 1 && 
+                               paragraphText.match(/^\*\*.*\*\*$/);
+      
       elements.push(
-        <Typography key={currentKey++} variant="body1" paragraph sx={{ 
+        <Typography key={currentKey++} variant={isStandaloneBold ? "subtitle1" : "body1"} paragraph sx={{ 
           lineHeight: 1.6, 
-          fontSize: '0.9rem',
+          fontSize: isStandaloneBold ? '1rem' : '0.9rem',
           color: 'text.primary',
           mb: 1.2,
-          textAlign: 'justify'
+          textAlign: isStandaloneBold ? 'left' : 'justify',
+          fontWeight: isStandaloneBold ? 'bold' : 'normal'
         }}>
           <span dangerouslySetInnerHTML={{ 
             __html: paragraphText
