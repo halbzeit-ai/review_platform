@@ -134,6 +134,7 @@ const DojoManagement = () => {
   const [selectFromCached, setSelectFromCached] = useState(false);
   const [cachedDecksCount, setCachedDecksCount] = useState(0);
   const [loadingCachedCount, setLoadingCachedCount] = useState(false);
+  const [sampleSize, setSampleSize] = useState(10);
 
   useEffect(() => {
     loadDojoData();
@@ -488,7 +489,7 @@ const DojoManagement = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
-          sample_size: 10,
+          sample_size: sampleSize === 'all' ? 999999 : sampleSize,
           cached_only: selectFromCached
         })
       });
@@ -1279,6 +1280,23 @@ const DojoManagement = () => {
                 Step 1: Create Sample
               </Typography>
               
+              {/* Sample Size Selection */}
+              <Box sx={{ mb: 2 }}>
+                <FormControl sx={{ minWidth: 200, mb: 2 }}>
+                  <InputLabel>Sample Size</InputLabel>
+                  <Select
+                    value={sampleSize}
+                    label="Sample Size"
+                    onChange={(e) => setSampleSize(e.target.value)}
+                  >
+                    <MenuItem value={10}>10 decks</MenuItem>
+                    <MenuItem value={50}>50 decks</MenuItem>
+                    <MenuItem value={100}>100 decks</MenuItem>
+                    <MenuItem value="all">All available decks</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+
               {/* Cached Selection Option */}
               <Box sx={{ mb: 2 }}>
                 <FormControlLabel
@@ -1326,7 +1344,7 @@ const DojoManagement = () => {
                   onClick={createExtractionSample}
                   disabled={loading}
                 >
-                  Generate Random Sample {selectFromCached ? '(Cached Only)' : '(Up to 10 decks)'}
+                  Generate Sample ({sampleSize === 'all' ? 'All' : sampleSize} decks{selectFromCached ? ', Cached Only' : ''})
                 </Button>
                 <Typography variant="body2" color="text.secondary">
                   {extractionSample.length > 0 ? `Sample created: ${extractionSample.length} decks` : 'No sample created yet'}
