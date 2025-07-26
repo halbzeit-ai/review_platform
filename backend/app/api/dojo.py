@@ -756,9 +756,9 @@ async def test_offering_extraction(
             "created_at": datetime.utcnow().isoformat()
         }
         
-        # Save experiment to database
-        db.execute(text(
-            "INSERT INTO extraction_experiments (experiment_name, pitch_deck_ids, extraction_type, text_model_used, extraction_prompt, results_json) VALUES (:name, :deck_ids, :type, :model, :prompt, :results)"
+        # Save experiment to database and get the ID
+        result = db.execute(text(
+            "INSERT INTO extraction_experiments (experiment_name, pitch_deck_ids, extraction_type, text_model_used, extraction_prompt, results_json) VALUES (:name, :deck_ids, :type, :model, :prompt, :results) RETURNING id"
         ), {
             "name": request.experiment_name,
             "deck_ids": request.deck_ids,
@@ -767,11 +767,15 @@ async def test_offering_extraction(
             "prompt": request.extraction_prompt,
             "results": json.dumps(experiment_data)
         })
+        experiment_id = result.fetchone()[0]
         db.commit()
         
-        logger.info(f"Extraction test completed: {request.experiment_name}")
+        logger.info(f"Extraction test completed: {request.experiment_name} (ID: {experiment_id})")
         
-        return experiment_data
+        # Add experiment_id to response
+        response_data = experiment_data.copy()
+        response_data["experiment_id"] = experiment_id
+        return response_data
         
     except HTTPException:
         raise
@@ -797,7 +801,7 @@ async def get_extraction_experiments(
             )
         
         experiments = db.execute(text(
-            "SELECT id, experiment_name, extraction_type, text_model_used, created_at, results_json, classification_enabled, classification_completed_at FROM extraction_experiments ORDER BY created_at DESC"
+            "SELECT id, experiment_name, extraction_type, text_model_used, created_at, results_json, classification_enabled, classification_completed_at, company_name_completed_at FROM extraction_experiments ORDER BY created_at DESC"
         )).fetchall()
         
         experiment_data = []
@@ -826,6 +830,7 @@ async def get_extraction_experiments(
                 "successful_extractions": results_data.get("successful_extractions", 0),
                 "classification_enabled": bool(exp[6]) if exp[6] is not None else False,
                 "classification_completed_at": exp[7].isoformat() if exp[7] else None,
+                "company_name_completed_at": exp[8].isoformat() if exp[8] else None,
                 "average_response_length": average_response_length
             })
         
@@ -861,7 +866,8 @@ async def get_experiment_details(
         experiment = db.execute(text("""
             SELECT id, experiment_name, extraction_type, text_model_used, extraction_prompt, 
                    created_at, results_json, pitch_deck_ids, classification_enabled, 
-                   classification_results_json, classification_completed_at
+                   classification_results_json, classification_completed_at, company_name_results_json, 
+                   company_name_completed_at
             FROM extraction_experiments 
             WHERE id = :exp_id
         """), {"exp_id": experiment_id}).fetchone()
@@ -941,6 +947,14 @@ async def get_experiment_details(
             
             enhanced_results.append(enhanced_result)
         
+        # Parse company name extraction results if available
+        company_name_data = {}
+        if experiment[11]:  # company_name_results_json
+            try:
+                company_name_data = json.loads(experiment[11])
+            except json.JSONDecodeError:
+                logger.warning(f"Failed to parse company name results for experiment {experiment_id}")
+
         experiment_details = {
             "id": experiment[0],
             "experiment_name": experiment[1],
@@ -955,7 +969,10 @@ async def get_experiment_details(
             "classification_enabled": bool(experiment[8]),
             "classification_completed_at": experiment[10].isoformat() if experiment[10] else None,
             "classification_statistics": classification_data.get("statistics", {}) if classification_data else {},
-            "classification_results_json": json.dumps(classification_data.get("classification_by_deck", {})) if classification_data else None
+            "classification_results_json": json.dumps(classification_data.get("classification_by_deck", {})) if classification_data else None,
+            "company_name_completed_at": experiment[12].isoformat() if experiment[12] else None,
+            "company_name_statistics": company_name_data.get("statistics", {}) if company_name_data else {},
+            "company_name_results": company_name_data.get("company_name_results", []) if company_name_data else []
         }
         
         return experiment_details
@@ -1173,6 +1190,165 @@ async def enrich_experiment_with_classification(
         raise HTTPException(
             status_code=500,
             detail="Failed to run classification enrichment"
+        )
+
+class CompanyNameExtractionRequest(BaseModel):
+    experiment_id: int
+
+@router.post("/extraction-test/run-company-name-extraction")
+async def enrich_experiment_with_company_names(
+    request: CompanyNameExtractionRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Enrich existing extraction experiment with company name extraction"""
+    try:
+        # Only GPs can run company name extraction
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=403,
+                detail="Only GPs can run company name extraction"
+            )
+        
+        # Get the experiment
+        experiment = db.execute(text("""
+            SELECT id, experiment_name, extraction_type, text_model_used, 
+                   extraction_prompt, created_at, results_json, pitch_deck_ids
+            FROM extraction_experiments 
+            WHERE id = :experiment_id
+        """), {"experiment_id": request.experiment_id}).fetchone()
+        
+        if not experiment:
+            raise HTTPException(
+                status_code=404,
+                detail="Experiment not found"
+            )
+        
+        # Parse existing results
+        results_data = json.loads(experiment[6]) if experiment[6] else {}
+        results = results_data.get("results", [])
+        
+        if not results:
+            raise HTTPException(
+                status_code=400,
+                detail="Experiment has no extraction results to extract company names from"
+            )
+        
+        # Get the company name extraction prompt from pipeline_prompts
+        prompt_result = db.execute(text(
+            "SELECT prompt_text FROM pipeline_prompts WHERE stage_name = 'startup_name_extraction' LIMIT 1"
+        )).fetchone()
+        
+        startup_name_prompt = prompt_result[0] if prompt_result else "Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it."
+        
+        # Use GPU pipeline for company name extraction
+        from ..services.gpu_http_client import gpu_http_client
+        
+        # Collect deck IDs for GPU processing
+        deck_ids = experiment[7]  # pitch_deck_ids
+        
+        # Call GPU pipeline for company name extraction using the same visual analysis
+        gpu_result = await gpu_http_client.run_offering_extraction(
+            deck_ids=deck_ids,
+            text_model=experiment[3],  # text_model_used
+            extraction_prompt=startup_name_prompt,
+            use_cached_visual=True
+        )
+        
+        # Process GPU results
+        company_name_results = []
+        successful_extractions = 0
+        
+        if gpu_result.get("success"):
+            logger.info("GPU company name extraction completed successfully")
+            extraction_results = gpu_result.get("extraction_results", [])
+            
+            for result in extraction_results:
+                deck_id = result.get("deck_id")
+                company_name = result.get("offering_extraction", "")  # GPU returns this field
+                
+                # Skip if extraction failed
+                if not company_name or company_name.startswith("Error:"):
+                    company_name_results.append({
+                        "deck_id": deck_id,
+                        "filename": result.get("filename", f"deck_{deck_id}"),
+                        "company_name": None,
+                        "error": company_name or "Company name extraction failed"
+                    })
+                    continue
+                
+                successful_extractions += 1
+                company_name_results.append({
+                    "deck_id": deck_id,
+                    "filename": result.get("filename", f"deck_{deck_id}"),
+                    "company_name": company_name.strip(),
+                    "error": None
+                })
+                
+                # Update the PitchDeck record with extracted company name
+                db.execute(text(
+                    "UPDATE pitch_decks SET ai_extracted_startup_name = :company_name WHERE id = :deck_id"
+                ), {
+                    "company_name": company_name.strip(),
+                    "deck_id": deck_id
+                })
+        else:
+            logger.error(f"GPU company name extraction failed: {gpu_result.get('error', 'Unknown error')}")
+            # Create error results for all decks
+            for deck_id in deck_ids:
+                company_name_results.append({
+                    "deck_id": deck_id,
+                    "filename": f"deck_{deck_id}",
+                    "company_name": None,
+                    "error": f"GPU processing failed: {gpu_result.get('error', 'Unknown error')}"
+                })
+        
+        # Create statistics
+        statistics = {
+            "total_decks": len(company_name_results),
+            "successful_extractions": successful_extractions,
+            "failed_extractions": len(company_name_results) - successful_extractions,
+            "success_rate": successful_extractions / len(company_name_results) if company_name_results else 0
+        }
+        
+        # Store company name extraction results in the experiment
+        company_name_data = {
+            "company_name_results": company_name_results,
+            "statistics": statistics,
+            "model_used": experiment[3],  # text_model_used
+            "prompt_used": startup_name_prompt,
+            "extracted_at": datetime.utcnow().isoformat()
+        }
+        
+        # Update experiment with company name extraction results
+        db.execute(text("""
+            UPDATE extraction_experiments 
+            SET company_name_results_json = :company_name_results,
+                company_name_completed_at = CURRENT_TIMESTAMP
+            WHERE id = :experiment_id
+        """), {
+            "experiment_id": request.experiment_id,
+            "company_name_results": json.dumps(company_name_data)
+        })
+        
+        db.commit()
+        
+        logger.info(f"Company name extraction completed for experiment {request.experiment_id}: {successful_extractions}/{len(company_name_results)} successful")
+        
+        return {
+            "message": "Company name extraction completed successfully",
+            "experiment_id": request.experiment_id,
+            "company_name_results": company_name_results,
+            "statistics": statistics
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error running company name extraction: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to run company name extraction"
         )
 
 # ==================== INTERNAL API FOR GPU COMMUNICATION ====================
