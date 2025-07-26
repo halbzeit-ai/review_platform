@@ -207,6 +207,7 @@ async def reset_prompt_to_default(
             "role_definition": "You are an analyst working at a Venture Capital company. Here is the descriptions of a startup's pitchdeck.",
             "offering_extraction": "Your Task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company.",
             "startup_name_extraction": "Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.",
+            "funding_amount_extraction": "Find the exact funding amount the startup is seeking or has raised from this pitch deck. Look for phrases like 'seeking $X', 'raising $X', 'funding round of $X', or similar. Return only the numerical amount with currency symbol (e.g., '$2.5M', '€500K', '$10 million'). If no specific amount is mentioned, return 'Not specified'.",
             "question_analysis": "Your task is to find answers to the following questions: ",
             "scoring_analysis": "Your task is to give a score between 0 and 7 based on how much information is provided for the following questions. Just give a number, no explanations.",
             "scientific_hypothesis": "You are a medical doctor reviewing a pitchdeck of a health startup. Provide a numbered list of core scientific, health related or medical hypothesis that are addressed by the startup. Do not report market size or any other economic hypotheses. Do not mention the name of the product or the company."

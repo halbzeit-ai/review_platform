@@ -788,6 +788,27 @@ const DojoManagement = () => {
         console.log('Step 5 completed: Company name extraction', companyNameData);
       }
 
+      // Step 6: Run funding amount extraction
+      const fundingAmountResponse = await fetch('/api/dojo/extraction-test/run-funding-amount-extraction', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          experiment_id: experimentId
+        })
+      });
+
+      if (!fundingAmountResponse.ok) {
+        const errorData = await fundingAmountResponse.json();
+        console.warn('Step 6 failed: Funding amount extraction', errorData);
+        // Continue even if funding amount extraction fails
+      } else {
+        const fundingAmountData = await fundingAmountResponse.json();
+        console.log('Step 6 completed: Funding amount extraction', fundingAmountData);
+      }
+
       // Refresh experiments list
       await loadExperiments();
       
@@ -1462,10 +1483,10 @@ const DojoManagement = () => {
             {extractionSample.length > 0 && (
               <Paper sx={{ p: 3, mb: 3, bgcolor: 'grey.50' }}>
                 <Typography variant="h6" gutterBottom>
-                  Steps 3-5: Complete Extraction Pipeline
+                  Steps 3-6: Complete Extraction Pipeline
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  This will run: (3) Company Offering Extraction → (4) Classification → (5) Company Name Extraction
+                  This will run: (3) Company Offering Extraction → (4) Classification → (5) Company Name Extraction → (6) Funding Amount Extraction
                 </Typography>
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={6}>
@@ -1856,6 +1877,17 @@ const DojoManagement = () => {
                                     Company: {result.deck_info.company_name}
                                   </Typography>
                                 )}
+                                {(() => {
+                                  // Get funding amount for this deck
+                                  const fundingAmountResult = experimentDetails.funding_amount_results?.find(
+                                    fa => fa.deck_id === result.deck_id
+                                  );
+                                  return fundingAmountResult?.funding_amount && (
+                                    <Typography variant="caption" color="text.secondary">
+                                      Funding: {fundingAmountResult.funding_amount}
+                                    </Typography>
+                                  );
+                                })()}
                                 {classificationData && (
                                   <Box sx={{ mt: 0.5, display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
                                     <Chip 

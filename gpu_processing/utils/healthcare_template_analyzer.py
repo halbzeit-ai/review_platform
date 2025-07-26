@@ -65,6 +65,7 @@ class HealthcareTemplateAnalyzer:
         self.visual_analysis_results = []
         self.company_offering = ""
         self.startup_name = None
+        self.funding_amount = None
         self.classification_result = None
         self.template_config = None
         self.chapter_results = {}
@@ -848,6 +849,8 @@ class HealthcareTemplateAnalyzer:
         # Clear state from previous analysis sessions
         self.visual_analysis_results = []
         self.company_offering = ""
+        self.startup_name = None
+        self.funding_amount = None
         self.classification_result = None
         self.template_config = None
         self.chapter_results = {}
@@ -863,6 +866,9 @@ class HealthcareTemplateAnalyzer:
             
             # Step 2.5: Extract startup name
             self._extract_startup_name()
+            
+            # Step 2.6: Extract funding amount
+            self._extract_funding_amount()
             
             # Step 3: Classify startup based on company offering
             self.classification_result = self._classify_startup(self.company_offering)
@@ -1027,6 +1033,42 @@ class HealthcareTemplateAnalyzer:
         except Exception as e:
             logger.error(f"Error extracting startup name: {e}")
             self.startup_name = None
+    
+    def _extract_funding_amount(self):
+        """Extract funding amount from pitch deck content following same pattern as _generate_company_offering()"""
+        logger.info("Extracting funding amount from pitch deck content")
+        
+        # Extract descriptions from the structured data
+        descriptions = []
+        for page_data in self.visual_analysis_results:
+            if isinstance(page_data, dict):
+                descriptions.append(page_data.get("description", ""))
+            else:
+                descriptions.append(str(page_data))
+        
+        full_pitchdeck_text = " ".join(descriptions)
+        
+        # Get funding amount extraction prompt from database
+        funding_amount_prompt = self._get_pipeline_prompt("funding_amount_extraction")
+        
+        try:
+            # Use the funding amount extraction prompt from database
+            funding_prompt = f"{funding_amount_prompt}\n\nPitch deck content: {{pitch_deck_content}}"
+            
+            response = ollama.generate(
+                model=self.text_model,
+                prompt=funding_prompt.format(pitch_deck_content=full_pitchdeck_text),
+                options={'num_ctx': 32768, 'temperature': 0.1}  # Lower temperature for more accurate extraction
+            )
+            
+            # Clean up the response to extract just the funding amount
+            self.funding_amount = response['response'].strip()
+            
+            logger.info(f"Extracted funding amount: {self.funding_amount}")
+            
+        except Exception as e:
+            logger.error(f"Error extracting funding amount: {e}")
+            self.funding_amount = None
     
     def _execute_template_analysis(self):
         """Execute analysis based on loaded template"""
@@ -1366,6 +1408,7 @@ class HealthcareTemplateAnalyzer:
         return {
             "company_offering": self.company_offering,
             "startup_name": self.startup_name,
+            "funding_amount": self.funding_amount,
             "classification": self.classification_result,
             "template_used": self.template_config.get("template", {}) if self.template_config else None,
             "overall_score": overall_score,
