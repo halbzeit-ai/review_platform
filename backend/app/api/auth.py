@@ -527,6 +527,22 @@ async def update_profile(
         }
     )
 
+@router.get("/company-info")
+async def get_company_info(current_user: User = Depends(get_current_user)):
+    """Get current user's company information and generated company ID"""
+    from ..api.projects import get_company_id_from_user
+    
+    company_id = get_company_id_from_user(current_user)
+    
+    return JSONResponse(
+        status_code=200,
+        content={
+            "company_name": current_user.company_name,
+            "company_id": company_id,
+            "dashboard_path": f"/project/{company_id}" if current_user.role == "startup" else "/dashboard/gp"
+        }
+    )
+
 @router.post("/forgot-password")
 async def forgot_password(data: ForgotPasswordData, db: Session = Depends(get_db)):
     """Send password reset email"""

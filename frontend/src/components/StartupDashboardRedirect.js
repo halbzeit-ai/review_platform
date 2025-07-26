@@ -1,33 +1,33 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, CircularProgress, Typography } from '@mui/material';
+import { getCurrentUserCompanyInfo } from '../utils/companyUtils';
 
 const StartupDashboardRedirect = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Get user info from localStorage
-    const user = JSON.parse(localStorage.getItem('user'));
-    
-    if (user && user.role === 'startup') {
-      // Generate company ID using same logic as backend
-      const getCompanyId = () => {
-        if (user?.companyName) {
-          // Convert company name to a URL-safe slug (same logic as backend)
-          return user.companyName.toLowerCase().replace(' ', '-').replace(/[^a-z0-9-]/g, '');
+    const redirectUser = async () => {
+      // Get user info from localStorage
+      const user = JSON.parse(localStorage.getItem('user') || 'null');
+      
+      if (user && user.role === 'startup') {
+        // Get company info from backend for consistent routing
+        try {
+          const companyInfo = await getCurrentUserCompanyInfo();
+          navigate(companyInfo.dashboard_path, { replace: true });
+        } catch (error) {
+          console.error('Error getting company info:', error);
+          // Fallback to login if company info fails
+          navigate('/login', { replace: true });
         }
-        // Fallback to email prefix if company name is not available
-        return user?.email?.split('@')[0] || 'unknown';
-      };
-      
-      const companyId = getCompanyId();
-      
-      // Redirect to project dashboard
-      navigate(`/project/${companyId}`, { replace: true });
-    } else {
-      // Fallback to login if no user data
-      navigate('/login', { replace: true });
-    }
+      } else {
+        // Fallback to login if no user data or wrong role
+        navigate('/login', { replace: true });
+      }
+    };
+
+    redirectUser();
   }, [navigate]);
 
   return (

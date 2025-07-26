@@ -120,4 +120,7 @@ export const deleteDeck = (companyId, deckId) =>
 export const cleanupOrphanedDecks = () =>
   api.delete('/decks/cleanup-orphaned');
 
+export const getCompanyInfo = () =>
+  api.get('/auth/company-info');
+
 export default api;

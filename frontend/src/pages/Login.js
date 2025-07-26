@@ -42,20 +42,9 @@ function Login() {
         localStorage.setItem('language', data.preferred_language);
       }
 
-      // Redirect based on role
+      // Redirect based on role - use generic dashboard redirect for consistency
       if (data.role === 'startup') {
-        // Generate company ID using same logic as backend
-        const getCompanyId = () => {
-          if (data.company_name) {
-            // Convert company name to a URL-safe slug (same logic as backend)
-            return data.company_name.toLowerCase().replace(' ', '-').replace(/[^a-z0-9-]/g, '');
-          }
-          // Fallback to email prefix if company name is not available
-          return data.email.split('@')[0];
-        };
-        
-        const companyId = getCompanyId();
-        window.location.href = `/project/${companyId}`;
+        window.location.href = '/dashboard';
       } else {
         window.location.href = '/dashboard/gp';
       }

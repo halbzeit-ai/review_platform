@@ -28,6 +28,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { getCurrentUserCompanyInfo, getCompanyInfoFallback } from '../utils/companyUtils';
 
 const Profile = () => {
   const { t, i18n } = useTranslation(['common', 'auth']);
@@ -68,18 +69,9 @@ const Profile = () => {
     if (user.role === 'gp') {
       return '/dashboard/gp';
     } else if (user.role === 'startup') {
-      // Generate company ID using same logic as backend
-      const getCompanyId = () => {
-        if (user?.companyName) {
-          // Convert company name to a URL-safe slug
-          return user.companyName.toLowerCase().replace(' ', '-').replace(/[^a-z0-9-]/g, '');
-        }
-        // Fallback to email prefix if company name is not available
-        return user?.email?.split('@')[0] || 'unknown';
-      };
-      
-      const companyId = getCompanyId();
-      return `/project/${companyId}`;
+      // Use fallback method for sync path generation
+      const companyInfo = getCompanyInfoFallback(user);
+      return companyInfo.dashboard_path;
     }
     
     // Fallback to generic dashboard redirect
@@ -99,8 +91,22 @@ const Profile = () => {
     return t('common:navigation.dashboard');
   };
 
-  const handleBackToDashboard = () => {
-    navigate(getDashboardPath());
+  const handleBackToDashboard = async () => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    if (user.role === 'startup') {
+      // Use backend for accurate routing
+      try {
+        const companyInfo = await getCurrentUserCompanyInfo();
+        navigate(companyInfo.dashboard_path);
+      } catch (error) {
+        console.error('Error getting company info:', error);
+        // Fallback to sync method
+        navigate(getDashboardPath());
+      }
+    } else {
+      navigate(getDashboardPath());
+    }
   };
 
   const loadProfile = async () => {

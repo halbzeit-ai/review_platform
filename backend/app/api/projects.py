@@ -57,9 +57,10 @@ class ProjectUploadsResponse(BaseModel):
 def get_company_id_from_user(user: User) -> str:
     """Extract company_id from user based on company name"""
     if user.company_name:
-        # Convert company name to a URL-safe slug
+        # Convert company name to a URL-safe slug - same logic as frontend
         import re
-        return re.sub(r'[^a-z0-9-]', '', user.company_name.lower().replace(' ', '-'))
+        # Replace all whitespace with dashes, then remove non-alphanumeric chars except dashes
+        return re.sub(r'[^a-z0-9-]', '', re.sub(r'\s+', '-', user.company_name.lower()))
     # Fallback to email prefix if company name is not available
     return user.email.split('@')[0]
 
