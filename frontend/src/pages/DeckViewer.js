@@ -31,6 +31,7 @@ import {
   getProjectDeckAnalysis
 } from '../services/api';
 import api from '../services/api';
+import { formatMarkdownText } from '../utils/markdownFormatter';
 
 const DeckViewer = () => {
   const { t } = useTranslation();
@@ -218,7 +219,7 @@ const DeckViewer = () => {
           WebkitBoxOrient: 'vertical',
           lineHeight: 1.2
         }}>
-          {slide.description.substring(0, 80)}...
+          {slide.description.replace(/\*\*(.*?)\*\*/g, '$1').substring(0, 80)}...
         </Typography>
       </CardContent>
     </Card>
@@ -464,9 +465,9 @@ const DeckViewer = () => {
                   </Typography>
                   
                   <Paper sx={{ p: 2, backgroundColor: 'grey.50' }}>
-                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                      {currentSlideData.description}
-                    </Typography>
+                    <Box>
+                      {formatMarkdownText(currentSlideData.description)}
+                    </Box>
                   </Paper>
                 </Box>
               </>
