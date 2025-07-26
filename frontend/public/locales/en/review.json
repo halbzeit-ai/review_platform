@@ -38,5 +38,8 @@
     "organisation": "Team & Organization",
     "competition": "Competition",
     "execution": "Execution"
+  },
+  "debug": {
+    "scoringResponse": "🐛 Debug - Scoring Response:"
   }
 }

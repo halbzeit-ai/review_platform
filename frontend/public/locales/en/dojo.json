@@ -1,0 +1,100 @@
+{
+  "title": "Dojo Management",
+  "navigation": {
+    "backToDashboard": "Back to Dashboard"
+  },
+  "tabs": {
+    "trainingFiles": "Training Files",
+    "extractionLab": "Extraction Testing Lab"
+  },
+  "fileManagement": {
+    "uploadFile": "Upload File",
+    "selectFiles": "Select files to upload",
+    "fileUploaded": "File uploaded successfully",
+    "uploadFailed": "Upload failed",
+    "deleteFile": "Delete File",
+    "confirmDelete": "Are you sure you want to delete this file?",
+    "fileDeleted": "File deleted successfully",
+    "noFiles": "No files uploaded yet"
+  },
+  "models": {
+    "visionModel": "Vision Model",
+    "textModel": "Text Model",
+    "selectModel": "Select Model",
+    "modelStatus": "Model Status",
+    "availableModels": "Available Models",
+    "noModelsAvailable": "No models available"
+  },
+  "prompts": {
+    "visualAnalysis": "Visual Analysis Prompt",
+    "extraction": "Extraction Prompt",
+    "loadingFromDb": "Loading actual prompt from database...",
+    "promptUpdated": "Prompt updated successfully",
+    "promptError": "Error updating prompt"
+  },
+  "extraction": {
+    "sampleOverview": "Sample Overview:",
+    "createSample": "Create Sample",
+    "runExtraction": "Run Extraction",
+    "selectFromCached": "Select from cached decks only",
+    "sampleSize": "Sample Size",
+    "extractionRunning": "Extraction running...",
+    "extractionComplete": "Extraction complete",
+    "extractionFailed": "Extraction failed"
+  },
+  "experiments": {
+    "title": "Extraction Experiments",
+    "noExperiments": "No experiments available",
+    "viewDetails": "View Details",
+    "successRate": "Success Rate",
+    "modelUsed": "Model Used",
+    "createdAt": "Created At",
+    "results": "Results",
+    "detailedResults": "Detailed Results"
+  },
+  "status": {
+    "classified": "Classified",
+    "inProgress": "In Progress",
+    "success": "Success",
+    "failed": "Failed",
+    "pending": "Pending",
+    "completed": "Completed",
+    "processing": "Processing",
+    "uploaded": "Uploaded"
+  },
+  "time": {
+    "moreThan24h": "More than 24h remaining",
+    "secondsRemaining": "s remaining",
+    "minutesRemaining": "m remaining",
+    "hoursRemaining": "h remaining",
+    "timeRemaining": "remaining"
+  },
+  "fileSize": {
+    "bytes": "B",
+    "kilobytes": "KB",
+    "megabytes": "MB",
+    "bytesPerSecond": "B/s",
+    "kilobytesPerSecond": "KB/s",
+    "megabytesPerSecond": "MB/s"
+  },
+  "actions": {
+    "refresh": "Refresh",
+    "clear": "Clear",
+    "stop": "Stop",
+    "download": "Download",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  },
+  "messages": {
+    "loadingFiles": "Loading files...",
+    "loadingModels": "Loading models...",
+    "loadingExperiments": "Loading experiments...",
+    "gpuStatus": "GPU Status",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "error": "Error"
+  }
+}

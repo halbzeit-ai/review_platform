@@ -382,7 +382,7 @@ const ProjectResults = ({ companyId, deckId }) => {
                                 {question.scoring_response && (
                                   <Box sx={{ mt: 1.5, p: 1.5, bgcolor: 'warning.50', borderRadius: 1, border: '1px solid', borderColor: 'warning.200' }}>
                                     <Typography variant="caption" color="warning.dark" fontWeight="bold" sx={{ fontSize: '0.75rem' }}>
-                                      🐛 Debug - Scoring Response:
+                                      {t('debug.scoringResponse')}
                                     </Typography>
                                     <Box sx={{ mt: 0.5, '& .MuiTypography-root': { color: 'warning.dark', fontSize: '0.8rem' } }}>
                                       {formatText(question.scoring_response)}

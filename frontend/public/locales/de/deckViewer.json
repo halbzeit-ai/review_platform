@@ -1,0 +1,37 @@
+{
+  "title": "Deck-Viewer",
+  "navigation": {
+    "backToProject": "Zurück zum Projekt",
+    "projectDashboard": "Projekt-Dashboard"
+  },
+  "controls": {
+    "zoomOut": "Verkleinern",
+    "zoomIn": "Vergrößern",
+    "fitToContainer": "An Container anpassen (F drücken)",
+    "fit": "Anpassen",
+    "previousSlide": "Vorherige Folie",
+    "nextSlide": "Nächste Folie"
+  },
+  "sections": {
+    "aiAnalysis": "KI-Analyse",
+    "slides": "Folien",
+    "slideControls": "Folien-Steuerung"
+  },
+  "slideInfo": {
+    "slide": "Folie",
+    "of": "von",
+    "company": "Unternehmen",
+    "analyzed": "KI-analysiert",
+    "slideCount": "{count} Folien"
+  },
+  "messages": {
+    "loading": "Lade Deck-Analyse...",
+    "error": "Fehler beim Laden der Deck-Analyse",
+    "noSlides": "Keine Folien verfügbar"
+  },
+  "shortcuts": {
+    "leftArrow": "Vorherige Folie",
+    "rightArrow": "Nächste Folie",
+    "fKey": "An Container anpassen"
+  }
+}

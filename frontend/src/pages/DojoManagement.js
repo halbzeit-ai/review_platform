@@ -56,7 +56,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 const DojoManagement = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['dojo', 'common']);
   const navigate = useNavigate();
 
   // Helper function to format upload speed
@@ -915,8 +915,8 @@ const DojoManagement = () => {
       {/* Main Content - Tabs */}
       <Paper sx={{ p: 3 }}>
         <Tabs value={currentTab} onChange={handleTabChange}>
-          <Tab label="Training Files" />
-          <Tab label="Extraction Testing Lab" />
+          <Tab label={t('tabs.trainingFiles')} />
+          <Tab label={t('tabs.extractionTestingLab')} />
         </Tabs>
         
         {/* Tab Panel 0: Files Table */}
@@ -926,7 +926,7 @@ const DojoManagement = () => {
             <Card sx={{ mb: 3 }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  Upload Training Data
+                  {t('fileManagement.uploadTrainingData')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   Upload a ZIP file containing PDF pitch decks for AI training (max 1GB)
@@ -959,7 +959,7 @@ const DojoManagement = () => {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Box>
                         <Typography variant="body2" color={uploadSuccess ? 'success.main' : 'text.secondary'}>
-                          {processingStatus || (uploadProgress < 100 ? `Uploading... ${uploadProgress}%` : 'Processing files...')}
+                          {processingStatus || (uploadProgress < 100 ? t('status.uploading', { progress: uploadProgress }) : t('status.processingFiles'))}
                         </Typography>
                         {uploadSpeed > 0 && uploadProgress < 100 && (
                           <Box>
@@ -981,7 +981,7 @@ const DojoManagement = () => {
                           <CircularProgress size={16} sx={{ mr: 1 }} />
                         )}
                         <Typography variant="caption" color={uploadSuccess ? 'success.main' : 'text.secondary'}>
-                          {uploadSuccess ? 'Success' : (uploadProgress < 100 ? 'Uploading' : 'Processing')}
+                          {uploadSuccess ? t('status.success') : (uploadProgress < 100 ? t('status.uploadingShort') : t('status.processing'))}
                         </Typography>
                       </Box>
                     </Box>
@@ -1002,10 +1002,10 @@ const DojoManagement = () => {
                             setUploadSpeed(0);
                             setUploadStartTime(null);
                             setBytesUploaded(0);
-                            setError('Upload cancelled');
+                            setError(t('messages.uploadCancelled'));
                           }}
                         >
-                          Cancel Upload
+                          {t('actions.cancelUpload')}
                         </Button>
                       </Box>
                     )}
@@ -1019,7 +1019,7 @@ const DojoManagement = () => {
                       disabled={uploading}
                       sx={{ mb: 2 }}
                     >
-                      Select ZIP File
+                      {t('fileManagement.selectZipFile')}
                       <input
                         type="file"
                         hidden
@@ -1033,23 +1033,23 @@ const DojoManagement = () => {
             </Card>
 
             <Typography variant="h6" gutterBottom>
-              Training Files
+              {t('tabs.trainingFiles')}
             </Typography>
         
             {files.length === 0 ? (
               <Typography variant="body2" color="text.secondary">
-                No training files uploaded yet
+                {t('fileManagement.noFilesUploaded')}
               </Typography>
             ) : (
               <TableContainer>
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell>Filename</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Startup Name</TableCell>
-                      <TableCell>Uploaded</TableCell>
-                      <TableCell>Actions</TableCell>
+                      <TableCell>{t('fileManagement.filename')}</TableCell>
+                      <TableCell>{t('status.title')}</TableCell>
+                      <TableCell>{t('fileManagement.startupName')}</TableCell>
+                      <TableCell>{t('fileManagement.uploaded')}</TableCell>
+                      <TableCell>{t('actions.title')}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -1280,17 +1280,17 @@ const DojoManagement = () => {
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={6}>
                     <FormControl fullWidth sx={{ mb: 2 }}>
-                      <InputLabel>Vision Model</InputLabel>
+                      <InputLabel>{t('models.visionModel')}</InputLabel>
                       <Select
                         value={selectedVisionModel}
                         onChange={(e) => setSelectedVisionModel(e.target.value)}
-                        label="Vision Model"
+                        label={t('models.visionModel')}
                         disabled={modelsLoading || gpuStatus === 'error'}
                       >
                         {modelsLoading ? (
                           <MenuItem disabled>
                             <CircularProgress size={16} sx={{ mr: 1 }} />
-                            Loading models...
+                            {t('models.loadingModels')}
                           </MenuItem>
                         ) : availableModels.vision && availableModels.vision.length > 0 ? (
                           availableModels.vision.map((model) => (
@@ -1300,7 +1300,7 @@ const DojoManagement = () => {
                           ))
                         ) : (
                           <MenuItem disabled>
-                            No models available - GPU may be offline
+                            {t('models.noModelsAvailable')}
                           </MenuItem>
                         )}
                       </Select>
@@ -1310,10 +1310,10 @@ const DojoManagement = () => {
                       fullWidth
                       multiline
                       rows={3}
-                      label="Visual Analysis Prompt"
+                      label={t('prompts.visualAnalysisPrompt')}
                       value={visualAnalysisPrompt}
                       onChange={(e) => setVisualAnalysisPrompt(e.target.value)}
-                      placeholder="Loading actual prompt from database..."
+                      placeholder={t('prompts.loadingPrompt')}
                     />
                   </Grid>
                   <Grid item xs={12} md={6}>
@@ -1324,7 +1324,7 @@ const DojoManagement = () => {
                         disabled={!selectedVisionModel || !visualAnalysisPrompt || visualAnalysisStatus === 'running'}
                         startIcon={visualAnalysisStatus === 'running' ? <CircularProgress size={16} /> : <Assessment />}
                       >
-                        {visualAnalysisStatus === 'running' ? 'Running Analysis...' : 'Run Visual Analysis'}
+                        {visualAnalysisStatus === 'running' ? t('experiments.runningAnalysis') : t('experiments.runVisualAnalysis')}
                       </Button>
 
                       {/* Stop Analysis Button */}
@@ -1401,7 +1401,7 @@ const DojoManagement = () => {
                           ))
                         ) : (
                           <MenuItem disabled>
-                            No models available - GPU may be offline
+                            {t('models.noModelsAvailable')}
                           </MenuItem>
                         )}
                       </Select>
@@ -1414,7 +1414,7 @@ const DojoManagement = () => {
                       label="Extraction Prompt"
                       value={extractionPrompt}
                       onChange={(e) => setExtractionPrompt(e.target.value)}
-                      placeholder="Loading actual prompt from database..."
+                      placeholder={t('prompts.loadingPrompt')}
                     />
                   </Grid>
                   <Grid item xs={12} md={6}>

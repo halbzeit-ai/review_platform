@@ -28,7 +28,7 @@ i18n
 
     // Namespace handling
     defaultNS: 'common',
-    ns: ['common', 'auth', 'dashboard', 'templates', 'review'],
+    ns: ['common', 'auth', 'dashboard', 'templates', 'review', 'dojo', 'deckViewer'],
 
     // Debug mode for development
     debug: process.env.NODE_ENV === 'development',

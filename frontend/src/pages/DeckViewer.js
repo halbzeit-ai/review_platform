@@ -34,7 +34,7 @@ import api from '../services/api';
 import { formatMarkdownText } from '../utils/markdownFormatter';
 
 const DeckViewer = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['deckViewer', 'common']);
   const navigate = useNavigate();
   const { companyId, deckId } = useParams();
   
@@ -49,9 +49,9 @@ const DeckViewer = () => {
   const [imageUrls, setImageUrls] = useState({});
   
   const [breadcrumbs, setBreadcrumbs] = useState([
-    { label: t('navigation.dashboard'), path: '/dashboard' },
-    { label: 'Project Dashboard', path: `/project/${companyId}` },
-    { label: 'Deck Viewer', path: null }
+    { label: t('common:navigation.dashboard'), path: '/dashboard' },
+    { label: t('navigation.projectDashboard'), path: `/project/${companyId}` },
+    { label: t('title'), path: null }
   ]);
 
   useEffect(() => {
@@ -87,9 +87,9 @@ const DeckViewer = () => {
       
       // Update breadcrumbs
       setBreadcrumbs([
-        { label: t('navigation.dashboard'), path: '/dashboard' },
-        { label: 'Project Dashboard', path: `/project/${companyId}` },
-        { label: `Deck Viewer: ${analysisData.deck_name}`, path: null }
+        { label: t('common:navigation.dashboard'), path: '/dashboard' },
+        { label: t('navigation.projectDashboard'), path: `/project/${companyId}` },
+        { label: `${t('title')}: ${analysisData.deck_name}`, path: null }
       ]);
       
       // Load slide images
@@ -184,7 +184,7 @@ const DeckViewer = () => {
       <CardContent sx={{ p: 1.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
-            Slide {slide.page_number}
+            {t('slideInfo.slideNumber', { number: slide.page_number })}
           </Typography>
         </Box>
         
@@ -200,7 +200,7 @@ const DeckViewer = () => {
             <CardMedia
               component="img"
               image={imageUrls[slide.page_number]}
-              alt={`Slide ${slide.page_number}`}
+              alt={t('slideInfo.slideAlt', { number: slide.page_number })}
               sx={{ 
                 width: '100%',
                 height: '100%',
@@ -229,8 +229,9 @@ const DeckViewer = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 4 }}>
         <CircularProgress />
+        <Typography sx={{ ml: 2 }}>{t('messages.loading')}</Typography>
       </Box>
     );
   }
@@ -242,7 +243,7 @@ const DeckViewer = () => {
           {error}
         </Alert>
         <Button onClick={() => navigate(`/project/${companyId}`)}>
-          Back to Project Dashboard
+          {t('navigation.backToProject')}
         </Button>
       </Box>
     );
@@ -257,10 +258,10 @@ const DeckViewer = () => {
           onClick={() => navigate(`/project/${companyId}`)}
           sx={{ mr: 2 }}
         >
-          Back to Project
+          {t('navigation.backToProject')}
         </Button>
         <Typography variant="h4">
-          Deck Viewer
+          {t('title')}
         </Typography>
       </Box>
 
@@ -304,7 +305,7 @@ const DeckViewer = () => {
               {deckAnalysis?.deck_name}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {slides.length} slides • Company: {companyId}
+              {t('slideInfo.slideCount', { count: slides.length })} • {t('slideInfo.company')}: {companyId}
             </Typography>
           </Box>
           
@@ -328,7 +329,7 @@ const DeckViewer = () => {
         <Grid item xs={12} md={3}>
           <Paper sx={{ p: 2, height: 'fit-content', maxHeight: '80vh', overflow: 'auto' }}>
             <Typography variant="h6" sx={{ mb: 2, fontSize: '1.1rem' }}>
-              Slides ({slides.length})
+              {t('sections.slides', { count: slides.length })}
             </Typography>
             
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -361,7 +362,7 @@ const DeckViewer = () => {
                     </IconButton>
                     
                     <Typography variant="h6">
-                      Slide {currentSlideData.page_number}
+                      {t('slideInfo.slideNumber', { number: currentSlideData.page_number })}
                     </Typography>
                     
                     <IconButton
@@ -378,18 +379,18 @@ const DeckViewer = () => {
                       onClick={handleZoomOut} 
                       size="small"
                       disabled={imageZoom === 'fit' || imageZoom <= 0.5}
-                      title="Zoom Out"
+                      title={t('controls.zoomOut')}
                     >
                       <ZoomOutIcon />
                     </IconButton>
                     <Typography variant="body2" sx={{ minWidth: '70px', textAlign: 'center' }}>
-                      {imageZoom === 'fit' ? 'Fit' : `${Math.round(imageZoom * 100)}%`}
+                      {imageZoom === 'fit' ? t('controls.fit') : `${Math.round(imageZoom * 100)}%`}
                     </Typography>
                     <IconButton 
                       onClick={handleZoomIn} 
                       size="small"
                       disabled={imageZoom === 'fit' ? false : imageZoom >= 3}
-                      title="Zoom In"
+                      title={t('controls.zoomIn')}
                     >
                       <ZoomInIcon />
                     </IconButton>
@@ -398,9 +399,9 @@ const DeckViewer = () => {
                       size="small" 
                       variant="outlined"
                       sx={{ ml: 1, fontSize: '0.75rem', minWidth: 'auto', px: 1 }}
-                      title="Fit to Container (Press F)"
+                      title={t('shortcuts.fitToContainer')}
                     >
-                      Fit
+                      {t('controls.fit')}
                     </Button>
                   </Box>
                 </Box>
@@ -422,7 +423,7 @@ const DeckViewer = () => {
                   {imageUrls[currentSlideData.page_number] ? (
                     <img
                       src={imageUrls[currentSlideData.page_number]}
-                      alt={`Slide ${currentSlideData.page_number}`}
+                      alt={t('slideInfo.slideAlt', { number: currentSlideData.page_number })}
                       style={{
                         position: 'absolute',
                         top: '50%',
@@ -461,7 +462,7 @@ const DeckViewer = () => {
                 {/* AI Analysis */}
                 <Box>
                   <Typography variant="h6" sx={{ mb: 2 }}>
-                    AI Analysis
+                    {t('sections.aiAnalysis')}
                   </Typography>
                   
                   <Paper sx={{ p: 2, backgroundColor: 'grey.50' }}>

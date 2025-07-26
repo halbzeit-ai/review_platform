@@ -1,0 +1,37 @@
+{
+  "title": "Deck Viewer",
+  "navigation": {
+    "backToProject": "Back to Project",
+    "projectDashboard": "Project Dashboard"
+  },
+  "controls": {
+    "zoomOut": "Zoom Out",
+    "zoomIn": "Zoom In",
+    "fitToContainer": "Fit to Container (Press F)",
+    "fit": "Fit",
+    "previousSlide": "Previous Slide",
+    "nextSlide": "Next Slide"
+  },
+  "sections": {
+    "aiAnalysis": "AI Analysis",
+    "slides": "Slides",
+    "slideControls": "Slide Controls"
+  },
+  "slideInfo": {
+    "slide": "Slide",
+    "of": "of",
+    "company": "Company",
+    "analyzed": "AI Analyzed",
+    "slideCount": "{count} slides"
+  },
+  "messages": {
+    "loading": "Loading deck analysis...",
+    "error": "Failed to load deck analysis",
+    "noSlides": "No slides available"
+  },
+  "shortcuts": {
+    "leftArrow": "Previous slide",
+    "rightArrow": "Next slide",
+    "fKey": "Fit to container"
+  }
+}

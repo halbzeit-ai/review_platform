@@ -38,5 +38,8 @@
     "organisation": "Team & Organisation",
     "competition": "Konkurrenz",
     "execution": "Umsetzung"
+  },
+  "debug": {
+    "scoringResponse": "🐛 Debug - Bewertungsantwort:"
   }
 }

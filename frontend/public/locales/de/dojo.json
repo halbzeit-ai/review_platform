@@ -1,0 +1,100 @@
+{
+  "title": "Dojo Management",
+  "navigation": {
+    "backToDashboard": "Zurück zum Dashboard"
+  },
+  "tabs": {
+    "trainingFiles": "Trainingsdateien",
+    "extractionLab": "Extraktions-Testlabor"
+  },
+  "fileManagement": {
+    "uploadFile": "Datei hochladen",
+    "selectFiles": "Dateien zum Hochladen auswählen",
+    "fileUploaded": "Datei erfolgreich hochgeladen",
+    "uploadFailed": "Upload fehlgeschlagen",
+    "deleteFile": "Datei löschen",
+    "confirmDelete": "Sind Sie sicher, dass Sie diese Datei löschen möchten?",
+    "fileDeleted": "Datei erfolgreich gelöscht",
+    "noFiles": "Noch keine Dateien hochgeladen"
+  },
+  "models": {
+    "visionModel": "Vision-Modell",
+    "textModel": "Text-Modell",
+    "selectModel": "Modell auswählen",
+    "modelStatus": "Modell-Status",
+    "availableModels": "Verfügbare Modelle",
+    "noModelsAvailable": "Keine Modelle verfügbar"
+  },
+  "prompts": {
+    "visualAnalysis": "Visuelle Analyse-Eingabeaufforderung",
+    "extraction": "Extraktions-Eingabeaufforderung",
+    "loadingFromDb": "Lade aktuelle Eingabeaufforderung aus der Datenbank...",
+    "promptUpdated": "Eingabeaufforderung erfolgreich aktualisiert",
+    "promptError": "Fehler beim Aktualisieren der Eingabeaufforderung"
+  },
+  "extraction": {
+    "sampleOverview": "Stichproben-Übersicht:",
+    "createSample": "Stichprobe erstellen",
+    "runExtraction": "Extraktion ausführen",
+    "selectFromCached": "Nur aus zwischengespeicherten Decks auswählen",
+    "sampleSize": "Stichprobengröße",
+    "extractionRunning": "Extraktion läuft...",
+    "extractionComplete": "Extraktion abgeschlossen",
+    "extractionFailed": "Extraktion fehlgeschlagen"
+  },
+  "experiments": {
+    "title": "Extraktions-Experimente",
+    "noExperiments": "Keine Experimente verfügbar",
+    "viewDetails": "Details anzeigen",
+    "successRate": "Erfolgsquote",
+    "modelUsed": "Verwendetes Modell",
+    "createdAt": "Erstellt am",
+    "results": "Ergebnisse",
+    "detailedResults": "Detaillierte Ergebnisse"
+  },
+  "status": {
+    "classified": "Klassifiziert",
+    "inProgress": "In Bearbeitung",
+    "success": "Erfolgreich",
+    "failed": "Fehlgeschlagen",
+    "pending": "Ausstehend",
+    "completed": "Abgeschlossen",
+    "processing": "Verarbeitung",
+    "uploaded": "Hochgeladen"
+  },
+  "time": {
+    "moreThan24h": "Mehr als 24h verbleibend",
+    "secondsRemaining": "s verbleibend",
+    "minutesRemaining": "m verbleibend",
+    "hoursRemaining": "h verbleibend",
+    "timeRemaining": "verbleibend"
+  },
+  "fileSize": {
+    "bytes": "B",
+    "kilobytes": "KB",
+    "megabytes": "MB",
+    "bytesPerSecond": "B/s",
+    "kilobytesPerSecond": "KB/s",
+    "megabytesPerSecond": "MB/s"
+  },
+  "actions": {
+    "refresh": "Aktualisieren",
+    "clear": "Löschen",
+    "stop": "Stoppen",
+    "download": "Herunterladen",
+    "view": "Anzeigen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen"
+  },
+  "messages": {
+    "loadingFiles": "Lade Dateien...",
+    "loadingModels": "Lade Modelle...",
+    "loadingExperiments": "Lade Experimente...",
+    "gpuStatus": "GPU-Status",
+    "connected": "Verbunden",
+    "disconnected": "Getrennt",
+    "error": "Fehler"
+  }
+}
