@@ -797,12 +797,25 @@ async def get_extraction_experiments(
             )
         
         experiments = db.execute(text(
-            "SELECT id, experiment_name, extraction_type, text_model_used, created_at, results_json FROM extraction_experiments ORDER BY created_at DESC"
+            "SELECT id, experiment_name, extraction_type, text_model_used, created_at, results_json, classification_enabled, classification_completed_at FROM extraction_experiments ORDER BY created_at DESC"
         )).fetchall()
         
         experiment_data = []
         for exp in experiments:
             results_data = json.loads(exp[5]) if exp[5] else {}
+            
+            # Calculate average response length from results
+            average_response_length = 0
+            if results_data.get("results"):
+                successful_results = [
+                    result for result in results_data["results"] 
+                    if result.get("offering_extraction") and 
+                    not result["offering_extraction"].startswith("Error:")
+                ]
+                if successful_results:
+                    total_length = sum(len(result["offering_extraction"]) for result in successful_results)
+                    average_response_length = round(total_length / len(successful_results))
+            
             experiment_data.append({
                 "id": exp[0],
                 "experiment_name": exp[1],
@@ -810,7 +823,10 @@ async def get_extraction_experiments(
                 "text_model_used": exp[3],
                 "created_at": exp[4].isoformat(),
                 "total_decks": results_data.get("total_decks", 0),
-                "successful_extractions": results_data.get("successful_extractions", 0)
+                "successful_extractions": results_data.get("successful_extractions", 0),
+                "classification_enabled": bool(exp[6]) if exp[6] is not None else False,
+                "classification_completed_at": exp[7].isoformat() if exp[7] else None,
+                "average_response_length": average_response_length
             })
         
         return {
