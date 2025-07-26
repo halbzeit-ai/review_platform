@@ -713,6 +713,92 @@ const DojoManagement = () => {
     }
   };
 
+  const runCompleteExtractionPipeline = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+
+      const deckIds = extractionSample.map(deck => deck.id);
+      const experimentName = `pipeline_${Date.now()}`;
+      
+      // Step 3: Run offering extraction
+      const offeringResponse = await fetch('/api/dojo/extraction-test/run-offering-extraction', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          experiment_name: experimentName,
+          deck_ids: deckIds,
+          text_model: selectedTextModel,
+          extraction_prompt: extractionPrompt,
+          use_cached_visual: true
+        })
+      });
+
+      if (!offeringResponse.ok) {
+        const errorData = await offeringResponse.json();
+        throw new Error(errorData.detail || 'Failed to run offering extraction');
+      }
+
+      const offeringData = await offeringResponse.json();
+      const experimentId = offeringData.experiment_id;
+      console.log('Step 3 completed: Offering extraction', offeringData);
+
+      // Step 4: Run classification on the experiment
+      const classificationResponse = await fetch('/api/dojo/extraction-test/run-classification', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          experiment_id: experimentId
+        })
+      });
+
+      if (!classificationResponse.ok) {
+        const errorData = await classificationResponse.json();
+        console.warn('Step 4 failed: Classification', errorData);
+        // Continue even if classification fails
+      } else {
+        const classificationData = await classificationResponse.json();
+        console.log('Step 4 completed: Classification', classificationData);
+      }
+
+      // Step 5: Run company name extraction
+      const companyNameResponse = await fetch('/api/dojo/extraction-test/run-company-name-extraction', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          experiment_id: experimentId
+        })
+      });
+
+      if (!companyNameResponse.ok) {
+        const errorData = await companyNameResponse.json();
+        console.warn('Step 5 failed: Company name extraction', errorData);
+        // Continue even if company name extraction fails
+      } else {
+        const companyNameData = await companyNameResponse.json();
+        console.log('Step 5 completed: Company name extraction', companyNameData);
+      }
+
+      // Refresh experiments list
+      await loadExperiments();
+      
+      console.log('Complete extraction pipeline finished successfully');
+      
+    } catch (err) {
+      console.error('Error running complete extraction pipeline:', err);
+      setError(err.message || 'Failed to run complete extraction pipeline');
+    }
+  };
+
   const loadExperiments = async () => {
     try {
       const user = JSON.parse(localStorage.getItem('user'));
@@ -1372,11 +1458,14 @@ const DojoManagement = () => {
               </Paper>
             )}
             
-            {/* Step 3: Extraction Testing */}
+            {/* Step 3-5: Complete Extraction Pipeline */}
             {extractionSample.length > 0 && (
               <Paper sx={{ p: 3, mb: 3, bgcolor: 'grey.50' }}>
                 <Typography variant="h6" gutterBottom>
-                  Step 3: Company Offering Extraction
+                  Steps 3-5: Complete Extraction Pipeline
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  This will run: (3) Company Offering Extraction → (4) Classification → (5) Company Name Extraction
                 </Typography>
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={6}>
@@ -1422,15 +1511,15 @@ const DojoManagement = () => {
                       <Button 
                         variant="contained" 
                         color="secondary"
-                        onClick={runExtractionTest}
+                        onClick={runCompleteExtractionPipeline}
                         disabled={!selectedTextModel || !extractionPrompt}
                         startIcon={<DataUsage />}
                       >
-                        Run Extraction Test
+                        Run Complete Extraction Pipeline
                       </Button>
                       
                       <Alert severity="info">
-                        This will test company offering extraction on your sample using the selected model and prompt. Results will be saved for comparison.
+                        This will run the complete pipeline: offering extraction, classification, and company name extraction. All results will be saved for comparison.
                       </Alert>
                     </Box>
                   </Grid>
@@ -1576,18 +1665,6 @@ const DojoManagement = () => {
                                 >
                                   View Details
                                 </Button>
-                                {!experiment.classification_completed_at && (
-                                  <Button 
-                                    size="small" 
-                                    variant="contained"
-                                    color="secondary"
-                                    onClick={() => runClassificationEnrichment(experiment.id)}
-                                    disabled={classificationLoading}
-                                    sx={{ minWidth: 'auto', px: 1 }}
-                                  >
-                                    {classificationLoading ? '...' : 'Classify'}
-                                  </Button>
-                                )}
                               </Box>
                             </TableCell>
                           </TableRow>
