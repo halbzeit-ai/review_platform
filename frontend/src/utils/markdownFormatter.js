@@ -118,16 +118,14 @@ export const formatMarkdownText = (text) => {
     }
     
     // Handle bullet points and dashes (including indented ones)
-    if (line.startsWith('*') || line.startsWith('-') || line.startsWith('•') || 
-        /^\s+[-*•]\s/.test(lines[i])) {
+    // Only match actual bullet points (* followed by space), not bold text (**bold**)
+    if (line.match(/^[-*•]\s/) || /^\s+[-*•]\s/.test(lines[i])) {
       const listItems = [];
       let j = i;
       
       // Collect consecutive bullet items (including nested ones)
       while (j < lines.length && lines[j].trim() && 
-             (lines[j].trim().startsWith('*') || 
-              lines[j].trim().startsWith('-') || 
-              lines[j].trim().startsWith('•') ||
+             (lines[j].trim().match(/^[-*•]\s/) ||
               /^\s+[-*•]\s/.test(lines[j]) ||
               (j > i && lines[j].startsWith('  ') && !lines[j].trim().startsWith('#') && !lines[j].trim().match(/^\d+\.\s/)))) {
         if (lines[j].trim()) {
