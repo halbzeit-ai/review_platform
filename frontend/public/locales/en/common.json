@@ -58,7 +58,8 @@
     "edit": "Edit",
     "delete": "Delete",
     "upload": "Upload",
-    "download": "Download"
+    "download": "Download",
+    "back": "Back"
   },
   "loading": "Loading..."
 }

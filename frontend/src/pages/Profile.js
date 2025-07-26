@@ -15,12 +15,15 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  Breadcrumbs,
+  Link
 } from '@mui/material';
 import {
   Person as PersonIcon,
   Save as SaveIcon,
-  AccountCircle as AccountCircleIcon
+  AccountCircle as AccountCircleIcon,
+  ArrowBack as ArrowBackIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -57,6 +60,48 @@ const Profile = () => {
   useEffect(() => {
     loadProfile();
   }, []);
+
+  // Helper function to get user's dashboard path
+  const getDashboardPath = () => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    if (user.role === 'gp') {
+      return '/dashboard/gp';
+    } else if (user.role === 'startup') {
+      // Generate company ID using same logic as backend
+      const getCompanyId = () => {
+        if (user?.companyName) {
+          // Convert company name to a URL-safe slug
+          return user.companyName.toLowerCase().replace(' ', '-').replace(/[^a-z0-9-]/g, '');
+        }
+        // Fallback to email prefix if company name is not available
+        return user?.email?.split('@')[0] || 'unknown';
+      };
+      
+      const companyId = getCompanyId();
+      return `/project/${companyId}`;
+    }
+    
+    // Fallback to generic dashboard redirect
+    return '/dashboard';
+  };
+
+  // Helper function to get dashboard label
+  const getDashboardLabel = () => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    if (user.role === 'gp') {
+      return t('common:navigation.dashboard');
+    } else if (user.role === 'startup') {
+      return t('dashboard:project.title');
+    }
+    
+    return t('common:navigation.dashboard');
+  };
+
+  const handleBackToDashboard = () => {
+    navigate(getDashboardPath());
+  };
 
   const loadProfile = async () => {
     try {
@@ -161,8 +206,31 @@ const Profile = () => {
 
   return (
     <Box sx={{ p: 3, maxWidth: 800, mx: 'auto' }}>
-      {/* Header */}
+      {/* Breadcrumbs */}
+      <Breadcrumbs sx={{ mb: 2 }}>
+        <Link 
+          component="button" 
+          variant="body2" 
+          onClick={handleBackToDashboard}
+          sx={{ textDecoration: 'none' }}
+        >
+          {getDashboardLabel()}
+        </Link>
+        <Typography variant="body2" color="text.primary">
+          {t('common:navigation.profile')}
+        </Typography>
+      </Breadcrumbs>
+
+      {/* Header with Back Button */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={handleBackToDashboard}
+          sx={{ mr: 2 }}
+          variant="outlined"
+        >
+          {t('common:actions.back')}
+        </Button>
         <PersonIcon sx={{ mr: 2, fontSize: 32, color: 'primary.main' }} />
         <Typography variant="h4">
           {t('common:navigation.profile')}

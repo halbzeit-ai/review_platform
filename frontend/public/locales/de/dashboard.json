@@ -111,6 +111,7 @@
     }
   },
   "project": {
+    "title": "Projekt Dashboard",
     "tabs": {
       "overview": "Übersicht",
       "allDecks": "Alle Decks",

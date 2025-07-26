@@ -35,6 +35,9 @@ function Navigation() {
           </>
         ) : (
           <>
+            <Button color="inherit" onClick={() => navigate('/dashboard')}>
+              {t('navigation.dashboard')}
+            </Button>
             <Button color="inherit" onClick={() => navigate('/profile')}>
               {t('navigation.profile')}
             </Button>

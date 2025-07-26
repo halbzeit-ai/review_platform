@@ -58,7 +58,8 @@
     "edit": "Bearbeiten",
     "delete": "Löschen",
     "upload": "Hochladen",
-    "download": "Herunterladen"
+    "download": "Herunterladen",
+    "back": "Zurück"
   },
   "loading": "Laden..."
 }
