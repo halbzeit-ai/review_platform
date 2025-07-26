@@ -5,7 +5,8 @@
   },
   "tabs": {
     "trainingFiles": "Trainingsdateien",
-    "extractionLab": "Extraktions-Testlabor"
+    "extractionLab": "Extraktions-Testlabor",
+    "extractionTestingLab": "Extraktions-Testlabor"
   },
   "fileManagement": {
     "uploadFile": "Datei hochladen",
@@ -15,7 +16,13 @@
     "deleteFile": "Datei löschen",
     "confirmDelete": "Sind Sie sicher, dass Sie diese Datei löschen möchten?",
     "fileDeleted": "Datei erfolgreich gelöscht",
-    "noFiles": "Noch keine Dateien hochgeladen"
+    "noFiles": "Noch keine Dateien hochgeladen",
+    "uploadTrainingData": "Trainingsdaten hochladen",
+    "selectZipFile": "ZIP-Datei auswählen",
+    "filename": "Dateiname",
+    "startupName": "Startup-Name",
+    "uploaded": "Hochgeladen",
+    "noFilesUploaded": "Noch keine Dateien hochgeladen"
   },
   "models": {
     "visionModel": "Vision-Modell",
@@ -23,14 +30,17 @@
     "selectModel": "Modell auswählen",
     "modelStatus": "Modell-Status",
     "availableModels": "Verfügbare Modelle",
-    "noModelsAvailable": "Keine Modelle verfügbar"
+    "noModelsAvailable": "Keine Modelle verfügbar",
+    "loadingModels": "Lade Modelle..."
   },
   "prompts": {
     "visualAnalysis": "Visuelle Analyse-Eingabeaufforderung",
     "extraction": "Extraktions-Eingabeaufforderung",
     "loadingFromDb": "Lade aktuelle Eingabeaufforderung aus der Datenbank...",
     "promptUpdated": "Eingabeaufforderung erfolgreich aktualisiert",
-    "promptError": "Fehler beim Aktualisieren der Eingabeaufforderung"
+    "promptError": "Fehler beim Aktualisieren der Eingabeaufforderung",
+    "visualAnalysisPrompt": "Visuelle Analyse-Eingabeaufforderung",
+    "loadingPrompt": "Lade Eingabeaufforderung..."
   },
   "extraction": {
     "sampleOverview": "Stichproben-Übersicht:",
@@ -50,7 +60,9 @@
     "modelUsed": "Verwendetes Modell",
     "createdAt": "Erstellt am",
     "results": "Ergebnisse",
-    "detailedResults": "Detaillierte Ergebnisse"
+    "detailedResults": "Detaillierte Ergebnisse",
+    "runningAnalysis": "Führe Analyse durch...",
+    "runVisualAnalysis": "Visuelle Analyse ausführen"
   },
   "status": {
     "classified": "Klassifiziert",
@@ -60,7 +72,11 @@
     "pending": "Ausstehend",
     "completed": "Abgeschlossen",
     "processing": "Verarbeitung",
-    "uploaded": "Hochgeladen"
+    "uploaded": "Hochgeladen",
+    "title": "Status",
+    "uploading": "Lade hoch {{progress}}%",
+    "uploadingShort": "Lade hoch...",
+    "processingFiles": "Verarbeite Dateien..."
   },
   "time": {
     "moreThan24h": "Mehr als 24h verbleibend",
@@ -86,7 +102,9 @@
     "edit": "Bearbeiten",
     "delete": "Löschen",
     "cancel": "Abbrechen",
-    "confirm": "Bestätigen"
+    "confirm": "Bestätigen",
+    "title": "Aktionen",
+    "cancelUpload": "Upload abbrechen"
   },
   "messages": {
     "loadingFiles": "Lade Dateien...",
@@ -95,6 +113,7 @@
     "gpuStatus": "GPU-Status",
     "connected": "Verbunden",
     "disconnected": "Getrennt",
-    "error": "Fehler"
+    "error": "Fehler",
+    "uploadCancelled": "Upload abgebrochen"
   }
 }

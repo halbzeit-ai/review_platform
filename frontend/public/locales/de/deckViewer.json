@@ -19,10 +19,12 @@
   },
   "slideInfo": {
     "slide": "Folie",
+    "slideNumber": "Folie {{number}}",
+    "slideAlt": "Folie {{number}}",
     "of": "von",
     "company": "Unternehmen",
     "analyzed": "KI-analysiert",
-    "slideCount": "{count} Folien"
+    "slideCount": "{{count}} Folien"
   },
   "messages": {
     "loading": "Lade Deck-Analyse...",

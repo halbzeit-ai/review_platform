@@ -5,7 +5,8 @@
   },
   "tabs": {
     "trainingFiles": "Training Files",
-    "extractionLab": "Extraction Testing Lab"
+    "extractionLab": "Extraction Testing Lab",
+    "extractionTestingLab": "Extraction Testing Lab"
   },
   "fileManagement": {
     "uploadFile": "Upload File",
@@ -15,7 +16,13 @@
     "deleteFile": "Delete File",
     "confirmDelete": "Are you sure you want to delete this file?",
     "fileDeleted": "File deleted successfully",
-    "noFiles": "No files uploaded yet"
+    "noFiles": "No files uploaded yet",
+    "uploadTrainingData": "Upload Training Data",
+    "selectZipFile": "Select ZIP File",
+    "filename": "Filename",
+    "startupName": "Startup Name",
+    "uploaded": "Uploaded",
+    "noFilesUploaded": "No files uploaded yet"
   },
   "models": {
     "visionModel": "Vision Model",
@@ -23,14 +30,17 @@
     "selectModel": "Select Model",
     "modelStatus": "Model Status",
     "availableModels": "Available Models",
-    "noModelsAvailable": "No models available"
+    "noModelsAvailable": "No models available",
+    "loadingModels": "Loading models..."
   },
   "prompts": {
     "visualAnalysis": "Visual Analysis Prompt",
     "extraction": "Extraction Prompt",
     "loadingFromDb": "Loading actual prompt from database...",
     "promptUpdated": "Prompt updated successfully",
-    "promptError": "Error updating prompt"
+    "promptError": "Error updating prompt",
+    "visualAnalysisPrompt": "Visual Analysis Prompt",
+    "loadingPrompt": "Loading prompt..."
   },
   "extraction": {
     "sampleOverview": "Sample Overview:",
@@ -50,7 +60,9 @@
     "modelUsed": "Model Used",
     "createdAt": "Created At",
     "results": "Results",
-    "detailedResults": "Detailed Results"
+    "detailedResults": "Detailed Results",
+    "runningAnalysis": "Running Analysis...",
+    "runVisualAnalysis": "Run Visual Analysis"
   },
   "status": {
     "classified": "Classified",
@@ -60,7 +72,11 @@
     "pending": "Pending",
     "completed": "Completed",
     "processing": "Processing",
-    "uploaded": "Uploaded"
+    "uploaded": "Uploaded",
+    "title": "Status",
+    "uploading": "Uploading {{progress}}%",
+    "uploadingShort": "Uploading...",
+    "processingFiles": "Processing files..."
   },
   "time": {
     "moreThan24h": "More than 24h remaining",
@@ -86,7 +102,9 @@
     "edit": "Edit",
     "delete": "Delete",
     "cancel": "Cancel",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "title": "Actions",
+    "cancelUpload": "Cancel Upload"
   },
   "messages": {
     "loadingFiles": "Loading files...",
@@ -95,6 +113,7 @@
     "gpuStatus": "GPU Status",
     "connected": "Connected",
     "disconnected": "Disconnected",
-    "error": "Error"
+    "error": "Error",
+    "uploadCancelled": "Upload cancelled"
   }
 }

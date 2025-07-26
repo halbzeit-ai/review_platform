@@ -19,10 +19,12 @@
   },
   "slideInfo": {
     "slide": "Slide",
+    "slideNumber": "Slide {{number}}",
+    "slideAlt": "Slide {{number}}",
     "of": "of",
     "company": "Company",
     "analyzed": "AI Analyzed",
-    "slideCount": "{count} slides"
+    "slideCount": "{{count}} slides"
   },
   "messages": {
     "loading": "Loading deck analysis...",
