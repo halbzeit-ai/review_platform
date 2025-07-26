@@ -1174,19 +1174,26 @@ class HealthcareTemplateAnalyzer:
             
             # Try to extract numeric score from the response
             try:
-                # Handle various formats like "**2**", "2", "Score: 2", etc.
-                # First try to find a number in markdown bold format
-                bold_match = re.search(r'\*\*(\d+)\*\*', score_text)
-                if bold_match:
+                # Handle various formats in priority order to avoid conflicts
+                
+                # 1. First try to find "Score: X" pattern (most reliable)
+                score_pattern_match = re.search(r'[Ss]core:?\s*(\d+)', score_text)
+                if score_pattern_match:
+                    score = int(score_pattern_match.group(1))
+                
+                # 2. Try to find a number in markdown bold format
+                elif re.search(r'\*\*(\d+)\*\*', score_text):
+                    bold_match = re.search(r'\*\*(\d+)\*\*', score_text)
                     score = int(bold_match.group(1))
+                
+                # 3. Look for standalone number at end of text (common format)
+                elif re.search(r'\b(\d+)\s*$', score_text.strip()):
+                    end_number_match = re.search(r'\b(\d+)\s*$', score_text.strip())
+                    score = int(end_number_match.group(1))
+                
                 else:
-                    # Try to find any digit in the response
-                    number_match = re.search(r'\d+', score_text)
-                    if number_match:
-                        score = int(number_match.group())
-                    else:
-                        # Fallback to original parsing
-                        score = int(score_text.split()[0])
+                    # 4. Fallback to original parsing (first word)
+                    score = int(score_text.split()[0])
                 
                 return max(0, min(7, score)), score_text
             except (ValueError, IndexError):
