@@ -61,7 +61,7 @@ const ProjectDashboard = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [projectJourney, setProjectJourney] = useState(null);
   const [journeyLoading, setJourneyLoading] = useState(false);
-  const [expandedStageId, setExpandedStageId] = useState(null);
+  const [hoveredStageId, setHoveredStageId] = useState(null);
   
   const [breadcrumbs, setBreadcrumbs] = useState([
     { label: t('navigation.dashboard'), path: '/dashboard' },
@@ -176,8 +176,12 @@ const ProjectDashboard = () => {
     return activeStage ? activeStage.stage_order - 1 : 0;
   };
 
-  const handleStageClick = (stage) => {
-    setExpandedStageId(expandedStageId === stage.id ? null : stage.id);
+  const handleStageHover = (stage) => {
+    setHoveredStageId(stage.id);
+  };
+
+  const handleStageLeave = () => {
+    setHoveredStageId(null);
   };
 
   const getStageDescription = (stageCode) => {
@@ -460,14 +464,17 @@ const ProjectDashboard = () => {
           Funding Process Steps
         </Typography>
         <Stepper 
-          activeStep={getActiveStep()} 
           orientation="vertical"
           sx={{ mt: 2 }}
         >
           {projectJourney.stages.map((stage) => (
-            <Step key={stage.id}>
+            <Step key={stage.id} active={true}>
               <StepLabel>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box 
+                  sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                  onMouseEnter={() => handleStageHover(stage)}
+                  onMouseLeave={handleStageLeave}
+                >
                   <Typography 
                     variant="body1" 
                     fontWeight="medium"
@@ -475,7 +482,6 @@ const ProjectDashboard = () => {
                       cursor: 'pointer',
                       '&:hover': { color: 'primary.main', textDecoration: 'underline' }
                     }}
-                    onClick={() => handleStageClick(stage)}
                   >
                     {stage.stage_name}
                   </Typography>
@@ -500,8 +506,8 @@ const ProjectDashboard = () => {
               </StepLabel>
               <StepContent>
                 <Box sx={{ pb: 2 }}>
-                  {/* Show stage description when expanded */}
-                  {expandedStageId === stage.id && (
+                  {/* Show stage description on hover */}
+                  {hoveredStageId === stage.id && (
                     <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1, border: '1px solid', borderColor: 'grey.200' }}>
                       <Typography variant="body2" sx={{ mb: 1 }}>
                         <strong>Stage {stage.stage_order} of 14</strong>
