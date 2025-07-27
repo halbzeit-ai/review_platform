@@ -92,14 +92,17 @@ class Project(Base):
     healthcare_sector_id = Column(Integer, nullable=True)  # Classification result
     company_offering = Column(Text, nullable=True)  # Description of what company offers
     project_metadata = Column(Text, nullable=True)  # JSON for additional project data
+    tags = Column(Text, nullable=True)  # JSON for project tags
+    is_test = Column(Boolean, default=False)  # Flag for test/dojo data
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
     documents = relationship("ProjectDocument", back_populates="project")
-    stages = relationship("ProjectStage", back_populates="project")
+    stages = relationship("ProjectStage", back_populates="project", foreign_keys="ProjectStage.project_id")
     interactions = relationship("ProjectInteraction", back_populates="project")
+    current_stage = relationship("ProjectStage", foreign_keys=[current_stage_id], post_update=True)
 
 class ProjectStage(Base):
     __tablename__ = "project_stages"
