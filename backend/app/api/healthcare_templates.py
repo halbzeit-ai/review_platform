@@ -388,6 +388,70 @@ async def get_my_customizations(
             detail="Failed to retrieve customizations"
         )
 
+@router.delete("/templates/{template_id}")
+async def delete_template(
+    template_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Soft delete a template (GP only)"""
+    try:
+        # Check if user is GP
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only GPs can delete templates"
+            )
+        
+        # Check if template exists and is active
+        template_check_query = text("""
+        SELECT id, name, is_default 
+        FROM analysis_templates 
+        WHERE id = :template_id AND is_active = TRUE
+        """)
+        
+        template_result = db.execute(template_check_query, {"template_id": template_id}).fetchone()
+        
+        if not template_result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Template {template_id} not found or already deleted"
+            )
+        
+        # Prevent deletion of default templates
+        if template_result[2]:  # is_default
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot delete default templates"
+            )
+        
+        # Perform soft delete
+        soft_delete_query = text("""
+        UPDATE analysis_templates 
+        SET is_active = FALSE 
+        WHERE id = :template_id
+        """)
+        
+        db.execute(soft_delete_query, {"template_id": template_id})
+        db.commit()
+        
+        logger.info(f"Template {template_id} ({template_result[1]}) soft deleted by GP {current_user.email}")
+        
+        return {
+            "message": f"Template '{template_result[1]}' deleted successfully",
+            "template_id": template_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting template {template_id}: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete template"
+        )
+
 @router.get("/performance-metrics", response_model=Dict[str, Any])
 async def get_performance_metrics(
     db: Session = Depends(get_db),

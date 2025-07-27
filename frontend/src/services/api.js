@@ -83,6 +83,9 @@ export const getMyCustomizations = () =>
 export const getPerformanceMetrics = () =>
   api.get('/healthcare-templates/performance-metrics');
 
+export const deleteTemplate = (templateId) =>
+  api.delete(`/healthcare-templates/templates/${templateId}`);
+
 // Pipeline Configuration API
 export const getPipelinePrompts = () =>
   api.get('/pipeline/prompts');

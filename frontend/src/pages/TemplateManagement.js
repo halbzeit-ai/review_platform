@@ -56,7 +56,8 @@ import {
   getPipelinePrompts,
   getPipelinePromptByStage,
   updatePipelinePrompt,
-  resetPipelinePrompt
+  resetPipelinePrompt,
+  deleteTemplate
 } from '../services/api';
 
 const TemplateManagement = () => {
@@ -261,18 +262,23 @@ const TemplateManagement = () => {
     if (!templateToDelete) return;
     
     try {
-      // TODO: Add API call to delete template
-      // await deleteTemplate(templateToDelete.id);
+      // Call API to delete template
+      await deleteTemplate(templateToDelete.id);
       
-      // For now, just close the dialog and show success
+      // Close dialog and clear state
       setDeleteDialogOpen(false);
       setTemplateToDelete(null);
       
-      // Refresh templates list
+      // Refresh templates list to reflect the deletion
       await loadInitialData();
+      
+      // Clear any existing errors
+      setError(null);
     } catch (err) {
       console.error('Error deleting template:', err);
       setError(err.response?.data?.detail || err.message || 'Failed to delete template');
+      setDeleteDialogOpen(false);
+      setTemplateToDelete(null);
     }
   };
 
