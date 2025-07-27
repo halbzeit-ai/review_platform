@@ -20,7 +20,11 @@ import {
   Step,
   StepLabel,
   StepContent,
-  LinearProgress
+  LinearProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import {
   Visibility as VisibilityIcon,
@@ -30,7 +34,8 @@ import {
   Timeline as TimelineIcon,
   CheckCircle,
   RadioButtonUnchecked,
-  Schedule
+  Schedule,
+  Info as InfoIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -60,6 +65,7 @@ const ProjectDashboard = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [projectJourney, setProjectJourney] = useState(null);
   const [journeyLoading, setJourneyLoading] = useState(false);
+  const [selectedStageInfo, setSelectedStageInfo] = useState(null);
   
   const [breadcrumbs, setBreadcrumbs] = useState([
     { label: t('navigation.dashboard'), path: '/dashboard' },
@@ -172,6 +178,48 @@ const ProjectDashboard = () => {
     if (!projectJourney?.stages) return 0;
     const activeStage = projectJourney.stages.find(stage => stage.status === 'active');
     return activeStage ? activeStage.stage_order - 1 : 0;
+  };
+
+  const handleStageClick = (stage) => {
+    setSelectedStageInfo(stage);
+  };
+
+  const closeStageInfo = () => {
+    setSelectedStageInfo(null);
+  };
+
+  const getStageDescription = (stageCode) => {
+    const descriptions = {
+      'deck_submission': 'You initially submit your deck and our AI will get the deal relevant data, analyse your startup according to our investment criteria. We will provide you with helpful feedback on your deck, the presentation of you company and the state of your business. You are then invited to answer questions, fill in details and also submit a new version of your deck.',
+      
+      'video_upload': 'As you can imagine, we are flooded with pitches and we simply cannot afford to meet every startup in person. To make the process easier for us and for you, we invite you to do a 5min video pitch recording you and possible co-founders to present your startup. A second video would then also demonstrate your product, software or any relevant information to for offering to the market. Again, we will analyse these videos using AI, but we will also watch them in person.',
+      
+      'gp_interview': 'Now it\'s time to get to know you in person and also you can ask your questions about the funding process, anything you want to know about HALBZEIT and the founders and hopefully, we get a personal touch here and an initial taste about you as founders feel in person. For most institutions, this is the most important step as it is very important to believe in the founders and their views on the world.',
+      
+      'kyc_verification': 'As a funding platform it is a legal obligation to verify that you are you and have an external proof of that. We are working with online verification services that will have a brief video interview with you asking you to show your ID and move your face to match it with the ID.',
+      
+      'due_diligence': 'Next, we need to look a bit deeper into your business plan, financial statements of the last couple of years, medical validity of your offering and so on. This is an important and legally obligatory step for us as funding platform as we have the obligation to deliver legit startups in whose success we as HALBZEIT can believe in.',
+      
+      'term_sheet': 'Once that is done, we can go on to negotiate terms of the investment. These are usually standard terms, but we may deviate when we are co-investing with other institutions. Further more, we need to discuss the current valuation of your company which has a direct effect on what share of your company our investors will get.',
+      
+      'publishing': 'Now we are able to "go public"! Your startup will be presented to the public and investors can view the investment opportunity. As part of this, we will publish a so-called KIIS (Key Investment Information Sheet) as this is a legal obligation again. It includes the investment terms in addition to your company\'s information.',
+      
+      'investor_commits': 'Investors are informed by us that there is a new investment opportunity, e.g. by our newsletter. They can also interact with you and comment on specific details of your offering, scientific background, reimbursement etc. They are asked for a financial commitment, e.g. 10.000€, we collect the commitments and you\'ll see how much is committed at any time.',
+      
+      'commit_complete': 'If you get enough committed capital: BINGO! Let\'s formalize the relationship, sign contracts and transfer the money.',
+      
+      'signing_vehicle': 'We are setting up a legal entity in which all investors are bundled, they get a share of that vehicle proportionate to the amount they are investing. This legal entity will become a shareholder in your company. In this way, you are not dealing with dozens of new investors but only one that will speak with one voice.',
+      
+      'signing_startup': 'We will sign the investment contract with you based on the term sheet we have negotiated earlier. We GPs do this as representing person in the role of the legal vehicle.',
+      
+      'funding_collection': 'The legal entity has a bank account, it will collect the money from the investors and keep it until the investment is formally registered here in Germany.',
+      
+      'funding_transfer': 'Once all money is there and legal obligations are met, the transfer of the money to your bank account is executed.',
+      
+      'round_closed': 'This is the final step: PARTY! From now on, the legal entity will receive monthly updates and reporting from you and will deliver this information to the investors. Again, this is a legal obligation.'
+    };
+    
+    return descriptions[stageCode] || 'No description available for this stage.';
   };
 
   const TabPanel = ({ children, value, index }) => (
@@ -399,49 +447,6 @@ const ProjectDashboard = () => {
           Funding Journey - {selectedProject.project_name}
         </Typography>
         
-        {/* Progress Overview */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={6} sm={3}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h3" color="primary">
-                {Math.round(projectJourney.completion_percentage)}%
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Complete
-              </Typography>
-            </Paper>
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h3" color="success.main">
-                {projectJourney.completed_stages}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Completed
-              </Typography>
-            </Paper>
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h3" color="primary">
-                {projectJourney.active_stages}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Active
-              </Typography>
-            </Paper>
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <Paper sx={{ p: 2, textAlign: 'center' }}>
-              <Typography variant="h3" color="text.secondary">
-                {projectJourney.pending_stages}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Pending
-              </Typography>
-            </Paper>
-          </Grid>
-        </Grid>
         
         {/* Overall Progress Bar */}
         <Box sx={{ mb: 4 }}>
@@ -469,43 +474,45 @@ const ProjectDashboard = () => {
         >
           {projectJourney.stages.map((stage) => (
             <Step key={stage.id}>
-              <StepLabel 
-                optional={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
-                    <Chip 
-                      label={stage.status} 
-                      color={getStatusColor(stage.status)}
-                      size="small"
-                    />
-                    {stage.status === 'completed' && stage.completed_at && (
-                      <Typography variant="caption" color="text.secondary">
-                        Completed: {new Date(stage.completed_at).toLocaleDateString()}
-                      </Typography>
-                    )}
-                    {stage.status === 'active' && stage.started_at && (
-                      <Typography variant="caption" color="text.secondary">
-                        Started: {new Date(stage.started_at).toLocaleDateString()}
-                      </Typography>
-                    )}
-                  </Box>
-                }
-              >
-                <Typography variant="body1" fontWeight="medium">
-                  {stage.stage_name}
-                </Typography>
+              <StepLabel>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography 
+                    variant="body1" 
+                    fontWeight="medium"
+                    sx={{ 
+                      cursor: 'pointer',
+                      '&:hover': { color: 'primary.main', textDecoration: 'underline' }
+                    }}
+                    onClick={() => handleStageClick(stage)}
+                  >
+                    {stage.stage_name}
+                  </Typography>
+                  <Chip 
+                    label={stage.status} 
+                    color={getStatusColor(stage.status)}
+                    size="small"
+                  />
+                  <InfoIcon 
+                    fontSize="small" 
+                    sx={{ color: 'action.active', cursor: 'pointer' }}
+                    onClick={() => handleStageClick(stage)}
+                  />
+                </Box>
+                <Box sx={{ mt: 1 }}>
+                  {stage.status === 'completed' && stage.completed_at && (
+                    <Typography variant="caption" color="text.secondary">
+                      Completed: {new Date(stage.completed_at).toLocaleDateString()}
+                    </Typography>
+                  )}
+                  {stage.status === 'active' && stage.started_at && (
+                    <Typography variant="caption" color="text.secondary">
+                      Started: {new Date(stage.started_at).toLocaleDateString()}
+                    </Typography>
+                  )}
+                </Box>
               </StepLabel>
               <StepContent>
                 <Box sx={{ pb: 2 }}>
-                  {/* Show estimated completion if pending/active */}
-                  {stage.estimated_completion && ['pending', 'active'].includes(stage.status) && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Schedule fontSize="small" color="action" />
-                      <Typography variant="caption" color="text.secondary">
-                        Estimated completion: {new Date(stage.estimated_completion).toLocaleDateString()}
-                      </Typography>
-                    </Box>
-                  )}
-
                   {/* Show completion notes if available */}
                   {stage.stage_metadata?.completion_notes && (
                     <Alert severity="info" sx={{ mt: 1 }}>
@@ -519,6 +526,44 @@ const ProjectDashboard = () => {
             </Step>
           ))}
         </Stepper>
+
+        {/* Stage Information Dialog */}
+        <Dialog 
+          open={!!selectedStageInfo} 
+          onClose={closeStageInfo}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>
+            {selectedStageInfo?.stage_name}
+            <Chip 
+              label={selectedStageInfo?.status} 
+              color={getStatusColor(selectedStageInfo?.status)}
+              size="small"
+              sx={{ ml: 2 }}
+            />
+          </DialogTitle>
+          <DialogContent>
+            <Typography variant="body1" paragraph>
+              <strong>Stage {selectedStageInfo?.stage_order} of 14</strong>
+            </Typography>
+            
+            <Typography variant="body2" paragraph>
+              {getStageDescription(selectedStageInfo?.stage_code || selectedStageInfo?.stage_name?.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''))}
+            </Typography>
+            
+            {selectedStageInfo?.stage_metadata?.completion_notes && (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                <Typography variant="body2">
+                  <strong>Notes:</strong> {selectedStageInfo.stage_metadata.completion_notes}
+                </Typography>
+              </Alert>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeStageInfo}>Close</Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     );
   };
