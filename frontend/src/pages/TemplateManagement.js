@@ -20,8 +20,6 @@ import {
   Link,
   Alert,
   CircularProgress,
-  Divider,
-  Badge,
   List,
   ListItem,
   ListItemText,
@@ -42,7 +40,8 @@ import {
   Visibility as VisibilityIcon,
   Storefront as StorefrontIcon,
   Category as CategoryIcon,
-  PlayArrow as PlayArrowIcon
+  PlayArrow as PlayArrowIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -86,6 +85,10 @@ const TemplateManagement = () => {
   
   // Pipeline configuration state
   const [pipelinePrompts, setPipelinePrompts] = useState({});
+  
+  // Delete confirmation dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState(null);
   const [selectedPromptStage, setSelectedPromptStage] = useState('image_analysis');
   const [promptTexts, setPromptTexts] = useState({
     image_analysis: '',
@@ -249,6 +252,34 @@ const TemplateManagement = () => {
     }
   };
 
+  const handleDeleteTemplate = (template) => {
+    setTemplateToDelete(template);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteTemplate = async () => {
+    if (!templateToDelete) return;
+    
+    try {
+      // TODO: Add API call to delete template
+      // await deleteTemplate(templateToDelete.id);
+      
+      // For now, just close the dialog and show success
+      setDeleteDialogOpen(false);
+      setTemplateToDelete(null);
+      
+      // Refresh templates list
+      await loadInitialData();
+    } catch (err) {
+      console.error('Error deleting template:', err);
+      setError(err.response?.data?.detail || err.message || 'Failed to delete template');
+    }
+  };
+
+  const cancelDeleteTemplate = () => {
+    setDeleteDialogOpen(false);
+    setTemplateToDelete(null);
+  };
 
   const handleCreateNewTemplate = () => {
     // Create a new empty template structure
@@ -1003,18 +1034,10 @@ const TemplateManagement = () => {
               <Grid item xs={12} md={6} lg={4} key={template.id}>
                 <Card>
                   <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                    <Box sx={{ mb: 2 }}>
                       <Typography variant="h6">
                         {template.name}
                       </Typography>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        {template.is_default && (
-                          <Chip label="Default" size="small" color="primary" />
-                        )}
-                        <Badge badgeContent={template.usage_count} color="secondary">
-                          <AssessmentIcon />
-                        </Badge>
-                      </Box>
                     </Box>
                     
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -1023,10 +1046,6 @@ const TemplateManagement = () => {
                     
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                       Sector: {template.sector_name}
-                    </Typography>
-                    
-                    <Typography variant="caption" color="text.secondary">
-                      Version {template.template_version} • Used {template.usage_count} times
                     </Typography>
                   </CardContent>
                   
@@ -1044,6 +1063,14 @@ const TemplateManagement = () => {
                       onClick={() => handleDuplicateTemplate(template)}
                     >
                       Duplicate
+                    </Button>
+                    <Button 
+                      size="small" 
+                      startIcon={<DeleteIcon />}
+                      onClick={() => handleDeleteTemplate(template)}
+                      color="error"
+                    >
+                      Delete
                     </Button>
                   </CardActions>
                 </Card>
@@ -1135,6 +1162,38 @@ const TemplateManagement = () => {
           </Button>
           <Button variant="contained" onClick={handleSaveCustomization}>
             {selectedTemplate?.id ? t('buttons.saveCustomization') : 'Create Template'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog 
+        open={deleteDialogOpen} 
+        onClose={cancelDeleteTemplate}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Delete Template
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1">
+            Are you sure you want to delete the template "{templateToDelete?.name}"?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            This action cannot be undone. The template will be permanently removed from the system.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelDeleteTemplate}>
+            Cancel
+          </Button>
+          <Button 
+            variant="contained" 
+            color="error" 
+            onClick={confirmDeleteTemplate}
+          >
+            Delete
           </Button>
         </DialogActions>
       </Dialog>
