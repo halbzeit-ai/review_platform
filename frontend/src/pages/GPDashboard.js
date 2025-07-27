@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, Box, Snackbar, Alert, Tabs, Tab, Divider, LinearProgress, Chip, Dialog, DialogContent, DialogTitle, Select, MenuItem, FormControl, InputLabel, TextField } from '@mui/material';
-import { Settings, Assignment, CleaningServices, Storage, People } from '@mui/icons-material';
+import { Settings, Assignment, Storage, People } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { getPitchDecks, cleanupOrphanedDecks, getPerformanceMetrics, getAllProjects, getProjectJourney, updateStageStatus } from '../services/api';
+import { getPerformanceMetrics, getAllProjects, getProjectJourney, updateStageStatus } from '../services/api';
 
 function GPDashboard() {
   const { t } = useTranslation('dashboard');
   const navigate = useNavigate();
-  const [pitchDecks, setPitchDecks] = useState([]);
-  const [loadingDecks, setLoadingDecks] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [cleanupLoading, setCleanupLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [performanceMetrics, setPerformanceMetrics] = useState(null);
   const [projects, setProjects] = useState([]);
@@ -23,16 +20,6 @@ function GPDashboard() {
   const [stageUpdateDialog, setStageUpdateDialog] = useState({ open: false, stage: null, projectId: null });
 
 
-  const fetchPitchDecks = async () => {
-    try {
-      const response = await getPitchDecks();
-      setPitchDecks(response.data.decks);
-    } catch (error) {
-      console.error('Error fetching pitch decks:', error);
-    } finally {
-      setLoadingDecks(false);
-    }
-  };
 
   const fetchPerformanceMetrics = async () => {
     try {
@@ -102,35 +89,8 @@ function GPDashboard() {
     }
   };
 
-  const handleCleanupOrphanedDecks = async () => {
-    setCleanupLoading(true);
-    try {
-      const response = await cleanupOrphanedDecks();
-      
-      setSnackbar({
-        open: true,
-        message: response.data.message || t('gp.adminActions.cleanupSuccess'),
-        severity: 'success'
-      });
-      
-      // Refresh the decks list
-      await fetchPitchDecks();
-      
-    } catch (error) {
-      console.error('Error cleaning up orphaned decks:', error);
-      
-      setSnackbar({
-        open: true,
-        message: `${t('gp.adminActions.cleanupError')}: ${error.response?.data?.detail || error.message}`,
-        severity: 'error'
-      });
-    } finally {
-      setCleanupLoading(false);
-    }
-  };
 
   useEffect(() => {
-    fetchPitchDecks();
     fetchPerformanceMetrics();
     fetchProjects();
   }, [includeTestData]);
@@ -541,65 +501,23 @@ function GPDashboard() {
           >
             {t('gp.adminActions.modelConfiguration')}
           </Button>
-          <Button
-            variant="outlined"
-            startIcon={<CleaningServices />}
-            onClick={handleCleanupOrphanedDecks}
-            disabled={cleanupLoading}
-          >
-            {cleanupLoading ? t('gp.adminActions.cleanupInProgress') : t('gp.adminActions.cleanupOrphanedData')}
-          </Button>
         </Box>
       </Box>
       <Paper sx={{ mt: 3 }}>
         <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ borderBottom: 1, borderColor: 'divider', px: 3, pt: 2 }}>
-          <Tab label={t('gp.reviewsSection.title')} />
-          <Tab label="Projects & Funding" />
           <Tab label="Performance Metrics" />
+          <Tab label="Projects & Funding" />
         </Tabs>
 
         <TabPanel value={activeTab} index={0}>
           <Box sx={{ px: 3, pb: 3 }}>
-            {loadingDecks ? (
-              <CircularProgress />
-            ) : pitchDecks.length === 0 ? (
-              <Typography color="text.secondary">{t('gp.reviewsSection.noReviews')}</Typography>
-            ) : (
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>{t('gp.reviewsSection.columns.deck')}</TableCell>
-                      <TableCell>{t('gp.reviewsSection.columns.company')}</TableCell>
-                      <TableCell>{t('common:forms.email')}</TableCell>
-                      <TableCell>{t('gp.reviewsSection.columns.date')}</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {pitchDecks.map((deck) => (
-                      <TableRow key={deck.id}>
-                        <TableCell>{deck.file_name}</TableCell>
-                        <TableCell>{deck.user?.company_name || 'N/A'}</TableCell>
-                        <TableCell>{deck.user?.email || 'N/A'}</TableCell>
-                        <TableCell>{new Date(deck.created_at).toLocaleDateString()}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
+            <PerformanceMetricsPanel />
           </Box>
         </TabPanel>
 
         <TabPanel value={activeTab} index={1}>
           <Box sx={{ px: 3, pb: 3 }}>
             <ProjectsManagementPanel />
-          </Box>
-        </TabPanel>
-
-        <TabPanel value={activeTab} index={2}>
-          <Box sx={{ px: 3, pb: 3 }}>
-            <PerformanceMetricsPanel />
           </Box>
         </TabPanel>
       </Paper>
