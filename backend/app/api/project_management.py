@@ -125,6 +125,7 @@ def check_project_access(user: User, project_id: int, db: Session) -> bool:
 @router.get("/companies/{company_id}/projects", response_model=List[ProjectResponse])
 async def get_company_projects(
     company_id: str,
+    include_test_data: bool = False,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -137,8 +138,8 @@ async def get_company_projects(
                 detail="You don't have access to this company's projects"
             )
         
-        # Get all projects for the company with counts
-        query = text("""
+        # Build query with optional test data filtering
+        base_query = """
         SELECT p.id, p.company_id, p.project_name, p.funding_round, p.current_stage_id,
                p.funding_sought, p.healthcare_sector_id, p.company_offering, 
                p.project_metadata, p.is_active, p.created_at, p.updated_at,
@@ -148,11 +149,20 @@ async def get_company_projects(
         LEFT JOIN project_documents pd ON p.id = pd.project_id AND pd.is_active = TRUE
         LEFT JOIN project_interactions pi ON p.id = pi.project_id AND pi.status = 'active'
         WHERE p.company_id = :company_id AND p.is_active = TRUE
+        """
+        
+        # Add test data filtering for GPs
+        if current_user.role == "gp" and not include_test_data:
+            base_query += " AND (p.is_test = FALSE OR p.is_test IS NULL)"
+        
+        base_query += """
         GROUP BY p.id, p.company_id, p.project_name, p.funding_round, p.current_stage_id,
                  p.funding_sought, p.healthcare_sector_id, p.company_offering, 
                  p.project_metadata, p.is_active, p.created_at, p.updated_at
         ORDER BY p.created_at DESC
-        """)
+        """
+        
+        query = text(base_query)
         
         results = db.execute(query, {"company_id": company_id}).fetchall()
         
@@ -513,4 +523,79 @@ async def get_project_interactions(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve project interactions"
+        )
+
+@router.get("/all-projects", response_model=List[ProjectResponse])
+async def get_all_projects(
+    include_test_data: bool = False,
+    limit: int = 100,
+    offset: int = 0,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all projects (GP only) with optional test data filtering"""
+    try:
+        # Check if user is GP
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only GPs can view all projects"
+            )
+        
+        # Build query with test data filtering
+        base_query = """
+        SELECT p.id, p.company_id, p.project_name, p.funding_round, p.current_stage_id,
+               p.funding_sought, p.healthcare_sector_id, p.company_offering, 
+               p.project_metadata, p.is_active, p.created_at, p.updated_at,
+               COUNT(DISTINCT pd.id) as document_count,
+               COUNT(DISTINCT pi.id) as interaction_count
+        FROM projects p
+        LEFT JOIN project_documents pd ON p.id = pd.project_id AND pd.is_active = TRUE
+        LEFT JOIN project_interactions pi ON p.id = pi.project_id AND pi.status = 'active'
+        WHERE p.is_active = TRUE
+        """
+        
+        # Add test data filtering
+        if not include_test_data:
+            base_query += " AND (p.is_test = FALSE OR p.is_test IS NULL)"
+        
+        base_query += """
+        GROUP BY p.id, p.company_id, p.project_name, p.funding_round, p.current_stage_id,
+                 p.funding_sought, p.healthcare_sector_id, p.company_offering, 
+                 p.project_metadata, p.is_active, p.created_at, p.updated_at
+        ORDER BY p.updated_at DESC
+        LIMIT :limit OFFSET :offset
+        """
+        
+        query = text(base_query)
+        results = db.execute(query, {"limit": limit, "offset": offset}).fetchall()
+        
+        projects = []
+        for row in results:
+            projects.append(ProjectResponse(
+                id=row[0],
+                company_id=row[1],
+                project_name=row[2],
+                funding_round=row[3],
+                current_stage_id=row[4],
+                funding_sought=row[5],
+                healthcare_sector_id=row[6],
+                company_offering=row[7],
+                project_metadata=json.loads(row[8]) if row[8] else {},
+                is_active=row[9],
+                created_at=row[10],
+                updated_at=row[11],
+                document_count=row[12] or 0,
+                interaction_count=row[13] or 0
+            ))
+        
+        return projects
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting all projects: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve all projects"
         )
