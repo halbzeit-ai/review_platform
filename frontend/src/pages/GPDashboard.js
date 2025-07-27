@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, Box, Snackbar, Alert, Tabs, Tab, Divider, LinearProgress, Chip, Dialog, DialogContent, DialogTitle, Select, MenuItem, FormControl, InputLabel, TextField } from '@mui/material';
+import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, Box, Snackbar, Alert, Tabs, Tab, Divider, LinearProgress, Chip, Dialog, DialogContent, DialogTitle, Select, MenuItem, FormControl, InputLabel, TextField, Card, CardContent, CardMedia } from '@mui/material';
 import { Settings, Assignment, Storage, People } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -289,6 +289,123 @@ function GPDashboard() {
     </Box>
   );
 
+  // Gallery Panel Component
+  const GalleryPanel = () => {
+    // Parse project metadata to get classification info
+    const getClassificationInfo = (project) => {
+      try {
+        const metadata = JSON.parse(project.project_metadata || '{}');
+        return metadata.classification?.primary_sector || 'N/A';
+      } catch (e) {
+        return 'N/A';
+      }
+    };
+
+    // Get first document with pitch deck for thumbnail
+    const getDeckThumbnail = (project) => {
+      const pitchDeck = project.documents?.find(doc => doc.document_type === 'pitch_deck');
+      if (pitchDeck) {
+        // Return placeholder for now - will implement actual thumbnail endpoint later
+        return `/api/thumbnails/deck/${pitchDeck.id}/slide/1`;
+      }
+      return '/api/thumbnails/placeholder';
+    };
+
+    return (
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h6">
+            Project Gallery
+          </Typography>
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <InputLabel>Data Filter</InputLabel>
+            <Select
+              value={includeTestData ? 'all' : 'production'}
+              label="Data Filter"
+              onChange={(e) => setIncludeTestData(e.target.value === 'all')}
+            >
+              <MenuItem value="production">Production Only</MenuItem>
+              <MenuItem value="all">Include Test Data</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+        
+        {loadingProjects ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : projects.length === 0 ? (
+          <Typography color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+            No projects found
+          </Typography>
+        ) : (
+          <Grid container spacing={3}>
+            {projects.map((project) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={project.id}>
+                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                  {/* Deck Thumbnail */}
+                  <CardMedia
+                    component="img"
+                    height="160"
+                    image={getDeckThumbnail(project)}
+                    alt={`${project.company_id} pitch deck`}
+                    sx={{ 
+                      objectFit: 'cover',
+                      backgroundColor: 'grey.200'  // Fallback background
+                    }}
+                    onError={(e) => {
+                      // Fallback to placeholder if thumbnail fails
+                      e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE2MCIgdmlld0JveD0iMCAwIDMyMCAxNjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iMTYwIiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik0gMTYwIDgwIEwgMTQwIDcwIEwgMTQwIDkwIFoiIGZpbGw9IiM5RTlFOUUiLz4KPHN2Zz4K';
+                    }}
+                  />
+                  
+                  <CardContent sx={{ flexGrow: 1, p: 2 }}>
+                    {/* Company Name and Classification Row */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="h6" component="h3" sx={{ fontSize: '1rem', fontWeight: 600 }}>
+                        {project.company_id}
+                      </Typography>
+                      <Chip 
+                        label={getClassificationInfo(project)} 
+                        size="small" 
+                        variant="outlined"
+                        sx={{ fontSize: '0.75rem' }}
+                      />
+                    </Box>
+                    
+                    {/* Company Offering */}
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      sx={{ 
+                        mb: 2, 
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        minHeight: '3.6em' // Reserve space for 3 lines
+                      }}
+                    >
+                      {project.company_offering || 'No offering description available'}
+                    </Typography>
+                    
+                    {/* Funding Sought */}
+                    <Box sx={{ mt: 'auto' }}>
+                      <Typography variant="body2" color="primary" sx={{ fontWeight: 500 }}>
+                        Funding: {project.funding_sought || 'N/A'}
+                      </Typography>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        )}
+      </Box>
+    );
+  };
+
   // Stage Update Dialog Component
   const StageUpdateDialog = () => {
     const [newStatus, setNewStatus] = useState('');
@@ -507,6 +624,7 @@ function GPDashboard() {
         <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ borderBottom: 1, borderColor: 'divider', px: 3, pt: 2 }}>
           <Tab label="Performance Metrics" />
           <Tab label="Projects & Funding" />
+          <Tab label="Gallery" />
         </Tabs>
 
         <TabPanel value={activeTab} index={0}>
@@ -518,6 +636,12 @@ function GPDashboard() {
         <TabPanel value={activeTab} index={1}>
           <Box sx={{ px: 3, pb: 3 }}>
             <ProjectsManagementPanel />
+          </Box>
+        </TabPanel>
+
+        <TabPanel value={activeTab} index={2}>
+          <Box sx={{ px: 3, pb: 3 }}>
+            <GalleryPanel />
           </Box>
         </TabPanel>
       </Paper>
