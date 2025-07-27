@@ -160,6 +160,12 @@ const DojoManagement = () => {
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [templateProcessingStatus, setTemplateProcessingStatus] = useState('');
   const [lastExperimentId, setLastExperimentId] = useState(null);
+
+  // Helper function to check if visual analysis is effectively completed
+  const isVisualAnalysisCompleted = () => {
+    return visualAnalysisStatus === 'completed' || 
+           (selectFromCached && extractionSample.length > 0);
+  };
   const [fullExtractionDialogOpen, setFullExtractionDialogOpen] = useState(false);
   const [selectedExtractionResult, setSelectedExtractionResult] = useState(null);
   
@@ -1083,8 +1089,8 @@ const DojoManagement = () => {
 
   // Run template-based processing for experiment results
   const runTemplateProcessing = async () => {
-    if (!lastExperimentId || !selectedTemplate) {
-      setError('Please select a template and ensure an experiment has been completed');
+    if ((!lastExperimentId && !isVisualAnalysisCompleted()) || !selectedTemplate) {
+      setError('Please select a template and ensure visual analysis is completed');
       return;
     }
 
@@ -1094,13 +1100,22 @@ const DojoManagement = () => {
 
       const user = JSON.parse(localStorage.getItem('user'));
 
-      // Get experiment details to find the deck IDs
-      const experimentResponse = await fetch(`/api/dojo/experiments/${lastExperimentId}`);
-      if (!experimentResponse.ok) {
-        throw new Error('Failed to fetch experiment details');
+      // Get deck IDs either from experiment or from extraction sample
+      let deckIds = [];
+      if (lastExperimentId) {
+        // Get experiment details to find the deck IDs
+        const experimentResponse = await fetch(`/api/dojo/experiments/${lastExperimentId}`);
+        if (!experimentResponse.ok) {
+          throw new Error('Failed to fetch experiment details');
+        }
+        const experimentData = await experimentResponse.json();
+        deckIds = experimentData.pitch_deck_ids || [];
+      } else if (extractionSample.length > 0) {
+        // Use deck IDs from extraction sample
+        deckIds = extractionSample.map(item => item.id);
+      } else {
+        throw new Error('No decks available for processing');
       }
-      const experimentData = await experimentResponse.json();
-      const deckIds = experimentData.pitch_deck_ids || [];
 
       // Trigger template processing for each deck
       const processingPromises = deckIds.map(async (deckId) => {
@@ -1556,8 +1571,8 @@ const DojoManagement = () => {
                     </Box>
                     
                     {visualAnalysisStatus !== 'idle' && (
-                      <Alert severity={visualAnalysisStatus === 'completed' ? 'success' : 'info'}>
-                        Visual analysis {visualAnalysisStatus === 'completed' ? 'completed successfully' : `status: ${visualAnalysisStatus}`}
+                      <Alert severity={isVisualAnalysisCompleted() ? 'success' : 'info'}>
+                        Visual analysis {isVisualAnalysisCompleted() ? 'completed successfully' : `status: ${visualAnalysisStatus}`}
                       </Alert>
                     )}
                   </Box>
@@ -1566,7 +1581,7 @@ const DojoManagement = () => {
             </Paper>
             
             {/* Steps 3-7: Complete Extraction Pipeline (greyed out until step 2 is complete) */}
-            <Paper sx={{ p: 3, mb: 3, bgcolor: visualAnalysisStatus !== 'completed' ? 'grey.100' : 'grey.50', opacity: visualAnalysisStatus !== 'completed' ? 0.6 : 1 }}>
+            <Paper sx={{ p: 3, mb: 3, bgcolor: !isVisualAnalysisCompleted() ? 'grey.100' : 'grey.50', opacity: !isVisualAnalysisCompleted() ? 0.6 : 1 }}>
               <Typography variant="h6" gutterBottom>
                 Steps 3-7: Complete Extraction Pipeline
               </Typography>
@@ -1583,7 +1598,7 @@ const DojoManagement = () => {
                       value={selectedTextModel}
                       onChange={(e) => setSelectedTextModel(e.target.value)}
                       label="Text Model"
-                      disabled={visualAnalysisStatus !== 'completed' || modelsLoading || gpuStatus === 'error'}
+                      disabled={!isVisualAnalysisCompleted() || modelsLoading || gpuStatus === 'error'}
                     >
                       {modelsLoading ? (
                         <MenuItem disabled>
@@ -1612,7 +1627,7 @@ const DojoManagement = () => {
                     value={extractionPrompt}
                     onChange={(e) => setExtractionPrompt(e.target.value)}
                     placeholder={t('prompts.loadingPrompt')}
-                    disabled={visualAnalysisStatus !== 'completed'}
+                    disabled={!isVisualAnalysisCompleted()}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -1621,7 +1636,7 @@ const DojoManagement = () => {
                       variant="contained" 
                       color="secondary"
                       onClick={runCompleteExtractionPipeline}
-                      disabled={visualAnalysisStatus !== 'completed' || !selectedTextModel || !extractionPrompt}
+                      disabled={!isVisualAnalysisCompleted() || !selectedTextModel || !extractionPrompt}
                       startIcon={<DataUsage />}
                     >
                       Run Complete Extraction Pipeline
@@ -1636,7 +1651,7 @@ const DojoManagement = () => {
             </Paper>
             
             {/* Step 8: Template-Based Processing (greyed out until step 3-7 is complete) */}
-            <Paper sx={{ p: 3, mb: 3, bgcolor: !lastExperimentId ? 'grey.100' : 'grey.50', opacity: !lastExperimentId ? 0.6 : 1 }}>
+            <Paper sx={{ p: 3, mb: 3, bgcolor: (!lastExperimentId && !isVisualAnalysisCompleted()) ? 'grey.100' : 'grey.50', opacity: (!lastExperimentId && !isVisualAnalysisCompleted()) ? 0.6 : 1 }}>
               <Typography variant="h6" gutterBottom>
                 Step 8: Template-Based Processing & Results Generation
               </Typography>
@@ -1653,7 +1668,7 @@ const DojoManagement = () => {
                       value={selectedTemplate || ''}
                       onChange={(e) => setSelectedTemplate(e.target.value)}
                       label="Healthcare Template"
-                      disabled={!lastExperimentId}
+                      disabled={!lastExperimentId && !isVisualAnalysisCompleted()}
                     >
                       <MenuItem value="healthcare_standard">Healthcare Standard Template</MenuItem>
                       <MenuItem value="medtech_devices">MedTech Devices Template</MenuItem>
@@ -1666,7 +1681,7 @@ const DojoManagement = () => {
                   <Button
                     variant="contained"
                     onClick={runTemplateProcessing}
-                    disabled={!lastExperimentId || !selectedTemplate || templateProcessingStatus === 'processing'}
+                    disabled={(!lastExperimentId && !isVisualAnalysisCompleted()) || !selectedTemplate || templateProcessingStatus === 'processing'}
                     startIcon={templateProcessingStatus === 'processing' ? <CircularProgress size={16} /> : <Assessment />}
                     fullWidth
                     sx={{ height: 56 }}
