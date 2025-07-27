@@ -980,13 +980,6 @@ const TemplateManagement = () => {
         <Typography variant="h4">
           {t('title')}
         </Typography>
-        <Button 
-          variant="contained" 
-          startIcon={<AddIcon />}
-          onClick={handleCreateNewTemplate}
-        >
-          {t('buttons.createCustomTemplate')}
-        </Button>
       </Box>
 
       {/* Error Alert */}
@@ -999,12 +992,12 @@ const TemplateManagement = () => {
       {/* Main Content */}
       <Paper sx={{ width: '100%' }}>
         <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
-          <Tab label="Healthcare Templates" />
-          <Tab label="Classifications" />
           <Tab label={t('tabs.obligatoryExtractions')} />
+          <Tab label="Classifications" />
+          <Tab label="Deck Review Templates" />
         </Tabs>
 
-        <TabPanel value={activeTab} index={0}>
+        <TabPanel value={activeTab} index={2}>
           <Grid container spacing={3}>
             {templates.map((template) => (
               <Grid item xs={12} md={6} lg={4} key={template.id}>
@@ -1096,7 +1089,7 @@ const TemplateManagement = () => {
           <ClassificationPanel />
         </TabPanel>
 
-        <TabPanel value={activeTab} index={2}>
+        <TabPanel value={activeTab} index={0}>
           <PipelineSettingsContent />
         </TabPanel>
       </Paper>
