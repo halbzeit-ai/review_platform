@@ -9,6 +9,7 @@ import Register from './pages/Register';
 import VerifyEmail from './pages/VerifyEmail';
 import ResetPassword from './pages/ResetPassword';
 import GPDashboard from './pages/GPDashboard';
+import UserManagement from './pages/UserManagement';
 import Review from './pages/Review';
 import ResultsPage from './pages/ResultsPage';
 import ConfigPage from './pages/ConfigPage';
@@ -35,6 +36,8 @@ function App() {
           <Route path="/dashboard" element={<DashboardRedirect />} />
           <Route path="/dashboard/startup" element={<StartupDashboardRedirect />} />
           <Route path="/dashboard/gp" element={<GPDashboard />} />
+          <Route path="/gp-dashboard" element={<GPDashboard />} />
+          <Route path="/users" element={<UserManagement />} />
           <Route path="/review/:id" element={<Review />} />
           <Route path="/results/:pitchDeckId" element={<ResultsPage />} />
           <Route path="/config" element={<ConfigPage />} />
