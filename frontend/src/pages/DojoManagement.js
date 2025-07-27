@@ -1602,10 +1602,7 @@ const DojoManagement = () => {
                             <Button
                               size="small"
                               variant="outlined"
-                              onClick={() => {
-                                setSelectedExperiment(experiment);
-                                setExperimentDetailsOpen(true);
-                              }}
+                              onClick={() => viewExperimentDetails(experiment)}
                             >
                               View Details
                             </Button>
