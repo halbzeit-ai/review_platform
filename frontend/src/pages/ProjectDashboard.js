@@ -15,19 +15,30 @@ import {
   Alert,
   CircularProgress,
   Chip,
-  Divider
+  Divider,
+  Stepper,
+  Step,
+  StepLabel,
+  StepContent,
+  LinearProgress
 } from '@mui/material';
 import {
   Visibility as VisibilityIcon,
   Assessment as AssessmentIcon,
   Upload as UploadIcon,
-  ArrowBack as ArrowBackIcon
+  ArrowBack as ArrowBackIcon,
+  Timeline as TimelineIcon,
+  CheckCircle,
+  RadioButtonUnchecked,
+  Schedule
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { 
-  getPitchDecks
+  getPitchDecks,
+  getMyProjects,
+  getProjectJourney
 } from '../services/api';
 import ProjectUploads from '../components/ProjectUploads';
 
@@ -44,6 +55,12 @@ const ProjectDashboard = () => {
   const [projectDecks, setProjectDecks] = useState([]);
   const [selectedDeck, setSelectedDeck] = useState(null);
   
+  // Funding journey data
+  const [projects, setProjects] = useState([]);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [projectJourney, setProjectJourney] = useState(null);
+  const [journeyLoading, setJourneyLoading] = useState(false);
+  
   const [breadcrumbs, setBreadcrumbs] = useState([
     { label: t('navigation.dashboard'), path: '/dashboard' },
     { label: 'Project Dashboard', path: null }
@@ -51,6 +68,7 @@ const ProjectDashboard = () => {
 
   useEffect(() => {
     loadProjectData();
+    loadFundingData();
   }, [companyId]);
 
   // Function to refresh project data (can be called after upload)
@@ -101,6 +119,49 @@ const ProjectDashboard = () => {
 
   const handleViewResults = (deck) => {
     navigate(`/project/${companyId}/results/${deck.id}`);
+  };
+
+  // Funding journey functions
+  const loadFundingData = async () => {
+    try {
+      setJourneyLoading(true);
+      
+      // Load my projects
+      const projectsResponse = await getMyProjects();
+      const projectsData = projectsResponse.data || [];
+      setProjects(projectsData);
+      
+      // Find the project matching this company ID
+      const matchingProject = projectsData.find(p => p.company_id === companyId);
+      if (matchingProject) {
+        setSelectedProject(matchingProject);
+        
+        // Load the journey for this project
+        const journeyResponse = await getProjectJourney(matchingProject.id);
+        setProjectJourney(journeyResponse.data);
+      }
+    } catch (err) {
+      console.error('Error loading funding data:', err);
+    } finally {
+      setJourneyLoading(false);
+    }
+  };
+
+  // Helper functions for funding journey
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'completed': return 'success';
+      case 'active': return 'primary';
+      case 'pending': return 'default';
+      case 'skipped': return 'warning';
+      default: return 'default';
+    }
+  };
+
+  const getActiveStep = () => {
+    if (!projectJourney?.stages) return 0;
+    const activeStage = projectJourney.stages.find(stage => stage.status === 'active');
+    return activeStage ? activeStage.stage_order - 1 : 0;
   };
 
   const TabPanel = ({ children, value, index }) => (
@@ -219,6 +280,52 @@ const ProjectDashboard = () => {
       
       <Divider sx={{ my: 4 }} />
       
+      {/* Funding Progress Card */}
+      {selectedProject && projectJourney && (
+        <>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Funding Progress
+          </Typography>
+          <Card sx={{ mb: 4, bgcolor: 'primary.50', border: '1px solid', borderColor: 'primary.200' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h6" gutterBottom>
+                    {selectedProject.project_name} - Funding Journey
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Track your progress through the 14-stage funding process
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
+                    <LinearProgress 
+                      variant="determinate" 
+                      value={projectJourney.completion_percentage}
+                      sx={{ width: 200, height: 8, borderRadius: 4 }}
+                    />
+                    <Typography variant="body2" color="text.secondary">
+                      {Math.round(projectJourney.completion_percentage)}% Complete
+                    </Typography>
+                    <Chip 
+                      label={`${projectJourney.completed_stages}/${projectJourney.total_stages} Stages`} 
+                      color="primary" 
+                      size="small"
+                    />
+                  </Box>
+                </Box>
+                <Button
+                  variant="contained"
+                  startIcon={<TimelineIcon />}
+                  onClick={() => setActiveTab(3)}
+                  size="large"
+                >
+                  View Journey
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        </>
+      )}
+      
       <Typography variant="h6" sx={{ mb: 2 }}>
         Recent Decks
       </Typography>
@@ -258,6 +365,153 @@ const ProjectDashboard = () => {
   const UploadsContent = () => (
     <ProjectUploads companyId={companyId} onUploadComplete={refreshProjectData} />
   );
+
+  const FundingJourneyContent = () => {
+    if (journeyLoading) {
+      return (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+          <CircularProgress />
+        </Box>
+      );
+    }
+
+    if (!selectedProject || !projectJourney) {
+      return (
+        <Alert severity="info">
+          No funding journey data available for this project yet.
+        </Alert>
+      );
+    }
+
+    return (
+      <Box>
+        <Typography variant="h5" sx={{ mb: 3 }}>
+          Funding Journey - {selectedProject.project_name}
+        </Typography>
+        
+        {/* Progress Overview */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={6} sm={3}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="h3" color="primary">
+                {Math.round(projectJourney.completion_percentage)}%
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Complete
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="h3" color="success.main">
+                {projectJourney.completed_stages}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Completed
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="h3" color="primary">
+                {projectJourney.active_stages}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Active
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="h3" color="text.secondary">
+                {projectJourney.pending_stages}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Pending
+              </Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+        
+        {/* Overall Progress Bar */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" gutterBottom>
+            Overall Progress
+          </Typography>
+          <LinearProgress 
+            variant="determinate" 
+            value={projectJourney.completion_percentage}
+            sx={{ height: 12, borderRadius: 6 }}
+          />
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            {Math.round(projectJourney.completion_percentage)}% Complete
+          </Typography>
+        </Box>
+
+        {/* Funding Journey Stepper */}
+        <Typography variant="h6" gutterBottom>
+          Funding Process Steps
+        </Typography>
+        <Stepper 
+          activeStep={getActiveStep()} 
+          orientation="vertical"
+          sx={{ mt: 2 }}
+        >
+          {projectJourney.stages.map((stage) => (
+            <Step key={stage.id}>
+              <StepLabel 
+                optional={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                    <Chip 
+                      label={stage.status} 
+                      color={getStatusColor(stage.status)}
+                      size="small"
+                    />
+                    {stage.status === 'completed' && stage.completed_at && (
+                      <Typography variant="caption" color="text.secondary">
+                        Completed: {new Date(stage.completed_at).toLocaleDateString()}
+                      </Typography>
+                    )}
+                    {stage.status === 'active' && stage.started_at && (
+                      <Typography variant="caption" color="text.secondary">
+                        Started: {new Date(stage.started_at).toLocaleDateString()}
+                      </Typography>
+                    )}
+                  </Box>
+                }
+              >
+                <Typography variant="body1" fontWeight="medium">
+                  {stage.stage_name}
+                </Typography>
+              </StepLabel>
+              <StepContent>
+                <Box sx={{ pb: 2 }}>
+                  {/* Show estimated completion if pending/active */}
+                  {stage.estimated_completion && ['pending', 'active'].includes(stage.status) && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <Schedule fontSize="small" color="action" />
+                      <Typography variant="caption" color="text.secondary">
+                        Estimated completion: {new Date(stage.estimated_completion).toLocaleDateString()}
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {/* Show completion notes if available */}
+                  {stage.stage_metadata?.completion_notes && (
+                    <Alert severity="info" sx={{ mt: 1 }}>
+                      <Typography variant="body2">
+                        {stage.stage_metadata.completion_notes}
+                      </Typography>
+                    </Alert>
+                  )}
+                </Box>
+              </StepContent>
+            </Step>
+          ))}
+        </Stepper>
+      </Box>
+    );
+  };
 
   if (loading) {
     return (
@@ -324,6 +578,7 @@ const ProjectDashboard = () => {
           <Tab label={t('project.tabs.overview')} />
           <Tab label={t('project.tabs.allDecks')} />
           <Tab label={t('project.tabs.uploads')} />
+          <Tab label="Funding Journey" icon={<TimelineIcon />} />
         </Tabs>
 
         <TabPanel value={activeTab} index={0}>
@@ -336,6 +591,10 @@ const ProjectDashboard = () => {
 
         <TabPanel value={activeTab} index={2}>
           <UploadsContent />
+        </TabPanel>
+
+        <TabPanel value={activeTab} index={3}>
+          <FundingJourneyContent />
         </TabPanel>
       </Paper>
     </Box>
