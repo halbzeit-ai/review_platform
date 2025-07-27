@@ -52,7 +52,6 @@ import {
   getHealthcareSectors, 
   getSectorTemplates, 
   getTemplateDetails,
-  getPerformanceMetrics,
   customizeTemplate,
   getMyCustomizations,
   getPipelinePrompts,
@@ -69,7 +68,6 @@ const TemplateManagement = () => {
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [templateDetails, setTemplateDetails] = useState(null);
-  const [performanceMetrics, setPerformanceMetrics] = useState(null);
   const [sectors, setSectors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -104,16 +102,14 @@ const TemplateManagement = () => {
   const loadInitialData = useCallback(async () => {
     try {
       setLoading(true);
-      const [sectorsResponse, metricsResponse, pipelineResponse, customizationsResponse] = await Promise.all([
+      const [sectorsResponse, pipelineResponse, customizationsResponse] = await Promise.all([
         getHealthcareSectors(),
-        getPerformanceMetrics(),
         getPipelinePrompts(),
         getMyCustomizations()
       ]);
       
       // Extract data from API responses
       const sectorsData = sectorsResponse.data || sectorsResponse;
-      const metricsData = metricsResponse.data || metricsResponse;
       const pipelineData = pipelineResponse.data || pipelineResponse;
       const customizationsData = customizationsResponse.data || customizationsResponse;
       
@@ -163,7 +159,6 @@ const TemplateManagement = () => {
       }
       
       setTemplates(allTemplates);
-      setPerformanceMetrics(metricsData);
       setPipelinePrompts(pipelineData.prompts || {});
       
       // Set default selected template to "Standard Seven-Chapter Review"
@@ -833,84 +828,6 @@ const TemplateManagement = () => {
     </Box>
   );
 
-  const PerformanceMetricsPanel = () => (
-    <Box>
-      <Typography variant="h6" sx={{ mb: 3 }}>
-        Template Performance Metrics
-      </Typography>
-      
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Template Usage
-            </Typography>
-            {performanceMetrics?.template_performance?.map((template, index) => (
-              <Box key={index} sx={{ mb: 1 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">{template.template_name}</Typography>
-                  <Typography variant="body2">{template.usage_count} uses</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Avg Confidence: {(template.avg_confidence * 100).toFixed(1)}%
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Avg Rating: {template.avg_rating.toFixed(1)}/5
-                  </Typography>
-                </Box>
-                <Divider sx={{ my: 1 }} />
-              </Box>
-            ))}
-          </Paper>
-        </Grid>
-        
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Classification Accuracy
-            </Typography>
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h3" color="primary">
-                {performanceMetrics?.classification_accuracy?.accuracy_percentage?.toFixed(1)}%
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Overall Accuracy
-              </Typography>
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="body2">
-                  {performanceMetrics?.classification_accuracy?.accurate_classifications} accurate / {' '}
-                  {performanceMetrics?.classification_accuracy?.total_classifications} total
-                </Typography>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid>
-        
-        <Grid item xs={12}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Sector Distribution
-            </Typography>
-            <Grid container spacing={2}>
-              {performanceMetrics?.sector_distribution?.map((sector, index) => (
-                <Grid item xs={12} sm={6} md={3} key={index}>
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Typography variant="h5" color="primary">
-                      {sector.classification_count}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {sector.sector_name}
-                    </Typography>
-                  </Box>
-                </Grid>
-              ))}
-            </Grid>
-          </Paper>
-        </Grid>
-      </Grid>
-    </Box>
-  );
 
   const PipelineSettingsContent = () => {
     const extractionTypes = [
@@ -1084,7 +1001,6 @@ const TemplateManagement = () => {
         <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
           <Tab label="Healthcare Templates" />
           <Tab label="Classifications" />
-          <Tab label={t('tabs.performanceMetrics')} />
           <Tab label={t('tabs.obligatoryExtractions')} />
         </Tabs>
 
@@ -1181,10 +1097,6 @@ const TemplateManagement = () => {
         </TabPanel>
 
         <TabPanel value={activeTab} index={2}>
-          <PerformanceMetricsPanel />
-        </TabPanel>
-
-        <TabPanel value={activeTab} index={3}>
           <PipelineSettingsContent />
         </TabPanel>
       </Paper>
