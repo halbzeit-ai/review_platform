@@ -321,3 +321,190 @@ async def cleanup_test_data(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to cleanup test data"
         )
+
+# ==================== ADD DOJO COMPANIES FUNCTIONALITY ====================
+
+class AddDojoCompaniesRequest(BaseModel):
+    experiment_id: int
+
+class AddDojoCompaniesResponse(BaseModel):
+    message: str
+    experiment_id: int
+    companies_added: int
+    projects_created: int
+    companies_created: List[str]
+
+@router.post("/experiments/add-companies", response_model=AddDojoCompaniesResponse)
+async def add_dojo_companies_from_experiment(
+    request: AddDojoCompaniesRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Add companies from a dojo experiment to the projects database"""
+    try:
+        # Check if user is GP
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only GPs can add companies from experiments"
+            )
+        
+        # Get the experiment details
+        experiment = db.execute(text("""
+            SELECT id, experiment_name, extraction_type, text_model_used, 
+                   extraction_prompt, created_at, results_json, pitch_deck_ids,
+                   classification_enabled, classification_results_json,
+                   company_name_results_json
+            FROM extraction_experiments 
+            WHERE id = :experiment_id
+        """), {"experiment_id": request.experiment_id}).fetchone()
+        
+        if not experiment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Experiment not found"
+            )
+        
+        # Parse experiment data
+        results_data = json.loads(experiment[6]) if experiment[6] else {}
+        classification_data = json.loads(experiment[9]) if experiment[9] else {}
+        company_name_data = json.loads(experiment[10]) if experiment[10] else {}
+        
+        # Check if experiment has required data
+        if not experiment[8]:  # classification_enabled
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Experiment does not have classification data"
+            )
+        
+        if not results_data.get("results"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Experiment has no extraction results"
+            )
+        
+        # Extract results and prepare for processing
+        results = results_data.get("results", [])
+        classification_lookup = {}
+        company_name_lookup = {}
+        
+        # Build lookups for classification and company name data
+        if classification_data.get("classification_by_deck"):
+            classification_lookup = classification_data["classification_by_deck"]
+        
+        if company_name_data.get("company_name_results"):
+            for result in company_name_data["company_name_results"]:
+                company_name_lookup[result.get("deck_id")] = result.get("company_name")
+        
+        # Process each result to create companies/projects
+        companies_added = 0
+        projects_created = 0
+        companies_created = []
+        
+        for result in results:
+            deck_id = result.get("deck_id")
+            offering_extraction = result.get("offering_extraction", "")
+            
+            # Skip failed extractions
+            if not offering_extraction or offering_extraction.startswith("Error:"):
+                continue
+            
+            # Get company name (prioritize AI extracted name, fallback to deck filename)
+            company_name = None
+            if deck_id in company_name_lookup:
+                company_name = company_name_lookup[deck_id]
+            elif result.get("ai_extracted_startup_name"):
+                company_name = result["ai_extracted_startup_name"]
+            elif result.get("filename"):
+                # Extract company name from filename as fallback
+                filename = result["filename"]
+                if filename.endswith(".pdf"):
+                    filename = filename[:-4]
+                company_name = filename.replace("_", " ").replace("-", " ").title()
+            
+            if not company_name:
+                logger.warning(f"No company name found for deck {deck_id}, skipping")
+                continue
+            
+            # Generate company_id from company name
+            company_id = get_company_id_from_name(company_name)
+            
+            # Ensure unique company_id
+            existing_check = text("SELECT id FROM projects WHERE company_id = :company_id LIMIT 1")
+            if db.execute(existing_check, {"company_id": company_id}).fetchone():
+                company_id = f"{company_id}-dojo-{uuid.uuid4().hex[:6]}"
+            
+            # Get classification data for this deck
+            classification_info = classification_lookup.get(str(deck_id), {})
+            primary_sector = classification_info.get("primary_sector", "Digital Health")
+            
+            # Create project name
+            project_name = f"{company_name} - Dojo Analysis"
+            
+            # Create project entry
+            project_insert = text("""
+                INSERT INTO projects (
+                    company_id, project_name, funding_round, funding_sought, 
+                    company_offering, tags, is_test, project_metadata, 
+                    created_at, updated_at
+                )
+                VALUES (:company_id, :project_name, :funding_round, :funding_sought,
+                        :company_offering, :tags, TRUE, :metadata, 
+                        :created_at, :updated_at)
+                RETURNING id
+            """)
+            
+            # Generate metadata
+            metadata = {
+                "created_from_experiment": True,
+                "experiment_id": request.experiment_id,
+                "experiment_name": experiment[1],
+                "source_deck_id": deck_id,
+                "created_by": current_user.email,
+                "created_at": datetime.utcnow().isoformat(),
+                "original_filename": result.get("filename"),
+                "classification": classification_info,
+                "ai_extracted_company_name": company_name_lookup.get(deck_id)
+            }
+            
+            project_result = db.execute(project_insert, {
+                "company_id": company_id,
+                "project_name": project_name,
+                "funding_round": "analysis",
+                "funding_sought": "TBD",
+                "company_offering": offering_extraction[:2000],  # Limit to 2000 chars
+                "tags": json.dumps(["dojo", "experiment", "ai-extracted", primary_sector.lower().replace(" ", "-")]),
+                "metadata": json.dumps(metadata),
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
+            })
+            
+            project_id = project_result.fetchone()[0]
+            projects_created += 1
+            companies_created.append(company_name)
+            
+            logger.info(f"Created project for {company_name} (company_id: {company_id}, project_id: {project_id})")
+        
+        companies_added = len(set(companies_created))  # Count unique companies
+        
+        db.commit()
+        
+        logger.info(f"Added {companies_added} companies from experiment {request.experiment_id} by {current_user.email}")
+        
+        return AddDojoCompaniesResponse(
+            message=f"Successfully added {companies_added} companies and created {projects_created} projects from experiment",
+            experiment_id=request.experiment_id,
+            companies_added=companies_added,
+            projects_created=projects_created,
+            companies_created=list(set(companies_created))  # Return unique company names
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error adding companies from experiment {request.experiment_id}: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to add companies from experiment"
+        )
