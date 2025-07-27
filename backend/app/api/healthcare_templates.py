@@ -585,6 +585,149 @@ async def delete_customization(
             detail="Failed to delete customization"
         )
 
+@router.get("/template-status", response_model=Dict[str, Any])
+async def get_template_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get current template status for migration planning (GP only)"""
+    try:
+        # Check if user is GP
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only GPs can view template status"
+            )
+        
+        # Get all active templates
+        query = text("""
+        SELECT id, name, is_default, is_active, healthcare_sector_id
+        FROM analysis_templates
+        WHERE is_active = TRUE
+        ORDER BY is_default DESC, name
+        """)
+        
+        result = db.execute(query).fetchall()
+        
+        default_templates = []
+        regular_templates = []
+        
+        for row in result:
+            template_data = {
+                "id": row[0],
+                "name": row[1],
+                "is_default": row[2],
+                "healthcare_sector_id": row[4]
+            }
+            
+            if row[2]:  # is_default
+                default_templates.append(template_data)
+            else:
+                regular_templates.append(template_data)
+        
+        # Find Standard Seven-Chapter Review
+        standard_template = None
+        for template in (default_templates + regular_templates):
+            if "standard seven-chapter review" in template["name"].lower():
+                standard_template = template
+                break
+        
+        return {
+            "total_templates": len(result),
+            "default_templates": default_templates,
+            "regular_templates": regular_templates,
+            "default_count": len(default_templates),
+            "regular_count": len(regular_templates),
+            "standard_template": standard_template,
+            "migration_preview": {
+                "templates_to_convert": len(default_templates),
+                "will_remain_default": 0 if not standard_template or not standard_template["is_default"] else 1,
+                "message": f"All {len(default_templates)} default templates will become editable/deletable"
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting template status: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve template status"
+        )
+
+@router.post("/migrate-templates", response_model=Dict[str, Any])
+async def migrate_template_defaults(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Convert all default templates to regular templates (GP only)"""
+    try:
+        # Check if user is GP
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only GPs can migrate templates"
+            )
+        
+        # Get current default templates
+        query = text("""
+        SELECT id, name, healthcare_sector_id
+        FROM analysis_templates
+        WHERE is_active = TRUE AND is_default = TRUE
+        ORDER BY name
+        """)
+        
+        default_templates = db.execute(query).fetchall()
+        
+        if not default_templates:
+            return {
+                "message": "No default templates found to convert",
+                "converted_count": 0,
+                "templates_converted": []
+            }
+        
+        # Convert all default templates to regular
+        template_ids = [row[0] for row in default_templates]
+        
+        update_query = text("""
+        UPDATE analysis_templates 
+        SET is_default = FALSE 
+        WHERE id = ANY(:template_ids) AND is_active = TRUE
+        """)
+        
+        db.execute(update_query, {"template_ids": template_ids})
+        
+        # Get the count of updated rows
+        updated_count = len(template_ids)
+        
+        # Prepare response data
+        converted_templates = []
+        for row in default_templates:
+            converted_templates.append({
+                "id": row[0],
+                "name": row[1],
+                "healthcare_sector_id": row[2],
+                "old_status": "default",
+                "new_status": "regular"
+            })
+        
+        db.commit()
+        
+        logger.info(f"Migrated {updated_count} templates from default to regular by GP {current_user.email}")
+        
+        return {
+            "message": f"Successfully converted {updated_count} templates to regular (editable/deletable)",
+            "converted_count": updated_count,
+            "templates_converted": converted_templates,
+            "note": "All templates are now editable and deletable by GPs. Startup classifier will use fallback logic."
+        }
+        
+    except Exception as e:
+        logger.error(f"Error migrating templates: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to migrate templates"
+        )
+
 @router.get("/performance-metrics", response_model=Dict[str, Any])
 async def get_performance_metrics(
     db: Session = Depends(get_db),
