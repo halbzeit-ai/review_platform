@@ -1,6 +1,7 @@
 
 from fastapi import APIRouter, HTTPException, UploadFile, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from ..core.volume_storage import volume_storage
 from ..core.config import settings
 from ..db.models import User, PitchDeck
@@ -11,10 +12,143 @@ import logging
 import os
 import json
 import glob
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/documents", tags=["documents"])
+
+async def create_project_from_pitch_deck(pitch_deck: PitchDeck, db: Session):
+    """Create a project automatically from a successfully processed pitch deck"""
+    try:
+        # Check if project already exists for this company
+        existing_project = db.execute(text("""
+            SELECT id FROM projects 
+            WHERE company_id = :company_id AND is_active = TRUE
+            LIMIT 1
+        """), {"company_id": pitch_deck.company_id}).fetchone()
+        
+        if existing_project:
+            logger.info(f"Project already exists for company {pitch_deck.company_id}, adding deck as document")
+            project_id = existing_project[0]
+        else:
+            # Extract data from results file if available
+            company_offering = None
+            funding_sought = None
+            classification_data = None
+            
+            if pitch_deck.results_file_path:
+                try:
+                    results_path = pitch_deck.results_file_path
+                    if not results_path.startswith('/'):
+                        results_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, results_path)
+                    
+                    if os.path.exists(results_path):
+                        with open(results_path, 'r') as f:
+                            results_data = json.load(f)
+                            
+                        # Extract relevant information
+                        company_offering = results_data.get("company_offering", "")[:2000]  # Limit length
+                        funding_sought = results_data.get("funding_sought", "")
+                        classification_data = results_data.get("classification", {})
+                        
+                        logger.info(f"Extracted data from results: offering={bool(company_offering)}, funding={bool(funding_sought)}")
+                        
+                except Exception as e:
+                    logger.warning(f"Could not extract data from results file: {e}")
+            
+            # Create project
+            project_name = f"{pitch_deck.company_id} - Initial Review"
+            
+            project_insert = text("""
+                INSERT INTO projects (
+                    company_id, project_name, funding_round, funding_sought, 
+                    company_offering, project_metadata, is_test, is_active,
+                    created_at, updated_at
+                )
+                VALUES (:company_id, :project_name, :funding_round, :funding_sought,
+                        :company_offering, :metadata, FALSE, TRUE,
+                        :created_at, :updated_at)
+                RETURNING id
+            """)
+            
+            metadata = {
+                "created_from_pitch_deck": True,
+                "pitch_deck_id": pitch_deck.id,
+                "original_filename": pitch_deck.file_name,
+                "auto_created": True,
+                "created_at": datetime.utcnow().isoformat()
+            }
+            
+            if classification_data:
+                metadata["classification"] = classification_data
+            
+            project_result = db.execute(project_insert, {
+                "company_id": pitch_deck.company_id,
+                "project_name": project_name,
+                "funding_round": "initial",
+                "funding_sought": funding_sought or "TBD",
+                "company_offering": company_offering or "Analysis in progress",
+                "metadata": json.dumps(metadata),
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
+            })
+            
+            project_id = project_result.fetchone()[0]
+            logger.info(f"Created project {project_id} for company {pitch_deck.company_id}")
+        
+        # Add pitch deck as project document
+        deck_doc_insert = text("""
+            INSERT INTO project_documents (
+                project_id, document_type, file_name, file_path,
+                original_filename, processing_status, uploaded_by,
+                upload_date, is_active
+            )
+            VALUES (:project_id, 'pitch_deck', :file_name, :file_path,
+                    :original_filename, 'completed', :uploaded_by,
+                    :upload_date, TRUE)
+        """)
+        
+        db.execute(deck_doc_insert, {
+            "project_id": project_id,
+            "file_name": pitch_deck.file_name,
+            "file_path": pitch_deck.file_path,
+            "original_filename": pitch_deck.file_name,
+            "uploaded_by": pitch_deck.user_id,
+            "upload_date": datetime.utcnow()
+        })
+        
+        # Add results file if available
+        if pitch_deck.results_file_path:
+            results_doc_insert = text("""
+                INSERT INTO project_documents (
+                    project_id, document_type, file_name, file_path,
+                    original_filename, processing_status, uploaded_by,
+                    upload_date, is_active
+                )
+                VALUES (:project_id, 'analysis_results', :file_name, :file_path,
+                        :original_filename, 'completed', :uploaded_by,
+                        :upload_date, TRUE)
+            """)
+            
+            results_filename = f"{pitch_deck.company_id}_analysis_results.json"
+            db.execute(results_doc_insert, {
+                "project_id": project_id,
+                "file_name": results_filename,
+                "file_path": pitch_deck.results_file_path,
+                "original_filename": results_filename,
+                "uploaded_by": pitch_deck.user_id,
+                "upload_date": datetime.utcnow()
+            })
+            
+            logger.info(f"Added documents to project {project_id}")
+        
+        db.commit()
+        logger.info(f"Successfully created/updated project for pitch deck {pitch_deck.id}")
+        
+    except Exception as e:
+        logger.error(f"Failed to create project from pitch deck {pitch_deck.id}: {e}")
+        db.rollback()
 
 async def trigger_gpu_processing(pitch_deck_id: int, file_path: str, company_id: str):
     """Background task to trigger HTTP-based GPU processing"""
@@ -43,8 +177,15 @@ async def trigger_gpu_processing(pitch_deck_id: int, file_path: str, company_id:
             # Update status to completed
             if pitch_deck:
                 pitch_deck.processing_status = "completed"
+                # Store results file path if provided
+                if results.get("results_path"):
+                    pitch_deck.results_file_path = results.get("results_path")
                 db.commit()
                 logger.info(f"Updated pitch deck {pitch_deck_id} status to 'completed'")
+                
+                # Auto-create project from successful pitch deck processing
+                await create_project_from_pitch_deck(pitch_deck, db)
+            
         else:
             logger.error(f"HTTP-based GPU processing failed for pitch deck {pitch_deck_id}: {results.get('error')}")
             

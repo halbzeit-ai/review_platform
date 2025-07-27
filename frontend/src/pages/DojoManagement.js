@@ -159,6 +159,7 @@ const DojoManagement = () => {
   const [selectedExperiments, setSelectedExperiments] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [templateProcessingStatus, setTemplateProcessingStatus] = useState('');
+  const [lastExperimentId, setLastExperimentId] = useState(null);
   const [fullExtractionDialogOpen, setFullExtractionDialogOpen] = useState(false);
   const [selectedExtractionResult, setSelectedExtractionResult] = useState(null);
   
@@ -971,6 +972,10 @@ const DojoManagement = () => {
       if (response.ok) {
         const data = await response.json();
         setExperiments(data.experiments);
+        // Set the last experiment ID for template processing
+        if (data.experiments && data.experiments.length > 0) {
+          setLastExperimentId(data.experiments[0].id);
+        }
       }
     } catch (err) {
       console.error('Error loading experiments:', err);
@@ -1087,6 +1092,8 @@ const DojoManagement = () => {
       setTemplateProcessingStatus('processing');
       setError(null);
 
+      const user = JSON.parse(localStorage.getItem('user'));
+
       // Get experiment details to find the deck IDs
       const experimentResponse = await fetch(`/api/dojo/experiments/${lastExperimentId}`);
       if (!experimentResponse.ok) {
@@ -1129,7 +1136,7 @@ const DojoManagement = () => {
       setTemplateProcessingStatus('completed');
       
       // Refresh experiments to show updated results
-      await fetchExperiments();
+      await loadExperiments();
 
     } catch (err) {
       console.error('Error running template processing:', err);
