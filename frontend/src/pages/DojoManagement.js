@@ -1073,6 +1073,65 @@ const DojoManagement = () => {
     }
   };
 
+  // Check if experiment has required extractions for adding companies
+  const canAddDojoCompanies = (experimentDetails) => {
+    if (!experimentDetails || !experimentDetails.results) return false;
+    
+    // Check if experiment has classification, company offering, and company name extractions
+    const hasClassification = experimentDetails.classification_enabled && 
+                             experimentDetails.classification_results_json;
+    
+    // Check if results contain company offering extraction
+    const hasOfferingExtraction = experimentDetails.results.some(result => 
+      result.offering_extraction && 
+      !result.offering_extraction.startsWith('Error:') && 
+      result.offering_extraction.length > 10
+    );
+    
+    // Check if results contain company name (from deck_info or AI extraction)
+    const hasCompanyName = experimentDetails.results.some(result => 
+      (result.deck_info?.company_name) || 
+      (result.ai_extracted_startup_name)
+    );
+    
+    return hasClassification && hasOfferingExtraction && hasCompanyName;
+  };
+
+  // Add companies from experiment to projects database
+  const addDojoCompanies = async () => {
+    if (!experimentDetails) return;
+    
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+      
+      const response = await fetch('/api/dojo/experiments/add-companies', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          experiment_id: selectedExperiment.id
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Companies added successfully:', result);
+        // You might want to show a success message here
+        setExperimentDetailsOpen(false);
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to add companies:', errorData);
+        setError(errorData.detail || 'Failed to add companies to projects database');
+      }
+    } catch (err) {
+      console.error('Error adding companies:', err);
+      setError('Failed to add companies to projects database');
+    }
+  };
+
   const handleDeleteFile = async (fileId) => {
     try {
       const user = JSON.parse(localStorage.getItem('user'));
@@ -1856,78 +1915,6 @@ const DojoManagement = () => {
             </Box>
           ) : experimentDetails ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {/* Experiment Overview */}
-              <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
-                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium' }}>
-                  Experiment Overview
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={6} md={3}>
-                    <Typography variant="caption" color="text.secondary">Total Decks</Typography>
-                    <Typography variant="h6">{experimentDetails.total_decks}</Typography>
-                  </Grid>
-                  <Grid item xs={6} md={3}>
-                    <Typography variant="caption" color="text.secondary">Successful Extractions</Typography>
-                    <Typography variant="h6" color="success.main">{experimentDetails.successful_extractions}</Typography>
-                  </Grid>
-                  <Grid item xs={6} md={3}>
-                    <Typography variant="caption" color="text.secondary">Success Rate</Typography>
-                    <Typography variant="h6">
-                      {Math.round((experimentDetails.successful_extractions / experimentDetails.total_decks) * 100)}%
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={6} md={3}>
-                    <Typography variant="caption" color="text.secondary">Model Used</Typography>
-                    <Typography variant="body2">{experimentDetails.text_model_used}</Typography>
-                  </Grid>
-                  {experimentDetails.classification_enabled && (
-                    <Grid item xs={12}>
-                      <Divider sx={{ my: 1 }} />
-                      <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'medium' }}>
-                        Classification Results
-                      </Typography>
-                      <Grid container spacing={2}>
-                        <Grid item xs={6} md={3}>
-                          <Typography variant="caption" color="text.secondary">Classified</Typography>
-                          <Typography variant="h6" color="success.main">
-                            {experimentDetails.classification_statistics?.successful_classifications || 0}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={6} md={3}>
-                          <Typography variant="caption" color="text.secondary">Classification Rate</Typography>
-                          <Typography variant="h6">
-                            {Math.round((experimentDetails.classification_statistics?.success_rate || 0) * 100)}%
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={6} md={3}>
-                          <Typography variant="caption" color="text.secondary">Avg. Confidence</Typography>
-                          <Typography variant="h6">
-                            {(experimentDetails.classification_statistics?.average_confidence || 0).toFixed(2)}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={6} md={3}>
-                          <Typography variant="caption" color="text.secondary">Top Sector</Typography>
-                          <Typography variant="body2">
-                            {Object.entries(experimentDetails.classification_statistics?.sector_distribution || {})
-                              .sort(([,a], [,b]) => b - a)[0]?.[0] || 'None'}
-                          </Typography>
-                        </Grid>
-                      </Grid>
-                    </Grid>
-                  )}
-                </Grid>
-              </Paper>
-
-              {/* Extraction Prompt */}
-              <Paper sx={{ p: 2, bgcolor: 'info.light', color: 'info.contrastText' }}>
-                <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'medium' }}>
-                  Extraction Prompt Used
-                </Typography>
-                <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
-                  {experimentDetails.extraction_prompt}
-                </Typography>
-              </Paper>
-
               {/* Individual Results */}
               <Box>
                 <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium' }}>
@@ -2082,8 +2069,12 @@ const DojoManagement = () => {
           <Button onClick={() => setExperimentDetailsOpen(false)}>
             Close
           </Button>
-          <Button variant="contained" disabled>
-            Export Results
+          <Button 
+            variant="contained" 
+            disabled={!canAddDojoCompanies(experimentDetails)}
+            onClick={addDojoCompanies}
+          >
+            Add Dojo Companies
           </Button>
         </DialogActions>
       </Dialog>
