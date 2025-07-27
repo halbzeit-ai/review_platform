@@ -1,5 +1,21 @@
--- Migrate existing pitch_decks data to new project structure
+-- Migrate existing pitch_decks data to new project structure (Safe version)
 -- This migration extracts project metadata from analysis results and creates project records
+
+-- Helper function to safely extract JSON values
+CREATE OR REPLACE FUNCTION safe_json_extract_text(json_text TEXT, key_name TEXT)
+RETURNS TEXT AS $$
+BEGIN
+    IF json_text IS NULL OR json_text = '' THEN
+        RETURN NULL;
+    END IF;
+    
+    BEGIN
+        RETURN (json_text::jsonb ->> key_name);
+    EXCEPTION WHEN OTHERS THEN
+        RETURN NULL;
+    END;
+END;
+$$ LANGUAGE plpgsql;
 
 -- Step 1: Create projects from existing pitch_decks grouped by company_id
 INSERT INTO projects (
@@ -19,21 +35,13 @@ SELECT DISTINCT
     'initial' as funding_round,
     
     -- Extract funding_sought from ai_analysis_results JSON if available
-    CASE 
-        WHEN pd.ai_analysis_results IS NOT NULL AND pd.ai_analysis_results != '' THEN
-            (pd.ai_analysis_results::jsonb)->>'funding_sought'
-        ELSE NULL
-    END as funding_sought,
+    safe_json_extract_text(pd.ai_analysis_results, 'funding_sought') as funding_sought,
     
     -- Healthcare sector will be populated later when we have classification data
     NULL::INTEGER as healthcare_sector_id,
     
     -- Extract company_offering from ai_analysis_results JSON if available  
-    CASE 
-        WHEN pd.ai_analysis_results IS NOT NULL AND pd.ai_analysis_results != '' THEN
-            (pd.ai_analysis_results::jsonb)->>'company_offering'
-        ELSE NULL
-    END as company_offering,
+    safe_json_extract_text(pd.ai_analysis_results, 'company_offering') as company_offering,
     
     -- Store any additional metadata from analysis results
     jsonb_build_object(
@@ -78,10 +86,13 @@ SELECT
     
     pd.processing_status,
     
-    -- Store extracted data from ai_analysis_results
+    -- Store extracted data from ai_analysis_results (safely)
     CASE 
         WHEN pd.ai_analysis_results IS NOT NULL AND pd.ai_analysis_results != '' THEN
-            pd.ai_analysis_results::jsonb
+            CASE 
+                WHEN pd.ai_analysis_results::text ~ '^{.*}$' THEN pd.ai_analysis_results::jsonb
+                ELSE NULL
+            END
         ELSE NULL
     END as extracted_data,
     
@@ -190,3 +201,6 @@ JOIN users u ON pd.user_id = u.id
 JOIN projects p ON p.company_id = pd.company_id
 JOIN project_documents doc ON doc.project_id = p.id AND doc.file_path = pd.file_path
 ON CONFLICT DO NOTHING;
+
+-- Clean up helper function
+DROP FUNCTION IF EXISTS safe_json_extract_text(TEXT, TEXT);
