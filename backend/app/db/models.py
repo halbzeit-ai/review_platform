@@ -117,7 +117,7 @@ class ProjectStage(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
-    project = relationship("Project", back_populates="stages")
+    project = relationship("Project", back_populates="stages", foreign_keys=[project_id])
 
 class ProjectDocument(Base):
     __tablename__ = "project_documents"
