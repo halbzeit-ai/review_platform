@@ -21,6 +21,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "build:fast": "GENERATE_SOURCEMAP=false react-scripts build",
     "test": "react-scripts test",
     "test:unit": "react-scripts test src/__tests__/unit --watchAll=false",
     "test:integration": "react-scripts test src/__tests__/integration --watchAll=false",

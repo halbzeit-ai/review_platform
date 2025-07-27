@@ -126,6 +126,7 @@ const DojoManagement = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [addCompaniesSuccess, setAddCompaniesSuccess] = useState('');
   const [processingStatus, setProcessingStatus] = useState('');
   const [uploadSpeed, setUploadSpeed] = useState(0);
   const [uploadStartTime, setUploadStartTime] = useState(null);
@@ -1119,8 +1120,11 @@ const DojoManagement = () => {
       if (response.ok) {
         const result = await response.json();
         console.log('Companies added successfully:', result);
-        // You might want to show a success message here
+        setAddCompaniesSuccess(`Successfully added ${result.companies_added} companies and created ${result.projects_created} projects!`);
+        setError(null);
         setExperimentDetailsOpen(false);
+        // Clear success message after 5 seconds
+        setTimeout(() => setAddCompaniesSuccess(''), 5000);
       } else {
         const errorData = await response.json();
         console.error('Failed to add companies:', errorData);
@@ -1209,6 +1213,13 @@ const DojoManagement = () => {
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
           {error}
+        </Alert>
+      )}
+
+      {/* Success Alert */}
+      {addCompaniesSuccess && (
+        <Alert severity="success" sx={{ mb: 3 }} onClose={() => setAddCompaniesSuccess('')}>
+          {addCompaniesSuccess}
         </Alert>
       )}
 

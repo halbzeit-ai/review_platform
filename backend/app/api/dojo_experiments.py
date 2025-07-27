@@ -429,6 +429,21 @@ async def add_dojo_companies_from_experiment(
             # Generate company_id from company name
             company_id = get_company_id_from_name(company_name)
             
+            # Check if this deck from this experiment was already processed
+            duplicate_check = text("""
+                SELECT id FROM projects 
+                WHERE project_metadata::json->>'experiment_id' = :experiment_id 
+                AND project_metadata::json->>'source_deck_id' = :deck_id
+            """)
+            existing_project = db.execute(duplicate_check, {
+                "experiment_id": str(request.experiment_id),
+                "deck_id": str(deck_id)
+            }).fetchone()
+            
+            if existing_project:
+                logger.info(f"Skipping deck {deck_id} - already processed from experiment {request.experiment_id}")
+                continue
+            
             # Ensure unique company_id
             existing_check = text("SELECT id FROM projects WHERE company_id = :company_id LIMIT 1")
             if db.execute(existing_check, {"company_id": company_id}).fetchone():
