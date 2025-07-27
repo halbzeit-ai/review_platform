@@ -83,6 +83,9 @@ export const getMyCustomizations = () =>
 export const getPerformanceMetrics = () =>
   api.get('/healthcare-templates/performance-metrics');
 
+export const updateTemplate = (templateId, templateData) =>
+  api.put(`/healthcare-templates/templates/${templateId}`, templateData);
+
 export const deleteTemplate = (templateId) =>
   api.delete(`/healthcare-templates/templates/${templateId}`);
 

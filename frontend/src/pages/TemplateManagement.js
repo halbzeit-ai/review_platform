@@ -52,6 +52,7 @@ import {
   getSectorTemplates, 
   getTemplateDetails,
   customizeTemplate,
+  updateTemplate,
   getMyCustomizations,
   getPipelinePrompts,
   getPipelinePromptByStage,
@@ -83,6 +84,7 @@ const TemplateManagement = () => {
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [customizeDialogOpen, setCustomizeDialogOpen] = useState(false);
   const [customizationName, setCustomizationName] = useState('');
+  const [isEditMode, setIsEditMode] = useState(false); // Track if we're editing vs duplicating
   
   // Pipeline configuration state
   const [pipelinePrompts, setPipelinePrompts] = useState({});
@@ -201,6 +203,8 @@ const TemplateManagement = () => {
 
   const handleEditTemplate = async (template) => {
     try {
+      setIsEditMode(true); // Set edit mode
+      
       if (template.is_customization) {
         // For customizations, we need to reconstruct the template structure
         // Since customizations store data differently, we'll create a basic structure
@@ -241,6 +245,8 @@ const TemplateManagement = () => {
 
   const handleDuplicateTemplate = async (template) => {
     try {
+      setIsEditMode(false); // Set duplicate mode
+      
       // Load template details and open customize dialog with duplicate name
       const detailsResponse = await getTemplateDetails(template.id);
       const details = detailsResponse.data || detailsResponse;
@@ -499,78 +505,95 @@ const TemplateManagement = () => {
           throw new Error('Template name is required');
         }
         
-        // For new templates, we need to use a base template ID
-        // If no base template, we'll use the first available template as base
-        let baseTemplateId = selectedTemplate?.id;
-        if (!baseTemplateId && templates.length > 0) {
-          // Use the first available template as base
-          const firstTemplate = templates[0];
-          baseTemplateId = firstTemplate.id;
-        } else if (!baseTemplateId) {
-          // If no templates exist, we need to get one from the first sector
-          const sectorsResponse = await getHealthcareSectors();
-          const sectorsData = sectorsResponse.data || sectorsResponse;
-          if (Array.isArray(sectorsData) && sectorsData.length > 0) {
-            const firstSector = sectorsData[0];
-            const templatesResponse = await getSectorTemplates(firstSector.id);
-            const templatesData = templatesResponse.data || templatesResponse;
-            const sectorTemplates = Array.isArray(templatesData) ? templatesData : [];
-            const defaultTemplate = sectorTemplates.find(t => t.is_default) || sectorTemplates[0];
-            if (defaultTemplate) {
-              baseTemplateId = defaultTemplate.id;
-            } else {
-              throw new Error('No base template available to create new template from');
-            }
+        if (isEditMode) {
+          // Edit mode: Update existing template
+          const templateId = selectedTemplate?.id;
+          if (!templateId) {
+            throw new Error('Template ID is required for editing');
           }
-        }
-        
-        if (!baseTemplateId) {
-          throw new Error('Base template is required');
-        }
-        
-        // Prepare customization data for API
-        const customizationData = {
-          base_template_id: baseTemplateId,
-          customization_name: editedTemplate.name,
-          customized_chapters: {},
-          customized_questions: {},
-          customized_weights: {}
-        };
-        
-        // Process chapters and questions into the format expected by the API
-        editedTemplate.chapters.forEach((chapter, chapterIndex) => {
-          customizationData.customized_chapters[chapter.id || chapterIndex] = {
-            name: chapter.name,
-            order_index: chapterIndex
+          
+          const updateData = {
+            name: editedTemplate.name,
+            description: editedTemplate.template?.description || ''
           };
           
-          chapter.questions.forEach((question, questionIndex) => {
-            const questionKey = `${chapter.id || chapterIndex}_${question.id || questionIndex}`;
-            customizationData.customized_questions[questionKey] = {
-              question_text: question.question_text,
-              scoring_criteria: question.scoring_criteria,
-              order_index: questionIndex
+          console.log('Updating template:', templateId, updateData);
+          const response = await updateTemplate(templateId, updateData);
+          console.log('Template updated successfully:', response.data);
+          
+        } else {
+          // Duplicate mode: Create new template customization
+          let baseTemplateId = selectedTemplate?.id;
+          if (!baseTemplateId && templates.length > 0) {
+            // Use the first available template as base
+            const firstTemplate = templates[0];
+            baseTemplateId = firstTemplate.id;
+          } else if (!baseTemplateId) {
+            // If no templates exist, we need to get one from the first sector
+            const sectorsResponse = await getHealthcareSectors();
+            const sectorsData = sectorsResponse.data || sectorsResponse;
+            if (Array.isArray(sectorsData) && sectorsData.length > 0) {
+              const firstSector = sectorsData[0];
+              const templatesResponse = await getSectorTemplates(firstSector.id);
+              const templatesData = templatesResponse.data || templatesResponse;
+              const sectorTemplates = Array.isArray(templatesData) ? templatesData : [];
+              const defaultTemplate = sectorTemplates.find(t => t.is_default) || sectorTemplates[0];
+              if (defaultTemplate) {
+                baseTemplateId = defaultTemplate.id;
+              } else {
+                throw new Error('No base template available to create new template from');
+              }
+            }
+          }
+          
+          if (!baseTemplateId) {
+            throw new Error('Base template is required');
+          }
+          
+          // Prepare customization data for API
+          const customizationData = {
+            base_template_id: baseTemplateId,
+            customization_name: editedTemplate.name,
+            customized_chapters: {},
+            customized_questions: {},
+            customized_weights: {}
+          };
+          
+          // Process chapters and questions into the format expected by the API
+          editedTemplate.chapters.forEach((chapter, chapterIndex) => {
+            customizationData.customized_chapters[chapter.id || chapterIndex] = {
+              name: chapter.name,
+              order_index: chapterIndex
             };
+            
+            chapter.questions.forEach((question, questionIndex) => {
+              const questionKey = `${chapter.id || chapterIndex}_${question.id || questionIndex}`;
+              customizationData.customized_questions[questionKey] = {
+                question_text: question.question_text,
+                scoring_criteria: question.scoring_criteria,
+                order_index: questionIndex
+              };
+            });
           });
-        });
-        
-        // Call API to save template customization
-        console.log('Saving template customization:', customizationData);
-        const response = await customizeTemplate(customizationData);
-        
-        console.log('Template saved successfully:', response.data);
+          
+          // Call API to save template customization
+          console.log('Saving template customization:', customizationData);
+          const response = await customizeTemplate(customizationData);
+          console.log('Template customization saved successfully:', response.data);
+        }
         
         // Close dialog and refresh data
         setTemplateDialogOpen(false);
+        setIsEditMode(false); // Reset edit mode
         
         // Clear any previous errors and show success
         setError(null);
         
-        // Refresh sectors data to show the newly saved template
+        // Refresh sectors data to show the changes
         await loadInitialData();
         
         // Show success message
-        console.log('✅ Template saved and sectors refreshed successfully');
+        console.log('✅ Template operation completed successfully');
         
       } catch (error) {
         console.error('Error saving template:', error);
@@ -583,7 +606,10 @@ const TemplateManagement = () => {
     return (
       <Dialog 
         open={templateDialogOpen} 
-        onClose={() => setTemplateDialogOpen(false)}
+        onClose={() => {
+          setTemplateDialogOpen(false);
+          setIsEditMode(false);
+        }}
         maxWidth="lg"
         fullWidth
         PaperProps={{ sx: { maxHeight: '90vh' } }}
@@ -591,7 +617,7 @@ const TemplateManagement = () => {
         <DialogTitle>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography variant="h6">
-              Edit Template: {selectedTemplate?.name}
+              {isEditMode ? 'Edit Template' : 'Duplicate Template'}: {selectedTemplate?.name}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               {templateDetails?.template?.sector_display_name}
@@ -697,7 +723,10 @@ const TemplateManagement = () => {
         </DialogContent>
         
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setTemplateDialogOpen(false)}>
+          <Button onClick={() => {
+            setTemplateDialogOpen(false);
+            setIsEditMode(false);
+          }}>
             Cancel
           </Button>
           <Button 

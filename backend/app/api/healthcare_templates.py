@@ -388,6 +388,75 @@ async def get_my_customizations(
             detail="Failed to retrieve customizations"
         )
 
+@router.put("/templates/{template_id}")
+async def update_template(
+    template_id: int,
+    request: Dict[str, Any],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update an existing template (GP only)"""
+    try:
+        # Check if user is GP
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only GPs can update templates"
+            )
+        
+        # Check if template exists and is active
+        template_check_query = text("""
+        SELECT id, name, is_default 
+        FROM analysis_templates 
+        WHERE id = :template_id AND is_active = TRUE
+        """)
+        
+        template_result = db.execute(template_check_query, {"template_id": template_id}).fetchone()
+        
+        if not template_result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Template {template_id} not found or already deleted"
+            )
+        
+        # Prevent updating default templates
+        if template_result[2]:  # is_default
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot update default templates"
+            )
+        
+        # Update template name and description
+        update_query = text("""
+        UPDATE analysis_templates 
+        SET name = :name, description = :description
+        WHERE id = :template_id
+        """)
+        
+        db.execute(update_query, {
+            "template_id": template_id,
+            "name": request.get("name", template_result[1]),
+            "description": request.get("description", "")
+        })
+        db.commit()
+        
+        logger.info(f"Template {template_id} updated by GP {current_user.email}")
+        
+        return {
+            "message": f"Template '{request.get('name', template_result[1])}' updated successfully",
+            "template_id": template_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating template {template_id}: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update template"
+        )
+
 @router.delete("/templates/{template_id}")
 async def delete_template(
     template_id: int,
