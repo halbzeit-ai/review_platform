@@ -131,7 +131,7 @@ async def get_stage_templates(
                 stage_order=row[4],
                 is_required=row[5],
                 estimated_duration_days=row[6],
-                stage_metadata=json.loads(row[7]) if row[7] else {},
+                stage_metadata=row[7] if isinstance(row[7], dict) else (json.loads(row[7]) if row[7] else {}),
                 is_active=row[8]
             ))
         
@@ -289,7 +289,7 @@ async def get_project_journey(
                 stage_code=stage_code,
                 stage_order=stage_order,
                 status=status,
-                stage_metadata=json.loads(metadata) if metadata else {},
+                stage_metadata=metadata if isinstance(metadata, dict) else (json.loads(metadata) if metadata else {}),
                 started_at=started_at,
                 completed_at=completed_at,
                 created_at=created_at,
@@ -387,7 +387,7 @@ async def update_stage_status(
             existing_meta_query = text("SELECT stage_metadata FROM project_stages WHERE id = :stage_id")
             existing_meta = db.execute(existing_meta_query, {"stage_id": stage_id}).fetchone()[0]
             
-            meta_dict = json.loads(existing_meta) if existing_meta else {}
+            meta_dict = existing_meta if isinstance(existing_meta, dict) else (json.loads(existing_meta) if existing_meta else {})
             meta_dict["completion_notes"] = request.completion_notes
             meta_dict["updated_by"] = current_user.email
             meta_dict["updated_at"] = datetime.utcnow().isoformat()
