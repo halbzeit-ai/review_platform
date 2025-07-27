@@ -185,38 +185,13 @@ const ProjectDashboard = () => {
   };
 
   const getStageDescription = (stageCode) => {
-    const descriptions = {
-      'deck_submission': 'You initially submit your deck and our AI will get the deal relevant data, analyse your startup according to our investment criteria. We will provide you with helpful feedback on your deck, the presentation of you company and the state of your business. You are then invited to answer questions, fill in details and also submit a new version of your deck.',
-      
-      'video_upload': 'As you can imagine, we are flooded with pitches and we simply cannot afford to meet every startup in person. To make the process easier for us and for you, we invite you to do a 5min video pitch recording you and possible co-founders to present your startup. A second video would then also demonstrate your product, software or any relevant information to for offering to the market. Again, we will analyse these videos using AI, but we will also watch them in person.',
-      
-      'gp_interview': 'Now it\'s time to get to know you in person and also you can ask your questions about the funding process, anything you want to know about HALBZEIT and the founders and hopefully, we get a personal touch here and an initial taste about you as founders feel in person. For most institutions, this is the most important step as it is very important to believe in the founders and their views on the world.',
-      
-      'kyc_verification': 'As a funding platform it is a legal obligation to verify that you are you and have an external proof of that. We are working with online verification services that will have a brief video interview with you asking you to show your ID and move your face to match it with the ID.',
-      
-      'due_diligence': 'Next, we need to look a bit deeper into your business plan, financial statements of the last couple of years, medical validity of your offering and so on. This is an important and legally obligatory step for us as funding platform as we have the obligation to deliver legit startups in whose success we as HALBZEIT can believe in.',
-      
-      'term_sheet': 'Once that is done, we can go on to negotiate terms of the investment. These are usually standard terms, but we may deviate when we are co-investing with other institutions. Further more, we need to discuss the current valuation of your company which has a direct effect on what share of your company our investors will get.',
-      
-      'publishing': 'Now we are able to "go public"! Your startup will be presented to the public and investors can view the investment opportunity. As part of this, we will publish a so-called KIIS (Key Investment Information Sheet) as this is a legal obligation again. It includes the investment terms in addition to your company\'s information.',
-      
-      'investor_commits': 'Investors are informed by us that there is a new investment opportunity, e.g. by our newsletter. They can also interact with you and comment on specific details of your offering, scientific background, reimbursement etc. They are asked for a financial commitment, e.g. 10.000€, we collect the commitments and you\'ll see how much is committed at any time.',
-      
-      'commit_complete': 'If you get enough committed capital: BINGO! Let\'s formalize the relationship, sign contracts and transfer the money.',
-      
-      'signing_vehicle': 'We are setting up a legal entity in which all investors are bundled, they get a share of that vehicle proportionate to the amount they are investing. This legal entity will become a shareholder in your company. In this way, you are not dealing with dozens of new investors but only one that will speak with one voice.',
-      
-      'signing_startup': 'We will sign the investment contract with you based on the term sheet we have negotiated earlier. We GPs do this as representing person in the role of the legal vehicle.',
-      
-      'funding_collection': 'The legal entity has a bank account, it will collect the money from the investors and keep it until the investment is formally registered here in Germany.',
-      
-      'funding_transfer': 'Once all money is there and legal obligations are met, the transfer of the money to your bank account is executed.',
-      
-      'round_closed': 'This is the final step: PARTY! From now on, the legal entity will receive monthly updates and reporting from you and will deliver this information to the investors. Again, this is a legal obligation.'
-    };
-    
-    return descriptions[stageCode] || 'No description available for this stage.';
+    return t(`journey.descriptions.${stageCode}`, 'No description available for this stage.');
   };
+
+  const getStageName = (stageCode) => {
+    return t(`journey.stages.${stageCode}`, stageCode);
+  };
+
 
   const TabPanel = ({ children, value, index }) => (
     <div hidden={value !== index}>
@@ -294,7 +269,7 @@ const ProjectDashboard = () => {
   const OverviewContent = () => (
     <Box>
       <Typography variant="h5" sx={{ mb: 3 }}>
-        Project Overview
+        {t('project.tabs.overview')}
       </Typography>
       
       <Grid container spacing={3}>
@@ -338,14 +313,14 @@ const ProjectDashboard = () => {
       {selectedProject && projectJourney && (
         <>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            Funding Progress
+            {t('journey.progressOverview')}
           </Typography>
           <Card sx={{ mb: 4, bgcolor: 'primary.50', border: '1px solid', borderColor: 'primary.200' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
                   <Typography variant="h6" gutterBottom>
-                    {selectedProject.project_name} - Funding Journey
+                    {selectedProject.project_name} - {t('journey.title')}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     Track your progress through the 14-stage funding process
@@ -357,7 +332,7 @@ const ProjectDashboard = () => {
                       sx={{ width: 200, height: 8, borderRadius: 4 }}
                     />
                     <Typography variant="body2" color="text.secondary">
-                      {Math.round(projectJourney.completion_percentage)}% Complete
+                      {Math.round(projectJourney.completion_percentage)}% {t('journey.complete')}
                     </Typography>
                     <Chip 
                       label={`${projectJourney.completed_stages}/${projectJourney.total_stages} Stages`} 
@@ -372,7 +347,7 @@ const ProjectDashboard = () => {
                   onClick={() => setActiveTab(0)}
                   size="large"
                 >
-                  View Journey
+                  {t('journey.viewJourney')}
                 </Button>
               </Box>
             </CardContent>
@@ -397,7 +372,7 @@ const ProjectDashboard = () => {
   const DecksContent = () => (
     <Box>
       <Typography variant="h5" sx={{ mb: 3 }}>
-        All Decks
+        {t('project.tabs.allDecks')}
       </Typography>
       
       <Grid container spacing={3}>
@@ -432,7 +407,7 @@ const ProjectDashboard = () => {
     if (!selectedProject || !projectJourney) {
       return (
         <Alert severity="info">
-          No funding journey data available for this project yet.
+          {t('journey.noJourneyData')}
         </Alert>
       );
     }
@@ -440,14 +415,14 @@ const ProjectDashboard = () => {
     return (
       <Box>
         <Typography variant="h5" sx={{ mb: 3 }}>
-          Funding Journey - {selectedProject.project_name}
+          {t('journey.title')} - {selectedProject.project_name}
         </Typography>
         
         
         {/* Overall Progress Bar */}
         <Box sx={{ mb: 4 }}>
           <Typography variant="h6" gutterBottom>
-            Overall Progress
+            {t('journey.overallProgress')}
           </Typography>
           <LinearProgress 
             variant="determinate" 
@@ -455,13 +430,13 @@ const ProjectDashboard = () => {
             sx={{ height: 12, borderRadius: 6 }}
           />
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {Math.round(projectJourney.completion_percentage)}% Complete
+            {Math.round(projectJourney.completion_percentage)}% {t('journey.complete')}
           </Typography>
         </Box>
 
         {/* Funding Journey Stepper */}
         <Typography variant="h6" gutterBottom>
-          Funding Process Steps
+          {t('journey.fundingProcessSteps')}
         </Typography>
         <Stepper 
           orientation="vertical"
@@ -483,10 +458,10 @@ const ProjectDashboard = () => {
                       '&:hover': { color: 'primary.main', textDecoration: 'underline' }
                     }}
                   >
-                    {stage.stage_name}
+                    {getStageName(stage.stage_code || stage.stage_name?.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''))}
                   </Typography>
                   <Chip 
-                    label={stage.status} 
+                    label={t(`journey.progress.${stage.status}`, stage.status)} 
                     color={getStatusColor(stage.status)}
                     size="small"
                   />
@@ -494,12 +469,12 @@ const ProjectDashboard = () => {
                 <Box sx={{ mt: 1 }}>
                   {stage.status === 'completed' && stage.completed_at && (
                     <Typography variant="caption" color="text.secondary">
-                      Completed: {new Date(stage.completed_at).toLocaleDateString()}
+                      {t('journey.dates.completed')} {new Date(stage.completed_at).toLocaleDateString()}
                     </Typography>
                   )}
                   {stage.status === 'active' && stage.started_at && (
                     <Typography variant="caption" color="text.secondary">
-                      Started: {new Date(stage.started_at).toLocaleDateString()}
+                      {t('journey.dates.started')} {new Date(stage.started_at).toLocaleDateString()}
                     </Typography>
                   )}
                 </Box>
@@ -510,7 +485,7 @@ const ProjectDashboard = () => {
                   {hoveredStageId === stage.id && (
                     <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1, border: '1px solid', borderColor: 'grey.200' }}>
                       <Typography variant="body2" sx={{ mb: 1 }}>
-                        <strong>Stage {stage.stage_order} of 14</strong>
+                        <strong>{t('journey.stageInfo.stageOf', { order: stage.stage_order })}</strong>
                       </Typography>
                       <Typography variant="body2" paragraph>
                         {getStageDescription(stage.stage_code || stage.stage_name?.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''))}
@@ -560,10 +535,10 @@ const ProjectDashboard = () => {
           }}
           sx={{ mr: 2 }}
         >
-          Back to Dashboard
+          {t('journey.backToDashboard')}
         </Button>
         <Typography variant="h4">
-          Project Dashboard
+          {t('project.title')}
         </Typography>
       </Box>
 
@@ -598,7 +573,7 @@ const ProjectDashboard = () => {
       {/* Main Content */}
       <Paper sx={{ width: '100%' }}>
         <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
-          <Tab label="Funding Journey" />
+          <Tab label={t('journey.title')} />
           <Tab label={t('project.tabs.overview')} />
           <Tab label={t('project.tabs.allDecks')} />
           <Tab label={t('project.tabs.uploads')} />

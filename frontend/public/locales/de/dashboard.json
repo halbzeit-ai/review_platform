@@ -131,6 +131,66 @@
       "viewResults": "Ergebnisse anzeigen"
     }
   },
+  "journey": {
+    "title": "Finanzierungsreise",
+    "noProjects": "Keine Projekte gefunden",
+    "noProjectsDescription": "Sie haben noch keine Finanzierungsprojekte. Laden Sie ein Pitch Deck hoch, um zu beginnen.",
+    "noJourneyData": "Für dieses Projekt sind noch keine Finanzierungsreise-Daten verfügbar.",
+    "selectProject": "Projekt auswählen",
+    "progressOverview": "Fortschrittsübersicht",
+    "overallProgress": "Gesamtfortschritt",
+    "fundingProcessSteps": "Finanzierungsprozess-Schritte",
+    "complete": "Abgeschlossen",
+    "completed": "Abgeschlossen",
+    "active": "Aktiv",
+    "pending": "Ausstehend",
+    "progress": {
+      "completed": "Abgeschlossen",
+      "active": "Aktiv",
+      "pending": "Ausstehend"
+    },
+    "dates": {
+      "completed": "Abgeschlossen:",
+      "started": "Gestartet:"
+    },
+    "backToDashboard": "Zurück zum Dashboard",
+    "viewJourney": "Reise anzeigen",
+    "stageInfo": {
+      "stageOf": "Stufe {order} von 14"
+    },
+    "stages": {
+      "deck_submission": "Deck-Einreichung & Feedback",
+      "video_upload": "Video-Upload",
+      "gp_interview": "GP-Persönliches Interview",
+      "kyc_verification": "Gründer-Verifizierung (KYC)",
+      "due_diligence": "Due Diligence",
+      "term_sheet": "Term Sheet Verhandlung / LOI",
+      "publishing": "Veröffentlichung",
+      "investor_commits": "Investor-Zusagen / Investor-Interaktion",
+      "commit_complete": "Zusagen abgeschlossen",
+      "signing_vehicle": "Unterzeichnung Vehikel",
+      "signing_startup": "Unterzeichnung Startup",
+      "funding_collection": "Mittelsammlung",
+      "funding_transfer": "Mittelübertragung",
+      "round_closed": "Runde abgeschlossen"
+    },
+    "descriptions": {
+      "deck_submission": "Sie reichen zunächst Ihr Deck ein und unsere KI wird die relevanten Deal-Daten erfassen und Ihr Startup nach unseren Investitionskriterien analysieren. Wir werden Ihnen hilfreiches Feedback zu Ihrem Deck, der Präsentation Ihres Unternehmens und dem Zustand Ihres Geschäfts geben. Sie werden dann eingeladen, Fragen zu beantworten, Details auszufüllen und auch eine neue Version Ihres Decks einzureichen.",
+      "video_upload": "Wie Sie sich vorstellen können, werden wir mit Pitches überflutet und können es uns einfach nicht leisten, jedes Startup persönlich zu treffen. Um den Prozess für uns und für Sie einfacher zu gestalten, laden wir Sie ein, ein 5-minütiges Video-Pitch aufzunehmen, in dem Sie und mögliche Mitgründer Ihr Startup präsentieren. Ein zweites Video würde dann auch Ihr Produkt, Ihre Software oder relevante Informationen zu Ihrem Marktangebot demonstrieren. Auch hier werden wir diese Videos mit KI analysieren, aber wir werden sie auch persönlich ansehen.",
+      "gp_interview": "Jetzt ist es an der Zeit, Sie persönlich kennenzulernen und auch Sie können Ihre Fragen zum Finanzierungsprozess stellen, alles was Sie über HALBZEIT und die Gründer wissen möchten und hoffentlich bekommen wir hier eine persönliche Note und einen ersten Eindruck davon, wie Sie sich als Gründer persönlich anfühlen. Für die meisten Institutionen ist dies der wichtigste Schritt, da es sehr wichtig ist, an die Gründer und ihre Weltsicht zu glauben.",
+      "kyc_verification": "Als Finanzierungsplattform ist es eine rechtliche Verpflichtung zu verifizieren, dass Sie Sie sind und einen externen Nachweis dafür haben. Wir arbeiten mit Online-Verifizierungsdiensten zusammen, die ein kurzes Video-Interview mit Ihnen führen und Sie bitten, Ihren Ausweis zu zeigen und Ihr Gesicht zu bewegen, um es mit dem Ausweis abzugleichen.",
+      "due_diligence": "Als nächstes müssen wir etwas tiefer in Ihren Geschäftsplan, die Finanzberichte der letzten Jahre, die medizinische Gültigkeit Ihres Angebots und so weiter schauen. Dies ist ein wichtiger und rechtlich obligatorischer Schritt für uns als Finanzierungsplattform, da wir die Verpflichtung haben, legitime Startups zu liefern, an deren Erfolg wir als HALBZEIT glauben können.",
+      "term_sheet": "Sobald das erledigt ist, können wir mit der Verhandlung der Investitionsbedingungen fortfahren. Dies sind normalerweise Standardbedingungen, aber wir können abweichen, wenn wir mit anderen Institutionen co-investieren. Außerdem müssen wir die aktuelle Bewertung Ihres Unternehmens diskutieren, die einen direkten Einfluss darauf hat, welchen Anteil an Ihrem Unternehmen unsere Investoren erhalten werden.",
+      "publishing": "Jetzt können wir \"an die Öffentlichkeit gehen\"! Ihr Startup wird der Öffentlichkeit präsentiert und Investoren können die Investitionsmöglichkeit einsehen. Als Teil davon werden wir ein sogenanntes KIIS (Key Investment Information Sheet) veröffentlichen, da dies wieder eine rechtliche Verpflichtung ist. Es enthält die Investitionsbedingungen zusätzlich zu den Informationen Ihres Unternehmens.",
+      "investor_commits": "Investoren werden von uns über eine neue Investitionsmöglichkeit informiert, z.B. durch unseren Newsletter. Sie können auch mit Ihnen interagieren und spezifische Details Ihres Angebots, wissenschaftlichen Hintergrunds, Erstattung etc. kommentieren. Sie werden um eine finanzielle Zusage gebeten, z.B. 10.000€, wir sammeln die Zusagen und Sie sehen jederzeit, wie viel zugesagt wurde.",
+      "commit_complete": "Wenn Sie genug zugesagtes Kapital bekommen: BINGO! Lassen Sie uns die Beziehung formalisieren, Verträge unterzeichnen und das Geld überweisen.",
+      "signing_vehicle": "Wir richten eine rechtliche Einheit ein, in der alle Investoren gebündelt werden, sie erhalten einen Anteil an diesem Vehikel proportional zu dem Betrag, den sie investieren. Diese rechtliche Einheit wird ein Aktionär in Ihrem Unternehmen. Auf diese Weise haben Sie es nicht mit Dutzenden neuer Investoren zu tun, sondern nur mit einem, der mit einer Stimme spricht.",
+      "signing_startup": "Wir werden den Investitionsvertrag mit Ihnen basierend auf dem Term Sheet unterzeichnen, das wir zuvor verhandelt haben. Wir GPs tun dies als Vertreter in der Rolle des rechtlichen Vehikels.",
+      "funding_collection": "Die rechtliche Einheit hat ein Bankkonto, sie wird das Geld von den Investoren sammeln und es aufbewahren, bis die Investition hier in Deutschland formal registriert ist.",
+      "funding_transfer": "Sobald alles Geld da ist und die rechtlichen Verpflichtungen erfüllt sind, wird die Übertragung des Geldes auf Ihr Bankkonto ausgeführt.",
+      "round_closed": "Dies ist der letzte Schritt: PARTY! Von nun an wird die rechtliche Einheit monatliche Updates und Berichte von Ihnen erhalten und diese Informationen an die Investoren weiterleiten. Auch dies ist eine rechtliche Verpflichtung."
+    }
+  },
   "modelConfig": {
     "title": "KI-Modell-Konfiguration",
     "description": "Konfigurieren Sie verschiedene KI-Modelle für jede Analyseaufgabe",
