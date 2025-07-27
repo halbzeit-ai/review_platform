@@ -1,0 +1,516 @@
+"""
+Project Management API Endpoints
+Handles multi-project funding management, document uploads, and stage progression
+"""
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from sqlalchemy import text
+from typing import List, Dict, Any, Optional
+from pydantic import BaseModel, Field
+from datetime import datetime
+import json
+import os
+import logging
+import shutil
+from pathlib import Path
+
+from ..db.database import get_db
+from ..db.models import User
+from .auth import get_current_user
+from ..core.config import settings
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/project-management", tags=["project-management"])
+
+# Pydantic models for API requests/responses
+class ProjectResponse(BaseModel):
+    id: int
+    company_id: str
+    project_name: str
+    funding_round: str
+    current_stage_id: Optional[int] = None
+    funding_sought: Optional[str] = None
+    healthcare_sector_id: Optional[int] = None
+    company_offering: Optional[str] = None
+    project_metadata: Dict[str, Any] = {}
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+    document_count: int = 0
+    interaction_count: int = 0
+
+class ProjectStageResponse(BaseModel):
+    id: int
+    project_id: int
+    stage_name: str
+    stage_order: int
+    status: str
+    stage_metadata: Dict[str, Any] = {}
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    created_at: datetime
+
+class ProjectDocumentResponse(BaseModel):
+    id: int
+    project_id: int
+    document_type: str
+    file_name: str
+    file_path: str
+    original_filename: Optional[str] = None
+    file_size: Optional[int] = None
+    processing_status: str
+    upload_date: datetime
+    uploaded_by: int
+    uploader_name: Optional[str] = None
+    analysis_completed: bool = False
+
+class ProjectInteractionResponse(BaseModel):
+    id: int
+    project_id: int
+    interaction_type: str
+    title: Optional[str] = None
+    content: str
+    document_id: Optional[int] = None
+    created_by: int
+    creator_name: Optional[str] = None
+    status: str
+    interaction_metadata: Dict[str, Any] = {}
+    created_at: datetime
+    updated_at: datetime
+
+class CreateProjectRequest(BaseModel):
+    project_name: str
+    funding_round: str
+    funding_sought: Optional[str] = None
+    company_offering: Optional[str] = None
+
+class UpdateProjectRequest(BaseModel):
+    project_name: Optional[str] = None
+    funding_round: Optional[str] = None
+    funding_sought: Optional[str] = None
+    company_offering: Optional[str] = None
+    current_stage_id: Optional[int] = None
+
+def get_company_id_from_user(user: User) -> str:
+    """Extract company_id from user based on company name"""
+    if user.company_name:
+        import re
+        return re.sub(r'[^a-z0-9-]', '', re.sub(r'\s+', '-', user.company_name.lower()))
+    return user.email.split('@')[0]
+
+def check_project_access(user: User, project_id: int, db: Session) -> bool:
+    """Check if user has access to the project"""
+    # Get project company_id
+    query = text("SELECT company_id FROM projects WHERE id = :project_id AND is_active = TRUE")
+    result = db.execute(query, {"project_id": project_id}).fetchone()
+    
+    if not result:
+        return False
+    
+    project_company_id = result[0]
+    
+    # Startups can only access their own company projects
+    if user.role == "startup":
+        return get_company_id_from_user(user) == project_company_id
+    
+    # GPs can access any company project
+    if user.role == "gp":
+        return True
+    
+    return False
+
+# Company-level endpoints for managing multiple projects
+@router.get("/companies/{company_id}/projects", response_model=List[ProjectResponse])
+async def get_company_projects(
+    company_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all projects for a specific company"""
+    try:
+        # Check access permissions
+        if current_user.role == "startup" and get_company_id_from_user(current_user) != company_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have access to this company's projects"
+            )
+        
+        # Get all projects for the company with counts
+        query = text("""
+        SELECT p.id, p.company_id, p.project_name, p.funding_round, p.current_stage_id,
+               p.funding_sought, p.healthcare_sector_id, p.company_offering, 
+               p.project_metadata, p.is_active, p.created_at, p.updated_at,
+               COUNT(DISTINCT pd.id) as document_count,
+               COUNT(DISTINCT pi.id) as interaction_count
+        FROM projects p
+        LEFT JOIN project_documents pd ON p.id = pd.project_id AND pd.is_active = TRUE
+        LEFT JOIN project_interactions pi ON p.id = pi.project_id AND pi.status = 'active'
+        WHERE p.company_id = :company_id AND p.is_active = TRUE
+        GROUP BY p.id, p.company_id, p.project_name, p.funding_round, p.current_stage_id,
+                 p.funding_sought, p.healthcare_sector_id, p.company_offering, 
+                 p.project_metadata, p.is_active, p.created_at, p.updated_at
+        ORDER BY p.created_at DESC
+        """)
+        
+        results = db.execute(query, {"company_id": company_id}).fetchall()
+        
+        projects = []
+        for row in results:
+            projects.append(ProjectResponse(
+                id=row[0],
+                company_id=row[1],
+                project_name=row[2],
+                funding_round=row[3],
+                current_stage_id=row[4],
+                funding_sought=row[5],
+                healthcare_sector_id=row[6],
+                company_offering=row[7],
+                project_metadata=json.loads(row[8]) if row[8] else {},
+                is_active=row[9],
+                created_at=row[10],
+                updated_at=row[11],
+                document_count=row[12] or 0,
+                interaction_count=row[13] or 0
+            ))
+        
+        return projects
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting projects for company {company_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve company projects"
+        )
+
+@router.post("/companies/{company_id}/projects", response_model=ProjectResponse)
+async def create_project(
+    company_id: str,
+    request: CreateProjectRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new project for a company"""
+    try:
+        # Check access permissions
+        if current_user.role == "startup" and get_company_id_from_user(current_user) != company_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only create projects for your own company"
+            )
+        
+        # Create the project
+        insert_query = text("""
+        INSERT INTO projects (company_id, project_name, funding_round, funding_sought, 
+                             company_offering, project_metadata, created_at, updated_at)
+        VALUES (:company_id, :project_name, :funding_round, :funding_sought, 
+                :company_offering, :project_metadata, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        RETURNING id, created_at, updated_at
+        """)
+        
+        result = db.execute(insert_query, {
+            "company_id": company_id,
+            "project_name": request.project_name,
+            "funding_round": request.funding_round,
+            "funding_sought": request.funding_sought,
+            "company_offering": request.company_offering,
+            "project_metadata": json.dumps({"created_by": current_user.email})
+        })
+        
+        project_data = result.fetchone()
+        project_id = project_data[0]
+        db.commit()
+        
+        logger.info(f"Created project {project_id} for company {company_id} by {current_user.email}")
+        
+        return ProjectResponse(
+            id=project_id,
+            company_id=company_id,
+            project_name=request.project_name,
+            funding_round=request.funding_round,
+            current_stage_id=None,
+            funding_sought=request.funding_sought,
+            healthcare_sector_id=None,
+            company_offering=request.company_offering,
+            project_metadata={"created_by": current_user.email},
+            is_active=True,
+            created_at=project_data[1],
+            updated_at=project_data[2],
+            document_count=0,
+            interaction_count=0
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating project for company {company_id}: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create project"
+        )
+
+# Project-specific endpoints
+@router.get("/projects/{project_id}", response_model=ProjectResponse)
+async def get_project(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get detailed information about a specific project"""
+    try:
+        # Check access permissions
+        if not check_project_access(current_user, project_id, db):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have access to this project"
+            )
+        
+        # Get project details with counts
+        query = text("""
+        SELECT p.id, p.company_id, p.project_name, p.funding_round, p.current_stage_id,
+               p.funding_sought, p.healthcare_sector_id, p.company_offering, 
+               p.project_metadata, p.is_active, p.created_at, p.updated_at,
+               COUNT(DISTINCT pd.id) as document_count,
+               COUNT(DISTINCT pi.id) as interaction_count
+        FROM projects p
+        LEFT JOIN project_documents pd ON p.id = pd.project_id AND pd.is_active = TRUE
+        LEFT JOIN project_interactions pi ON p.id = pi.project_id AND pi.status = 'active'
+        WHERE p.id = :project_id AND p.is_active = TRUE
+        GROUP BY p.id, p.company_id, p.project_name, p.funding_round, p.current_stage_id,
+                 p.funding_sought, p.healthcare_sector_id, p.company_offering, 
+                 p.project_metadata, p.is_active, p.created_at, p.updated_at
+        """)
+        
+        result = db.execute(query, {"project_id": project_id}).fetchone()
+        
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project {project_id} not found"
+            )
+        
+        return ProjectResponse(
+            id=result[0],
+            company_id=result[1],
+            project_name=result[2],
+            funding_round=result[3],
+            current_stage_id=result[4],
+            funding_sought=result[5],
+            healthcare_sector_id=result[6],
+            company_offering=result[7],
+            project_metadata=json.loads(result[8]) if result[8] else {},
+            is_active=result[9],
+            created_at=result[10],
+            updated_at=result[11],
+            document_count=result[12] or 0,
+            interaction_count=result[13] or 0
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting project {project_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve project"
+        )
+
+@router.put("/projects/{project_id}", response_model=ProjectResponse)
+async def update_project(
+    project_id: int,
+    request: UpdateProjectRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update project information"""
+    try:
+        # Check access permissions
+        if not check_project_access(current_user, project_id, db):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have access to this project"
+            )
+        
+        # Build update query dynamically based on provided fields
+        update_fields = []
+        params = {"project_id": project_id}
+        
+        if request.project_name is not None:
+            update_fields.append("project_name = :project_name")
+            params["project_name"] = request.project_name
+            
+        if request.funding_round is not None:
+            update_fields.append("funding_round = :funding_round")
+            params["funding_round"] = request.funding_round
+            
+        if request.funding_sought is not None:
+            update_fields.append("funding_sought = :funding_sought")
+            params["funding_sought"] = request.funding_sought
+            
+        if request.company_offering is not None:
+            update_fields.append("company_offering = :company_offering")
+            params["company_offering"] = request.company_offering
+            
+        if request.current_stage_id is not None:
+            update_fields.append("current_stage_id = :current_stage_id")
+            params["current_stage_id"] = request.current_stage_id
+        
+        if not update_fields:
+            # No fields to update
+            return await get_project(project_id, db, current_user)
+        
+        update_query = text(f"""
+        UPDATE projects 
+        SET {', '.join(update_fields)}, updated_at = CURRENT_TIMESTAMP
+        WHERE id = :project_id AND is_active = TRUE
+        """)
+        
+        db.execute(update_query, params)
+        db.commit()
+        
+        logger.info(f"Updated project {project_id} by {current_user.email}")
+        
+        # Return updated project
+        return await get_project(project_id, db, current_user)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating project {project_id}: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update project"
+        )
+
+@router.get("/projects/{project_id}/documents", response_model=List[ProjectDocumentResponse])
+async def get_project_documents(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all documents for a specific project"""
+    try:
+        # Check access permissions
+        if not check_project_access(current_user, project_id, db):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have access to this project"
+            )
+        
+        # Get project documents
+        query = text("""
+        SELECT pd.id, pd.project_id, pd.document_type, pd.file_name, pd.file_path,
+               pd.original_filename, pd.file_size, pd.processing_status, pd.upload_date,
+               pd.uploaded_by, pd.analysis_results_path,
+               u.first_name, u.last_name, u.email
+        FROM project_documents pd
+        JOIN users u ON pd.uploaded_by = u.id
+        WHERE pd.project_id = :project_id AND pd.is_active = TRUE
+        ORDER BY pd.upload_date DESC
+        """)
+        
+        results = db.execute(query, {"project_id": project_id}).fetchall()
+        
+        documents = []
+        for row in results:
+            uploader_name = f"{row[11] or ''} {row[12] or ''}".strip() or row[13]
+            analysis_completed = bool(row[10])  # analysis_results_path exists
+            
+            documents.append(ProjectDocumentResponse(
+                id=row[0],
+                project_id=row[1],
+                document_type=row[2],
+                file_name=row[3],
+                file_path=row[4],
+                original_filename=row[5],
+                file_size=row[6],
+                processing_status=row[7],
+                upload_date=row[8],
+                uploaded_by=row[9],
+                uploader_name=uploader_name,
+                analysis_completed=analysis_completed
+            ))
+        
+        return documents
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting documents for project {project_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve project documents"
+        )
+
+@router.get("/projects/{project_id}/interactions", response_model=List[ProjectInteractionResponse])
+async def get_project_interactions(
+    project_id: int,
+    interaction_type: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all interactions for a specific project"""
+    try:
+        # Check access permissions
+        if not check_project_access(current_user, project_id, db):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have access to this project"
+            )
+        
+        # Build query with optional interaction type filter
+        base_query = """
+        SELECT pi.id, pi.project_id, pi.interaction_type, pi.title, pi.content,
+               pi.document_id, pi.created_by, pi.status, pi.interaction_metadata,
+               pi.created_at, pi.updated_at,
+               u.first_name, u.last_name, u.email
+        FROM project_interactions pi
+        JOIN users u ON pi.created_by = u.id
+        WHERE pi.project_id = :project_id AND pi.status = 'active'
+        """
+        
+        params = {"project_id": project_id}
+        
+        if interaction_type:
+            base_query += " AND pi.interaction_type = :interaction_type"
+            params["interaction_type"] = interaction_type
+        
+        base_query += " ORDER BY pi.created_at DESC"
+        
+        query = text(base_query)
+        results = db.execute(query, params).fetchall()
+        
+        interactions = []
+        for row in results:
+            creator_name = f"{row[11] or ''} {row[12] or ''}".strip() or row[13]
+            
+            interactions.append(ProjectInteractionResponse(
+                id=row[0],
+                project_id=row[1],
+                interaction_type=row[2],
+                title=row[3],
+                content=row[4],
+                document_id=row[5],
+                created_by=row[6],
+                creator_name=creator_name,
+                status=row[7],
+                interaction_metadata=json.loads(row[8]) if row[8] else {},
+                created_at=row[9],
+                updated_at=row[10]
+            ))
+        
+        return interactions
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting interactions for project {project_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve project interactions"
+        )
