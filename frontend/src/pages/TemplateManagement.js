@@ -1049,21 +1049,23 @@ const TemplateManagement = () => {
                     </Typography>
                   </CardContent>
                   
-                  <CardActions>
-                    <Button 
-                      size="small" 
-                      startIcon={<EditIcon />}
-                      onClick={() => handleEditTemplate(template)}
-                    >
-                      Edit
-                    </Button>
-                    <Button 
-                      size="small" 
-                      startIcon={<CopyIcon />}
-                      onClick={() => handleDuplicateTemplate(template)}
-                    >
-                      Duplicate
-                    </Button>
+                  <CardActions sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button 
+                        size="small" 
+                        startIcon={<EditIcon />}
+                        onClick={() => handleEditTemplate(template)}
+                      >
+                        Edit
+                      </Button>
+                      <Button 
+                        size="small" 
+                        startIcon={<CopyIcon />}
+                        onClick={() => handleDuplicateTemplate(template)}
+                      >
+                        Duplicate
+                      </Button>
+                    </Box>
                     <Button 
                       size="small" 
                       startIcon={<DeleteIcon />}
