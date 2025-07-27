@@ -222,8 +222,9 @@ Ensure the confidence score reflects how certain you are about the classificatio
         return None
     
     def _get_default_template_id(self, sector_id: int) -> Optional[int]:
-        """Get default template ID for a sector"""
+        """Get default template ID for a sector, with fallback to regular templates"""
         try:
+            # First, try to find a default template
             query = text("""
             SELECT id FROM analysis_templates 
             WHERE healthcare_sector_id = :sector_id AND is_default = TRUE AND is_active = TRUE
@@ -231,10 +232,28 @@ Ensure the confidence score reflects how certain you are about the classificatio
             """)
             
             result = self.db.execute(query, {"sector_id": sector_id}).fetchone()
-            return result[0] if result else None
+            if result:
+                return result[0]
+            
+            # If no default template found, fall back to first available regular template for the sector
+            logger.info(f"No default template found for sector {sector_id}, using fallback")
+            fallback_query = text("""
+            SELECT id FROM analysis_templates 
+            WHERE healthcare_sector_id = :sector_id AND is_active = TRUE
+            ORDER BY id ASC
+            LIMIT 1
+            """)
+            
+            fallback_result = self.db.execute(fallback_query, {"sector_id": sector_id}).fetchone()
+            if fallback_result:
+                logger.info(f"Using fallback template {fallback_result[0]} for sector {sector_id}")
+                return fallback_result[0]
+            
+            logger.warning(f"No templates found for sector {sector_id}")
+            return None
             
         except Exception as e:
-            logger.warning(f"Could not get default template (table may not exist): {e}")
+            logger.warning(f"Could not get template for sector {sector_id}: {e}")
             # Rollback any failed transaction
             try:
                 self.db.rollback()

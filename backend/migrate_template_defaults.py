@@ -70,25 +70,18 @@ def main():
         for template in default_templates:
             print(f"  - ID {template['id']}: {template['name']}")
         
-        # Find templates to convert (all except Standard Seven-Chapter Review)
-        templates_to_convert = []
-        standard_template = None
+        # Convert ALL current default templates to regular templates
+        # Based on the current state, "Standard Seven-Chapter Review" is already regular
+        templates_to_convert = list(default_templates)
         
-        for template in default_templates:
-            if "standard seven-chapter review" in template['name'].lower():
-                standard_template = template
-                print(f"\n🔒 KEEPING as default: {template['name']} (ID: {template['id']})")
-            else:
-                templates_to_convert.append(template)
+        print(f"\n🔄 All {len(templates_to_convert)} default templates will be converted to regular templates:")
+        for template in templates_to_convert:
+            print(f"  - {template['name']} (ID: {template['id']})")
         
-        if not standard_template:
-            print("\n⚠️  WARNING: Could not find 'Standard Seven-Chapter Review' template!")
-            print("Available templates:", [t['name'] for t in default_templates])
-            rollback_confirm = input("Continue anyway? Type 'YES' to proceed: ")
-            if rollback_confirm != 'YES':
-                print("❌ Migration cancelled")
-                conn.rollback()
-                return
+        print(f"\n💡 This means:")
+        print(f"  - GPs will be able to edit and delete these sector-specific templates")
+        print(f"  - 'Standard Seven-Chapter Review' is already regular (good for general use)")
+        print(f"  - Each sector will no longer have a protected default template")
         
         if not templates_to_convert:
             print("\n✅ No templates need to be converted")
