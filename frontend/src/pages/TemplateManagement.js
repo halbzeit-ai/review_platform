@@ -269,11 +269,19 @@ const TemplateManagement = () => {
     if (!templateToDelete) return;
     
     try {
+      // Debug: Log the template object to see its structure
+      console.log('🔍 Template to delete:', templateToDelete);
+      console.log('🔍 is_customization:', templateToDelete.is_customization);
+      console.log('🔍 customization_id:', templateToDelete.customization_id);
+      console.log('🔍 id:', templateToDelete.id);
+      
       // Check if it's a customization or regular template
       if (templateToDelete.is_customization) {
+        console.log('🔥 Deleting customization with ID:', templateToDelete.customization_id);
         // Delete customization using the customization_id
         await deleteCustomization(templateToDelete.customization_id);
       } else {
+        console.log('🔥 Deleting regular template with ID:', templateToDelete.id);
         // Delete regular template using the template id
         await deleteTemplate(templateToDelete.id);
       }
