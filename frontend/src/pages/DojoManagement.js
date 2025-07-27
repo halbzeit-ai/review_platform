@@ -1104,12 +1104,470 @@ const DojoManagement = () => {
       {/* Main Content - Tabs */}
       <Paper sx={{ p: 3 }}>
         <Tabs value={currentTab} onChange={handleTabChange}>
-          <Tab label={t('tabs.trainingFiles')} />
           <Tab label={t('tabs.extractionTestingLab')} />
+          <Tab label="Extraction Experiments History" />
+          <Tab label={t('tabs.trainingFiles')} />
         </Tabs>
         
-        {/* Tab Panel 0: Files Table */}
+        {/* Tab Panel 0: Extraction Testing Lab */}
         {currentTab === 0 && (
+          <Box sx={{ mt: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+              <Box>
+                <Typography variant="h6" gutterBottom>
+                  Extraction Testing Lab
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Test and compare company offering extraction quality using different models and prompts
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                {gpuStatus && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {gpuStatus === 'online' && (
+                      <>
+                        <CheckCircle color="success" fontSize="small" />
+                        <Typography variant="caption" color="success.main">GPU Online</Typography>
+                      </>
+                    )}
+                    {gpuStatus === 'offline' && (
+                      <>
+                        <Error color="warning" fontSize="small" />
+                        <Typography variant="caption" color="warning.main">GPU Offline</Typography>
+                      </>
+                    )}
+                    {gpuStatus === 'error' && (
+                      <>
+                        <Error color="error" fontSize="small" />
+                        <Typography variant="caption" color="error.main">GPU Connection Error</Typography>
+                      </>
+                    )}
+                  </Box>
+                )}
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={loadAvailableModels}
+                  disabled={modelsLoading}
+                  startIcon={modelsLoading ? <CircularProgress size={16} /> : <Refresh />}
+                >
+                  {modelsLoading ? 'Loading...' : 'Refresh Models'}
+                </Button>
+              </Box>
+            </Box>
+            
+            {/* GPU Status Alert */}
+            {gpuStatus === 'error' && (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                Unable to connect to GPU instance. Model selection and analysis features will not be available.
+                Please check if the GPU instance is running and try refreshing the models.
+              </Alert>
+            )}
+            
+            {gpuStatus === 'offline' && (
+              <Alert severity="warning" sx={{ mb: 3 }}>
+                GPU instance is online but no models are available. You may need to pull models first 
+                in the Model Configuration page.
+              </Alert>
+            )}
+            
+            {availableModels.vision && availableModels.vision.length === 0 && !modelsLoading && (
+              <Alert severity="info" sx={{ mb: 3 }}>
+                No models available for extraction testing. Please ensure the GPU instance is running 
+                and models are installed.
+              </Alert>
+            )}
+            
+            {/* Step 1: Sample Selection */}
+            <Paper sx={{ p: 3, mb: 3, bgcolor: 'grey.50' }}>
+              <Typography variant="h6" gutterBottom>
+                Step 1: Create Sample
+              </Typography>
+              
+              {/* Sample Size Selection */}
+              <Box sx={{ mb: 2 }}>
+                <FormControl sx={{ minWidth: 200, mb: 2 }}>
+                  <InputLabel>Sample Size</InputLabel>
+                  <Select
+                    value={sampleSize}
+                    label="Sample Size"
+                    onChange={(e) => setSampleSize(e.target.value)}
+                  >
+                    <MenuItem value={10}>10 decks</MenuItem>
+                    <MenuItem value={50}>50 decks</MenuItem>
+                    <MenuItem value={100}>100 decks</MenuItem>
+                    <MenuItem value="all">All available decks</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+
+              {/* Cached Selection Option */}
+              <Box sx={{ mb: 2 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={selectFromCached}
+                      onChange={(e) => setSelectFromCached(e.target.checked)}
+                    />
+                  }
+                  label={
+                    <Box>
+                      <Typography variant="body2">
+                        Select from cached decks only
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Prioritize decks with existing visual analysis for faster demo
+                      </Typography>
+                    </Box>
+                  }
+                />
+                
+                {selectFromCached && (
+                  <Box sx={{ ml: 4, mt: 1 }}>
+                    {loadingCachedCount ? (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <CircularProgress size={14} />
+                        <Typography variant="caption" color="text.secondary">
+                          Checking cached decks...
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Typography variant="caption" color="text.secondary">
+                        {cachedDecksCount} cached decks available
+                      </Typography>
+                    )}
+                  </Box>
+                )}
+              </Box>
+
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Button
+                  variant="contained"
+                  onClick={createExtractionSample}
+                  disabled={files.length === 0}
+                >
+                  Create Sample ({sampleSize === 'all' ? files.length : Math.min(sampleSize, files.length)} decks)
+                </Button>
+                
+                {extractionSample.length > 0 && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Sample created: {extractionSample.length} decks selected
+                  </Typography>
+                )}
+              </Box>
+            </Paper>
+
+            {/* Step 2: Visual Analysis (greyed out until step 1 is complete) */}
+            <Paper sx={{ p: 3, mb: 3, bgcolor: extractionSample.length === 0 ? 'grey.100' : 'grey.50', opacity: extractionSample.length === 0 ? 0.6 : 1 }}>
+              <Typography variant="h6" gutterBottom>
+                Step 2: Visual Analysis Manager
+              </Typography>
+              
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth sx={{ mb: 2 }}>
+                    <InputLabel>Vision Model</InputLabel>
+                    <Select
+                      value={selectedVisionModel}
+                      onChange={(e) => setSelectedVisionModel(e.target.value)}
+                      label="Vision Model"
+                      disabled={extractionSample.length === 0 || modelsLoading || gpuStatus === 'error'}
+                    >
+                      {modelsLoading ? (
+                        <MenuItem disabled>
+                          <CircularProgress size={16} sx={{ mr: 1 }} />
+                          Loading models...
+                        </MenuItem>
+                      ) : availableModels.vision && availableModels.vision.length > 0 ? (
+                        availableModels.vision.map((model) => (
+                          <MenuItem key={model.model_name} value={model.model_name}>
+                            {model.model_name}
+                          </MenuItem>
+                        ))
+                      ) : (
+                        <MenuItem disabled>
+                          {t('models.noModelsAvailable')}
+                        </MenuItem>
+                      )}
+                    </Select>
+                  </FormControl>
+                  
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={4}
+                    label="Visual Analysis Prompt"
+                    value={visualAnalysisPrompt}
+                    onChange={(e) => setVisualAnalysisPrompt(e.target.value)}
+                    placeholder={t('prompts.loadingPrompt')}
+                    disabled={extractionSample.length === 0}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Button 
+                      variant="contained"
+                      onClick={runVisualAnalysisBatch}
+                      disabled={extractionSample.length === 0 || !selectedVisionModel || !visualAnalysisPrompt || visualAnalysisStatus === 'running'}
+                      startIcon={visualAnalysisStatus === 'running' ? <CircularProgress size={16} /> : <Assessment />}
+                    >
+                      {visualAnalysisStatus === 'running' ? 'Analyzing...' : 'Run Visual Analysis'}
+                    </Button>
+                    
+                    {visualAnalysisStatus === 'running' && (
+                      <Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                          <Typography variant="body2">
+                            Progress: {analysisProgress.completed}/{analysisProgress.total}
+                          </Typography>
+                          {(() => {
+                            const stats = getProcessingStats();
+                            return stats && (
+                              <Typography variant="caption" color="text.secondary">
+                                Avg: {stats.avgTimePerDeck}
+                              </Typography>
+                            );
+                          })()}
+                        </Box>
+                        <LinearProgress 
+                          variant="determinate" 
+                          value={(analysisProgress.completed / analysisProgress.total) * 100}
+                          sx={{ mb: 1 }}
+                        />
+                      </Box>
+                    )}
+                    
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button 
+                        variant="outlined" 
+                        size="small"
+                        onClick={clearAnalysisCache}
+                        disabled={clearingCache || visualAnalysisStatus === 'running'}
+                        startIcon={clearingCache ? <CircularProgress size={16} /> : <Clear />}
+                      >
+                        {clearingCache ? 'Clearing...' : 'Clear Cache'}
+                      </Button>
+                      
+                      <Button 
+                        variant="outlined" 
+                        color="error"
+                        size="small"
+                        onClick={stopCurrentAnalysis}
+                        disabled={visualAnalysisStatus !== 'running'}
+                        startIcon={<Stop />}
+                      >
+                        Stop
+                      </Button>
+                    </Box>
+                    
+                    {visualAnalysisStatus !== 'idle' && (
+                      <Alert severity={visualAnalysisStatus === 'completed' ? 'success' : 'info'}>
+                        Visual analysis {visualAnalysisStatus === 'completed' ? 'completed successfully' : `status: ${visualAnalysisStatus}`}
+                      </Alert>
+                    )}
+                  </Box>
+                </Grid>
+              </Grid>
+            </Paper>
+            
+            {/* Steps 3-7: Complete Extraction Pipeline (greyed out until step 2 is complete) */}
+            <Paper sx={{ p: 3, mb: 3, bgcolor: visualAnalysisStatus !== 'completed' ? 'grey.100' : 'grey.50', opacity: visualAnalysisStatus !== 'completed' ? 0.6 : 1 }}>
+              <Typography variant="h6" gutterBottom>
+                Steps 3-7: Complete Extraction Pipeline
+              </Typography>
+              
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Run the complete extraction pipeline including company offering extraction, classification, company name extraction, funding amount extraction, and deck date extraction.
+              </Typography>
+              
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth sx={{ mb: 2 }}>
+                    <InputLabel>Text Model</InputLabel>
+                    <Select
+                      value={selectedTextModel}
+                      onChange={(e) => setSelectedTextModel(e.target.value)}
+                      label="Text Model"
+                      disabled={visualAnalysisStatus !== 'completed' || modelsLoading || gpuStatus === 'error'}
+                    >
+                      {modelsLoading ? (
+                        <MenuItem disabled>
+                          <CircularProgress size={16} sx={{ mr: 1 }} />
+                          Loading models...
+                        </MenuItem>
+                      ) : availableModels.text && availableModels.text.length > 0 ? (
+                        availableModels.text.map((model) => (
+                          <MenuItem key={model.model_name} value={model.model_name}>
+                            {model.model_name}
+                          </MenuItem>
+                        ))
+                      ) : (
+                        <MenuItem disabled>
+                          {t('models.noModelsAvailable')}
+                        </MenuItem>
+                      )}
+                    </Select>
+                  </FormControl>
+                  
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={4}
+                    label="Extraction Prompt"
+                    value={extractionPrompt}
+                    onChange={(e) => setExtractionPrompt(e.target.value)}
+                    placeholder={t('prompts.loadingPrompt')}
+                    disabled={visualAnalysisStatus !== 'completed'}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Button 
+                      variant="contained" 
+                      color="secondary"
+                      onClick={runCompleteExtractionPipeline}
+                      disabled={visualAnalysisStatus !== 'completed' || !selectedTextModel || !extractionPrompt}
+                      startIcon={<DataUsage />}
+                    >
+                      Run Complete Extraction Pipeline
+                    </Button>
+                    
+                    <Alert severity="info">
+                      This will run the complete pipeline: offering extraction, classification, and company name extraction. All results will be saved for comparison.
+                    </Alert>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Paper>
+          </Box>
+        )}
+
+        {/* Tab Panel 1: Extraction Experiments History */}
+        {currentTab === 1 && (
+          <Box sx={{ mt: 3 }}>
+            <Paper sx={{ p: 3, bgcolor: 'grey.50' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6">
+                  Extraction Experiments History ({experiments.length})
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button 
+                    size="small" 
+                    variant={comparisonMode ? 'contained' : 'outlined'}
+                    onClick={toggleComparisonMode}
+                    disabled={experiments.length < 2}
+                  >
+                    {comparisonMode ? 'Exit Comparison' : 'Compare Experiments'}
+                  </Button>
+                  {comparisonMode && selectedExperiments.length >= 2 && (
+                    <Button 
+                      size="small" 
+                      variant="contained" 
+                      color="secondary"
+                      onClick={() => {/* TODO: Open comparison view */}}
+                    >
+                      Compare ({selectedExperiments.length})
+                    </Button>
+                  )}
+                </Box>
+              </Box>
+              
+              {experiments.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  No extraction experiments run yet. Complete the steps in the Extraction Testing Lab to create your first experiment.
+                </Typography>
+              ) : (
+                <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        {comparisonMode && <TableCell padding="checkbox"></TableCell>}
+                        <TableCell>Experiment Name</TableCell>
+                        <TableCell>Text Model</TableCell>
+                        <TableCell>Success Rate</TableCell>
+                        <TableCell>Classification</TableCell>
+                        <TableCell>Avg. Response Length</TableCell>
+                        <TableCell>Created</TableCell>
+                        <TableCell>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {experiments.map((experiment) => (
+                        <TableRow key={experiment.id}>
+                          {comparisonMode && (
+                            <TableCell padding="checkbox">
+                              <Checkbox
+                                checked={selectedExperiments.includes(experiment.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedExperiments([...selectedExperiments, experiment.id]);
+                                  } else {
+                                    setSelectedExperiments(selectedExperiments.filter(id => id !== experiment.id));
+                                  }
+                                }}
+                              />
+                            </TableCell>
+                          )}
+                          <TableCell>
+                            <Typography variant="body2" fontWeight="medium">
+                              {experiment.experiment_name}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Chip label={experiment.text_model_used} size="small" variant="outlined" />
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography variant="body2">
+                                {Math.round((experiment.successful_extractions / experiment.total_decks) * 100)}%
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                ({experiment.successful_extractions}/{experiment.total_decks})
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Chip 
+                              label={experiment.classification_enabled ? 'Enabled' : 'Disabled'}
+                              color={experiment.classification_enabled ? 'success' : 'default'}
+                              size="small"
+                              variant="outlined"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">
+                              {experiment.avg_response_length ? `${Math.round(experiment.avg_response_length)} chars` : '-'}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">
+                              {new Date(experiment.created_at).toLocaleDateString()}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              onClick={() => {
+                                setSelectedExperiment(experiment);
+                                setExperimentDetailsOpen(true);
+                              }}
+                            >
+                              View Details
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </Paper>
+          </Box>
+        )}
+
+        {/* Tab Panel 2: Training Files */}
+        {currentTab === 2 && (
           <Box sx={{ mt: 3 }}>
             {/* Upload Section inside Training Files Tab */}
             <Card sx={{ mb: 3 }}>
@@ -1126,6 +1584,166 @@ const DojoManagement = () => {
                     {/* File Info */}
                     {selectedFile && (
                       <Box sx={{ mb: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                          Uploading: {selectedFile.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Size: {formatFileSize(selectedFile.size)}
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {/* Progress Bar */}
+                    <Box sx={{ width: '100%', mb: 1 }}>
+                      <LinearProgress 
+                        variant="determinate" 
+                        value={uploadProgress} 
+                        sx={{ height: 8, borderRadius: 4 }}
+                      />
+                    </Box>
+
+                    {/* Progress Info */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Box>
+                        <Typography variant="body2" color={uploadSuccess ? 'success.main' : 'text.secondary'}>
+                          {processingStatus || (uploadProgress < 100 ? t('status.uploading', { progress: uploadProgress }) : t('status.processingFiles'))}
+                        </Typography>
+                        {uploadSpeed > 0 && uploadProgress < 100 && (
+                          <Box>
+                            <Typography variant="caption" color="text.secondary">
+                              {formatUploadSpeed(uploadSpeed)}
+                            </Typography>
+                            {selectedFile && (
+                              <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                                • {formatRemainingTime(bytesUploaded, selectedFile.size, uploadSpeed)}
+                              </Typography>
+                            )}
+                          </Box>
+                        )}
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        {uploadSuccess ? (
+                          <CheckCircle color="success" sx={{ mr: 1 }} />
+                        ) : (
+                          <CircularProgress size={16} sx={{ mr: 1 }} />
+                        )}
+                        <Typography variant="caption" color={uploadSuccess ? 'success.main' : 'text.secondary'}>
+                          {uploadSuccess ? t('status.success') : (uploadProgress < 100 ? t('status.uploadingShort') : t('status.processing'))}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {/* Cancel Button - only show if upload is in progress and not completed */}
+                    {!uploadSuccess && (
+                      <Box sx={{ mt: 2 }}>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          onClick={() => {
+                            setUploading(false);
+                            setUploadProgress(0);
+                            setSelectedFile(null);
+                            setUploadSuccess(false);
+                            setProcessingStatus('');
+                            setUploadSpeed(0);
+                            setUploadStartTime(null);
+                            setBytesUploaded(0);
+                            setError(t('messages.uploadCancelled'));
+                          }}
+                        >
+                          {t('actions.cancelUpload')}
+                        </Button>
+                      </Box>
+                    )}
+                  </Box>
+                ) : (
+                  <Box>
+                    <Button
+                      variant="contained"
+                      component="label"
+                      startIcon={<CloudUpload />}
+                      disabled={uploading}
+                      sx={{ mb: 2 }}
+                    >
+                      {t('fileManagement.selectZipFile')}
+                      <input
+                        type="file"
+                        hidden
+                        accept=".zip"
+                        onChange={handleFileUpload}
+                      />
+                    </Button>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+
+            <Typography variant="h6" gutterBottom>
+              {t('tabs.trainingFiles')}
+            </Typography>
+
+            {files.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                {t('fileManagement.noFilesUploaded')}
+              </Typography>
+            ) : (
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>{t('fileManagement.filename')}</TableCell>
+                      <TableCell>{t('status.title')}</TableCell>
+                      <TableCell>{t('fileManagement.startupName')}</TableCell>
+                      <TableCell>{t('fileManagement.uploaded')}</TableCell>
+                      <TableCell>{t('actions.title')}</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {files.map((file) => (
+                      <TableRow key={file.id}>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Description sx={{ mr: 1 }} />
+                            {file.filename}
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            icon={getStatusIcon(file.processing_status)}
+                            label={file.processing_status}
+                            color={getStatusColor(file.processing_status)}
+                            variant="outlined"
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {file.ai_extracted_startup_name || '-'}
+                        </TableCell>
+                        <TableCell>
+                          {file.created_at ? new Date(file.created_at).toLocaleDateString() : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <IconButton
+                            onClick={() => {
+                              setFileToDelete(file);
+                              setDeleteDialogOpen(true);
+                            }}
+                            color="error"
+                            size="small"
+                          >
+                            <Delete />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </Box>
+        )}
+      </Paper>
                         <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
                           Uploading: {selectedFile.name}
                         </Typography>
