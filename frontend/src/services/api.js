@@ -132,4 +132,27 @@ export const cleanupOrphanedDecks = () =>
 export const getCompanyInfo = () =>
   api.get('/auth/company-info');
 
+// Project Management API
+export const getAllProjects = (includeTestData = false, limit = 100, offset = 0) =>
+  api.get(`/project-management/all-projects?include_test_data=${includeTestData}&limit=${limit}&offset=${offset}`);
+
+export const getMyProjects = (limit = 100, offset = 0) =>
+  api.get(`/project-management/my-projects?limit=${limit}&offset=${offset}`);
+
+// Funding Stages API
+export const getStageTemplates = () =>
+  api.get('/funding-stages/templates');
+
+export const createStageTemplate = (templateData) =>
+  api.post('/funding-stages/templates', templateData);
+
+export const getProjectJourney = (projectId) =>
+  api.get(`/funding-stages/projects/${projectId}/journey`);
+
+export const updateStageStatus = (projectId, stageId, statusData) =>
+  api.put(`/funding-stages/projects/${projectId}/stages/${stageId}/status`, statusData);
+
+export const reinitializeProjectStages = (projectId) =>
+  api.post(`/funding-stages/projects/${projectId}/reinitialize-stages`);
+
 export default api;

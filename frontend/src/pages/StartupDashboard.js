@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Container, Paper, Typography, Button, Grid, Alert, CircularProgress, List, ListItem, ListItemText, Divider, Chip, Box } from '@mui/material';
-import { Upload, CheckCircle, Pending, Error, Visibility, Schedule, Folder } from '@mui/icons-material';
+import { Upload, CheckCircle, Pending, Error, Visibility, Schedule, Folder, Timeline } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { uploadPitchDeck, getPitchDecks } from '../services/api';
@@ -166,6 +166,10 @@ function StartupDashboard() {
     navigate(`/project/${companyId}`);
   };
 
+  const handleViewFundingJourney = () => {
+    navigate('/funding-journey');
+  };
+
   // Check if there are any decks currently processing
   const hasProcessingDecks = pitchDecks.some(deck => 
     deck.processing_status === 'processing' || deck.processing_status === 'pending'
@@ -218,28 +222,54 @@ function StartupDashboard() {
           </Paper>
         </Grid>
 
-        {/* Project Dashboard Link */}
+        {/* Project Dashboard and Funding Journey Links */}
         <Grid item xs={12}>
-          <Paper sx={{ p: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box>
-                <Typography variant="h6" gutterBottom>
-                  Project Dashboard
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  View all your decks, slide-by-slide analysis, and project files in one place.
-                </Typography>
-              </Box>
-              <Button
-                variant="outlined"
-                startIcon={<Folder />}
-                onClick={handleViewProject}
-                size="large"
-              >
-                View Project
-              </Button>
-            </Box>
-          </Paper>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 3, h: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
+                  <Box>
+                    <Typography variant="h6" gutterBottom>
+                      Project Dashboard
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      View all your decks, slide-by-slide analysis, and project files.
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant="outlined"
+                    startIcon={<Folder />}
+                    onClick={handleViewProject}
+                    size="large"
+                  >
+                    View Project
+                  </Button>
+                </Box>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 3, h: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
+                  <Box>
+                    <Typography variant="h6" gutterBottom>
+                      Funding Journey
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Track your progress through the 14-stage funding process.
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant="contained"
+                    startIcon={<Timeline />}
+                    onClick={handleViewFundingJourney}
+                    size="large"
+                  >
+                    View Journey
+                  </Button>
+                </Box>
+              </Paper>
+            </Grid>
+          </Grid>
         </Grid>
         
         <Grid item xs={12}>

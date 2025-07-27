@@ -21,6 +21,7 @@ import ProjectResultsPage from './pages/ProjectResultsPage';
 import Profile from './pages/Profile';
 import StartupDashboardRedirect from './components/StartupDashboardRedirect';
 import DashboardRedirect from './components/DashboardRedirect';
+import StartupJourney from './pages/StartupJourney';
 
 function App() {
   return (
@@ -46,6 +47,8 @@ function App() {
           <Route path="/project/:companyId" element={<ProjectDashboard />} />
           <Route path="/project/:companyId/deck-viewer/:deckId" element={<DeckViewer />} />
           <Route path="/project/:companyId/results/:deckId" element={<ProjectResultsPage />} />
+          <Route path="/funding-journey" element={<StartupJourney />} />
+          <Route path="/funding-journey/:projectId" element={<StartupJourney />} />
           <Route path="/profile" element={<Profile />} />
         </Routes>
       </BrowserRouter>
