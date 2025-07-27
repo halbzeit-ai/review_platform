@@ -305,10 +305,11 @@ function GPDashboard() {
     const getDeckThumbnail = (project) => {
       const pitchDeck = project.documents?.find(doc => doc.document_type === 'pitch_deck');
       if (pitchDeck) {
-        // Return placeholder for now - will implement actual thumbnail endpoint later
-        return `/api/thumbnails/deck/${pitchDeck.id}/slide/1`;
+        // Use the actual deck document path to generate thumbnail
+        return `/api/documents/${pitchDeck.id}/thumbnail/slide/1`;
       }
-      return '/api/thumbnails/placeholder';
+      // Return empty placeholder if no deck document exists
+      return null;
     };
 
     return (
@@ -344,20 +345,40 @@ function GPDashboard() {
               <Grid item xs={12} sm={6} md={4} lg={3} key={project.id}>
                 <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                   {/* Deck Thumbnail */}
-                  <CardMedia
-                    component="img"
-                    height="160"
-                    image={getDeckThumbnail(project)}
-                    alt={`${project.company_id} pitch deck`}
-                    sx={{ 
-                      objectFit: 'cover',
-                      backgroundColor: 'grey.200'  // Fallback background
-                    }}
-                    onError={(e) => {
-                      // Fallback to placeholder if thumbnail fails
-                      e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE2MCIgdmlld0JveD0iMCAwIDMyMCAxNjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iMTYwIiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik0gMTYwIDgwIEwgMTQwIDcwIEwgMTQwIDkwIFoiIGZpbGw9IiM5RTlFOUUiLz4KPHN2Zz4K';
-                    }}
-                  />
+                  {getDeckThumbnail(project) ? (
+                    <CardMedia
+                      component="img"
+                      height="160"
+                      image={getDeckThumbnail(project)}
+                      alt={`${project.company_id} pitch deck`}
+                      sx={{ 
+                        objectFit: 'cover',
+                        backgroundColor: 'grey.200'
+                      }}
+                      onError={(e) => {
+                        // Fallback to placeholder if thumbnail fails
+                        e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE2MCIgdmlld0JveD0iMCAwIDMyMCAxNjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iMTYwIiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik0gMTYwIDgwIEwgMTQwIDcwIEwgMTQwIDkwIFoiIGZpbGw9IiM5RTlFOUUiLz4KPHN2Zz4K';
+                      }}
+                    />
+                  ) : (
+                    <Box
+                      sx={{
+                        height: 160,
+                        backgroundColor: 'grey.100',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexDirection: 'column'
+                      }}
+                    >
+                      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
+                        No Deck Available
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', mt: 1 }}>
+                        Run template processing to generate thumbnails
+                      </Typography>
+                    </Box>
+                  )}
                   
                   <CardContent sx={{ flexGrow: 1, p: 2 }}>
                     {/* Company Name and Classification Row */}

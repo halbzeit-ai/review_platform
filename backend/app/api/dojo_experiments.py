@@ -498,6 +498,65 @@ async def add_dojo_companies_from_experiment(
             projects_created += 1
             companies_created.append(company_name)
             
+            # Add pitch deck as project document
+            pitch_deck_query = text("""
+                SELECT id, file_name, file_path, results_file_path
+                FROM pitch_decks 
+                WHERE id = :deck_id
+            """)
+            pitch_deck_info = db.execute(pitch_deck_query, {"deck_id": deck_id}).fetchone()
+            
+            if pitch_deck_info:
+                # Add pitch deck document
+                deck_doc_insert = text("""
+                    INSERT INTO project_documents (
+                        project_id, document_type, file_name, file_path,
+                        original_filename, processing_status, uploaded_by,
+                        upload_date, is_active
+                    )
+                    VALUES (:project_id, 'pitch_deck', :file_name, :file_path,
+                            :original_filename, 'completed', :uploaded_by,
+                            :upload_date, TRUE)
+                    RETURNING id
+                """)
+                
+                deck_doc_result = db.execute(deck_doc_insert, {
+                    "project_id": project_id,
+                    "file_name": pitch_deck_info[1],  # file_name
+                    "file_path": pitch_deck_info[2],  # file_path
+                    "original_filename": pitch_deck_info[1],
+                    "uploaded_by": current_user.id,
+                    "upload_date": datetime.utcnow()
+                })
+                
+                deck_document_id = deck_doc_result.fetchone()[0]
+                logger.info(f"Added pitch deck document {deck_document_id} to project {project_id}")
+                
+                # Add results file if it exists
+                if pitch_deck_info[3]:  # results_file_path
+                    results_doc_insert = text("""
+                        INSERT INTO project_documents (
+                            project_id, document_type, file_name, file_path,
+                            original_filename, processing_status, uploaded_by,
+                            upload_date, is_active
+                        )
+                        VALUES (:project_id, 'analysis_results', :file_name, :file_path,
+                                :original_filename, 'completed', :uploaded_by,
+                                :upload_date, TRUE)
+                    """)
+                    
+                    results_filename = f"{company_name}_analysis_results.json"
+                    db.execute(results_doc_insert, {
+                        "project_id": project_id,
+                        "file_name": results_filename,
+                        "file_path": pitch_deck_info[3],  # results_file_path
+                        "original_filename": results_filename,
+                        "uploaded_by": current_user.id,
+                        "upload_date": datetime.utcnow()
+                    })
+                    
+                    logger.info(f"Added results document to project {project_id}")
+            
             logger.info(f"Created project for {company_name} (company_id: {company_id}, project_id: {project_id})")
         
         companies_added = len(set(companies_created))  # Count unique companies

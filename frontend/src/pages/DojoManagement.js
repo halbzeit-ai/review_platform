@@ -157,6 +157,8 @@ const DojoManagement = () => {
   const [loadingExperimentDetails, setLoadingExperimentDetails] = useState(false);
   const [comparisonMode, setComparisonMode] = useState(false);
   const [selectedExperiments, setSelectedExperiments] = useState([]);
+  const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [templateProcessingStatus, setTemplateProcessingStatus] = useState('');
   const [fullExtractionDialogOpen, setFullExtractionDialogOpen] = useState(false);
   const [selectedExtractionResult, setSelectedExtractionResult] = useState(null);
   
@@ -1074,6 +1076,68 @@ const DojoManagement = () => {
     }
   };
 
+  // Run template-based processing for experiment results
+  const runTemplateProcessing = async () => {
+    if (!lastExperimentId || !selectedTemplate) {
+      setError('Please select a template and ensure an experiment has been completed');
+      return;
+    }
+
+    try {
+      setTemplateProcessingStatus('processing');
+      setError(null);
+
+      // Get experiment details to find the deck IDs
+      const experimentResponse = await fetch(`/api/dojo/experiments/${lastExperimentId}`);
+      if (!experimentResponse.ok) {
+        throw new Error('Failed to fetch experiment details');
+      }
+      const experimentData = await experimentResponse.json();
+      const deckIds = experimentData.pitch_deck_ids || [];
+
+      // Trigger template processing for each deck
+      const processingPromises = deckIds.map(async (deckId) => {
+        const response = await fetch('/api/pipeline/process', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${user?.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            pitch_deck_id: deckId,
+            template_type: selectedTemplate,
+            generate_thumbnails: true
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.warn(`Template processing failed for deck ${deckId}:`, errorData);
+          return { deckId, success: false, error: errorData };
+        }
+
+        const result = await response.json();
+        return { deckId, success: true, result };
+      });
+
+      const results = await Promise.all(processingPromises);
+      const successCount = results.filter(r => r.success).length;
+      const failureCount = results.filter(r => !r.success).length;
+
+      console.log(`Template processing completed: ${successCount} success, ${failureCount} failures`);
+      
+      setTemplateProcessingStatus('completed');
+      
+      // Refresh experiments to show updated results
+      await fetchExperiments();
+
+    } catch (err) {
+      console.error('Error running template processing:', err);
+      setError(err.message || 'Failed to run template processing');
+      setTemplateProcessingStatus('error');
+    }
+  };
+
   // Check if experiment has required extractions for adding companies
   const canAddDojoCompanies = (experimentDetails) => {
     if (!experimentDetails || !experimentDetails.results) return false;
@@ -1559,6 +1623,65 @@ const DojoManagement = () => {
                     <Alert severity="info">
                       This will run the complete pipeline: offering extraction, classification, and company name extraction. All results will be saved for comparison.
                     </Alert>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Paper>
+            
+            {/* Step 8: Template-Based Processing (greyed out until step 3-7 is complete) */}
+            <Paper sx={{ p: 3, mb: 3, bgcolor: !lastExperimentId ? 'grey.100' : 'grey.50', opacity: !lastExperimentId ? 0.6 : 1 }}>
+              <Typography variant="h6" gutterBottom>
+                Step 8: Template-Based Processing & Results Generation
+              </Typography>
+              
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Process selected decks through the full template-based analysis pipeline to generate complete results files and extract slide images for thumbnails.
+              </Typography>
+              
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth sx={{ mb: 2 }}>
+                    <InputLabel>Healthcare Template</InputLabel>
+                    <Select
+                      value={selectedTemplate || ''}
+                      onChange={(e) => setSelectedTemplate(e.target.value)}
+                      label="Healthcare Template"
+                      disabled={!lastExperimentId}
+                    >
+                      <MenuItem value="healthcare_standard">Healthcare Standard Template</MenuItem>
+                      <MenuItem value="medtech_devices">MedTech Devices Template</MenuItem>
+                      <MenuItem value="biotech_pharma">Biotech & Pharma Template</MenuItem>
+                      <MenuItem value="digital_health">Digital Health Template</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Button
+                    variant="contained"
+                    onClick={runTemplateProcessing}
+                    disabled={!lastExperimentId || !selectedTemplate || templateProcessingStatus === 'processing'}
+                    startIcon={templateProcessingStatus === 'processing' ? <CircularProgress size={16} /> : <Assessment />}
+                    fullWidth
+                    sx={{ height: 56 }}
+                  >
+                    {templateProcessingStatus === 'processing' ? 'Processing...' : 'Run Template Processing'}
+                  </Button>
+                </Grid>
+                <Grid item xs={12}>
+                  <Box sx={{ mt: 2 }}>
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      This will process all decks from the last experiment through the selected healthcare template to generate complete analysis results and extract slide images for gallery thumbnails.
+                    </Alert>
+                    {templateProcessingStatus === 'completed' && (
+                      <Alert severity="success">
+                        Template processing completed! Results and slide images are now available for gallery display.
+                      </Alert>
+                    )}
+                    {templateProcessingStatus === 'error' && (
+                      <Alert severity="error">
+                        Template processing failed. Please check the logs and try again.
+                      </Alert>
+                    )}
                   </Box>
                 </Grid>
               </Grid>
