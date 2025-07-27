@@ -58,7 +58,8 @@ import {
   getPipelinePromptByStage,
   updatePipelinePrompt,
   resetPipelinePrompt,
-  deleteTemplate
+  deleteTemplate,
+  deleteCustomization
 } from '../services/api';
 
 const TemplateManagement = () => {
@@ -268,8 +269,14 @@ const TemplateManagement = () => {
     if (!templateToDelete) return;
     
     try {
-      // Call API to delete template
-      await deleteTemplate(templateToDelete.id);
+      // Check if it's a customization or regular template
+      if (templateToDelete.is_customization) {
+        // Delete customization using the customization_id
+        await deleteCustomization(templateToDelete.customization_id);
+      } else {
+        // Delete regular template using the template id
+        await deleteTemplate(templateToDelete.id);
+      }
       
       // Close dialog and clear state
       setDeleteDialogOpen(false);

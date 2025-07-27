@@ -89,6 +89,9 @@ export const updateTemplate = (templateId, templateData) =>
 export const deleteTemplate = (templateId) =>
   api.delete(`/healthcare-templates/templates/${templateId}`);
 
+export const deleteCustomization = (customizationId) =>
+  api.delete(`/healthcare-templates/customizations/${customizationId}`);
+
 // Pipeline Configuration API
 export const getPipelinePrompts = () =>
   api.get('/pipeline/prompts');

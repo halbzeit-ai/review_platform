@@ -521,6 +521,70 @@ async def delete_template(
             detail="Failed to delete template"
         )
 
+@router.delete("/customizations/{customization_id}")
+async def delete_customization(
+    customization_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Soft delete a template customization (GP only)"""
+    try:
+        # Check if user is GP
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only GPs can delete customizations"
+            )
+        
+        # Check if customization exists and belongs to the current user
+        customization_check_query = text("""
+        SELECT id, customization_name, gp_email 
+        FROM gp_template_customizations 
+        WHERE id = :customization_id AND is_active = TRUE
+        """)
+        
+        customization_result = db.execute(customization_check_query, {"customization_id": customization_id}).fetchone()
+        
+        if not customization_result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Customization {customization_id} not found or already deleted"
+            )
+        
+        # Check if the customization belongs to the current user
+        if customization_result[2] != current_user.email:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only delete your own customizations"
+            )
+        
+        # Perform soft delete
+        soft_delete_query = text("""
+        UPDATE gp_template_customizations 
+        SET is_active = FALSE 
+        WHERE id = :customization_id
+        """)
+        
+        db.execute(soft_delete_query, {"customization_id": customization_id})
+        db.commit()
+        
+        logger.info(f"Customization {customization_id} ({customization_result[1]}) soft deleted by GP {current_user.email}")
+        
+        return {
+            "message": f"Customization '{customization_result[1]}' deleted successfully",
+            "customization_id": customization_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting customization {customization_id}: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete customization"
+        )
+
 @router.get("/performance-metrics", response_model=Dict[str, Any])
 async def get_performance_metrics(
     db: Session = Depends(get_db),
