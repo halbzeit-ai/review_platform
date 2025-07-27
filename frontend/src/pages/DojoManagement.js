@@ -159,6 +159,8 @@ const DojoManagement = () => {
   const [selectedExperiments, setSelectedExperiments] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [templateProcessingStatus, setTemplateProcessingStatus] = useState('');
+  const [availableTemplates, setAvailableTemplates] = useState([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
   const [lastExperimentId, setLastExperimentId] = useState(null);
 
   // Helper function to check if visual analysis is effectively completed
@@ -180,6 +182,7 @@ const DojoManagement = () => {
   useEffect(() => {
     loadDojoData();
     loadAvailableModels();
+    loadAvailableTemplates();
   }, []);
 
   // Load cached decks count when checkbox is checked
@@ -228,6 +231,31 @@ const DojoManagement = () => {
       setLoading(false);
     }
   }, [navigate]);
+
+  const loadAvailableTemplates = async () => {
+    try {
+      setTemplatesLoading(true);
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+
+      const response = await fetch('/api/healthcare-templates/templates', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const templates = await response.json();
+        setAvailableTemplates(templates);
+      } else {
+        console.error('Failed to load templates');
+        setAvailableTemplates([]);
+      }
+    } catch (err) {
+      console.error('Error loading templates:', err);
+      setAvailableTemplates([]);
+    } finally {
+      setTemplatesLoading(false);
+    }
+  };
 
   const cancelUpload = () => {
     if (currentXhr) {
@@ -1670,10 +1698,20 @@ const DojoManagement = () => {
                       label="Healthcare Template"
                       disabled={!lastExperimentId && !isVisualAnalysisCompleted()}
                     >
-                      <MenuItem value="healthcare_standard">Healthcare Standard Template</MenuItem>
-                      <MenuItem value="medtech_devices">MedTech Devices Template</MenuItem>
-                      <MenuItem value="biotech_pharma">Biotech & Pharma Template</MenuItem>
-                      <MenuItem value="digital_health">Digital Health Template</MenuItem>
+                      {templatesLoading ? (
+                        <MenuItem disabled>
+                          <CircularProgress size={16} sx={{ mr: 1 }} />
+                          Loading templates...
+                        </MenuItem>
+                      ) : availableTemplates.length > 0 ? (
+                        availableTemplates.map((template) => (
+                          <MenuItem key={template.id} value={template.id}>
+                            {template.name} {template.sector_name && `(${template.sector_name})`}
+                          </MenuItem>
+                        ))
+                      ) : (
+                        <MenuItem disabled>No templates available</MenuItem>
+                      )}
                     </Select>
                   </FormControl>
                 </Grid>
@@ -1692,7 +1730,7 @@ const DojoManagement = () => {
                 <Grid item xs={12}>
                   <Box sx={{ mt: 2 }}>
                     <Alert severity="info" sx={{ mb: 2 }}>
-                      This will process all decks from the last experiment through the selected healthcare template to generate complete analysis results and extract slide images for gallery thumbnails.
+                      This will process all decks from the current sample through the selected healthcare template to generate complete analysis results and extract slide images for gallery thumbnails.
                     </Alert>
                     {templateProcessingStatus === 'completed' && (
                       <Alert severity="success">

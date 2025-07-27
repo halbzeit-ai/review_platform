@@ -41,6 +41,7 @@ class AnalysisTemplateResponse(BaseModel):
     is_active: bool
     is_default: bool
     usage_count: int
+    sector_name: Optional[str] = None
 
 class TemplateChapterResponse(BaseModel):
     id: int
@@ -122,6 +123,49 @@ async def get_healthcare_sectors(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve healthcare sectors"
+        )
+
+@router.get("/templates", response_model=List[AnalysisTemplateResponse])
+async def get_all_templates(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all analysis templates"""
+    try:
+        query = text("""
+        SELECT at.id, at.healthcare_sector_id, at.name, at.description, at.template_version,
+               at.specialized_analysis, at.is_active, at.is_default, at.usage_count,
+               hs.display_name as sector_name
+        FROM analysis_templates at
+        LEFT JOIN healthcare_sectors hs ON at.healthcare_sector_id = hs.id
+        WHERE at.is_active = TRUE
+        ORDER BY at.is_default DESC, hs.display_name, at.name
+        """)
+        
+        result = db.execute(query).fetchall()
+        
+        templates = []
+        for row in result:
+            templates.append(AnalysisTemplateResponse(
+                id=row[0],
+                healthcare_sector_id=row[1],
+                name=row[2],
+                description=row[3],
+                template_version=row[4],
+                specialized_analysis=json.loads(row[5]) if row[5] else {},
+                is_active=row[6],
+                is_default=row[7],
+                usage_count=row[8] or 0,
+                sector_name=row[9] or "General"
+            ))
+        
+        return templates
+        
+    except Exception as e:
+        logger.error(f"Error getting all templates: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve templates"
         )
 
 @router.get("/sectors/{sector_id}/templates", response_model=List[AnalysisTemplateResponse])
