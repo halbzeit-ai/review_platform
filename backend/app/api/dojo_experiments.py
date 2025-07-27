@@ -451,7 +451,7 @@ async def add_dojo_companies_from_experiment(
             
             # Get classification data for this deck
             classification_info = classification_lookup.get(str(deck_id), {})
-            primary_sector = classification_info.get("primary_sector", "Digital Health")
+            primary_sector = classification_info.get("primary_sector") or "Digital Health"
             
             # Create project name
             project_name = f"{company_name} - Dojo Analysis"
@@ -488,7 +488,7 @@ async def add_dojo_companies_from_experiment(
                 "funding_round": "analysis",
                 "funding_sought": "TBD",
                 "company_offering": offering_extraction[:2000],  # Limit to 2000 chars
-                "tags": json.dumps(["dojo", "experiment", "ai-extracted", primary_sector.lower().replace(" ", "-")]),
+                "tags": json.dumps(["dojo", "experiment", "ai-extracted", (primary_sector or "digital-health").lower().replace(" ", "-")]),
                 "metadata": json.dumps(metadata),
                 "created_at": datetime.utcnow(),
                 "updated_at": datetime.utcnow()
