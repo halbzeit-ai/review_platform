@@ -126,22 +126,32 @@ const ProjectDashboard = () => {
     try {
       setJourneyLoading(true);
       
+      console.log('Loading funding data for companyId:', companyId);
+      
       // Load my projects
       const projectsResponse = await getMyProjects();
       const projectsData = projectsResponse.data || [];
+      console.log('My projects response:', projectsData);
       setProjects(projectsData);
       
       // Find the project matching this company ID
       const matchingProject = projectsData.find(p => p.company_id === companyId);
+      console.log('Matching project found:', matchingProject);
+      
       if (matchingProject) {
         setSelectedProject(matchingProject);
         
         // Load the journey for this project
+        console.log('Loading journey for project ID:', matchingProject.id);
         const journeyResponse = await getProjectJourney(matchingProject.id);
+        console.log('Journey response:', journeyResponse.data);
         setProjectJourney(journeyResponse.data);
+      } else {
+        console.log('No matching project found. Available projects:', projectsData.map(p => ({id: p.id, company_id: p.company_id})));
       }
     } catch (err) {
       console.error('Error loading funding data:', err);
+      console.error('Error details:', err.response?.data);
     } finally {
       setJourneyLoading(false);
     }
@@ -315,7 +325,7 @@ const ProjectDashboard = () => {
                 <Button
                   variant="contained"
                   startIcon={<TimelineIcon />}
-                  onClick={() => setActiveTab(3)}
+                  onClick={() => setActiveTab(0)}
                   size="large"
                 >
                   View Journey
@@ -575,26 +585,26 @@ const ProjectDashboard = () => {
       {/* Main Content */}
       <Paper sx={{ width: '100%' }}>
         <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
+          <Tab label="Funding Journey" />
           <Tab label={t('project.tabs.overview')} />
           <Tab label={t('project.tabs.allDecks')} />
           <Tab label={t('project.tabs.uploads')} />
-          <Tab label="Funding Journey" icon={<TimelineIcon />} />
         </Tabs>
 
         <TabPanel value={activeTab} index={0}>
-          <OverviewContent />
+          <FundingJourneyContent />
         </TabPanel>
 
         <TabPanel value={activeTab} index={1}>
-          <DecksContent />
+          <OverviewContent />
         </TabPanel>
 
         <TabPanel value={activeTab} index={2}>
-          <UploadsContent />
+          <DecksContent />
         </TabPanel>
 
         <TabPanel value={activeTab} index={3}>
-          <FundingJourneyContent />
+          <UploadsContent />
         </TabPanel>
       </Paper>
     </Box>

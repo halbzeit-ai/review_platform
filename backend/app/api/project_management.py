@@ -599,3 +599,78 @@ async def get_all_projects(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve all projects"
         )
+
+@router.get("/my-projects", response_model=List[ProjectResponse])
+async def get_my_projects(
+    limit: int = 100,
+    offset: int = 0,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get projects for the current user (startup only)"""
+    try:
+        # Check if user is startup
+        if current_user.role != "startup":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only startup users can access their projects"
+            )
+        
+        # Get user's company ID
+        user_company_id = get_company_id_from_user(current_user)
+        
+        # Build query for user's projects
+        base_query = """
+        SELECT p.id, p.company_id, p.project_name, p.funding_round, p.current_stage_id,
+               p.funding_sought, p.healthcare_sector_id, p.company_offering, 
+               p.project_metadata, p.is_active, p.created_at, p.updated_at,
+               COUNT(DISTINCT pd.id) as document_count,
+               COUNT(DISTINCT pi.id) as interaction_count
+        FROM projects p
+        LEFT JOIN project_documents pd ON p.id = pd.project_id AND pd.is_active = TRUE
+        LEFT JOIN project_interactions pi ON p.id = pi.project_id AND pi.status = 'active'
+        WHERE p.is_active = TRUE AND p.company_id = :company_id
+        GROUP BY p.id, p.company_id, p.project_name, p.funding_round, p.current_stage_id,
+                 p.funding_sought, p.healthcare_sector_id, p.company_offering, 
+                 p.project_metadata, p.is_active, p.created_at, p.updated_at
+        ORDER BY p.updated_at DESC
+        LIMIT :limit OFFSET :offset
+        """
+        
+        query = text(base_query)
+        results = db.execute(query, {
+            "company_id": user_company_id,
+            "limit": limit, 
+            "offset": offset
+        }).fetchall()
+        
+        projects = []
+        for row in results:
+            projects.append(ProjectResponse(
+                id=row[0],
+                company_id=row[1],
+                project_name=row[2],
+                funding_round=row[3],
+                current_stage_id=row[4],
+                funding_sought=row[5],
+                healthcare_sector_id=row[6],
+                company_offering=row[7],
+                project_metadata=row[8] if isinstance(row[8], dict) else (json.loads(row[8]) if row[8] else {}),
+                is_active=row[9],
+                created_at=row[10],
+                updated_at=row[11],
+                document_count=row[12] or 0,
+                interaction_count=row[13] or 0
+            ))
+        
+        logger.info(f"Retrieved {len(projects)} projects for user {current_user.email}")
+        return projects
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting my projects for user {current_user.email}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve your projects"
+        )
