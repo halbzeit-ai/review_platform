@@ -391,6 +391,7 @@ async def add_dojo_companies_from_experiment(
         # Build lookups for classification and company name data
         if classification_data.get("classification_by_deck"):
             classification_lookup = classification_data["classification_by_deck"]
+            logger.info(f"Classification lookup keys: {list(classification_lookup.keys())}")
         
         if company_name_data.get("company_name_results"):
             for result in company_name_data["company_name_results"]:
@@ -404,6 +405,7 @@ async def add_dojo_companies_from_experiment(
         for result in results:
             deck_id = result.get("deck_id")
             offering_extraction = result.get("offering_extraction", "")
+            funding_extraction = result.get("funding_extraction", "")
             
             # Skip failed extractions
             if not offering_extraction or offering_extraction.startswith("Error:"):
@@ -451,7 +453,14 @@ async def add_dojo_companies_from_experiment(
             
             # Get classification data for this deck
             classification_info = classification_lookup.get(str(deck_id), {})
+            
+            # If no classification found by deck_id, try to extract from result directly
+            if not classification_info and result.get("classification"):
+                classification_info = {"primary_sector": result.get("classification")}
+            
             primary_sector = classification_info.get("primary_sector") or "Digital Health"
+            
+            logger.info(f"Deck {deck_id}: classification_info={classification_info}, primary_sector={primary_sector}")
             
             # Create project name
             project_name = f"{company_name} - Dojo Analysis"
@@ -486,7 +495,7 @@ async def add_dojo_companies_from_experiment(
                 "company_id": company_id,
                 "project_name": project_name,
                 "funding_round": "analysis",
-                "funding_sought": "TBD",
+                "funding_sought": funding_extraction or "TBD",
                 "company_offering": offering_extraction[:2000],  # Limit to 2000 chars
                 "tags": json.dumps(["dojo", "experiment", "ai-extracted", (primary_sector or "digital-health").lower().replace(" ", "-")]),
                 "metadata": json.dumps(metadata),
