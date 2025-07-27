@@ -87,6 +87,34 @@ const DojoManagement = () => {
     if (remainingSeconds < 3600) return `${Math.round(remainingSeconds / 60)}m remaining`;
     return `${Math.round(remainingSeconds / 3600)}h ${Math.round((remainingSeconds % 3600) / 60)}m remaining`;
   };
+
+  // Helper function to format processing time
+  const formatProcessingTime = (milliseconds) => {
+    const seconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${seconds % 60}s`;
+    } else {
+      return `${seconds}s`;
+    }
+  };
+
+  // Helper function to get current processing stats
+  const getProcessingStats = () => {
+    if (!analysisStartTime || processingTimes.length === 0) return null;
+    
+    const avgTimePerDeck = processingTimes.reduce((sum, time) => sum + time, 0) / processingTimes.length;
+    const totalElapsed = Date.now() - analysisStartTime;
+    
+    return {
+      avgTimePerDeck: formatProcessingTime(avgTimePerDeck),
+      totalElapsed: formatProcessingTime(totalElapsed)
+    };
+  };
   
   const [files, setFiles] = useState([]);
   const [stats, setStats] = useState({});
@@ -115,6 +143,9 @@ const DojoManagement = () => {
   const [currentAnalysisController, setCurrentAnalysisController] = useState(null);
   const [clearingCache, setClearingCache] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState({ completed: 0, total: 0 });
+  const [analysisStartTime, setAnalysisStartTime] = useState(null);
+  const [lastDeckCompletedTime, setLastDeckCompletedTime] = useState(null);
+  const [processingTimes, setProcessingTimes] = useState([]);
   const [experiments, setExperiments] = useState([]);
   const [availableModels, setAvailableModels] = useState({});
   const [modelsLoading, setModelsLoading] = useState(false);
@@ -511,6 +542,10 @@ const DojoManagement = () => {
   const runVisualAnalysis = async () => {
     try {
       setVisualAnalysisStatus('running');
+      // Reset timing states for fresh analysis
+      setAnalysisStartTime(null);
+      setLastDeckCompletedTime(null);
+      setProcessingTimes([]);
       const user = JSON.parse(localStorage.getItem('user'));
       const token = user?.token;
 
@@ -540,7 +575,11 @@ const DojoManagement = () => {
         
         // Initialize progress tracking
         const total = extractionSample.length;
+        const startTime = Date.now();
         setAnalysisProgress({ completed: 0, total });
+        setAnalysisStartTime(startTime);
+        setLastDeckCompletedTime(null);
+        setProcessingTimes([]);
         
         // Start polling for progress updates
         const pollInterval = setInterval(async () => {
@@ -605,9 +644,30 @@ const DojoManagement = () => {
         const completed = data.sample.filter(deck => deck.has_visual_cache).length;
         const total = data.sample.length;
         
+        // Calculate timing if a new deck was completed
+        const currentTime = Date.now();
+        let newProcessingTimes = processingTimes;
+        
+        if (completed > analysisProgress.completed && analysisStartTime) {
+          // A new deck was completed - calculate processing time for this deck
+          let deckProcessingTime;
+          
+          if (processingTimes.length === 0) {
+            // First deck completed - time from analysis start
+            deckProcessingTime = currentTime - analysisStartTime;
+          } else {
+            // Subsequent decks - time since last completion
+            deckProcessingTime = lastDeckCompletedTime ? currentTime - lastDeckCompletedTime : currentTime - analysisStartTime;
+          }
+          
+          newProcessingTimes = [...processingTimes, deckProcessingTime];
+          setProcessingTimes(newProcessingTimes);
+          setLastDeckCompletedTime(currentTime);
+        }
+        
         setAnalysisProgress({ completed, total });
         
-        return { completed, total };
+        return { completed, total, processingTimes: newProcessingTimes };
       }
     } catch (err) {
       console.error('Error checking analysis progress:', err);
@@ -808,6 +868,27 @@ const DojoManagement = () => {
       } else {
         const fundingAmountData = await fundingAmountResponse.json();
         console.log('Step 6 completed: Funding amount extraction', fundingAmountData);
+      }
+
+      // Step 7: Run deck date extraction
+      const deckDateResponse = await fetch('/api/dojo/extraction-test/run-deck-date-extraction', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          experiment_id: experimentId
+        })
+      });
+
+      if (!deckDateResponse.ok) {
+        const errorData = await deckDateResponse.json();
+        console.warn('Step 7 failed: Deck date extraction', errorData);
+        // Continue even if deck date extraction fails
+      } else {
+        const deckDateData = await deckDateResponse.json();
+        console.log('Step 7 completed: Deck date extraction', deckDateData);
       }
 
       // Refresh experiments list
@@ -1483,10 +1564,16 @@ const DojoManagement = () => {
                         }>
                           {visualAnalysisStatus === 'running' && (
                             analysisProgress.total > 0 
-                              ? `Processing visual analysis: ${analysisProgress.completed}/${analysisProgress.total} decks analyzed`
+                              ? (() => {
+                                  const stats = getProcessingStats();
+                                  return `Processing visual analysis: ${analysisProgress.completed}/${analysisProgress.total} decks analyzed${stats ? ` • Avg: ${stats.avgTimePerDeck}/deck • Elapsed: ${stats.totalElapsed}` : ''}`;
+                                })()
                               : 'Processing visual analysis for sample decks...'
                           )}
-                          {visualAnalysisStatus === 'completed' && 'Visual analysis completed and cached!'}
+                          {visualAnalysisStatus === 'completed' && (() => {
+                            const stats = getProcessingStats();
+                            return `Visual analysis completed and cached!${stats ? ` • Total time: ${stats.totalElapsed} • Avg: ${stats.avgTimePerDeck}/deck` : ''}`;
+                          })()}
                           {visualAnalysisStatus === 'cancelled' && 'Visual analysis cancelled by user.'}
                           {visualAnalysisStatus === 'error' && 'Visual analysis failed. Check logs for details.'}
                         </Alert>
@@ -1501,10 +1588,10 @@ const DojoManagement = () => {
             {extractionSample.length > 0 && (
               <Paper sx={{ p: 3, mb: 3, bgcolor: 'grey.50' }}>
                 <Typography variant="h6" gutterBottom>
-                  Steps 3-6: Complete Extraction Pipeline
+                  Steps 3-7: Complete Extraction Pipeline
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  This will run: (3) Company Offering Extraction → (4) Classification → (5) Company Name Extraction → (6) Funding Amount Extraction
+                  This will run: (3) Company Offering Extraction → (4) Classification → (5) Company Name Extraction → (6) Funding Amount Extraction → (7) Deck Date Extraction
                 </Typography>
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={6}>
@@ -1903,6 +1990,17 @@ const DojoManagement = () => {
                                   return fundingAmountResult?.funding_amount && (
                                     <Typography variant="caption" color="text.secondary">
                                       Funding: {fundingAmountResult.funding_amount}
+                                    </Typography>
+                                  );
+                                })()}
+                                {(() => {
+                                  // Get deck date for this deck
+                                  const deckDateResult = experimentDetails.deck_date_results?.find(
+                                    dd => dd.deck_id === result.deck_id
+                                  );
+                                  return deckDateResult?.deck_date && deckDateResult.deck_date !== 'Date not specified' && (
+                                    <Typography variant="caption" color="text.secondary">
+                                      Deck Date: {deckDateResult.deck_date}
                                     </Typography>
                                   );
                                 })()}

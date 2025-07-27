@@ -801,7 +801,7 @@ async def get_extraction_experiments(
             )
         
         experiments = db.execute(text(
-            "SELECT id, experiment_name, extraction_type, text_model_used, created_at, results_json, classification_enabled, classification_completed_at, company_name_completed_at, funding_amount_completed_at FROM extraction_experiments ORDER BY created_at DESC"
+            "SELECT id, experiment_name, extraction_type, text_model_used, created_at, results_json, classification_enabled, classification_completed_at, company_name_completed_at, funding_amount_completed_at, deck_date_completed_at FROM extraction_experiments ORDER BY created_at DESC"
         )).fetchall()
         
         experiment_data = []
@@ -832,6 +832,7 @@ async def get_extraction_experiments(
                 "classification_completed_at": exp[7].isoformat() if exp[7] else None,
                 "company_name_completed_at": exp[8].isoformat() if exp[8] else None,
                 "funding_amount_completed_at": exp[9].isoformat() if exp[9] else None,
+                "deck_date_completed_at": exp[10].isoformat() if exp[10] else None,
                 "average_response_length": average_response_length
             })
         
@@ -868,7 +869,8 @@ async def get_experiment_details(
             SELECT id, experiment_name, extraction_type, text_model_used, extraction_prompt, 
                    created_at, results_json, pitch_deck_ids, classification_enabled, 
                    classification_results_json, classification_completed_at, company_name_results_json, 
-                   company_name_completed_at, funding_amount_results_json, funding_amount_completed_at
+                   company_name_completed_at, funding_amount_results_json, funding_amount_completed_at,
+                   deck_date_results_json, deck_date_completed_at
             FROM extraction_experiments 
             WHERE id = :exp_id
         """), {"exp_id": experiment_id}).fetchone()
@@ -964,6 +966,14 @@ async def get_experiment_details(
             except json.JSONDecodeError:
                 logger.warning(f"Failed to parse funding amount results for experiment {experiment_id}")
 
+        # Parse deck date extraction results if available
+        deck_date_data = {}
+        if experiment[15]:  # deck_date_results_json
+            try:
+                deck_date_data = json.loads(experiment[15])
+            except json.JSONDecodeError:
+                logger.warning(f"Failed to parse deck date results for experiment {experiment_id}")
+
         experiment_details = {
             "id": experiment[0],
             "experiment_name": experiment[1],
@@ -984,7 +994,10 @@ async def get_experiment_details(
             "company_name_results": company_name_data.get("company_name_results", []) if company_name_data else [],
             "funding_amount_completed_at": experiment[14].isoformat() if experiment[14] else None,
             "funding_amount_statistics": funding_amount_data.get("statistics", {}) if funding_amount_data else {},
-            "funding_amount_results": funding_amount_data.get("funding_amount_results", []) if funding_amount_data else []
+            "funding_amount_results": funding_amount_data.get("funding_amount_results", []) if funding_amount_data else [],
+            "deck_date_completed_at": experiment[16].isoformat() if experiment[16] else None,
+            "deck_date_statistics": deck_date_data.get("statistics", {}) if deck_date_data else {},
+            "deck_date_results": deck_date_data.get("deck_date_results", []) if deck_date_data else []
         }
         
         return experiment_details
@@ -1208,6 +1221,9 @@ class CompanyNameExtractionRequest(BaseModel):
     experiment_id: int
 
 class FundingAmountExtractionRequest(BaseModel):
+    experiment_id: int
+
+class DeckDateExtractionRequest(BaseModel):
     experiment_id: int
 
 @router.post("/extraction-test/run-company-name-extraction")
@@ -1512,6 +1528,154 @@ async def enrich_experiment_with_funding_amounts(
         raise HTTPException(
             status_code=500,
             detail="Failed to run funding amount extraction"
+        )
+
+@router.post("/extraction-test/run-deck-date-extraction")
+async def enrich_experiment_with_deck_dates(
+    request: DeckDateExtractionRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Enrich existing extraction experiment with deck date extraction"""
+    try:
+        # Only GPs can run deck date extraction
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=403,
+                detail="Only GPs can run deck date extraction"
+            )
+        
+        # Get the experiment
+        experiment = db.execute(text("""
+            SELECT id, experiment_name, extraction_type, text_model_used, 
+                   extraction_prompt, created_at, results_json, pitch_deck_ids
+            FROM extraction_experiments 
+            WHERE id = :experiment_id
+        """), {"experiment_id": request.experiment_id}).fetchone()
+        
+        if not experiment:
+            raise HTTPException(
+                status_code=404,
+                detail="Experiment not found"
+            )
+        
+        # Parse existing results
+        results_data = json.loads(experiment[6]) if experiment[6] else {}
+        results = results_data.get("results", [])
+        
+        if not results:
+            raise HTTPException(
+                status_code=400,
+                detail="Experiment has no extraction results to extract deck dates from"
+            )
+        
+        # Get the deck date extraction prompt from pipeline_prompts
+        prompt_result = db.execute(text(
+            "SELECT prompt_text FROM pipeline_prompts WHERE stage_name = 'deck_date_extraction' LIMIT 1"
+        )).fetchone()
+        
+        deck_date_prompt = prompt_result[0] if prompt_result else "Find the date when this pitch deck was created or last updated. Look for dates on slides, footers, headers, or any text mentioning when the deck was prepared. Common formats include 'March 2024', '2024-03-15', 'Q1 2024', 'Spring 2024', etc. Return only the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date is found, return 'Date not specified'."
+        
+        # Use GPU pipeline for deck date extraction
+        from ..services.gpu_http_client import gpu_http_client
+        
+        # Collect deck IDs for GPU processing
+        deck_ids = experiment[7]  # pitch_deck_ids
+        
+        # Call GPU pipeline for deck date extraction using the same visual analysis
+        gpu_result = await gpu_http_client.run_offering_extraction(
+            deck_ids=deck_ids,
+            text_model=experiment[3],  # text_model_used
+            extraction_prompt=deck_date_prompt,
+            use_cached_visual=True
+        )
+        
+        # Process GPU results
+        deck_date_results = []
+        successful_extractions = 0
+        
+        if gpu_result.get("success"):
+            logger.info("GPU deck date extraction completed successfully")
+            extraction_results = gpu_result.get("extraction_results", [])
+            
+            for result in extraction_results:
+                deck_id = result.get("deck_id")
+                deck_date = result.get("offering_extraction", "")  # GPU returns this field
+                
+                # Skip if extraction failed
+                if not deck_date or deck_date.startswith("Error:"):
+                    deck_date_results.append({
+                        "deck_id": deck_id,
+                        "filename": result.get("filename", f"deck_{deck_id}"),
+                        "deck_date": None,
+                        "error": deck_date or "Deck date extraction failed"
+                    })
+                    continue
+                
+                successful_extractions += 1
+                deck_date_results.append({
+                    "deck_id": deck_id,
+                    "filename": result.get("filename", f"deck_{deck_id}"),
+                    "deck_date": deck_date.strip(),
+                    "error": None
+                })
+        else:
+            logger.error(f"GPU deck date extraction failed: {gpu_result.get('error', 'Unknown error')}")
+            # Create error results for all decks
+            for deck_id in deck_ids:
+                deck_date_results.append({
+                    "deck_id": deck_id,
+                    "filename": f"deck_{deck_id}",
+                    "deck_date": None,
+                    "error": f"GPU processing failed: {gpu_result.get('error', 'Unknown error')}"
+                })
+        
+        # Create statistics
+        statistics = {
+            "total_decks": len(deck_date_results),
+            "successful_extractions": successful_extractions,
+            "failed_extractions": len(deck_date_results) - successful_extractions,
+            "success_rate": successful_extractions / len(deck_date_results) if deck_date_results else 0
+        }
+        
+        # Store deck date extraction results in the experiment
+        deck_date_data = {
+            "deck_date_results": deck_date_results,
+            "statistics": statistics,
+            "model_used": experiment[3],  # text_model_used
+            "prompt_used": deck_date_prompt,
+            "extracted_at": datetime.utcnow().isoformat()
+        }
+        
+        # Update experiment with deck date extraction results
+        db.execute(text("""
+            UPDATE extraction_experiments 
+            SET deck_date_results_json = :deck_date_results,
+                deck_date_completed_at = CURRENT_TIMESTAMP
+            WHERE id = :experiment_id
+        """), {
+            "experiment_id": request.experiment_id,
+            "deck_date_results": json.dumps(deck_date_data)
+        })
+        
+        db.commit()
+        
+        logger.info(f"Deck date extraction completed for experiment {request.experiment_id}: {successful_extractions}/{len(deck_date_results)} successful")
+        
+        return {
+            "message": "Deck date extraction completed successfully",
+            "experiment_id": request.experiment_id,
+            "deck_date_results": deck_date_results,
+            "statistics": statistics
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error running deck date extraction: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to run deck date extraction"
         )
 
 # ==================== INTERNAL API FOR GPU COMMUNICATION ====================
