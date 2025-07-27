@@ -1105,7 +1105,7 @@ const DojoManagement = () => {
       const user = JSON.parse(localStorage.getItem('user'));
       const token = user?.token;
       
-      const response = await fetch('/api/dojo/experiments/add-companies', {
+      const response = await fetch('/api/dojo-experiments/add-companies', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -334,7 +334,7 @@ class AddDojoCompaniesResponse(BaseModel):
     projects_created: int
     companies_created: List[str]
 
-@router.post("/experiments/add-companies", response_model=AddDojoCompaniesResponse)
+@router.post("/add-companies", response_model=AddDojoCompaniesResponse)
 async def add_dojo_companies_from_experiment(
     request: AddDojoCompaniesRequest,
     db: Session = Depends(get_db),
