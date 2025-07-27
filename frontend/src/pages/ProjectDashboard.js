@@ -21,10 +21,6 @@ import {
   StepLabel,
   StepContent,
   LinearProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions
 } from '@mui/material';
 import {
   Visibility as VisibilityIcon,
@@ -65,7 +61,7 @@ const ProjectDashboard = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [projectJourney, setProjectJourney] = useState(null);
   const [journeyLoading, setJourneyLoading] = useState(false);
-  const [selectedStageInfo, setSelectedStageInfo] = useState(null);
+  const [expandedStageId, setExpandedStageId] = useState(null);
   
   const [breadcrumbs, setBreadcrumbs] = useState([
     { label: t('navigation.dashboard'), path: '/dashboard' },
@@ -181,11 +177,7 @@ const ProjectDashboard = () => {
   };
 
   const handleStageClick = (stage) => {
-    setSelectedStageInfo(stage);
-  };
-
-  const closeStageInfo = () => {
-    setSelectedStageInfo(null);
+    setExpandedStageId(expandedStageId === stage.id ? null : stage.id);
   };
 
   const getStageDescription = (stageCode) => {
@@ -492,11 +484,6 @@ const ProjectDashboard = () => {
                     color={getStatusColor(stage.status)}
                     size="small"
                   />
-                  <InfoIcon 
-                    fontSize="small" 
-                    sx={{ color: 'action.active', cursor: 'pointer' }}
-                    onClick={() => handleStageClick(stage)}
-                  />
                 </Box>
                 <Box sx={{ mt: 1 }}>
                   {stage.status === 'completed' && stage.completed_at && (
@@ -513,6 +500,18 @@ const ProjectDashboard = () => {
               </StepLabel>
               <StepContent>
                 <Box sx={{ pb: 2 }}>
+                  {/* Show stage description when expanded */}
+                  {expandedStageId === stage.id && (
+                    <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1, border: '1px solid', borderColor: 'grey.200' }}>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        <strong>Stage {stage.stage_order} of 14</strong>
+                      </Typography>
+                      <Typography variant="body2" paragraph>
+                        {getStageDescription(stage.stage_code || stage.stage_name?.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''))}
+                      </Typography>
+                    </Box>
+                  )}
+                  
                   {/* Show completion notes if available */}
                   {stage.stage_metadata?.completion_notes && (
                     <Alert severity="info" sx={{ mt: 1 }}>
@@ -527,43 +526,6 @@ const ProjectDashboard = () => {
           ))}
         </Stepper>
 
-        {/* Stage Information Dialog */}
-        <Dialog 
-          open={!!selectedStageInfo} 
-          onClose={closeStageInfo}
-          maxWidth="md"
-          fullWidth
-        >
-          <DialogTitle>
-            {selectedStageInfo?.stage_name}
-            <Chip 
-              label={selectedStageInfo?.status} 
-              color={getStatusColor(selectedStageInfo?.status)}
-              size="small"
-              sx={{ ml: 2 }}
-            />
-          </DialogTitle>
-          <DialogContent>
-            <Typography variant="body1" paragraph>
-              <strong>Stage {selectedStageInfo?.stage_order} of 14</strong>
-            </Typography>
-            
-            <Typography variant="body2" paragraph>
-              {getStageDescription(selectedStageInfo?.stage_code || selectedStageInfo?.stage_name?.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''))}
-            </Typography>
-            
-            {selectedStageInfo?.stage_metadata?.completion_notes && (
-              <Alert severity="info" sx={{ mt: 2 }}>
-                <Typography variant="body2">
-                  <strong>Notes:</strong> {selectedStageInfo.stage_metadata.completion_notes}
-                </Typography>
-              </Alert>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={closeStageInfo}>Close</Button>
-          </DialogActions>
-        </Dialog>
       </Box>
     );
   };
