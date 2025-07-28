@@ -457,19 +457,32 @@ async def get_document_thumbnail(
             deck_name = os.path.splitext(file_name)[0] if file_name else str(doc_id)
         
         # Check access permissions (GPs can access any project)
+        logger.info(f"Thumbnail access check: user_role={current_user.role}, user_id={current_user.id}, document_id={document_id}, company_id={company_id}")
+        
         if current_user.role != "gp":
             # For startup users, check if they have access to this company
+            logger.info(f"Non-GP user, checking company access for user {current_user.id}")
             user_company_query = text("SELECT company_name FROM users WHERE id = :user_id")
             user_result = db.execute(user_company_query, {"user_id": current_user.id}).fetchone()
             
-            if user_result:
+            if user_result and user_result[0]:
                 import re
                 user_company_id = re.sub(r'[^a-z0-9-]', '', user_result[0].lower().replace(' ', '-'))
+                logger.info(f"User company_id: {user_company_id}, document company_id: {company_id}")
                 if user_company_id != company_id:
                     raise HTTPException(
                         status_code=403,
                         detail="Access denied"
                     )
+            else:
+                # If user has no company name, deny access
+                logger.warning(f"User {current_user.id} has no company association")
+                raise HTTPException(
+                    status_code=403,
+                    detail="Access denied - no company association"
+                )
+        else:
+            logger.info(f"GP user {current_user.id} granted access to document {document_id}")
         
         # Try to find slide image files
         analysis_dir = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id, "analysis", deck_name)
