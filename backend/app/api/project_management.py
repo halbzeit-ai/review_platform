@@ -27,10 +27,10 @@ router = APIRouter(prefix="/project-management", tags=["project-management"])
 # Pydantic models for API requests/responses
 class DocumentResponse(BaseModel):
     id: int
-    document_name: str
+    file_name: str
     document_type: str
     file_path: Optional[str] = None
-    created_at: datetime
+    upload_date: datetime
 
 class ProjectResponse(BaseModel):
     id: int
@@ -584,10 +584,10 @@ async def get_all_projects(
             
             # Fetch documents for this project
             docs_query = text("""
-                SELECT pd.id, pd.document_name, pd.document_type, pd.file_path, pd.created_at
+                SELECT pd.id, pd.file_name, pd.document_type, pd.file_path, pd.upload_date
                 FROM project_documents pd
                 WHERE pd.project_id = :project_id AND pd.is_active = TRUE
-                ORDER BY pd.created_at DESC
+                ORDER BY pd.upload_date DESC
             """)
             
             docs_results = db.execute(docs_query, {"project_id": project_id}).fetchall()
@@ -595,10 +595,10 @@ async def get_all_projects(
             for doc_row in docs_results:
                 documents.append(DocumentResponse(
                     id=doc_row[0],
-                    document_name=doc_row[1],
+                    file_name=doc_row[1],
                     document_type=doc_row[2],
                     file_path=doc_row[3],
-                    created_at=doc_row[4]
+                    upload_date=doc_row[4]
                 ))
             
             projects.append(ProjectResponse(
