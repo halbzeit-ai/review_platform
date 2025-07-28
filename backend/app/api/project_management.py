@@ -25,6 +25,13 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/project-management", tags=["project-management"])
 
 # Pydantic models for API requests/responses
+class DocumentResponse(BaseModel):
+    id: int
+    document_name: str
+    document_type: str
+    file_path: Optional[str] = None
+    created_at: datetime
+
 class ProjectResponse(BaseModel):
     id: int
     company_id: str
@@ -40,6 +47,7 @@ class ProjectResponse(BaseModel):
     updated_at: datetime
     document_count: int = 0
     interaction_count: int = 0
+    documents: List[DocumentResponse] = []
 
 class ProjectStageResponse(BaseModel):
     id: int
@@ -572,8 +580,29 @@ async def get_all_projects(
         
         projects = []
         for row in results:
+            project_id = row[0]
+            
+            # Fetch documents for this project
+            docs_query = text("""
+                SELECT pd.id, pd.document_name, pd.document_type, pd.file_path, pd.created_at
+                FROM project_documents pd
+                WHERE pd.project_id = :project_id AND pd.is_active = TRUE
+                ORDER BY pd.created_at DESC
+            """)
+            
+            docs_results = db.execute(docs_query, {"project_id": project_id}).fetchall()
+            documents = []
+            for doc_row in docs_results:
+                documents.append(DocumentResponse(
+                    id=doc_row[0],
+                    document_name=doc_row[1],
+                    document_type=doc_row[2],
+                    file_path=doc_row[3],
+                    created_at=doc_row[4]
+                ))
+            
             projects.append(ProjectResponse(
-                id=row[0],
+                id=project_id,
                 company_id=row[1],
                 project_name=row[2],
                 funding_round=row[3],
@@ -586,7 +615,8 @@ async def get_all_projects(
                 created_at=row[10],
                 updated_at=row[11],
                 document_count=row[12] or 0,
-                interaction_count=row[13] or 0
+                interaction_count=row[13] or 0,
+                documents=documents
             ))
         
         return projects

@@ -406,9 +406,105 @@ async def get_processing_progress(
             "gpu_progress": progress_info,
             "created_at": pitch_deck.created_at.isoformat() if pitch_deck.created_at else None
         }
+
+
+@router.get("/{document_id}/thumbnail/slide/{slide_number}")
+async def get_document_thumbnail(
+    document_id: int,
+    slide_number: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get thumbnail image for a specific slide of a document"""
+    try:
+        # Get document info from project_documents table
+        doc_query = text("""
+            SELECT pd.id, pd.project_id, pd.document_name, pd.file_path, 
+                   p.company_id
+            FROM project_documents pd
+            JOIN projects p ON pd.project_id = p.id
+            WHERE pd.id = :document_id AND pd.is_active = TRUE
+        """)
+        
+        doc_result = db.execute(doc_query, {"document_id": document_id}).fetchone()
+        
+        if not doc_result:
+            # Fallback: try to get from pitch_decks table
+            pitch_deck_query = text("""
+                SELECT pd.id, pd.company_id, pd.file_name, pd.file_path
+                FROM pitch_decks pd
+                WHERE pd.id = :document_id
+            """)
+            
+            pitch_deck_result = db.execute(pitch_deck_query, {"document_id": document_id}).fetchone()
+            
+            if not pitch_deck_result:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Document not found"
+                )
+            
+            deck_id, company_id, file_name, file_path = pitch_deck_result
+            deck_name = os.path.splitext(file_name)[0] if file_name else str(deck_id)
+        else:
+            doc_id, project_id, document_name, file_path, company_id = doc_result
+            deck_name = os.path.splitext(document_name)[0] if document_name else str(doc_id)
+        
+        # Check access permissions (GPs can access any project)
+        if current_user.role != "gp":
+            # For startup users, check if they have access to this company
+            user_company_query = text("SELECT company_name FROM users WHERE id = :user_id")
+            user_result = db.execute(user_company_query, {"user_id": current_user.id}).fetchone()
+            
+            if user_result:
+                import re
+                user_company_id = re.sub(r'[^a-z0-9-]', '', user_result[0].lower().replace(' ', '-'))
+                if user_company_id != company_id:
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Access denied"
+                    )
+        
+        # Try to find slide image files
+        analysis_dir = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id, "analysis", deck_name)
+        
+        # Look for slide image files (try different naming patterns)
+        slide_patterns = [
+            f"slide_{slide_number:02d}.png",
+            f"slide_{slide_number}.png", 
+            f"page_{slide_number:02d}.png",
+            f"page_{slide_number}.png",
+            f"slide_{slide_number:02d}.jpg",
+            f"slide_{slide_number}.jpg"
+        ]
+        
+        image_path = None
+        for pattern in slide_patterns:
+            potential_path = os.path.join(analysis_dir, pattern)
+            if os.path.exists(potential_path):
+                image_path = potential_path
+                break
+        
+        if not image_path:
+            # If no slide image found, return 404
+            raise HTTPException(
+                status_code=404,
+                detail=f"Thumbnail for slide {slide_number} not found"
+            )
+        
+        # Serve the image file
+        from fastapi.responses import FileResponse
+        return FileResponse(
+            image_path,
+            media_type="image/png",
+            headers={"Cache-Control": "max-age=3600"}
+        )
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting processing progress for pitch deck {pitch_deck_id}: {e}")
-        raise HTTPException(status_code=500, detail="Failed to get processing progress")
+        logger.error(f"Error serving thumbnail for document {document_id}, slide {slide_number}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to retrieve thumbnail"
+        )
