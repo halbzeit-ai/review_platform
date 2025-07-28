@@ -1737,6 +1737,32 @@ async def run_template_processing_batch(
                 detail="Some deck IDs not found or not dojo files"
             )
         
+        # Check if companies have been added to the database
+        # Template processing results won't show in gallery without proper company entries
+        from ..db.models import Company
+        company_ids = [deck.company_id for deck in decks if deck.company_id]
+        
+        if len(company_ids) != len(decks):
+            # Some decks don't have associated companies
+            decks_without_companies = [deck.id for deck in decks if not deck.company_id]
+            raise HTTPException(
+                status_code=400,
+                detail=f"Template processing requires companies to be added first. "
+                       f"Please use 'Add Dojo Companies' to add these decks to the database before running template processing. "
+                       f"Decks without companies: {decks_without_companies}"
+            )
+        
+        # Verify companies actually exist in the database
+        existing_companies = db.query(Company).filter(Company.id.in_(company_ids)).all()
+        if len(existing_companies) != len(company_ids):
+            missing_company_ids = set(company_ids) - {c.id for c in existing_companies}
+            raise HTTPException(
+                status_code=400,
+                detail=f"Some companies are missing from the database. "
+                       f"Please use 'Add Dojo Companies' to properly add all companies first. "
+                       f"Missing company IDs: {list(missing_company_ids)}"
+            )
+        
         # Get template information if specified
         template_info = None
         if request.template_id:
