@@ -42,7 +42,7 @@ def test_template_endpoint():
         },
         json={
             "experiment_id": 21,  # Use experiment 21 that was mentioned
-            "template_id": None,
+            "template_id": 3,  # Test with a specific template ID (Digital Therapeutics)
             "generate_thumbnails": True
         }
     )
@@ -53,6 +53,16 @@ def test_template_endpoint():
     
     if test_response.status_code == 200:
         print("✅ Endpoint is working!")
+        # Parse and show some results
+        try:
+            result_data = test_response.json()
+            processing_results = result_data.get("processing_results", [])
+            print(f"✅ Successfully processed {len(processing_results)} decks")
+            if processing_results:
+                first_result = processing_results[0]
+                print(f"First deck analysis preview: {first_result.get('template_analysis', '')[:200]}...")
+        except:
+            pass
     else:
         print("❌ Endpoint failed")
 
