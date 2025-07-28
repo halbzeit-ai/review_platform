@@ -100,6 +100,10 @@ function GPDashboard() {
     }
   };
 
+  const handleOpenProject = (projectId) => {
+    // Navigate to startup view of the project for GP
+    navigate(`/admin/project/${projectId}/startup-view`);
+  };
 
   useEffect(() => {
     fetchPerformanceMetrics();
@@ -505,6 +509,19 @@ function GPDashboard() {
                       <Typography variant="body2" color="primary" sx={{ fontWeight: 500 }}>
                         Funding: {project.funding_sought || 'N/A'}
                       </Typography>
+                    </Box>
+                    
+                    {/* Action Buttons */}
+                    <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        fullWidth
+                        onClick={() => handleOpenProject(project.id)}
+                        sx={{ textTransform: 'none' }}
+                      >
+                        Open Project
+                      </Button>
                     </Box>
                   </CardContent>
                 </Card>

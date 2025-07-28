@@ -674,3 +674,94 @@ async def get_my_projects(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve your projects"
         )
+
+@router.get("/projects/{project_id}/decks")
+async def get_project_decks(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get pitch decks for a specific project (GP admin access)"""
+    try:
+        # Only GPs can access any project's decks
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only GPs can access project decks"
+            )
+        
+        # Get project info to verify it exists
+        project_query = text("""
+            SELECT id, company_id, project_name 
+            FROM projects 
+            WHERE id = :project_id AND is_active = TRUE
+        """)
+        
+        project_result = db.execute(project_query, {"project_id": project_id}).fetchone()
+        
+        if not project_result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found"
+            )
+        
+        # Get all pitch decks for this project
+        decks_query = text("""
+            SELECT 
+                pd.id,
+                pd.user_id,
+                pd.company_id,
+                pd.file_name,
+                pd.file_path,
+                pd.results_file_path,
+                pd.processing_status,
+                pd.ai_analysis_results,
+                pd.ai_extracted_startup_name,
+                pd.data_source,
+                pd.created_at,
+                u.email as user_email,
+                u.first_name,
+                u.last_name
+            FROM pitch_decks pd
+            LEFT JOIN users u ON pd.user_id = u.id
+            WHERE pd.company_id = :company_id
+            ORDER BY pd.created_at DESC
+        """)
+        
+        decks_results = db.execute(decks_query, {"company_id": project_result[1]}).fetchall()
+        
+        decks = []
+        for row in decks_results:
+            deck_data = {
+                "id": row[0],
+                "user_id": row[1],
+                "company_id": row[2],
+                "file_name": row[3],
+                "file_path": row[4],
+                "results_file_path": row[5],
+                "processing_status": row[6],
+                "ai_analysis_results": row[7],
+                "ai_extracted_startup_name": row[8],
+                "data_source": row[9],
+                "created_at": row[10],
+                "user_email": row[11],
+                "user_first_name": row[12],
+                "user_last_name": row[13]
+            }
+            decks.append(deck_data)
+        
+        return {
+            "project_id": project_id,
+            "project_name": project_result[2],
+            "company_id": project_result[1],
+            "decks": decks
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting project decks for project {project_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve project decks"
+        )

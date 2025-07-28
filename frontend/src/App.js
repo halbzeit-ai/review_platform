@@ -49,6 +49,7 @@ function App() {
           <Route path="/project/:companyId/results/:deckId" element={<ProjectResultsPage />} />
           <Route path="/funding-journey" element={<StartupJourney />} />
           <Route path="/funding-journey/:projectId" element={<StartupJourney />} />
+          <Route path="/admin/project/:projectId/startup-view" element={<ProjectDashboard />} />
           <Route path="/profile" element={<Profile />} />
         </Routes>
       </BrowserRouter>

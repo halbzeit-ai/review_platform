@@ -39,14 +39,18 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { 
   getPitchDecks,
   getMyProjects,
-  getProjectJourney
+  getProjectJourney,
+  getProjectDecks
 } from '../services/api';
 import ProjectUploads from '../components/ProjectUploads';
 
 const ProjectDashboard = () => {
   const { t } = useTranslation('dashboard');
   const navigate = useNavigate();
-  const { companyId } = useParams();
+  const { companyId, projectId } = useParams();
+  
+  // Determine if this is GP admin view
+  const isAdminView = window.location.pathname.includes('/admin/project/');
   
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -71,7 +75,7 @@ const ProjectDashboard = () => {
   useEffect(() => {
     loadProjectData();
     loadFundingData();
-  }, [companyId]);
+  }, [companyId, projectId]);
 
   // Function to refresh project data (can be called after upload)
   const refreshProjectData = () => {
@@ -83,8 +87,20 @@ const ProjectDashboard = () => {
       setLoading(true);
       setError(null);
       
-      // Load project decks
-      const decksResponse = await getPitchDecks();
+      let decksResponse;
+      let displayId;
+      
+      if (isAdminView && projectId) {
+        // GP Admin view: get decks for specific project
+        decksResponse = await getProjectDecks(projectId);
+        displayId = `Project ID: ${projectId}`;
+      } else if (companyId) {
+        // Regular startup view: get user's own decks
+        decksResponse = await getPitchDecks();
+        displayId = `Project: ${companyId}`;
+      } else {
+        throw new Error('No valid project identifier found');
+      }
       
       const decksData = decksResponse.data || decksResponse;
       
@@ -98,9 +114,10 @@ const ProjectDashboard = () => {
       }
       
       // Update breadcrumbs
+      const dashboardPath = isAdminView ? '/dashboard/gp' : '/dashboard';
       setBreadcrumbs([
-        { label: t('navigation.dashboard'), path: '/dashboard' },
-        { label: `Project: ${companyId}`, path: null }
+        { label: t('navigation.dashboard'), path: dashboardPath },
+        { label: displayId, path: null }
       ]);
       
     } catch (err) {

@@ -139,6 +139,10 @@ export const getAllProjects = (includeTestData = false, limit = 100, offset = 0)
 export const getMyProjects = (limit = 100, offset = 0) =>
   api.get(`/project-management/my-projects?limit=${limit}&offset=${offset}`);
 
+// GP Admin: Get project decks by project ID (for any project)
+export const getProjectDecks = (projectId) =>
+  api.get(`/project-management/projects/${projectId}/decks`);
+
 // Funding Stages API
 export const getStageTemplates = () =>
   api.get('/funding-stages/templates');
