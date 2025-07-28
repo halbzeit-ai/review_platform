@@ -1121,9 +1121,15 @@ const DojoManagement = () => {
       }
 
       const allFiles = await filesResponse.json();
+      console.log('Files API response:', allFiles);
+      console.log('Is allFiles an array?', Array.isArray(allFiles));
+      
+      // Handle case where API returns object with files property or direct array
+      const filesArray = Array.isArray(allFiles) ? allFiles : (allFiles.files || allFiles.data || []);
+      console.log('Files array to filter:', filesArray);
       
       // Filter files to match the experiment's deck IDs
-      const experimentSample = allFiles.filter(file => deckIds.includes(file.id));
+      const experimentSample = filesArray.filter(file => deckIds.includes(file.id));
 
       // Set this as the current extraction sample
       setExtractionSample(experimentSample);
@@ -1975,6 +1981,18 @@ const DojoManagement = () => {
                                 const hasOfferingExtraction = experiment.successful_extractions > 0;
                                 const hasCompanyNameExtraction = !!(experiment.company_name_completed_at);
                                 const hasFundingAmountExtraction = !!(experiment.funding_amount_completed_at);
+                                
+                                // Debug logging for experiment 21
+                                if (experiment.experiment_name && experiment.experiment_name.includes('pipeline_1753699505211')) {
+                                  console.log(`Debug experiment ${experiment.experiment_name}:`);
+                                  console.log('  successful_extractions:', experiment.successful_extractions);
+                                  console.log('  hasOfferingExtraction:', hasOfferingExtraction);
+                                  console.log('  company_name_completed_at:', experiment.company_name_completed_at);
+                                  console.log('  hasCompanyNameExtraction:', hasCompanyNameExtraction);
+                                  console.log('  funding_amount_completed_at:', experiment.funding_amount_completed_at);
+                                  console.log('  hasFundingAmountExtraction:', hasFundingAmountExtraction);
+                                  console.log('  Final result:', (hasOfferingExtraction && hasCompanyNameExtraction && hasFundingAmountExtraction) ? 'Yes' : 'No');
+                                }
                                 
                                 return (hasOfferingExtraction && hasCompanyNameExtraction && hasFundingAmountExtraction) ? 'Yes' : 'No';
                               })()}
