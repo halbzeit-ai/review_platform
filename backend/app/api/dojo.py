@@ -1226,6 +1226,11 @@ class FundingAmountExtractionRequest(BaseModel):
 class DeckDateExtractionRequest(BaseModel):
     experiment_id: int
 
+class TemplateProcessingRequest(BaseModel):
+    experiment_id: int
+    template_id: Optional[int] = None  # Optional: use default if not specified
+    generate_thumbnails: bool = True
+
 @router.post("/extraction-test/run-company-name-extraction")
 async def enrich_experiment_with_company_names(
     request: CompanyNameExtractionRequest,
@@ -1676,6 +1681,213 @@ async def enrich_experiment_with_deck_dates(
         raise HTTPException(
             status_code=500,
             detail="Failed to run deck date extraction"
+        )
+
+@router.post("/extraction-test/run-template-processing")
+async def run_template_processing_batch(
+    request: TemplateProcessingRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Process all decks from an experiment through the template analysis pipeline with thumbnail generation"""
+    try:
+        # Only GPs can run template processing
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=403,
+                detail="Only GPs can run template processing"
+            )
+        
+        # Get the experiment
+        experiment = db.execute(text("""
+            SELECT id, experiment_name, extraction_type, text_model_used, 
+                   extraction_prompt, created_at, results_json, pitch_deck_ids
+            FROM extraction_experiments 
+            WHERE id = :experiment_id
+        """), {"experiment_id": request.experiment_id}).fetchone()
+        
+        if not experiment:
+            raise HTTPException(
+                status_code=404,
+                detail="Experiment not found"
+            )
+        
+        # Parse existing results
+        results_data = json.loads(experiment[6]) if experiment[6] else {}
+        results = results_data.get("results", [])
+        
+        if not results:
+            raise HTTPException(
+                status_code=400,
+                detail="Experiment has no extraction results to process through template analysis"
+            )
+        
+        # Get deck IDs for processing
+        deck_ids = experiment[7]  # pitch_deck_ids
+        
+        # Validate deck IDs exist and are dojo files
+        decks = db.query(PitchDeck).filter(
+            PitchDeck.id.in_(deck_ids),
+            PitchDeck.data_source == "dojo"
+        ).all()
+        
+        if len(decks) != len(deck_ids):
+            raise HTTPException(
+                status_code=400,
+                detail="Some deck IDs not found or not dojo files"
+            )
+        
+        # Get template information if specified
+        template_info = None
+        if request.template_id:
+            template_result = db.execute(text("""
+                SELECT id, template_name, analysis_prompt FROM healthcare_templates 
+                WHERE id = :template_id
+            """), {"template_id": request.template_id}).fetchone()
+            
+            if not template_result:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Template not found"
+                )
+            
+            template_info = {
+                "id": template_result[0],
+                "name": template_result[1],
+                "prompt": template_result[2]
+            }
+        else:
+            # Use default template if none specified
+            default_template = db.execute(text("""
+                SELECT id, template_name, analysis_prompt FROM healthcare_templates 
+                WHERE template_name = 'Standard Analysis' 
+                LIMIT 1
+            """)).fetchone()
+            
+            if default_template:
+                template_info = {
+                    "id": default_template[0],
+                    "name": default_template[1],
+                    "prompt": default_template[2]
+                }
+        
+        # Use GPU pipeline for template processing
+        from ..services.gpu_http_client import gpu_http_client
+        
+        # Call GPU pipeline for template processing with thumbnail generation
+        gpu_result = await gpu_http_client.run_template_processing_batch(
+            deck_ids=deck_ids,
+            template_info=template_info,
+            generate_thumbnails=request.generate_thumbnails
+        )
+        
+        # Process GPU results
+        template_processing_results = []
+        successful_processing = 0
+        thumbnail_generation_success = 0
+        
+        if gpu_result.get("success"):
+            logger.info("GPU template processing completed successfully")
+            processing_results = gpu_result.get("processing_results", [])
+            
+            for result in processing_results:
+                deck_id = result.get("deck_id")
+                template_analysis = result.get("template_analysis", "")
+                thumbnail_info = result.get("thumbnail_info", {})
+                
+                # Check if processing succeeded
+                processing_success = not (template_analysis.startswith("Error:") if template_analysis else True)
+                thumbnail_success = thumbnail_info.get("success", False) if request.generate_thumbnails else True
+                
+                if processing_success:
+                    successful_processing += 1
+                
+                if thumbnail_success:
+                    thumbnail_generation_success += 1
+                
+                # Find corresponding deck info
+                deck = next((d for d in decks if d.id == deck_id), None)
+                filename = deck.file_name if deck else f"deck_{deck_id}"
+                
+                template_processing_results.append({
+                    "deck_id": deck_id,
+                    "filename": filename,
+                    "template_analysis": template_analysis,
+                    "template_used": template_info["name"] if template_info else "Default",
+                    "thumbnail_info": thumbnail_info,
+                    "processing_success": processing_success,
+                    "thumbnail_success": thumbnail_success,
+                    "error": result.get("error")
+                })
+        else:
+            logger.error(f"GPU template processing failed: {gpu_result.get('error', 'Unknown error')}")
+            # Create error results for all decks
+            for deck_id in deck_ids:
+                deck = next((d for d in decks if d.id == deck_id), None)
+                filename = deck.file_name if deck else f"deck_{deck_id}"
+                
+                template_processing_results.append({
+                    "deck_id": deck_id,
+                    "filename": filename,
+                    "template_analysis": None,
+                    "template_used": template_info["name"] if template_info else "Default",
+                    "thumbnail_info": {"success": False, "error": "GPU processing failed"},
+                    "processing_success": False,
+                    "thumbnail_success": False,
+                    "error": f"GPU processing failed: {gpu_result.get('error', 'Unknown error')}"
+                })
+        
+        # Create statistics
+        statistics = {
+            "total_decks": len(template_processing_results),
+            "successful_template_processing": successful_processing,
+            "failed_template_processing": len(template_processing_results) - successful_processing,
+            "template_processing_success_rate": successful_processing / len(template_processing_results) if template_processing_results else 0,
+            "successful_thumbnail_generation": thumbnail_generation_success,
+            "failed_thumbnail_generation": len(template_processing_results) - thumbnail_generation_success,
+            "thumbnail_generation_success_rate": thumbnail_generation_success / len(template_processing_results) if template_processing_results else 0,
+            "template_used": template_info["name"] if template_info else "Default",
+            "thumbnails_requested": request.generate_thumbnails
+        }
+        
+        # Store template processing results in the experiment
+        template_processing_data = {
+            "template_processing_results": template_processing_results,
+            "statistics": statistics,
+            "template_used": template_info,
+            "thumbnails_generated": request.generate_thumbnails,
+            "processed_at": datetime.utcnow().isoformat()
+        }
+        
+        # Update experiment with template processing results
+        db.execute(text("""
+            UPDATE extraction_experiments 
+            SET template_processing_results_json = :template_processing_results,
+                template_processing_completed_at = CURRENT_TIMESTAMP
+            WHERE id = :experiment_id
+        """), {
+            "experiment_id": request.experiment_id,
+            "template_processing_results": json.dumps(template_processing_data)
+        })
+        
+        db.commit()
+        
+        logger.info(f"Template processing completed for experiment {request.experiment_id}: {successful_processing}/{len(template_processing_results)} successful template analyses, {thumbnail_generation_success}/{len(template_processing_results)} successful thumbnail generations")
+        
+        return {
+            "message": "Template processing completed successfully",
+            "experiment_id": request.experiment_id,
+            "template_processing_results": template_processing_results,
+            "statistics": statistics
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error running template processing: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to run template processing"
         )
 
 # ==================== INTERNAL API FOR GPU COMMUNICATION ====================

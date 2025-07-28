@@ -575,5 +575,81 @@ class GPUHTTPClient:
                 "error": str(e)
             }
 
+    async def run_template_processing_batch(self, deck_ids: List[int], template_info: Optional[Dict[str, Any]] = None, generate_thumbnails: bool = True) -> Dict[str, Any]:
+        """
+        Run template processing for multiple decks with optional thumbnail generation
+        
+        Args:
+            deck_ids: List of pitch deck IDs
+            template_info: Template information (id, name, prompt)
+            generate_thumbnails: Whether to generate thumbnails
+            
+        Returns:
+            Template processing results for all decks
+        """
+        try:
+            if not self.gpu_host:
+                logger.error("GPU_INSTANCE_HOST not configured")
+                return {
+                    "success": False,
+                    "error": "GPU_INSTANCE_HOST not configured"
+                }
+            
+            logger.info(f"Requesting template processing for {len(deck_ids)} decks with thumbnails={generate_thumbnails}")
+            
+            payload = {
+                "deck_ids": deck_ids,
+                "template_info": template_info,
+                "generate_thumbnails": generate_thumbnails
+            }
+            
+            async with httpx.AsyncClient(timeout=3600.0) as client:  # 1 hour timeout
+                response = await client.post(
+                    f"{self.base_url}/run-template-processing-batch",
+                    json=payload,
+                    headers={'Content-Type': 'application/json'}
+                )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    logger.info(f"Successfully completed template processing batch")
+                    return {
+                        "success": True,
+                        "processing_results": data.get("processing_results", []),
+                        "message": data.get("message", "Template processing batch completed")
+                    }
+                else:
+                    logger.error(f"GPU template processing batch failed: {data.get('error')}")
+                    return {
+                        "success": False,
+                        "error": data.get("error", "Unknown GPU processing error")
+                    }
+            else:
+                logger.error(f"HTTP error {response.status_code}: {response.text}")
+                return {
+                    "success": False,
+                    "error": f"HTTP {response.status_code}: {response.text}"
+                }
+                
+        except httpx.TimeoutException:
+            logger.error(f"Timeout processing template processing batch")
+            return {
+                "success": False,
+                "error": "Processing timeout (1 hour exceeded)"
+            }
+        except httpx.ConnectError:
+            logger.error("Connection error communicating with GPU instance")
+            return {
+                "success": False,
+                "error": "Connection error communicating with GPU instance"
+            }
+        except Exception as e:
+            logger.error(f"Error processing template processing batch: {e}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
+
 # Global instance
 gpu_http_client = GPUHTTPClient()

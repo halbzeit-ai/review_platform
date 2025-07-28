@@ -1121,12 +1121,9 @@ const DojoManagement = () => {
       }
 
       const allFiles = await filesResponse.json();
-      console.log('Files API response:', allFiles);
-      console.log('Is allFiles an array?', Array.isArray(allFiles));
       
       // Handle case where API returns object with files property or direct array
       const filesArray = Array.isArray(allFiles) ? allFiles : (allFiles.files || allFiles.data || []);
-      console.log('Files array to filter:', filesArray);
       
       // Filter files to match the experiment's deck IDs
       const experimentSample = filesArray.filter(file => deckIds.includes(file.id));
@@ -1226,54 +1223,67 @@ const DojoManagement = () => {
       setError(null);
 
       const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
 
-      // Get deck IDs either from experiment or from extraction sample
-      let deckIds = [];
-      if (lastExperimentId) {
-        // Get experiment details to find the deck IDs
-        const experimentResponse = await fetch(`/api/dojo/experiments/${lastExperimentId}`);
-        if (!experimentResponse.ok) {
-          throw new Error('Failed to fetch experiment details');
-        }
-        const experimentData = await experimentResponse.json();
-        deckIds = experimentData.pitch_deck_ids || [];
-      } else if (extractionSample.length > 0) {
-        // Use deck IDs from extraction sample
-        deckIds = extractionSample.map(item => item.id);
-      } else {
-        throw new Error('No decks available for processing');
-      }
-
-      // Trigger template processing for each deck
-      const processingPromises = deckIds.map(async (deckId) => {
-        const response = await fetch('/api/pipeline/process', {
+      // Use the existing experiment ID or create a new one
+      let experimentId = lastExperimentId;
+      
+      if (!experimentId && extractionSample.length > 0) {
+        // If no experiment ID but we have a sample, we need to create a new experiment first
+        const deckIds = extractionSample.map(item => item.id);
+        const experimentName = `template_processing_${Date.now()}`;
+        
+        // Create experiment by running offering extraction first (required for experiment creation)
+        const offeringResponse = await fetch('/api/dojo/extraction-test/run-offering-extraction', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${user?.token}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            pitch_deck_id: deckId,
-            template_type: selectedTemplate,
-            generate_thumbnails: true
+            experiment_name: experimentName,
+            deck_ids: deckIds,
+            text_model: selectedTextModel || 'gemma3:27b',
+            extraction_prompt: extractionPrompt || 'Extract company offering',
+            use_cached_visual: true
           })
         });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.warn(`Template processing failed for deck ${deckId}:`, errorData);
-          return { deckId, success: false, error: errorData };
+        if (!offeringResponse.ok) {
+          const errorData = await offeringResponse.json();
+          throw new Error(errorData.detail || 'Failed to create experiment for template processing');
         }
 
-        const result = await response.json();
-        return { deckId, success: true, result };
+        const offeringData = await offeringResponse.json();
+        experimentId = offeringData.experiment_id;
+        console.log('Created experiment for template processing:', experimentId);
+      }
+
+      if (!experimentId) {
+        throw new Error('No experiment available for template processing');
+      }
+
+      // Run batch template processing on the entire experiment
+      const response = await fetch('/api/dojo/extraction-test/run-template-processing', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          experiment_id: experimentId,
+          template_type: selectedTemplate,
+          generate_thumbnails: true
+        })
       });
 
-      const results = await Promise.all(processingPromises);
-      const successCount = results.filter(r => r.success).length;
-      const failureCount = results.filter(r => !r.success).length;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to run template processing');
+      }
 
-      console.log(`Template processing completed: ${successCount} success, ${failureCount} failures`);
+      const result = await response.json();
+      console.log('Template processing completed:', result);
       
       setTemplateProcessingStatus('completed');
       
@@ -1982,17 +1992,6 @@ const DojoManagement = () => {
                                 const hasCompanyNameExtraction = !!(experiment.company_name_completed_at);
                                 const hasFundingAmountExtraction = !!(experiment.funding_amount_completed_at);
                                 
-                                // Debug logging for experiment 21
-                                if (experiment.experiment_name && experiment.experiment_name.includes('pipeline_1753699505211')) {
-                                  console.log(`Debug experiment ${experiment.experiment_name}:`);
-                                  console.log('  successful_extractions:', experiment.successful_extractions);
-                                  console.log('  hasOfferingExtraction:', hasOfferingExtraction);
-                                  console.log('  company_name_completed_at:', experiment.company_name_completed_at);
-                                  console.log('  hasCompanyNameExtraction:', hasCompanyNameExtraction);
-                                  console.log('  funding_amount_completed_at:', experiment.funding_amount_completed_at);
-                                  console.log('  hasFundingAmountExtraction:', hasFundingAmountExtraction);
-                                  console.log('  Final result:', (hasOfferingExtraction && hasCompanyNameExtraction && hasFundingAmountExtraction) ? 'Yes' : 'No');
-                                }
                                 
                                 return (hasOfferingExtraction && hasCompanyNameExtraction && hasFundingAmountExtraction) ? 'Yes' : 'No';
                               })()}
