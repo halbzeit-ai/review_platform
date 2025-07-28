@@ -29,6 +29,7 @@ function GPDashboard() {
   const [projectJourney, setProjectJourney] = useState(null);
   const [journeyDialogOpen, setJourneyDialogOpen] = useState(false);
   const [stageUpdateDialog, setStageUpdateDialog] = useState({ open: false, stage: null, projectId: null });
+  const [thumbnailUrls, setThumbnailUrls] = useState({});
 
 
 
@@ -46,6 +47,9 @@ function GPDashboard() {
     try {
       const response = await getAllProjects(includeTestData);
       setProjects(response.data);
+      
+      // After projects are loaded, fetch thumbnails
+      fetchThumbnails(response.data);
     } catch (error) {
       console.error('Error fetching projects:', error);
       setSnackbar({
@@ -56,6 +60,37 @@ function GPDashboard() {
     } finally {
       setLoadingProjects(false);
     }
+  };
+
+  const fetchThumbnails = async (projectsList) => {
+    const newThumbnailUrls = {};
+    
+    for (const project of projectsList) {
+      const pitchDeck = project.documents?.find(doc => doc.document_type === 'pitch_deck');
+      if (pitchDeck) {
+        try {
+          // Get JWT token from localStorage
+          const user = JSON.parse(localStorage.getItem('user'));
+          if (user?.token) {
+            const response = await fetch(`/api/documents/${pitchDeck.id}/thumbnail/slide/1`, {
+              headers: {
+                'Authorization': `Bearer ${user.token}`
+              }
+            });
+            
+            if (response.ok) {
+              const blob = await response.blob();
+              const objectUrl = URL.createObjectURL(blob);
+              newThumbnailUrls[pitchDeck.id] = objectUrl;
+            }
+          }
+        } catch (error) {
+          console.error(`Error fetching thumbnail for project ${project.id}:`, error);
+        }
+      }
+    }
+    
+    setThumbnailUrls(newThumbnailUrls);
   };
 
   const handleViewProjectJourney = async (projectId) => {
@@ -140,6 +175,16 @@ function GPDashboard() {
       setClassificationData([]);
     }
   }, [projects]);
+
+  // Cleanup object URLs when component unmounts or thumbnails change
+  useEffect(() => {
+    return () => {
+      // Cleanup all object URLs to prevent memory leaks
+      Object.values(thumbnailUrls).forEach(url => {
+        URL.revokeObjectURL(url);
+      });
+    };
+  }, [thumbnailUrls]);
 
   // Helper function to get status color
   const getStatusColor = (status) => {
@@ -397,11 +442,11 @@ function GPDashboard() {
     // Get first document with pitch deck for thumbnail
     const getDeckThumbnail = (project) => {
       const pitchDeck = project.documents?.find(doc => doc.document_type === 'pitch_deck');
-      if (pitchDeck) {
-        // Use the actual deck document path to generate thumbnail
-        return `/api/documents/${pitchDeck.id}/thumbnail/slide/1`;
+      if (pitchDeck && thumbnailUrls[pitchDeck.id]) {
+        // Use the blob URL from our authenticated fetch
+        return thumbnailUrls[pitchDeck.id];
       }
-      // Return empty placeholder if no deck document exists
+      // Return empty placeholder if no deck document exists or thumbnail not loaded
       return null;
     };
 
