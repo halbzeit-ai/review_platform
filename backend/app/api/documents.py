@@ -424,10 +424,11 @@ async def test_endpoint():
 async def get_document_thumbnail(
     document_id: int,
     slide_number: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Get thumbnail image for a specific slide of a document"""
-    logger.info(f"=== THUMBNAIL REQUEST START (NO AUTH): document_id={document_id}, slide_number={slide_number} ===")
+    logger.info(f"=== THUMBNAIL REQUEST START: document_id={document_id}, slide_number={slide_number}, user={current_user.email if current_user else 'None'} ===")
     try:
         # Get document info from project_documents table
         doc_query = text("""
@@ -466,12 +467,43 @@ async def get_document_thumbnail(
             doc_id, project_id, file_name, file_path, company_id = doc_result
             deck_name = os.path.splitext(file_name)[0] if file_name else str(doc_id)
         
-        # TEMPORARY: Skip access control for debugging
-        logger.info(f"TEMPORARY: Skipping access control for document_id={document_id}, company_id={company_id}")
+        # Check access permissions (GPs can access any project)
+        if current_user.role != "gp":
+            # For startup users, check if they have access to this company
+            user_company_query = text("SELECT company_name FROM users WHERE id = :user_id")
+            user_result = db.execute(user_company_query, {"user_id": current_user.id}).fetchone()
+            
+            if user_result and user_result[0]:
+                import re
+                user_company_id = re.sub(r'[^a-z0-9-]', '', user_result[0].lower().replace(' ', '-'))
+                if user_company_id != company_id:
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Access denied"
+                    )
+            else:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Access denied - no company association"
+                )
         
-        # Try to find slide image files
-        analysis_dir = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id, "analysis", deck_name)
-        logger.info(f"Looking for slide images in: {analysis_dir}")
+        # Try to find slide image files in multiple possible locations
+        # Clean deck name for filesystem path
+        import string
+        import re
+        safe_deck_name = "".join(c for c in deck_name if c.isalnum() or c in (' ', '-', '_')).rstrip()
+        safe_deck_name = re.sub(r'\s+', '_', safe_deck_name)
+        
+        possible_locations = [
+            # Project-based structure with original deck name
+            os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id, "analysis", deck_name),
+            # Project-based structure with safe deck name
+            os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id, "analysis", safe_deck_name),
+            # Original results-based structure (might exist from legacy processing)
+            os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "results", f"job_{document_id}_{deck_name}"),
+            # Original results-based structure with safe name
+            os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "results", f"job_{document_id}_{safe_deck_name}"),
+        ]
         
         # Look for slide image files (try different naming patterns)
         slide_patterns = [
@@ -484,24 +516,32 @@ async def get_document_thumbnail(
         ]
         
         image_path = None
-        for pattern in slide_patterns:
-            potential_path = os.path.join(analysis_dir, pattern)
-            logger.debug(f"Checking for image at: {potential_path}")
-            if os.path.exists(potential_path):
-                image_path = potential_path
-                logger.info(f"Found slide image at: {image_path}")
-                break
+        found_location = None
+        
+        for location in possible_locations:
+            logger.info(f"Checking location: {location}")
+            if os.path.exists(location):
+                for pattern in slide_patterns:
+                    potential_path = os.path.join(location, pattern)
+                    if os.path.exists(potential_path):
+                        image_path = potential_path
+                        found_location = location
+                        logger.info(f"Found slide image at: {image_path}")
+                        break
+                if image_path:
+                    break
+            else:
+                logger.debug(f"Location does not exist: {location}")
         
         if not image_path:
-            # If no slide image found, log directory contents and return 404
-            if os.path.exists(analysis_dir):
-                try:
-                    files_in_dir = os.listdir(analysis_dir)
-                    logger.warning(f"No slide image found for slide {slide_number} in {analysis_dir}. Files present: {files_in_dir}")
-                except Exception as e:
-                    logger.error(f"Could not list directory {analysis_dir}: {e}")
-            else:
-                logger.warning(f"Analysis directory does not exist: {analysis_dir}")
+            # Log what we actually found in the existing directories
+            for location in possible_locations:
+                if os.path.exists(location):
+                    try:
+                        files_in_dir = os.listdir(location)
+                        logger.warning(f"No slide image found for slide {slide_number} in {location}. Files present: {files_in_dir}")
+                    except Exception as e:
+                        logger.error(f"Could not list directory {location}: {e}")
             
             raise HTTPException(
                 status_code=404,
