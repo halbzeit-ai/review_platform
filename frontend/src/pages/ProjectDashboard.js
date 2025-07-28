@@ -137,11 +137,13 @@ const ProjectDashboard = () => {
   };
 
   const handleViewDeckAnalysis = (deck) => {
-    navigate(`/project/${companyId}/deck-viewer/${deck.id}`);
+    const targetCompanyId = isAdminView ? deck.company_id : companyId;
+    navigate(`/project/${targetCompanyId}/deck-viewer/${deck.id}`);
   };
 
   const handleViewResults = (deck) => {
-    navigate(`/project/${companyId}/results/${deck.id}`);
+    const targetCompanyId = isAdminView ? deck.company_id : companyId;
+    navigate(`/project/${targetCompanyId}/results/${deck.id}`);
   };
 
   // Funding journey functions

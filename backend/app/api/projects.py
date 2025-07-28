@@ -110,17 +110,18 @@ async def get_deck_analysis(
         
         deck_id_db, file_path, results_file_path, user_email, company_name = deck_result
         
-        # Verify this deck belongs to the requested company
-        if company_name:
-            import re
-            deck_company_id = re.sub(r'[^a-z0-9-]', '', company_name.lower().replace(' ', '-'))
-        else:
-            deck_company_id = user_email.split('@')[0]
-        if deck_company_id != company_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Deck doesn't belong to this company"
-            )
+        # Verify this deck belongs to the requested company (skip for GP admin access)
+        if current_user.role != "gp":
+            if company_name:
+                import re
+                deck_company_id = re.sub(r'[^a-z0-9-]', '', company_name.lower().replace(' ', '-'))
+            else:
+                deck_company_id = user_email.split('@')[0]
+            if deck_company_id != company_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Deck doesn't belong to this company"
+                )
         
         # Load analysis results
         if not results_file_path:
@@ -227,17 +228,18 @@ async def get_project_results(
         
         deck_id_db, file_path, results_file_path, user_email, company_name = deck_result
         
-        # Verify this deck belongs to the requested company
-        if company_name:
-            import re
-            deck_company_id = re.sub(r'[^a-z0-9-]', '', company_name.lower().replace(' ', '-'))
-        else:
-            deck_company_id = user_email.split('@')[0]
-        if deck_company_id != company_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Deck doesn't belong to this company"
-            )
+        # Verify this deck belongs to the requested company (skip for GP admin access)
+        if current_user.role != "gp":
+            if company_name:
+                import re
+                deck_company_id = re.sub(r'[^a-z0-9-]', '', company_name.lower().replace(' ', '-'))
+            else:
+                deck_company_id = user_email.split('@')[0]
+            if deck_company_id != company_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Deck doesn't belong to this company"
+                )
         
         # Load analysis results
         if not results_file_path:
@@ -466,17 +468,18 @@ async def delete_deck(
         
         deck_id_db, file_name, file_path, results_file_path, user_email, company_name = deck_result
         
-        # Verify this deck belongs to the requested company
-        if company_name:
-            import re
-            deck_company_id = re.sub(r'[^a-z0-9-]', '', company_name.lower().replace(' ', '-'))
-        else:
-            deck_company_id = user_email.split('@')[0]
-        if deck_company_id != company_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Deck doesn't belong to this company"
-            )
+        # Verify this deck belongs to the requested company (skip for GP admin access)
+        if current_user.role != "gp":
+            if company_name:
+                import re
+                deck_company_id = re.sub(r'[^a-z0-9-]', '', company_name.lower().replace(' ', '-'))
+            else:
+                deck_company_id = user_email.split('@')[0]
+            if deck_company_id != company_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Deck doesn't belong to this company"
+                )
         
         # Delete the PDF file
         if file_path:
