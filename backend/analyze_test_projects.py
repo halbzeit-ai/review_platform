@@ -126,9 +126,22 @@ def analyze_test_projects(conn):
             
             # Parse metadata and tags
             try:
-                metadata = json.loads(metadata_str) if metadata_str else {}
-                tags = json.loads(tags_str) if tags_str else []
-            except json.JSONDecodeError:
+                # Handle both string and dict formats for metadata
+                if isinstance(metadata_str, dict):
+                    metadata = metadata_str
+                elif metadata_str:
+                    metadata = json.loads(metadata_str)
+                else:
+                    metadata = {}
+                
+                # Handle both string and list formats for tags
+                if isinstance(tags_str, list):
+                    tags = tags_str
+                elif tags_str:
+                    tags = json.loads(tags_str)
+                else:
+                    tags = []
+            except (json.JSONDecodeError, TypeError):
                 metadata = {}
                 tags = []
             
@@ -158,9 +171,22 @@ def analyze_test_projects(conn):
                 project_id, company_id, project_name, funding_round, created_at, metadata_str, tags_str = project
                 
                 try:
-                    metadata = json.loads(metadata_str) if metadata_str else {}
-                    tags = json.loads(tags_str) if tags_str else []
-                except:
+                    # Handle both string and dict formats for metadata
+                    if isinstance(metadata_str, dict):
+                        metadata = metadata_str
+                    elif metadata_str:
+                        metadata = json.loads(metadata_str)
+                    else:
+                        metadata = {}
+                    
+                    # Handle both string and list formats for tags
+                    if isinstance(tags_str, list):
+                        tags = tags_str
+                    elif tags_str:
+                        tags = json.loads(tags_str)
+                    else:
+                        tags = []
+                except (json.JSONDecodeError, TypeError):
                     metadata = {}
                     tags = []
                 
