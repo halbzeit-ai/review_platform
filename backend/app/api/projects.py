@@ -293,20 +293,35 @@ async def get_project_uploads(
                 detail="You don't have access to this project"
             )
         
-        # Get all pitch decks for this company using company_id
+        # Get all pitch decks and filter by company in application logic
+        # This handles cases where company_id might not be populated in the database
         uploads_query = text("""
         SELECT pd.id, pd.file_path, pd.created_at, pd.results_file_path, u.email, pd.processing_status, u.company_name
         FROM pitch_decks pd
         JOIN users u ON pd.user_id = u.id
-        WHERE pd.company_id = :company_id 
         ORDER BY pd.created_at DESC
         """)
         
-        uploads_result = db.execute(uploads_query, {"company_id": company_id}).fetchall()
+        uploads_result = db.execute(uploads_query).fetchall()
         
         uploads = []
         for upload in uploads_result:
             deck_id, file_path, created_at, results_file_path, user_email, processing_status, company_name = upload
+            
+            # Filter to only include decks that belong to the requested company
+            # Convert company name to company_id format for comparison
+            if company_name:
+                import re
+                deck_company_id = re.sub(r'[^a-z0-9-]', '', company_name.lower().replace(' ', '-'))
+            else:
+                deck_company_id = user_email.split('@')[0]
+            
+            # Skip if this deck doesn't belong to the requested company (unless GP admin access)
+            if current_user.role != "gp" and deck_company_id != company_id:
+                continue
+            # For GP admin access, only include if they specifically requested this company's uploads
+            elif current_user.role == "gp" and deck_company_id != company_id:
+                continue
             
             # Get file info
             full_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, file_path)
