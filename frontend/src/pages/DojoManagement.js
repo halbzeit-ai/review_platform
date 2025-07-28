@@ -178,6 +178,11 @@ const DojoManagement = () => {
   const [cachedDecksCount, setCachedDecksCount] = useState(0);
   const [loadingCachedCount, setLoadingCachedCount] = useState(false);
   const [sampleSize, setSampleSize] = useState(10);
+  
+  // Data management states
+  const [cleanupLoading, setCleanupLoading] = useState(false);
+  const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
+  const [testDataStats, setTestDataStats] = useState(null);
 
   useEffect(() => {
     loadDojoData();
@@ -1018,8 +1023,10 @@ const DojoManagement = () => {
 
   const handleTabChange = (event, newValue) => {
     setCurrentTab(newValue);
-    if (newValue === 1) { // Extraction Testing Lab tab
+    if (newValue === 1) { // Extraction Experiments History tab
       loadExperiments();
+    } else if (newValue === 3) { // Data Management tab
+      loadTestDataStats();
     }
   };
 
@@ -1277,6 +1284,58 @@ const DojoManagement = () => {
     }
   };
 
+  // Load test data statistics for data management tab
+  const loadTestDataStats = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+
+      const response = await fetch('/api/dojo-experiments/stats', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const stats = await response.json();
+        setTestDataStats(stats);
+      }
+    } catch (err) {
+      console.error('Error loading test data stats:', err);
+    }
+  };
+
+  // Clean up dojo projects while preserving experimental data
+  const cleanupDojoProjects = async () => {
+    try {
+      setCleanupLoading(true);
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+
+      const response = await fetch('/api/dojo-experiments/cleanup-dojo-projects', {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setAddCompaniesSuccess(`Successfully cleaned up ${result.projects_deleted} dojo projects and ${result.documents_deleted} documents. All experimental data preserved.`);
+        setError(null);
+        // Refresh stats
+        await loadTestDataStats();
+        // Clear success message after 8 seconds
+        setTimeout(() => setAddCompaniesSuccess(''), 8000);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Failed to cleanup dojo projects');
+      }
+    } catch (err) {
+      console.error('Error cleaning up dojo projects:', err);
+      setError('Failed to cleanup dojo projects');
+    } finally {
+      setCleanupLoading(false);
+      setCleanupDialogOpen(false);
+    }
+  };
+
   const getStatusIcon = (status) => {
     switch (status) {
       case 'completed':
@@ -1345,6 +1404,7 @@ const DojoManagement = () => {
           <Tab label={t('tabs.extractionTestingLab')} />
           <Tab label="Extraction Experiments History" />
           <Tab label={t('tabs.trainingFiles')} />
+          <Tab label="Data Management" />
         </Tabs>
         
         {/* Tab Panel 0: Extraction Testing Lab */}
@@ -2047,7 +2107,159 @@ const DojoManagement = () => {
             )}
           </Box>
         )}
+        
+        {/* Tab Panel 3: Data Management */}
+        {currentTab === 3 && (
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Data Management
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Manage test data and dojo projects. Clean up operations preserve all experimental data.
+            </Typography>
+            
+            {/* Test Data Statistics */}
+            {testDataStats && (
+              <Paper sx={{ p: 3, mb: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  Current Test Data Statistics
+                </Typography>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Card>
+                      <CardContent sx={{ textAlign: 'center' }}>
+                        <Typography variant="h4" color="primary">
+                          {testDataStats.total_test_projects}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Total Test Projects
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Card>
+                      <CardContent sx={{ textAlign: 'center' }}>
+                        <Typography variant="h4" color="info.main">
+                          {testDataStats.dojo_projects}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Dojo Projects
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Card>
+                      <CardContent sx={{ textAlign: 'center' }}>
+                        <Typography variant="h4" color="secondary.main">
+                          {testDataStats.total_test_companies}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Test Companies
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Card>
+                      <CardContent sx={{ textAlign: 'center' }}>
+                        <Typography variant="h4" color="success.main">
+                          {testDataStats.total_test_documents}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Test Documents
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+              </Paper>
+            )}
+            
+            {/* Cleanup Operations */}
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Cleanup Operations
+              </Typography>
+              
+              <Alert severity="info" sx={{ mb: 3 }}>
+                <Typography variant="body2">
+                  <strong>Safety Notice:</strong> These cleanup operations only remove projects and project documents created from experiments. 
+                  All experimental data (experiments, PDFs, results files) are preserved and you can regenerate projects 
+                  by running "Add Dojo Companies" again on any experiment.
+                </Typography>
+              </Alert>
+              
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
+                <Box>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Clean Up Dojo Projects
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Remove all dojo-created projects and their associated documents from the projects database. 
+                    This will clean up the Gallery view while preserving all experimental data for future re-creation.
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    color="warning"
+                    onClick={() => setCleanupDialogOpen(true)}
+                    disabled={cleanupLoading}
+                    startIcon={cleanupLoading ? <CircularProgress size={16} /> : <Clear />}
+                  >
+                    {cleanupLoading ? 'Cleaning...' : 'Clean Up Dojo Projects'}
+                  </Button>
+                </Box>
+              </Box>
+            </Paper>
+          </Box>
+        )}
       </Paper>
+      
+      {/* Cleanup Confirmation Dialog */}
+      <Dialog
+        open={cleanupDialogOpen}
+        onClose={() => !cleanupLoading && setCleanupDialogOpen(false)}
+      >
+        <DialogTitle>Clean Up Dojo Projects</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 2 }}>
+            Are you sure you want to clean up all dojo projects? This will:
+          </Typography>
+          <Box component="ul" sx={{ pl: 2 }}>
+            <Typography component="li" variant="body2">
+              Remove all projects created from dojo experiments ({testDataStats?.dojo_projects || 0} projects)
+            </Typography>
+            <Typography component="li" variant="body2">
+              Remove associated project documents
+            </Typography>
+            <Typography component="li" variant="body2" color="success.main">
+              <strong>Preserve</strong> all experimental data (experiments, PDFs, results files)
+            </Typography>
+            <Typography component="li" variant="body2" color="success.main">
+              <strong>Allow</strong> re-creation of projects from existing experiments
+            </Typography>
+          </Box>
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            This action cannot be undone, but projects can be recreated from experiments.
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCleanupDialogOpen(false)} disabled={cleanupLoading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={cleanupDojoProjects}
+            color="warning"
+            variant="contained"
+            disabled={cleanupLoading}
+            startIcon={cleanupLoading ? <CircularProgress size={16} /> : null}
+          >
+            {cleanupLoading ? 'Cleaning...' : 'Clean Up Projects'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
       {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteDialogOpen}
