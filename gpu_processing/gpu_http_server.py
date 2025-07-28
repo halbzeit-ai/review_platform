@@ -643,8 +643,18 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                             })
                             continue
                         
-                        # Extract visual analysis text
-                        visual_analysis_text = deck_visual_data.get('visual_analysis', '')
+                        # Extract visual analysis text from the correct structure
+                        visual_analysis_results = deck_visual_data.get('visual_analysis_results', [])
+                        if visual_analysis_results:
+                            # Format the visual analysis from the results
+                            visual_descriptions = []
+                            for result in visual_analysis_results:
+                                page_desc = f"Page {result.get('page_number', 'N/A')}: {result.get('description', 'No description')}"
+                                visual_descriptions.append(page_desc)
+                            visual_analysis_text = "\n".join(visual_descriptions)
+                        else:
+                            visual_analysis_text = deck_visual_data.get('visual_analysis', '')
+                        
                         filename = deck_visual_data.get('filename', f'deck_{deck_id}')
                         
                         # Combine template prompt with visual context
