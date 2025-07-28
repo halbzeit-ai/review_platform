@@ -500,9 +500,16 @@ async def get_document_thumbnail(
         dojo_analysis_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis")
         if os.path.exists(dojo_analysis_path):
             try:
-                # Look for directories that contain the deck name
+                # Create filesystem-safe version of deck name (spaces -> underscores)
+                filesystem_deck_name = deck_name.replace(' ', '_')
+                filesystem_safe_deck_name = safe_deck_name.replace(' ', '_')
+                
+                # Look for directories that contain the deck name (with underscores)
                 for dir_name in os.listdir(dojo_analysis_path):
-                    if deck_name in dir_name or safe_deck_name in dir_name:
+                    if (filesystem_deck_name in dir_name or 
+                        filesystem_safe_deck_name in dir_name or
+                        deck_name in dir_name or 
+                        safe_deck_name in dir_name):
                         possible_locations.append(os.path.join(dojo_analysis_path, dir_name))
                         logger.info(f"Found potential dojo directory: {dir_name}")
             except Exception as e:
