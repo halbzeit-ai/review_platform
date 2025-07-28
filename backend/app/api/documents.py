@@ -427,7 +427,8 @@ async def get_document_thumbnail(
     db: Session = Depends(get_db)
 ):
     """Get thumbnail image for a specific slide of a document"""
-    logger.info(f"=== THUMBNAIL REQUEST START (NO AUTH): document_id={document_id}, slide_number={slide_number} ===")
+    print(f"=== THUMBNAIL REQUEST START (NO AUTH): document_id={document_id}, slide_number={slide_number} ===")
+    logger.error(f"=== THUMBNAIL REQUEST START (NO AUTH): document_id={document_id}, slide_number={slide_number} ===")
     try:
         # Get document info from project_documents table
         doc_query = text("""
@@ -519,14 +520,22 @@ async def get_document_thumbnail(
                 logger.debug(f"Location does not exist: {location}")
         
         if not image_path:
-            # Log what we actually found in the existing directories
+            # Enhanced debugging: log what we actually found in the existing directories
+            debug_info = []
             for location in possible_locations:
                 if os.path.exists(location):
                     try:
                         files_in_dir = os.listdir(location)
+                        debug_info.append(f"Directory {location} exists with files: {files_in_dir}")
                         logger.warning(f"No slide image found for slide {slide_number} in {location}. Files present: {files_in_dir}")
                     except Exception as e:
+                        debug_info.append(f"Could not list directory {location}: {e}")
                         logger.error(f"Could not list directory {location}: {e}")
+                else:
+                    debug_info.append(f"Directory {location} does not exist")
+            
+            # Log comprehensive debug info
+            logger.error(f"THUMBNAIL DEBUG for document {document_id}: {'; '.join(debug_info)}")
             
             raise HTTPException(
                 status_code=404,
