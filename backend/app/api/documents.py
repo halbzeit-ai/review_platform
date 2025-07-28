@@ -463,7 +463,9 @@ async def get_document_thumbnail(
         # Check access permissions (GPs can access any project)
         logger.info(f"Thumbnail access check: user_role={current_user.role}, user_id={current_user.id}, document_id={document_id}, company_id={company_id}")
         
-        if current_user.role != "gp":
+        if current_user.role == "gp":
+            logger.info(f"GP user {current_user.id} granted access to document {document_id}")
+        else:
             # For startup users, check if they have access to this company
             logger.info(f"Non-GP user, checking company access for user {current_user.id}")
             user_company_query = text("SELECT company_name FROM users WHERE id = :user_id")
@@ -474,6 +476,7 @@ async def get_document_thumbnail(
                 user_company_id = re.sub(r'[^a-z0-9-]', '', user_result[0].lower().replace(' ', '-'))
                 logger.info(f"User company_id: {user_company_id}, document company_id: {company_id}")
                 if user_company_id != company_id:
+                    logger.warning(f"Access denied: user company {user_company_id} != document company {company_id}")
                     raise HTTPException(
                         status_code=403,
                         detail="Access denied"
@@ -485,11 +488,10 @@ async def get_document_thumbnail(
                     status_code=403,
                     detail="Access denied - no company association"
                 )
-        else:
-            logger.info(f"GP user {current_user.id} granted access to document {document_id}")
         
         # Try to find slide image files
         analysis_dir = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id, "analysis", deck_name)
+        logger.info(f"Looking for slide images in: {analysis_dir}")
         
         # Look for slide image files (try different naming patterns)
         slide_patterns = [
@@ -504,12 +506,23 @@ async def get_document_thumbnail(
         image_path = None
         for pattern in slide_patterns:
             potential_path = os.path.join(analysis_dir, pattern)
+            logger.debug(f"Checking for image at: {potential_path}")
             if os.path.exists(potential_path):
                 image_path = potential_path
+                logger.info(f"Found slide image at: {image_path}")
                 break
         
         if not image_path:
-            # If no slide image found, return 404
+            # If no slide image found, log directory contents and return 404
+            if os.path.exists(analysis_dir):
+                try:
+                    files_in_dir = os.listdir(analysis_dir)
+                    logger.warning(f"No slide image found for slide {slide_number} in {analysis_dir}. Files present: {files_in_dir}")
+                except Exception as e:
+                    logger.error(f"Could not list directory {analysis_dir}: {e}")
+            else:
+                logger.warning(f"Analysis directory does not exist: {analysis_dir}")
+            
             raise HTTPException(
                 status_code=404,
                 detail=f"Thumbnail for slide {slide_number} not found"
