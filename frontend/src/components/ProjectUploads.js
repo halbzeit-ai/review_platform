@@ -42,13 +42,18 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
   const [deleting, setDeleting] = useState(null);
 
   useEffect(() => {
+    console.log('ProjectUploads - companyId changed:', companyId);
     if (companyId) {
+      console.log('ProjectUploads - calling loadUploads with companyId:', companyId);
       loadUploads();
+    } else {
+      console.log('ProjectUploads - no companyId provided, not loading uploads');
     }
   }, [companyId]);
 
   const loadUploads = async () => {
     try {
+      console.log('ProjectUploads - loadUploads called with companyId:', companyId);
       setLoading(true);
       setError(null);
       
