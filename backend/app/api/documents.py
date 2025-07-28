@@ -422,6 +422,7 @@ async def get_document_thumbnail(
     current_user: User = Depends(get_current_user)
 ):
     """Get thumbnail image for a specific slide of a document"""
+    logger.info(f"=== THUMBNAIL REQUEST START: document_id={document_id}, slide_number={slide_number}, user={current_user.email if current_user else 'None'} ===")
     try:
         # Get document info from project_documents table
         doc_query = text("""
@@ -536,10 +537,13 @@ async def get_document_thumbnail(
             headers={"Cache-Control": "max-age=3600"}
         )
         
-    except HTTPException:
+    except HTTPException as he:
+        logger.error(f"HTTP Exception in thumbnail endpoint: status={he.status_code}, detail={he.detail}")
         raise
     except Exception as e:
-        logger.error(f"Error serving thumbnail for document {document_id}, slide {slide_number}: {e}")
+        logger.error(f"Unexpected error serving thumbnail for document {document_id}, slide {slide_number}: {e}")
+        import traceback
+        logger.error(f"Full traceback: {traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
             detail="Failed to retrieve thumbnail"
