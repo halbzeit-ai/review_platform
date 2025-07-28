@@ -12,42 +12,63 @@ from datetime import datetime
 def get_database_connection():
     """Get database connection based on environment"""
     try:
-        # Try to use the app's database config if available
+        # Try to use the app's database session factory
         sys.path.append(os.path.join(os.path.dirname(__file__), 'app'))
         try:
-            from app.core.config import settings
+            from app.db.database import SessionLocal
             from sqlalchemy import create_engine
-            engine = create_engine(settings.database_url)
-            return engine.connect(), 'app_config'
-        except ImportError:
-            pass
+            
+            # Use the SessionLocal to get the engine
+            session = SessionLocal()
+            engine = session.get_bind()
+            session.close()
+            
+            return engine.connect(), 'app_database'
+        except Exception as e:
+            print(f"App database connection failed: {e}")
         
         # Fallback to manual connection
         from sqlalchemy import create_engine
         
-        # Check if we're on production (PostgreSQL) or development (SQLite)
-        if os.path.exists('/opt/review-platform'):  # Production path
-            # Try to connect to PostgreSQL
+        # Try environment variables first
+        db_url = os.getenv('DATABASE_URL')
+        if db_url:
             try:
-                # Read database URL from environment or config
-                db_url = os.getenv('DATABASE_URL')
-                if not db_url:
-                    # Try common PostgreSQL configurations
-                    password = os.getenv('POSTGRES_PASSWORD', '')
-                    db_url = f"postgresql://postgres:{password}@localhost:5432/review_platform"
-                
                 engine = create_engine(db_url)
-                return engine.connect(), 'production'
+                return engine.connect(), 'env_var'
             except Exception as e:
-                print(f"PostgreSQL connection failed: {e}")
+                print(f"Environment DATABASE_URL failed: {e}")
+        
+        # Check if we're on production (PostgreSQL)
+        if os.path.exists('/opt/review-platform'):
+            # Try common PostgreSQL configurations
+            postgres_configs = [
+                "postgresql://postgres:@localhost:5432/review_platform",
+                "postgresql://postgres:postgres@localhost:5432/review_platform",
+                "postgresql://review_platform:@localhost:5432/review_platform",
+            ]
+            
+            password = os.getenv('POSTGRES_PASSWORD', '')
+            if password:
+                postgres_configs.insert(0, f"postgresql://postgres:{password}@localhost:5432/review_platform")
+            
+            for db_url in postgres_configs:
+                try:
+                    print(f"Trying: {db_url.replace(password, '***' if password else '')}")
+                    engine = create_engine(db_url)
+                    conn = engine.connect()
+                    return conn, 'manual_postgres'
+                except Exception as e:
+                    print(f"Failed: {e}")
+                    continue
         
         # Fallback to SQLite for local development
         sqlite_path = os.path.join(os.path.dirname(__file__), 'sql_app.db')
         if os.path.exists(sqlite_path):
             engine = create_engine(f'sqlite:///{sqlite_path}')
-            return engine.connect(), 'local'
+            return engine.connect(), 'sqlite'
         
-        raise Exception("Could not establish database connection")
+        raise Exception("Could not establish database connection with any method")
         
     except Exception as e:
         print(f"Database connection error: {e}")
