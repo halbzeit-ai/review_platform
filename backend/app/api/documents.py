@@ -425,7 +425,7 @@ async def get_document_thumbnail(
     try:
         # Get document info from project_documents table
         doc_query = text("""
-            SELECT pd.id, pd.project_id, pd.document_name, pd.file_path, 
+            SELECT pd.id, pd.project_id, pd.file_name, pd.file_path, 
                    p.company_id
             FROM project_documents pd
             JOIN projects p ON pd.project_id = p.id
@@ -453,8 +453,8 @@ async def get_document_thumbnail(
             deck_id, company_id, file_name, file_path = pitch_deck_result
             deck_name = os.path.splitext(file_name)[0] if file_name else str(deck_id)
         else:
-            doc_id, project_id, document_name, file_path, company_id = doc_result
-            deck_name = os.path.splitext(document_name)[0] if document_name else str(doc_id)
+            doc_id, project_id, file_name, file_path, company_id = doc_result
+            deck_name = os.path.splitext(file_name)[0] if file_name else str(doc_id)
         
         # Check access permissions (GPs can access any project)
         if current_user.role != "gp":
