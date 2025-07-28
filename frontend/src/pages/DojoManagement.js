@@ -1071,11 +1071,24 @@ const DojoManagement = () => {
       }
 
       const experimentDetails = await response.json();
-      const deckIds = experimentDetails.pitch_deck_ids || [];
+      console.log('Full experiment details:', experimentDetails); // Debug log
+      
+      let deckIds = experimentDetails.pitch_deck_ids || [];
+      console.log('Extracted deck IDs:', deckIds); // Debug log
 
       if (deckIds.length === 0) {
-        setError('No decks found in this experiment');
-        return;
+        console.log('No deck IDs found. Trying alternative field names...'); // Debug log
+        // Try alternative field names that might contain the deck IDs
+        const alternativeIds = experimentDetails.deck_ids || 
+                              (experimentDetails.results && experimentDetails.results.map(r => r.deck_id)) ||
+                              [];
+        console.log('Alternative deck IDs found:', alternativeIds); // Debug log
+        
+        if (alternativeIds.length === 0) {
+          setError('No decks found in this experiment');
+          return;
+        }
+        deckIds = alternativeIds;
       }
 
       // Fetch the file details for these deck IDs to recreate the sample
@@ -1938,23 +1951,41 @@ const DojoManagement = () => {
                           <TableCell>
                             <Chip 
                               label={(() => {
+                                console.log('Debug experiment data:', experiment); // Debug log
+                                
                                 // Check if obligatory extractions are present (company offering, company name, funding amount)
-                                const hasOfferingExtraction = experiment.results_json && 
-                                  JSON.parse(experiment.results_json)?.results?.some(result => 
-                                    result.offering_extraction && !result.offering_extraction.startsWith('Error:')
-                                  );
-                                const hasCompanyNameExtraction = experiment.company_name_results_json;
-                                const hasFundingAmountExtraction = experiment.funding_amount_results_json;
+                                let hasOfferingExtraction = false;
+                                try {
+                                  hasOfferingExtraction = experiment.results_json && 
+                                    JSON.parse(experiment.results_json)?.results?.some(result => 
+                                      result.offering_extraction && !result.offering_extraction.startsWith('Error:')
+                                    );
+                                } catch (e) {
+                                  console.log('Error parsing results_json:', e);
+                                }
+                                
+                                const hasCompanyNameExtraction = !!(experiment.company_name_results_json);
+                                const hasFundingAmountExtraction = !!(experiment.funding_amount_results_json);
+                                
+                                console.log('Extraction check:', {
+                                  hasOfferingExtraction,
+                                  hasCompanyNameExtraction, 
+                                  hasFundingAmountExtraction
+                                });
                                 
                                 return (hasOfferingExtraction && hasCompanyNameExtraction && hasFundingAmountExtraction) ? 'Yes' : 'No';
                               })()}
                               color={(() => {
-                                const hasOfferingExtraction = experiment.results_json && 
-                                  JSON.parse(experiment.results_json)?.results?.some(result => 
-                                    result.offering_extraction && !result.offering_extraction.startsWith('Error:')
-                                  );
-                                const hasCompanyNameExtraction = experiment.company_name_results_json;
-                                const hasFundingAmountExtraction = experiment.funding_amount_results_json;
+                                let hasOfferingExtraction = false;
+                                try {
+                                  hasOfferingExtraction = experiment.results_json && 
+                                    JSON.parse(experiment.results_json)?.results?.some(result => 
+                                      result.offering_extraction && !result.offering_extraction.startsWith('Error:')
+                                    );
+                                } catch (e) {}
+                                
+                                const hasCompanyNameExtraction = !!(experiment.company_name_results_json);
+                                const hasFundingAmountExtraction = !!(experiment.funding_amount_results_json);
                                 
                                 return (hasOfferingExtraction && hasCompanyNameExtraction && hasFundingAmountExtraction) ? 'success' : 'default';
                               })()}
