@@ -232,11 +232,6 @@ function GPDashboard() {
                         ))}
                       </Pie>
                       <Tooltip formatter={(value, name) => [`${value} projects`, name]} />
-                      <Legend 
-                        verticalAlign="bottom" 
-                        height={36}
-                        formatter={(value, entry) => `${value} (${entry.payload.percentage}%)`}
-                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </Box>
