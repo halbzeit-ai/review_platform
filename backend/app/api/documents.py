@@ -488,6 +488,18 @@ async def get_document_thumbnail(
             os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "results", f"job_{document_id}_{safe_deck_name}"),
         ]
         
+        # Also check the dojo directory structure where UUID-prefixed directories exist
+        dojo_analysis_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis")
+        if os.path.exists(dojo_analysis_path):
+            try:
+                # Look for directories that contain the deck name
+                for dir_name in os.listdir(dojo_analysis_path):
+                    if deck_name in dir_name or safe_deck_name in dir_name:
+                        possible_locations.append(os.path.join(dojo_analysis_path, dir_name))
+                        logger.info(f"Found potential dojo directory: {dir_name}")
+            except Exception as e:
+                logger.warning(f"Could not scan dojo analysis directory: {e}")
+        
         # Look for slide image files (try different naming patterns)
         # Based on GPU processing code: slide_{page_number + 1}.jpg (no zero-padding)
         slide_patterns = [
@@ -512,7 +524,8 @@ async def get_document_thumbnail(
                     if os.path.exists(potential_path):
                         image_path = potential_path
                         found_location = location
-                        logger.info(f"Found slide image at: {image_path}")
+                        logger.error(f"SUCCESS: Found slide image at: {image_path}")
+                        print(f"SUCCESS: Found slide image at: {image_path}")
                         break
                 if image_path:
                     break
