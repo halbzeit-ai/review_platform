@@ -50,7 +50,7 @@ def debug_production():
     templates = templates_response.json()
     print(f"✅ Found {len(templates)} templates:")
     for template in templates:
-        print(f"   ID: {template.get('id')}, Name: '{template.get('template_name')}', Active: {template.get('is_active')}")
+        print(f"   ID: {template.get('id')}, Name: '{template.get('name')}', Active: {template.get('is_active')}")
     
     # Step 3: Test template processing with different template IDs
     test_template_ids = [None, 1, 2, 3, 4, 5]  # Test various IDs
