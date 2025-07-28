@@ -630,6 +630,12 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                         
                         # Get visual analysis for this deck
                         deck_visual_data = cached_visual_data.get(deck_id, {})
+                        logger.info(f"Looking for deck {deck_id}, found data: {bool(deck_visual_data)}")
+                        if not deck_visual_data:
+                            # Try string key as fallback
+                            deck_visual_data = cached_visual_data.get(str(deck_id), {})
+                            logger.info(f"Fallback lookup for deck {deck_id} as string: {bool(deck_visual_data)}")
+                        
                         if not deck_visual_data:
                             logger.warning(f"No cached visual analysis found for deck {deck_id}")
                             processing_results.append({
@@ -745,6 +751,8 @@ Please provide a comprehensive analysis focusing on the requested areas."""
                 if data.get("success"):
                     cached_data = data.get("cached_analysis", {})
                     logger.info(f"Retrieved cached visual analysis for {len(cached_data)} decks")
+                    logger.info(f"Cached data keys: {list(cached_data.keys())}")
+                    logger.info(f"Requested deck IDs: {deck_ids}")
                     return cached_data
                 else:
                     logger.error(f"Failed to get cached visual analysis: {data.get('error', 'Unknown error')}")
