@@ -406,6 +406,12 @@ async def get_processing_progress(
             "gpu_progress": progress_info,
             "created_at": pitch_deck.created_at.isoformat() if pitch_deck.created_at else None
         }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting processing progress for pitch deck {pitch_deck_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get processing progress")
 
 
 @router.get("/{document_id}/thumbnail/slide/{slide_number}")
