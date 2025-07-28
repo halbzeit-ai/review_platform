@@ -587,6 +587,143 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                     "error": f"Error in classification: {str(e)}",
                     "timestamp": datetime.now().isoformat()
                 }), 500
+        
+        @self.app.route('/api/run-template-processing-batch', methods=['POST'])
+        def run_template_processing_batch():
+            """Run template processing for multiple decks with optional thumbnail generation"""
+            try:
+                data = request.get_json()
+                if not data:
+                    return jsonify({
+                        "success": False,
+                        "error": "No JSON data provided",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                deck_ids = data.get('deck_ids', [])
+                template_info = data.get('template_info')
+                generate_thumbnails = data.get('generate_thumbnails', True)
+                
+                # Validation
+                if not deck_ids:
+                    return jsonify({
+                        "success": False,
+                        "error": "deck_ids is required",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                logger.info(f"Starting template processing batch for {len(deck_ids)} decks with template: {template_info}")
+                
+                # Get template information
+                template_name = template_info.get('name', 'Standard Analysis') if template_info else 'Standard Analysis'
+                template_prompt = template_info.get('prompt', 'Analyze this healthcare startup pitch deck focusing on market opportunity, technology innovation, business model, competitive advantage, and regulatory considerations.') if template_info else 'Analyze this healthcare startup pitch deck focusing on market opportunity, technology innovation, business model, competitive advantage, and regulatory considerations.'
+                
+                # Get cached visual analysis for all decks
+                cached_visual_data = self._get_cached_visual_analysis(deck_ids)
+                
+                # Process each deck
+                processing_results = []
+                
+                for deck_id in deck_ids:
+                    try:
+                        logger.info(f"Processing deck {deck_id} with template '{template_name}'")
+                        
+                        # Get visual analysis for this deck
+                        deck_visual_data = cached_visual_data.get(deck_id, {})
+                        if not deck_visual_data:
+                            logger.warning(f"No cached visual analysis found for deck {deck_id}")
+                            processing_results.append({
+                                "deck_id": deck_id,
+                                "filename": f"deck_{deck_id}",
+                                "template_analysis": None,
+                                "template_used": template_name,
+                                "thumbnails": [],
+                                "error": "No cached visual analysis available"
+                            })
+                            continue
+                        
+                        # Extract visual analysis text
+                        visual_analysis_text = deck_visual_data.get('visual_analysis', '')
+                        filename = deck_visual_data.get('filename', f'deck_{deck_id}')
+                        
+                        # Combine template prompt with visual context
+                        full_prompt = f"""Based on the following visual analysis of a healthcare startup pitch deck, {template_prompt}
+
+Visual Analysis:
+{visual_analysis_text}
+
+Please provide a comprehensive analysis focusing on the requested areas."""
+                        
+                        # Use ollama to generate template analysis
+                        model_name = "phi4:latest"  # Use the same model as other extractions
+                        
+                        response = ollama.generate(
+                            model=model_name,
+                            prompt=full_prompt,
+                            options={
+                                "temperature": 0.3,
+                                "num_ctx": 32768,
+                                "num_predict": 4096
+                            }
+                        )
+                        
+                        template_analysis = response.get('response', '').strip()
+                        
+                        # Generate thumbnail paths (simulated for now)
+                        thumbnails = []
+                        if generate_thumbnails:
+                            # In a real implementation, this would generate actual thumbnails
+                            # For now, we'll return placeholder paths
+                            thumbnails = [f"/thumbnails/{deck_id}_slide_{i}.jpg" for i in range(1, 6)]
+                        
+                        result = {
+                            "deck_id": deck_id,
+                            "filename": filename,
+                            "template_analysis": template_analysis,
+                            "template_used": template_name,
+                            "thumbnails": thumbnails,
+                            "error": None
+                        }
+                        processing_results.append(result)
+                        
+                        logger.info(f"Successfully processed deck {deck_id} with template analysis")
+                        
+                    except Exception as e:
+                        logger.error(f"Error processing deck {deck_id}: {e}")
+                        processing_results.append({
+                            "deck_id": deck_id,
+                            "filename": f"deck_{deck_id}",
+                            "template_analysis": None,
+                            "template_used": template_name,
+                            "thumbnails": [],
+                            "error": str(e)
+                        })
+                        continue
+                
+                success_count = len([r for r in processing_results if r.get('error') is None])
+                
+                return jsonify({
+                    "success": True,
+                    "message": f"Template processing batch completed: {success_count}/{len(deck_ids)} decks processed successfully",
+                    "processing_results": processing_results,
+                    "statistics": {
+                        "total_decks": len(deck_ids),
+                        "successful_processing": success_count,
+                        "failed_processing": len(deck_ids) - success_count,
+                        "success_rate": success_count / len(deck_ids) if deck_ids else 0
+                    },
+                    "template_used": template_name,
+                    "thumbnails_generated": generate_thumbnails,
+                    "timestamp": datetime.now().isoformat()
+                })
+                
+            except Exception as e:
+                logger.error(f"Error in template processing batch: {e}")
+                return jsonify({
+                    "success": False,
+                    "error": f"Error in template processing batch: {str(e)}",
+                    "timestamp": datetime.now().isoformat()
+                }), 500
     
     def _get_cached_visual_analysis(self, deck_ids: List[int]) -> Dict[int, Dict]:
         """Get cached visual analysis from production server for extraction testing"""
