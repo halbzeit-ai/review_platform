@@ -14,8 +14,8 @@ def test_template_endpoint():
     login_response = requests.post(
         f"{base_url}/api/auth/login",
         json={
-            "username": "ramin.ranjbar@gmail.com",  # Your actual GP credentials
-            "password": "test123"  # Update with your actual password
+            "email": "ramin@halölölöl.ai",  # Your actual GP credentials
+            "password": "1234zeedee12"  # Your actual password
         }
     )
     
