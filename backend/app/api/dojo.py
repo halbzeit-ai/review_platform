@@ -1741,8 +1741,8 @@ async def run_template_processing_batch(
         template_info = None
         if request.template_id:
             template_result = db.execute(text("""
-                SELECT id, template_name, analysis_prompt FROM healthcare_templates 
-                WHERE id = :template_id
+                SELECT id, name, description FROM analysis_templates 
+                WHERE id = :template_id AND is_active = true
             """), {"template_id": request.template_id}).fetchone()
             
             if not template_result:
@@ -1754,13 +1754,13 @@ async def run_template_processing_batch(
             template_info = {
                 "id": template_result[0],
                 "name": template_result[1],
-                "prompt": template_result[2]
+                "prompt": template_result[2]  # Using description as prompt for now
             }
         else:
             # Use default template if none specified
             default_template = db.execute(text("""
-                SELECT id, template_name, analysis_prompt FROM healthcare_templates 
-                WHERE template_name = 'Standard Analysis' 
+                SELECT id, name, description FROM analysis_templates 
+                WHERE is_default = true AND is_active = true
                 LIMIT 1
             """)).fetchone()
             
@@ -1768,7 +1768,7 @@ async def run_template_processing_batch(
                 template_info = {
                     "id": default_template[0],
                     "name": default_template[1],
-                    "prompt": default_template[2]
+                    "prompt": default_template[2]  # Using description as prompt for now
                 }
         
         # Use GPU pipeline for template processing
