@@ -506,13 +506,16 @@ async def get_document_thumbnail(
         ]
         
         # Look for slide image files (try different naming patterns)
+        # Based on GPU processing code: slide_{page_number + 1}.jpg (no zero-padding)
         slide_patterns = [
+            f"slide_{slide_number}.jpg",  # Primary pattern from GPU processing
+            f"slide_{slide_number}.png",
+            f"slide_{slide_number:02d}.jpg",  # Zero-padded version
             f"slide_{slide_number:02d}.png",
-            f"slide_{slide_number}.png", 
-            f"page_{slide_number:02d}.png",
+            f"page_{slide_number}.jpg",
             f"page_{slide_number}.png",
-            f"slide_{slide_number:02d}.jpg",
-            f"slide_{slide_number}.jpg"
+            f"page_{slide_number:02d}.jpg",
+            f"page_{slide_number:02d}.png"
         ]
         
         image_path = None
