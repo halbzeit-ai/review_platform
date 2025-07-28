@@ -435,6 +435,7 @@ async def get_document_thumbnail(
         doc_result = db.execute(doc_query, {"document_id": document_id}).fetchone()
         
         if not doc_result:
+            logger.info(f"Document {document_id} not found in project_documents, trying pitch_decks table")
             # Fallback: try to get from pitch_decks table
             pitch_deck_query = text("""
                 SELECT pd.id, pd.company_id, pd.file_name, pd.file_path
@@ -445,14 +446,17 @@ async def get_document_thumbnail(
             pitch_deck_result = db.execute(pitch_deck_query, {"document_id": document_id}).fetchone()
             
             if not pitch_deck_result:
+                logger.error(f"Document {document_id} not found in either project_documents or pitch_decks tables")
                 raise HTTPException(
                     status_code=404,
                     detail="Document not found"
                 )
             
+            logger.info(f"Found document {document_id} in pitch_decks table")
             deck_id, company_id, file_name, file_path = pitch_deck_result
             deck_name = os.path.splitext(file_name)[0] if file_name else str(deck_id)
         else:
+            logger.info(f"Found document {document_id} in project_documents table")
             doc_id, project_id, file_name, file_path, company_id = doc_result
             deck_name = os.path.splitext(file_name)[0] if file_name else str(doc_id)
         
