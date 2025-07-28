@@ -1987,8 +1987,9 @@ const DojoManagement = () => {
                           <TableCell>
                             <Chip 
                               label={(() => {
-                                // Check completion timestamps instead of JSON data
-                                const hasOfferingExtraction = experiment.successful_extractions > 0;
+                                // Check completion timestamps and results data
+                                const resultsData = experiment.results_json ? JSON.parse(experiment.results_json) : {};
+                                const hasOfferingExtraction = !!(resultsData.successful_extractions > 0);
                                 const hasCompanyNameExtraction = !!(experiment.company_name_completed_at);
                                 const hasFundingAmountExtraction = !!(experiment.funding_amount_completed_at);
                                 
@@ -1996,7 +1997,8 @@ const DojoManagement = () => {
                                 return (hasOfferingExtraction && hasCompanyNameExtraction && hasFundingAmountExtraction) ? 'Yes' : 'No';
                               })()}
                               color={(() => {
-                                const hasOfferingExtraction = experiment.successful_extractions > 0;
+                                const resultsData = experiment.results_json ? JSON.parse(experiment.results_json) : {};
+                                const hasOfferingExtraction = !!(resultsData.successful_extractions > 0);
                                 const hasCompanyNameExtraction = !!(experiment.company_name_completed_at);
                                 const hasFundingAmountExtraction = !!(experiment.funding_amount_completed_at);
                                 
