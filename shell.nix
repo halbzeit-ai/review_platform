@@ -12,6 +12,7 @@ in pkgs.mkShell rec {
     nodejs
     python311Full 
     sqlite
+    scc
   ];
 
   shellHook = ''
