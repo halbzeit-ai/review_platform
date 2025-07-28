@@ -57,8 +57,11 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
       setLoading(true);
       setError(null);
       
+      console.log('ProjectUploads - about to call getProjectUploads API...');
       const response = await getProjectUploads(companyId);
+      console.log('ProjectUploads - API response:', response);
       const uploadsData = response.data || response;
+      console.log('ProjectUploads - processed uploadsData:', uploadsData);
       
       setUploads(uploadsData.uploads || []);
     } catch (err) {

@@ -60,6 +60,7 @@ const ProjectDashboard = () => {
   // Project data
   const [projectDecks, setProjectDecks] = useState([]);
   const [selectedDeck, setSelectedDeck] = useState(null);
+  const [actualCompanyId, setActualCompanyId] = useState(null);
   
   // Funding journey data
   const [projects, setProjects] = useState([]);
@@ -77,6 +78,11 @@ const ProjectDashboard = () => {
     loadProjectData();
     loadFundingData();
   }, [companyId, projectId]);
+
+  // Debug actualCompanyId changes
+  useEffect(() => {
+    console.log('actualCompanyId state changed to:', actualCompanyId);
+  }, [actualCompanyId]);
 
   // Function to refresh project data (can be called after upload)
   const refreshProjectData = () => {
@@ -434,8 +440,11 @@ const ProjectDashboard = () => {
   );
 
   const UploadsContent = () => {
+    console.log('UploadsContent render - isAdminView:', isAdminView, 'actualCompanyId:', actualCompanyId, 'companyId:', companyId);
+    
     // Wait for actualCompanyId to be loaded in admin view
     if (isAdminView && !actualCompanyId) {
+      console.log('UploadsContent - waiting for actualCompanyId...');
       return (
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
           <CircularProgress />
@@ -443,8 +452,11 @@ const ProjectDashboard = () => {
       );
     }
     
+    const finalCompanyId = actualCompanyId || companyId;
+    console.log('UploadsContent - passing companyId to ProjectUploads:', finalCompanyId);
+    
     return (
-      <ProjectUploads companyId={actualCompanyId || companyId} onUploadComplete={refreshProjectData} />
+      <ProjectUploads companyId={finalCompanyId} onUploadComplete={refreshProjectData} />
     );
   };
 
