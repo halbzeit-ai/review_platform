@@ -38,7 +38,8 @@ def identify_migration_projects(conn):
         WHERE is_test = TRUE
         AND (
             project_metadata IS NULL 
-            OR NOT (project_metadata::json ? 'created_from_experiment')
+            OR project_metadata = '{}'
+            OR project_metadata::json->>'created_from_experiment' IS NULL
             OR project_metadata::json->>'created_from_experiment' != 'true'
         )
         ORDER BY created_at DESC
