@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, Box, Snackbar, Alert, Tabs, Tab, Divider, LinearProgress, Chip, Dialog, DialogContent, DialogTitle, Select, MenuItem, FormControl, InputLabel, TextField, Card, CardContent, CardMedia } from '@mui/material';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { Settings, Assignment, Storage, People } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -13,7 +14,17 @@ function GPDashboard() {
   const [performanceMetrics, setPerformanceMetrics] = useState(null);
   const [projects, setProjects] = useState([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
-  const [includeTestData, setIncludeTestData] = useState(false);
+  const [includeTestData, setIncludeTestData] = useState(() => {
+    // Persist the setting in localStorage
+    const saved = localStorage.getItem('gp_dashboard_include_test_data');
+    return saved ? JSON.parse(saved) : false;
+  });
+
+  // Update localStorage when includeTestData changes
+  useEffect(() => {
+    localStorage.setItem('gp_dashboard_include_test_data', JSON.stringify(includeTestData));
+  }, [includeTestData]);
+  const [classificationData, setClassificationData] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
   const [projectJourney, setProjectJourney] = useState(null);
   const [journeyDialogOpen, setJourneyDialogOpen] = useState(false);
@@ -95,6 +106,34 @@ function GPDashboard() {
     fetchProjects();
   }, [includeTestData]);
 
+  // Process projects data to create classification distribution for pie chart
+  useEffect(() => {
+    if (projects.length > 0) {
+      const classificationCounts = {};
+      
+      projects.forEach(project => {
+        try {
+          const metadata = JSON.parse(project.project_metadata || '{}');
+          const classification = metadata.classification?.primary_sector || 'N/A';
+          classificationCounts[classification] = (classificationCounts[classification] || 0) + 1;
+        } catch (e) {
+          classificationCounts['N/A'] = (classificationCounts['N/A'] || 0) + 1;
+        }
+      });
+
+      // Convert to array format for pie chart
+      const chartData = Object.entries(classificationCounts).map(([name, value]) => ({
+        name,
+        value,
+        percentage: ((value / projects.length) * 100).toFixed(1)
+      }));
+
+      setClassificationData(chartData);
+    } else {
+      setClassificationData([]);
+    }
+  }, [projects]);
+
   // Helper function to get status color
   const getStatusColor = (status) => {
     switch (status) {
@@ -113,85 +152,134 @@ function GPDashboard() {
     </div>
   );
 
-  // Performance metrics panel component
-  const PerformanceMetricsPanel = () => (
-    <Box>
-      <Typography variant="h6" sx={{ mb: 3 }}>
-        Template Performance Metrics
-      </Typography>
-      
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Template Usage
-            </Typography>
-            {performanceMetrics?.template_performance?.map((template, index) => (
-              <Box key={index} sx={{ mb: 1 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2">{template.template_name}</Typography>
-                  <Typography variant="body2">{template.usage_count} uses</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Avg Confidence: {(template.avg_confidence * 100).toFixed(1)}%
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Avg Rating: {template.avg_rating.toFixed(1)}/5
-                  </Typography>
-                </Box>
-                <Divider sx={{ my: 1 }} />
-              </Box>
-            ))}
-          </Paper>
-        </Grid>
+  // Performance metrics panel component with pie chart
+  const PerformanceMetricsPanel = () => {
+    // Define colors for the pie chart
+    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF7C7C'];
+    
+    const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+      if (percent < 0.05) return null; // Don't show label for slices < 5%
+      const RADIAN = Math.PI / 180;
+      const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+      const x = cx + radius * Math.cos(-midAngle * RADIAN);
+      const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+      return (
+        <text 
+          x={x} 
+          y={y} 
+          fill="white" 
+          textAnchor={x > cx ? 'start' : 'end'} 
+          dominantBaseline="central"
+          fontSize="12"
+          fontWeight="bold"
+        >
+          {`${(percent * 100).toFixed(0)}%`}
+        </text>
+      );
+    };
+
+    return (
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h6">
+            Classification Distribution
+          </Typography>
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <InputLabel>Data Filter</InputLabel>
+            <Select
+              value={includeTestData ? 'all' : 'production'}
+              label="Data Filter"
+              onChange={(e) => setIncludeTestData(e.target.value === 'all')}
+            >
+              <MenuItem value="production">Production Only</MenuItem>
+              <MenuItem value="all">Include Test Data</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
         
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Classification Accuracy
+        {classificationData.length === 0 ? (
+          <Paper sx={{ p: 4, textAlign: 'center' }}>
+            <Typography color="text.secondary">
+              No classification data available
             </Typography>
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h3" color="primary">
-                {performanceMetrics?.classification_accuracy?.accuracy_percentage?.toFixed(1)}%
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Overall Accuracy
-              </Typography>
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="body2">
-                  {performanceMetrics?.classification_accuracy?.accurate_classifications} accurate / {' '}
-                  {performanceMetrics?.classification_accuracy?.total_classifications} total
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              {projects.length === 0 ? 'No projects found' : 'Projects do not have classification data'}
+            </Typography>
+          </Paper>
+        ) : (
+          <Paper sx={{ p: 3 }}>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={8}>
+                <Box sx={{ height: 400, display: 'flex', justifyContent: 'center' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={classificationData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={renderCustomizedLabel}
+                        outerRadius={140}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {classificationData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value, name) => [`${value} projects`, name]} />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={36}
+                        formatter={(value, entry) => `${value} (${entry.payload.percentage}%)`}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </Box>
+              </Grid>
+              
+              <Grid item xs={12} md={4}>
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                  Summary
                 </Typography>
-              </Box>
-            </Box>
-          </Paper>
-        </Grid>
-        
-        <Grid item xs={12}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Sector Distribution
-            </Typography>
-            <Grid container spacing={2}>
-              {performanceMetrics?.sector_distribution?.map((sector, index) => (
-                <Grid item xs={12} sm={6} md={3} key={index}>
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Typography variant="h5" color="primary">
-                      {sector.classification_count}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {sector.sector_name}
-                    </Typography>
-                  </Box>
-                </Grid>
-              ))}
+                <List dense>
+                  {classificationData.map((item, index) => (
+                    <ListItem key={index}>
+                      <Box
+                        sx={{
+                          width: 16,
+                          height: 16,
+                          backgroundColor: COLORS[index % COLORS.length],
+                          borderRadius: '50%',
+                          mr: 2
+                        }}
+                      />
+                      <ListItemText
+                        primary={item.name}
+                        secondary={`${item.value} projects (${item.percentage}%)`}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+                
+                <Divider sx={{ my: 2 }} />
+                
+                <Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Total Projects: <strong>{projects.length}</strong>
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Data Source: <strong>{includeTestData ? 'Production + Test' : 'Production Only'}</strong>
+                  </Typography>
+                </Box>
+              </Grid>
             </Grid>
           </Paper>
-        </Grid>
-      </Grid>
-    </Box>
-  );
+        )}
+      </Box>
+    );
+  };
 
   // Projects Management panel component
   const ProjectsManagementPanel = () => (
