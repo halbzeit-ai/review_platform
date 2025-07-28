@@ -98,10 +98,14 @@ const ProjectDashboard = () => {
         const responseData = decksResponse.data || decksResponse;
         projectName = responseData.project_name || 'Unknown Project';
         displayId = projectName;
+        // Set the actual company ID for uploads functionality
+        console.log('Setting actualCompanyId to:', responseData.company_id);
+        setActualCompanyId(responseData.company_id);
       } else if (companyId) {
         // Regular startup view: get user's own decks
         decksResponse = await getPitchDecks();
         displayId = `Project: ${companyId}`;
+        setActualCompanyId(companyId);
       } else {
         throw new Error('No valid project identifier found');
       }
@@ -429,9 +433,20 @@ const ProjectDashboard = () => {
     </Box>
   );
 
-  const UploadsContent = () => (
-    <ProjectUploads companyId={companyId} onUploadComplete={refreshProjectData} />
-  );
+  const UploadsContent = () => {
+    // Wait for actualCompanyId to be loaded in admin view
+    if (isAdminView && !actualCompanyId) {
+      return (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+          <CircularProgress />
+        </Box>
+      );
+    }
+    
+    return (
+      <ProjectUploads companyId={actualCompanyId || companyId} onUploadComplete={refreshProjectData} />
+    );
+  };
 
   const FundingJourneyContent = () => {
     if (journeyLoading) {
