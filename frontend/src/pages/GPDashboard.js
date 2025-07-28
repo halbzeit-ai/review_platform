@@ -382,7 +382,10 @@ function GPDashboard() {
     // Parse project metadata to get classification info
     const getClassificationInfo = (project) => {
       try {
-        const metadata = JSON.parse(project.project_metadata || '{}');
+        // Handle both cases: metadata as object (from API) or JSON string (legacy)
+        const metadata = typeof project.project_metadata === 'object' 
+                          ? project.project_metadata 
+                          : JSON.parse(project.project_metadata || '{}');
         return metadata.classification?.primary_sector || 'N/A';
       } catch (e) {
         return 'N/A';

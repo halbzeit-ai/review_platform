@@ -411,7 +411,7 @@ async def add_dojo_companies_from_experiment(
             SELECT id, experiment_name, extraction_type, text_model_used, 
                    extraction_prompt, created_at, results_json, pitch_deck_ids,
                    classification_enabled, classification_results_json,
-                   company_name_results_json
+                   company_name_results_json, funding_amount_results_json
             FROM extraction_experiments 
             WHERE id = :experiment_id
         """), {"experiment_id": request.experiment_id}).fetchone()
@@ -426,6 +426,7 @@ async def add_dojo_companies_from_experiment(
         results_data = json.loads(experiment[6]) if experiment[6] else {}
         classification_data = json.loads(experiment[9]) if experiment[9] else {}
         company_name_data = json.loads(experiment[10]) if experiment[10] else {}
+        funding_amount_data = json.loads(experiment[11]) if experiment[11] else {}
         
         # Check if experiment has required data
         if not experiment[8]:  # classification_enabled
@@ -444,6 +445,7 @@ async def add_dojo_companies_from_experiment(
         results = results_data.get("results", [])
         classification_lookup = {}
         company_name_lookup = {}
+        funding_amount_lookup = {}
         
         # Build lookups for classification and company name data
         if classification_data.get("classification_by_deck"):
@@ -453,6 +455,12 @@ async def add_dojo_companies_from_experiment(
         if company_name_data.get("company_name_results"):
             for result in company_name_data["company_name_results"]:
                 company_name_lookup[result.get("deck_id")] = result.get("company_name")
+        
+        # Build funding amount lookup
+        if funding_amount_data.get("funding_amount_results"):
+            for result in funding_amount_data["funding_amount_results"]:
+                funding_amount_lookup[result.get("deck_id")] = result.get("funding_amount")
+            logger.info(f"Funding amount lookup keys: {list(funding_amount_lookup.keys())}")
         
         # Process each result to create companies/projects
         companies_added = 0
@@ -548,11 +556,14 @@ async def add_dojo_companies_from_experiment(
                 "ai_extracted_company_name": company_name_lookup.get(deck_id)
             }
             
+            # Get funding from the lookup (if available) or fallback to funding_extraction
+            funding_sought_value = funding_amount_lookup.get(deck_id) or funding_extraction or "TBD"
+            
             project_result = db.execute(project_insert, {
                 "company_id": company_id,
                 "project_name": project_name,
                 "funding_round": "analysis",
-                "funding_sought": funding_extraction or "TBD",
+                "funding_sought": funding_sought_value,
                 "company_offering": offering_extraction[:2000],  # Limit to 2000 chars
                 "tags": json.dumps(["dojo", "experiment", "ai-extracted", (primary_sector or "digital-health").lower().replace(" ", "-")]),
                 "metadata": json.dumps(metadata),
