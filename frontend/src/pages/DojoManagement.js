@@ -1072,23 +1072,43 @@ const DojoManagement = () => {
 
       const experimentDetails = await response.json();
       console.log('Full experiment details:', experimentDetails); // Debug log
+      console.log('All experiment detail keys:', Object.keys(experimentDetails)); // Debug log
       
       let deckIds = experimentDetails.pitch_deck_ids || [];
-      console.log('Extracted deck IDs:', deckIds); // Debug log
+      console.log('Extracted deck IDs from pitch_deck_ids:', deckIds); // Debug log
 
       if (deckIds.length === 0) {
-        console.log('No deck IDs found. Trying alternative field names...'); // Debug log
-        // Try alternative field names that might contain the deck IDs
-        const alternativeIds = experimentDetails.deck_ids || 
-                              (experimentDetails.results && experimentDetails.results.map(r => r.deck_id)) ||
-                              [];
-        console.log('Alternative deck IDs found:', alternativeIds); // Debug log
+        console.log('No deck IDs found in pitch_deck_ids. Trying alternative field names...'); // Debug log
         
-        if (alternativeIds.length === 0) {
-          setError('No decks found in this experiment');
+        // Try all possible field names that might contain deck IDs
+        const possibleFields = [
+          'deck_ids',
+          'pitch_decks', 
+          'deck_list',
+          'sample_deck_ids',
+          'experiment_deck_ids'
+        ];
+        
+        for (const field of possibleFields) {
+          if (experimentDetails[field]) {
+            console.log(`Found deck IDs in field '${field}':`, experimentDetails[field]);
+            deckIds = Array.isArray(experimentDetails[field]) ? experimentDetails[field] : [experimentDetails[field]];
+            break;
+          }
+        }
+        
+        // Try extracting from results array
+        if (deckIds.length === 0 && experimentDetails.results && Array.isArray(experimentDetails.results)) {
+          console.log('Trying to extract deck IDs from results array...');
+          deckIds = experimentDetails.results.map(r => r.deck_id).filter(id => id != null);
+          console.log('Deck IDs from results:', deckIds);
+        }
+        
+        if (deckIds.length === 0) {
+          console.log('Still no deck IDs found. Full experiment details:', experimentDetails);
+          setError('No decks found in this experiment - check console for details');
           return;
         }
-        deckIds = alternativeIds;
       }
 
       // Fetch the file details for these deck IDs to recreate the sample
@@ -1951,41 +1971,17 @@ const DojoManagement = () => {
                           <TableCell>
                             <Chip 
                               label={(() => {
-                                console.log('Debug experiment data:', experiment); // Debug log
-                                
-                                // Check if obligatory extractions are present (company offering, company name, funding amount)
-                                let hasOfferingExtraction = false;
-                                try {
-                                  hasOfferingExtraction = experiment.results_json && 
-                                    JSON.parse(experiment.results_json)?.results?.some(result => 
-                                      result.offering_extraction && !result.offering_extraction.startsWith('Error:')
-                                    );
-                                } catch (e) {
-                                  console.log('Error parsing results_json:', e);
-                                }
-                                
-                                const hasCompanyNameExtraction = !!(experiment.company_name_results_json);
-                                const hasFundingAmountExtraction = !!(experiment.funding_amount_results_json);
-                                
-                                console.log('Extraction check:', {
-                                  hasOfferingExtraction,
-                                  hasCompanyNameExtraction, 
-                                  hasFundingAmountExtraction
-                                });
+                                // Check completion timestamps instead of JSON data
+                                const hasOfferingExtraction = experiment.successful_extractions > 0;
+                                const hasCompanyNameExtraction = !!(experiment.company_name_completed_at);
+                                const hasFundingAmountExtraction = !!(experiment.funding_amount_completed_at);
                                 
                                 return (hasOfferingExtraction && hasCompanyNameExtraction && hasFundingAmountExtraction) ? 'Yes' : 'No';
                               })()}
                               color={(() => {
-                                let hasOfferingExtraction = false;
-                                try {
-                                  hasOfferingExtraction = experiment.results_json && 
-                                    JSON.parse(experiment.results_json)?.results?.some(result => 
-                                      result.offering_extraction && !result.offering_extraction.startsWith('Error:')
-                                    );
-                                } catch (e) {}
-                                
-                                const hasCompanyNameExtraction = !!(experiment.company_name_results_json);
-                                const hasFundingAmountExtraction = !!(experiment.funding_amount_results_json);
+                                const hasOfferingExtraction = experiment.successful_extractions > 0;
+                                const hasCompanyNameExtraction = !!(experiment.company_name_completed_at);
+                                const hasFundingAmountExtraction = !!(experiment.funding_amount_completed_at);
                                 
                                 return (hasOfferingExtraction && hasCompanyNameExtraction && hasFundingAmountExtraction) ? 'success' : 'default';
                               })()}
@@ -1995,8 +1991,8 @@ const DojoManagement = () => {
                           </TableCell>
                           <TableCell>
                             <Chip 
-                              label={experiment.classification_enabled && experiment.classification_results_json ? 'Yes' : 'No'}
-                              color={experiment.classification_enabled && experiment.classification_results_json ? 'success' : 'default'}
+                              label={experiment.classification_enabled && experiment.classification_completed_at ? 'Yes' : 'No'}
+                              color={experiment.classification_enabled && experiment.classification_completed_at ? 'success' : 'default'}
                               size="small"
                               variant="outlined"
                             />
