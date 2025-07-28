@@ -1056,6 +1056,59 @@ const DojoManagement = () => {
     }
   };
 
+  const getSampleFromExperiment = async (experiment) => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+
+      // Get the experiment details to extract the deck IDs
+      const response = await fetch(`/api/dojo/extraction-test/experiments/${experiment.id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch experiment details');
+      }
+
+      const experimentDetails = await response.json();
+      const deckIds = experimentDetails.pitch_deck_ids || [];
+
+      if (deckIds.length === 0) {
+        setError('No decks found in this experiment');
+        return;
+      }
+
+      // Fetch the file details for these deck IDs to recreate the sample
+      const filesResponse = await fetch('/api/dojo/files', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!filesResponse.ok) {
+        throw new Error('Failed to fetch files');
+      }
+
+      const allFiles = await filesResponse.json();
+      
+      // Filter files to match the experiment's deck IDs
+      const experimentSample = allFiles.filter(file => deckIds.includes(file.id));
+
+      // Set this as the current extraction sample
+      setExtractionSample(experimentSample);
+      
+      // Switch to the Extraction Testing Lab tab if not already there
+      setCurrentTab(0);
+      
+      console.log(`Sample recreated from experiment ${experiment.experiment_name}:`, experimentSample);
+      
+      // Show success message
+      setError(null);
+      
+    } catch (err) {
+      console.error('Error getting sample from experiment:', err);
+      setError(err.message || 'Failed to get sample from experiment');
+    }
+  };
+
   const toggleComparisonMode = () => {
     setComparisonMode(!comparisonMode);
     setSelectedExperiments([]);
@@ -1851,9 +1904,8 @@ const DojoManagement = () => {
                         {comparisonMode && <TableCell padding="checkbox"></TableCell>}
                         <TableCell>Experiment Name</TableCell>
                         <TableCell>Text Model</TableCell>
-                        <TableCell>Success Rate</TableCell>
-                        <TableCell>Classification</TableCell>
-                        <TableCell>Avg. Response Length</TableCell>
+                        <TableCell>Obligatory Extractions</TableCell>
+                        <TableCell>Templates Processed</TableCell>
                         <TableCell>Created</TableCell>
                         <TableCell>Actions</TableCell>
                       </TableRow>
@@ -1884,27 +1936,39 @@ const DojoManagement = () => {
                             <Chip label={experiment.text_model_used} size="small" variant="outlined" />
                           </TableCell>
                           <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Typography variant="body2">
-                                {Math.round((experiment.successful_extractions / experiment.total_decks) * 100)}%
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                ({experiment.successful_extractions}/{experiment.total_decks})
-                              </Typography>
-                            </Box>
-                          </TableCell>
-                          <TableCell>
                             <Chip 
-                              label={experiment.classification_enabled ? 'Enabled' : 'Disabled'}
-                              color={experiment.classification_enabled ? 'success' : 'default'}
+                              label={(() => {
+                                // Check if obligatory extractions are present (company offering, company name, funding amount)
+                                const hasOfferingExtraction = experiment.results_json && 
+                                  JSON.parse(experiment.results_json)?.results?.some(result => 
+                                    result.offering_extraction && !result.offering_extraction.startsWith('Error:')
+                                  );
+                                const hasCompanyNameExtraction = experiment.company_name_results_json;
+                                const hasFundingAmountExtraction = experiment.funding_amount_results_json;
+                                
+                                return (hasOfferingExtraction && hasCompanyNameExtraction && hasFundingAmountExtraction) ? 'Yes' : 'No';
+                              })()}
+                              color={(() => {
+                                const hasOfferingExtraction = experiment.results_json && 
+                                  JSON.parse(experiment.results_json)?.results?.some(result => 
+                                    result.offering_extraction && !result.offering_extraction.startsWith('Error:')
+                                  );
+                                const hasCompanyNameExtraction = experiment.company_name_results_json;
+                                const hasFundingAmountExtraction = experiment.funding_amount_results_json;
+                                
+                                return (hasOfferingExtraction && hasCompanyNameExtraction && hasFundingAmountExtraction) ? 'success' : 'default';
+                              })()}
                               size="small"
                               variant="outlined"
                             />
                           </TableCell>
                           <TableCell>
-                            <Typography variant="body2">
-                              {experiment.avg_response_length ? `${Math.round(experiment.avg_response_length)} chars` : '-'}
-                            </Typography>
+                            <Chip 
+                              label={experiment.classification_enabled && experiment.classification_results_json ? 'Yes' : 'No'}
+                              color={experiment.classification_enabled && experiment.classification_results_json ? 'success' : 'default'}
+                              size="small"
+                              variant="outlined"
+                            />
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2">
@@ -1912,13 +1976,23 @@ const DojoManagement = () => {
                             </Typography>
                           </TableCell>
                           <TableCell>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              onClick={() => viewExperimentDetails(experiment)}
-                            >
-                              View Details
-                            </Button>
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => viewExperimentDetails(experiment)}
+                              >
+                                View Details
+                              </Button>
+                              <Button
+                                size="small"
+                                variant="contained"
+                                color="primary"
+                                onClick={() => getSampleFromExperiment(experiment)}
+                              >
+                                Get Sample
+                              </Button>
+                            </Box>
                           </TableCell>
                         </TableRow>
                       ))}

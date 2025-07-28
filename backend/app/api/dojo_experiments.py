@@ -525,11 +525,7 @@ async def add_dojo_companies_from_experiment(
             
             primary_sector = classification_info.get("primary_sector") or "Digital Health"
             
-            print(f"🏷️  Deck {deck_id} classification debug:")
-            print(f"    classification_lookup keys: {list(classification_lookup.keys())[:5]}...")
-            print(f"    looking for deck_id: '{deck_id}' (type: {type(deck_id)})")
-            print(f"    found classification_info: {classification_info}")
-            print(f"    final primary_sector: '{primary_sector}'")
+            logger.info(f"Deck {deck_id}: classification='{primary_sector}'")
             
             # Create project name
             project_name = f"{company_name} - Dojo Analysis"
@@ -563,12 +559,7 @@ async def add_dojo_companies_from_experiment(
             # Get funding from the lookup (if available) or fallback to funding_extraction
             funding_sought_value = funding_amount_lookup.get(deck_id) or funding_extraction or "TBD"
             
-            print(f"💰 Deck {deck_id} funding debug:")
-            print(f"    funding_amount_lookup keys: {list(funding_amount_lookup.keys())[:5]}...")
-            print(f"    looking for deck_id: '{deck_id}' (type: {type(deck_id)})")
-            print(f"    funding_amount_lookup.get(deck_id): '{funding_amount_lookup.get(deck_id)}'")
-            print(f"    funding_extraction: '{funding_extraction}'")
-            print(f"    final funding_sought_value: '{funding_sought_value}'")
+            logger.info(f"Deck {deck_id}: funding='{funding_sought_value}'")
             
             project_result = db.execute(project_insert, {
                 "company_id": company_id,
@@ -651,11 +642,7 @@ async def add_dojo_companies_from_experiment(
         
         db.commit()
         
-        # Debug: Print summary of what was processed
-        print(f"🔍 DEBUG SUMMARY: Added {companies_added} companies from experiment {request.experiment_id}")
-        print(f"🔍 Classification lookup had {len(classification_lookup)} entries")
-        print(f"🔍 Funding lookup had {len(funding_amount_lookup)} entries")
-        print(f"🔍 Processed {len(results)} total results")
+        logger.info(f"Summary: Added {companies_added} companies from experiment {request.experiment_id} ({len(results)} processed)")
         
         logger.info(f"Added {companies_added} companies from experiment {request.experiment_id} by {current_user.email}")
         
