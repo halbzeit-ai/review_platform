@@ -1272,7 +1272,7 @@ const DojoManagement = () => {
         },
         body: JSON.stringify({
           experiment_id: experimentId,
-          template_id: selectedTemplate,
+          template_id: selectedTemplate ? parseInt(selectedTemplate, 10) : null,
           generate_thumbnails: true
         })
       });
