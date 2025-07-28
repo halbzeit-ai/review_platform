@@ -39,6 +39,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { 
   getPitchDecks,
   getMyProjects,
+  getAllProjects,
   getProjectJourney,
   getProjectDecks
 } from '../services/api';
@@ -89,11 +90,14 @@ const ProjectDashboard = () => {
       
       let decksResponse;
       let displayId;
+      let projectName;
       
       if (isAdminView && projectId) {
         // GP Admin view: get decks for specific project
         decksResponse = await getProjectDecks(projectId);
-        displayId = `Project ID: ${projectId}`;
+        const responseData = decksResponse.data || decksResponse;
+        projectName = responseData.project_name || 'Unknown Project';
+        displayId = projectName;
       } else if (companyId) {
         // Regular startup view: get user's own decks
         decksResponse = await getPitchDecks();
@@ -145,17 +149,32 @@ const ProjectDashboard = () => {
     try {
       setJourneyLoading(true);
       
-      console.log('Loading funding data for companyId:', companyId);
+      console.log('Loading funding data for companyId:', companyId, 'projectId:', projectId, 'isAdminView:', isAdminView);
       
-      // Load my projects
-      const projectsResponse = await getMyProjects();
-      const projectsData = projectsResponse.data || [];
-      console.log('My projects response:', projectsData);
+      let projectsData = [];
+      let matchingProject = null;
+      
+      if (isAdminView && projectId) {
+        // GP Admin view: get all projects and find by projectId
+        const projectsResponse = await getAllProjects();
+        projectsData = projectsResponse.data || [];
+        console.log('All projects response:', projectsData);
+        
+        // Find the project by projectId (not companyId)
+        matchingProject = projectsData.find(p => p.id === parseInt(projectId));
+        console.log('Matching project found by ID:', matchingProject);
+      } else if (companyId) {
+        // Regular startup view: get user's own projects
+        const projectsResponse = await getMyProjects();
+        projectsData = projectsResponse.data || [];
+        console.log('My projects response:', projectsData);
+        
+        // Find the project matching this company ID
+        matchingProject = projectsData.find(p => p.company_id === companyId);
+        console.log('Matching project found by company ID:', matchingProject);
+      }
+      
       setProjects(projectsData);
-      
-      // Find the project matching this company ID
-      const matchingProject = projectsData.find(p => p.company_id === companyId);
-      console.log('Matching project found:', matchingProject);
       
       if (matchingProject) {
         setSelectedProject(matchingProject);
@@ -234,7 +253,7 @@ const ProjectDashboard = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           <AssessmentIcon sx={{ mr: 1, color: 'primary.main' }} />
           <Typography variant="h6">
-            {deck.filename || `${t('project.labels.deckDefault')} ${deck.id}`}
+            {deck.filename || deck.file_name || `${t('project.labels.deckDefault')} ${deck.id}`}
           </Typography>
         </Box>
         
