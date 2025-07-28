@@ -424,11 +424,11 @@ async def test_endpoint():
 async def get_document_thumbnail(
     document_id: int,
     slide_number: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """Get thumbnail image for a specific slide of a document"""
-    print(f"=== THUMBNAIL REQUEST START (NO AUTH): document_id={document_id}, slide_number={slide_number} ===")
-    logger.error(f"=== THUMBNAIL REQUEST START (NO AUTH): document_id={document_id}, slide_number={slide_number} ===")
+    logger.info(f"Thumbnail request: document_id={document_id}, slide_number={slide_number}, user={current_user.email}")
     try:
         # Get document info from project_documents table
         doc_query = text("""
@@ -467,8 +467,16 @@ async def get_document_thumbnail(
             doc_id, project_id, file_name, file_path, company_id = doc_result
             deck_name = os.path.splitext(file_name)[0] if file_name else str(doc_id)
         
-        # TEMPORARY: Skip access control for debugging
-        logger.info(f"Skipping access control for debugging - document_id={document_id}, company_id={company_id}")
+        # Access control: GPs can access all documents, startups can only access their own
+        if current_user.role != "gp":
+            from ..api.projects import get_company_id_from_user
+            user_company_id = get_company_id_from_user(current_user)
+            if company_id != user_company_id:
+                logger.warning(f"Access denied: user {current_user.email} (company: {user_company_id}) tried to access document from company {company_id}")
+                raise HTTPException(
+                    status_code=403,
+                    detail="Access denied: You can only access your own company's documents"
+                )
         
         # Try to find slide image files in multiple possible locations
         # Clean deck name for filesystem path
