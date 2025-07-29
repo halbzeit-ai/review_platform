@@ -668,15 +668,37 @@ const DojoManagement = () => {
         
         // Start polling for progress updates
         const pollInterval = setInterval(async () => {
-          const progress = await checkAnalysisProgress();
-          await fetchCurrentDeckProgress(); // Also fetch current deck being processed
-          if (progress && (progress.completed === progress.total || visualAnalysisStatus === 'cancelled')) {
-            clearInterval(pollInterval);
-            if (progress.completed === progress.total) {
+          const progressData = await fetchCurrentDeckProgress();
+          
+          // During active processing, use backend progress tracker instead of cache checking
+          if (progressData && progressData.step2) {
+            const step2Status = progressData.step2.status;
+            const step2Progress = progressData.step2.progress || 0;
+            const step2Total = progressData.step2.total || total;
+            
+            // Update analysis progress from backend progress tracker
+            setAnalysisProgress({ completed: step2Progress, total: step2Total });
+            
+            if (step2Status === 'completed') {
+              clearInterval(pollInterval);
               setVisualAnalysisStatus('completed');
+              // Do a final cache check to get accurate numbers
+              await checkAnalysisProgress();
+            } else if (step2Status === 'error') {
+              clearInterval(pollInterval);
+              setVisualAnalysisStatus('error');
+            }
+          } else {
+            // Fallback to cache checking if backend progress is not available
+            const progress = await checkAnalysisProgress();
+            if (progress && (progress.completed === progress.total || visualAnalysisStatus === 'cancelled')) {
+              clearInterval(pollInterval);
+              if (progress.completed === progress.total) {
+                setVisualAnalysisStatus('completed');
+              }
             }
           }
-        }, 3000); // Check every 3 seconds
+        }, 2000); // Check every 2 seconds for more responsive updates
         
         // Store interval ID so we can clear it if stopped
         controller.pollInterval = pollInterval;
