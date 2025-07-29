@@ -220,11 +220,11 @@ const DojoManagement = () => {
 
   // Auto-run Step 4 (template processing) after Step 3 completes if checkbox is enabled
   useEffect(() => {
-    if (step3Progress.status === 'completed' && runStep4AfterStep3 && selectedTemplate && templateProcessingStatus !== 'processing') {
+    if (step3Progress.status === 'completed' && runStep4AfterStep3 && selectedTemplate && step4Progress.status !== 'processing') {
       console.log('Auto-triggering Step 4 (template processing) after Step 3 completion');
       runTemplateProcessing();
     }
-  }, [step3Progress.status, runStep4AfterStep3, selectedTemplate, templateProcessingStatus]);
+  }, [step3Progress.status, runStep4AfterStep3, selectedTemplate, step4Progress.status]);
 
   // Load cached decks count when checkbox is checked
   useEffect(() => {
@@ -2009,8 +2009,7 @@ const DojoManagement = () => {
                     {step3Progress.status !== 'idle' && (
                       <Box sx={{ width: '100%' }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          Progress: {step3Progress.completed}/{step3Progress.total} 
-                          {step3Progress.status === 'processing' ? 'processing...' : 
+                          Progress: {step3Progress.completed}/{step3Progress.total} {step3Progress.status === 'processing' ? 'processing...' : 
                            step3Progress.status === 'completed' ? 'completed' : 
                            step3Progress.status === 'error' ? 'error' : ''}
                         </Typography>
@@ -2088,20 +2087,19 @@ const DojoManagement = () => {
                     <Button
                       variant="contained"
                       onClick={runTemplateProcessing}
-                      disabled={!selectedTemplate || templateProcessingStatus === 'processing'} // Enabled when template is selected and not processing
-                      startIcon={templateProcessingStatus === 'processing' ? <CircularProgress size={16} /> : <Assessment />}
+                      disabled={!selectedTemplate || step4Progress.status === 'processing'} // Use backend progress status
+                      startIcon={step4Progress.status === 'processing' ? <CircularProgress size={16} /> : <Assessment />}
                       fullWidth
                       sx={{ height: 56 }}
                     >
-                      {templateProcessingStatus === 'processing' ? 'Processing...' : 'Run Template Processing'}
+                      {step4Progress.status === 'processing' ? 'Processing...' : 'Run Template Processing'}
                     </Button>
 
                     {/* Progress bar for Step 4 */}
                     {step4Progress.status !== 'idle' && (
                       <Box sx={{ width: '100%' }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          Progress: {step4Progress.completed}/{step4Progress.total} 
-                          {step4Progress.status === 'processing' ? 'processing...' : 
+                          Progress: {step4Progress.completed}/{step4Progress.total} {step4Progress.status === 'processing' ? 'processing...' : 
                            step4Progress.status === 'completed' ? 'completed' : 
                            step4Progress.status === 'error' ? 'error' : ''}
                         </Typography>

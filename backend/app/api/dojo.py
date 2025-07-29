@@ -1878,6 +1878,8 @@ async def run_template_processing_batch(
         # Update progress tracker - start step 4 processing
         progress_tracker["step4"]["status"] = "processing"
         progress_tracker["step4"]["current_deck"] = decks[0].file_name if decks else ""
+        progress_tracker["step4"]["progress"] = 0
+        progress_tracker["step4"]["total"] = len(decks)
         
         # Use GPU pipeline for template processing
         from ..services.gpu_http_client import gpu_http_client
