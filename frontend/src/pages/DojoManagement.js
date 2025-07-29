@@ -1778,7 +1778,6 @@ const DojoManagement = () => {
               </Box>
             </Box>
             
-            
             {/* Step 1: Sample Selection */}
             <Paper sx={{ p: 3, mb: 3, bgcolor: 'grey.50' }}>
               <Typography variant="h6" gutterBottom>
@@ -1924,7 +1923,6 @@ const DojoManagement = () => {
                       {visualAnalysisStatus === 'running' ? 'Analyzing...' : 'Run Visual Analysis'}
                     </Button>
                     
-                    
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <Button 
                         variant="outlined" 
@@ -2007,7 +2005,6 @@ const DojoManagement = () => {
                       </Button>
                     )}
 
-
                     {/* Run after step 2 checkbox for Step 3 */}
                     <FormControlLabel
                       control={
@@ -2064,7 +2061,6 @@ const DojoManagement = () => {
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    
                     <Button
                       variant="contained"
                       onClick={runTemplateProcessing}
@@ -2088,7 +2084,6 @@ const DojoManagement = () => {
                         Stop
                       </Button>
                     )}
-
 
                     {/* Run after step 3 checkbox for Step 4 */}
                     <FormControlLabel
