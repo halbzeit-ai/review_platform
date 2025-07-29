@@ -1972,7 +1972,7 @@ const DojoManagement = () => {
                         color="error"
                         size="small"
                         onClick={stopCurrentAnalysis}
-                        disabled={visualAnalysisStatus !== 'running'}
+                        disabled={!currentAnalysisController}
                         startIcon={<Stop />}
                       >
                         Stop
