@@ -262,137 +262,21 @@ async def get_deck_analysis(
                 except Exception as e:
                     logger.warning(f"Error checking file-based results: {e}")
         
-        # If still no results found, create minimal results from slide images
         if not analysis_found:
-            logger.warning(f"No analysis_results.json found for deck {deck_id}, creating from slide images")
-            dojo_analysis_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis")
-            deck_name = os.path.splitext(os.path.basename(file_path))[0]
-            filesystem_deck_name = deck_name.replace(' ', '_')
-            
-            if os.path.exists(dojo_analysis_path):
-                for dir_name in os.listdir(dojo_analysis_path):
-                    if deck_name in dir_name or filesystem_deck_name in dir_name:
-                        potential_dir = os.path.join(dojo_analysis_path, dir_name)
-                        if os.path.exists(potential_dir):
-                            slide_files = sorted([f for f in os.listdir(potential_dir) if f.startswith('slide_') and f.endswith(('.jpg', '.png'))])
-                            if slide_files:
-                                # Create minimal results data from slide images
-                                visual_results = []
-                                for i, slide_file in enumerate(slide_files, 1):
-                                    slide_path = os.path.join(potential_dir, slide_file)
-                                    visual_results.append({
-                                        "page_number": i,
-                                        "slide_image_path": slide_path,
-                                        "description": f"Slide {i} analysis not available",
-                                        "deck_name": deck_name
-                                    })
-                                
-                                results_data = {
-                                    "visual_analysis_results": visual_results,
-                                    "processing_metadata": {"source": "slide_images_only"}
-                                }
-                                analysis_found = True
-                                logger.info(f"Created minimal results from {len(slide_files)} slide images")
-                                break
-        
-        # Development fallback - create mock results if no shared filesystem access
-        if not analysis_found and not os.path.exists(settings.SHARED_FILESYSTEM_MOUNT_PATH):
-            logger.warning(f"Development mode: Creating mock analysis results for deck {deck_id}")
-            deck_name = os.path.splitext(os.path.basename(file_path))[0]
-            
-            # Create mock visual results with placeholder data
-            mock_slides = []
-            for i in range(1, 6):  # Mock 5 slides
-                mock_slides.append({
-                    "page_number": i,
-                    "slide_image_path": f"/mock/path/slide_{i}.jpg",
-                    "description": f"**Slide {i} Analysis**\n\nThis is mock analysis data for development purposes. In the actual system, this would contain AI-generated insights about slide {i} of the pitch deck.\n\n• Key points would be highlighted here\n• Business model insights\n• Market analysis\n• Technical details",
-                    "deck_name": deck_name
-                })
-            
-            results_data = {
-                "visual_analysis_results": mock_slides,
-                "processing_metadata": {
-                    "source": "development_mock",
-                    "vision_model": "Mock Development Model",
-                    "created_at": "2024-01-01T00:00:00Z"
-                }
-            }
-            analysis_found = True
-            logger.info(f"Created mock development results for deck {deck_id}")
-        
-        if not analysis_found:
+            logger.warning(f"No analysis results found for deck {deck_id}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Analysis results not found for this deck"
             )
         
-        # Extract visual analysis results - handle different formats
+        # Extract visual analysis results
         visual_results = results_data.get("visual_analysis_results", [])
         
-        # If no visual_analysis_results, check if this is a projects table fallback with company offering
-        if not visual_results and ("company_offering" in results_data or results_data.get("processing_metadata", {}).get("source") == "projects_table_fallback"):
-            logger.info("Creating visual analysis from company offering and slide images")
-            
-            # Get company offering from results_data or query it if needed
-            company_offering = results_data.get("company_offering", "")
-            
-            # If we don't have company offering in results_data, it means we found it via the projects table fallback
-            if not company_offering and results_data.get("processing_metadata", {}).get("source") == "projects_table_fallback":
-                # The company offering should already be in results_data from the projects table query
-                company_offering = results_data.get("company_offering", "No company offering available")
-            
-            # Look for slide images in dojo structure
-            deck_name = os.path.splitext(os.path.basename(file_path))[0]
-            filesystem_deck_name = deck_name.replace(' ', '_')
-            dojo_analysis_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis")
-            
-            if os.path.exists(dojo_analysis_path):
-                for dir_name in os.listdir(dojo_analysis_path):
-                    if deck_name in dir_name or filesystem_deck_name in dir_name:
-                        dir_path = os.path.join(dojo_analysis_path, dir_name)
-                        if os.path.exists(dir_path):
-                            slide_files = sorted([f for f in os.listdir(dir_path) if f.startswith('slide_') and f.endswith(('.jpg', '.png'))])
-                            
-                            if slide_files:
-                                logger.info(f"Creating visual analysis from company offering and {len(slide_files)} slide images")
-                                
-                                # Split company offering into logical sections for different slides
-                                offering_parts = company_offering.split('\n\n') if company_offering else []
-                                
-                                # Create visual analysis entries
-                                visual_results = []
-                                for i, slide_file in enumerate(slide_files, 1):
-                                    slide_path = os.path.join(dir_path, slide_file)
-                                    
-                                    # Create meaningful descriptions based on company offering
-                                    if i == 1:
-                                        # First slide gets the main company overview
-                                        description = f"**Company Overview - Slide {i}**\n\n{company_offering[:500]}" if company_offering else f"**Slide {i}**\n\nCompany pitch deck slide - detailed analysis not available."
-                                    elif i == 2 and len(offering_parts) > 1:
-                                        # Second slide gets additional details
-                                        description = f"**Business Details - Slide {i}**\n\n{offering_parts[1][:400]}" if len(offering_parts[1]) > 400 else f"**Business Details - Slide {i}**\n\n{offering_parts[1]}"
-                                    elif i == 3 and len(offering_parts) > 2:
-                                        # Third slide gets more details
-                                        description = f"**Market & Technology - Slide {i}**\n\n{offering_parts[2][:400]}" if len(offering_parts[2]) > 400 else f"**Market & Technology - Slide {i}**\n\n{offering_parts[2]}"
-                                    else:
-                                        # Other slides get generic but informative descriptions
-                                        description = f"**Slide {i} - Pitch Content**\n\nThis slide contains additional information about the company's value proposition, market opportunity, business model, or technical approach.\n\n*This deck has been processed through the dojo analysis system. The complete company overview and business details are available in the first few slides.*"
-                                    
-                                    visual_results.append({
-                                        "page_number": i,
-                                        "slide_image_path": slide_path,
-                                        "description": description,
-                                        "deck_name": deck_name
-                                    })
-                                
-                                logger.info(f"✅ Created {len(visual_results)} visual analysis entries from company offering data")
-                                break
-        
         if not visual_results:
+            logger.warning(f"No visual analysis results found for deck {deck_id}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="No slide analysis found for this deck"
+                detail="Visual analysis not found for this deck"
             )
         
         # Extract deck name from file path
