@@ -128,18 +128,46 @@ async def get_deck_analysis(
         deck_id_db, file_path, results_file_path, user_email, company_name, source_table = deck_result
         
         # Verify this deck belongs to the requested company (for ALL users including GPs)
-        if company_name:
-            import re
-            deck_company_id = re.sub(r'[^a-z0-9-]', '', company_name.lower().replace(' ', '-'))
+        # For project_documents, check the project's company_id rather than uploader's company
+        # This allows GP admins to upload decks for other companies
+        if source_table == 'project_documents':
+            # For project-based decks, get the project's company_id
+            project_company_query = text("""
+                SELECT p.company_id
+                FROM projects p
+                JOIN project_documents pd ON p.id = pd.project_id
+                WHERE pd.id = :deck_id AND pd.document_type = 'pitch_deck' AND pd.is_active = TRUE
+            """)
+            
+            project_company_result = db.execute(project_company_query, {"deck_id": deck_id}).fetchone()
+            
+            if project_company_result:
+                actual_company_id = project_company_result[0]
+                logger.info(f"Project-based deck {deck_id}: project company_id = {actual_company_id}, requested company_id = {company_id}")
+            else:
+                logger.warning(f"Could not find project company for deck {deck_id}")
+                actual_company_id = None
         else:
-            deck_company_id = user_email.split('@')[0]
+            # For legacy pitch_decks, use uploader's company (original logic)
+            if company_name:
+                import re
+                actual_company_id = re.sub(r'[^a-z0-9-]', '', company_name.lower().replace(' ', '-'))
+            else:
+                actual_company_id = user_email.split('@')[0]
+            
+            logger.info(f"Legacy deck {deck_id}: uploader company_id = {actual_company_id}, requested company_id = {company_id}")
         
-        if deck_company_id != company_id:
-            logger.warning(f"Security violation: User {current_user.email} ({current_user.role}) attempted to access deck {deck_id} via company {company_id}, but deck belongs to {deck_company_id}")
+        # Allow GP access to dojo companies (test/demo data)
+        is_dojo_access = (company_id == 'dojo' or 'dojo' in company_id.lower()) and current_user.role == "gp"
+        
+        if actual_company_id and actual_company_id != company_id and not is_dojo_access:
+            logger.warning(f"Security violation: User {current_user.email} ({current_user.role}) attempted to access deck {deck_id} via company {company_id}, but deck belongs to {actual_company_id}")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Deck {deck_id} does not belong to company {company_id}. Please access this deck through the correct company path."
+                detail=f"Deck {deck_id} does not belong to company {company_id}. Please access this deck through the correct company path: /project/{actual_company_id}/deck-viewer/{deck_id}"
             )
+        elif is_dojo_access:
+            logger.info(f"GP {current_user.email} accessing dojo company {company_id} - allowed for test data")
         
         # Load analysis results - check multiple locations
         analysis_found = False
