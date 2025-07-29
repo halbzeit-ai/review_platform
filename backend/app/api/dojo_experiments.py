@@ -576,15 +576,6 @@ async def add_dojo_companies_from_experiment(
             # Get funding from the lookup (if available) or fallback to funding_extraction
             funding_sought_value = funding_amount_lookup.get(deck_id) or funding_extraction or "TBD"
             
-            # Get company offering - prefer template analysis if available, fallback to extraction
-            template_info = template_processing_lookup.get(deck_id)
-            if template_info and template_info.get("template_analysis"):
-                company_offering_text = template_info["template_analysis"][:2000]  # Use template analysis
-                logger.info(f"Deck {deck_id}: Using template analysis for company offering")
-            else:
-                company_offering_text = offering_extraction[:2000]  # Fallback to extraction
-                logger.info(f"Deck {deck_id}: Using extraction result for company offering")
-            
             logger.info(f"Deck {deck_id}: funding='{funding_sought_value}'")
             
             project_result = db.execute(project_insert, {
@@ -592,7 +583,7 @@ async def add_dojo_companies_from_experiment(
                 "project_name": project_name,
                 "funding_round": "analysis",
                 "funding_sought": funding_sought_value,
-                "company_offering": company_offering_text,
+                "company_offering": offering_extraction[:2000],  # Limit to 2000 chars
                 "tags": json.dumps(["dojo", "experiment", "ai-extracted", (primary_sector or "digital-health").lower().replace(" ", "-")]),
                 "metadata": json.dumps(metadata),
                 "created_at": datetime.utcnow(),
