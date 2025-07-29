@@ -1778,27 +1778,6 @@ const DojoManagement = () => {
               </Box>
             </Box>
             
-            {/* GPU Status Alert */}
-            {gpuStatus === 'error' && (
-              <Alert severity="error" sx={{ mb: 3 }}>
-                Unable to connect to GPU instance. Model selection and analysis features will not be available.
-                Please check if the GPU instance is running and try refreshing the models.
-              </Alert>
-            )}
-            
-            {gpuStatus === 'offline' && (
-              <Alert severity="warning" sx={{ mb: 3 }}>
-                GPU instance is online but no models are available. You may need to pull models first 
-                in the Model Configuration page.
-              </Alert>
-            )}
-            
-            {availableModels.vision && availableModels.vision.length === 0 && !modelsLoading && (
-              <Alert severity="info" sx={{ mb: 3 }}>
-                No models available for extraction testing. Please ensure the GPU instance is running 
-                and models are installed.
-              </Alert>
-            )}
             
             {/* Step 1: Sample Selection */}
             <Paper sx={{ p: 3, mb: 3, bgcolor: 'grey.50' }}>
@@ -1933,12 +1912,6 @@ const DojoManagement = () => {
                     </Select>
                   </FormControl>
                   
-                  {/* Sanity check for sample selection */}
-                  {extractionSample.length === 0 && (
-                    <Alert severity="error" sx={{ mb: 2 }}>
-                      Please create a sample in Step 1 before running visual analysis.
-                    </Alert>
-                  )}
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -1951,28 +1924,6 @@ const DojoManagement = () => {
                       {visualAnalysisStatus === 'running' ? 'Analyzing...' : 'Run Visual Analysis'}
                     </Button>
                     
-                    {visualAnalysisStatus === 'running' && (
-                      <Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                          <Typography variant="body2">
-                            Progress: {analysisProgress.completed}/{analysisProgress.total}
-                          </Typography>
-                          {(() => {
-                            const stats = getProcessingStats();
-                            return stats && (
-                              <Typography variant="caption" color="text.secondary">
-                                Avg: {stats.avgTimePerDeck}
-                              </Typography>
-                            );
-                          })()}
-                        </Box>
-                        <LinearProgress 
-                          variant="determinate" 
-                          value={analysisProgress.total > 0 ? (analysisProgress.completed / analysisProgress.total) * 100 : 0}
-                          sx={{ mb: 1 }}
-                        />
-                      </Box>
-                    )}
                     
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <Button 
@@ -1987,15 +1938,6 @@ const DojoManagement = () => {
                       </Button>
                     </Box>
                     
-                    {visualAnalysisStatus !== 'idle' && (
-                      <Alert severity={isVisualAnalysisCompleted() ? 'success' : 'info'}>
-                        {isVisualAnalysisCompleted() ? 
-                          'Visual analysis completed successfully' : 
-                          visualAnalysisStatus === 'running' && currentStep2Deck ? 
-                            `Analyzing: ${currentStep2Deck}` : 
-                            `Visual analysis status: ${visualAnalysisStatus}`}
-                      </Alert>
-                    )}
                   </Box>
                 </Grid>
               </Grid>
@@ -2040,12 +1982,6 @@ const DojoManagement = () => {
                     </Select>
                   </FormControl>
                   
-                  {/* Sanity check for visual analysis */}
-                  {!isVisualAnalysisCompleted() && (
-                    <Alert severity="error" sx={{ mb: 2 }}>
-                      Please complete visual analysis in Step 2 before running extraction pipeline.
-                    </Alert>
-                  )}
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -2071,21 +2007,6 @@ const DojoManagement = () => {
                       </Button>
                     )}
 
-                    {/* Progress bar for Step 3 */}
-                    {step3Progress.status !== 'idle' && (
-                      <Box sx={{ width: '100%' }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          Progress: {step3Progress.completed}/{step3Progress.total} {step3Progress.status === 'processing' ? 'processing...' : 
-                           step3Progress.status === 'completed' ? 'completed' : 
-                           step3Progress.status === 'error' ? 'error' : ''}
-                        </Typography>
-                        <LinearProgress 
-                          variant="determinate" 
-                          value={step3Progress.total > 0 ? (step3Progress.completed / step3Progress.total) * 100 : 0}
-                          sx={{ height: 8, borderRadius: 4 }}
-                        />
-                      </Box>
-                    )}
 
                     {/* Run after step 2 checkbox for Step 3 */}
                     <FormControlLabel
@@ -2099,13 +2020,6 @@ const DojoManagement = () => {
                       label="Run after Step 2 is completed"
                     />
                     
-                    <Alert severity={step3Progress.status === 'completed' ? 'success' : 'info'}>
-                      {step3Progress.status === 'completed' ? 
-                        'Complete extraction pipeline completed successfully' : 
-                        step3Progress.status === 'processing' && currentStep3Deck ? 
-                          `Analyzing: ${currentStep3Deck}` : 
-                          'This will run the complete pipeline: offering extraction, classification, and company name extraction. All results will be saved for comparison.'}
-                    </Alert>
                   </Box>
                 </Grid>
               </Grid>
@@ -2150,12 +2064,6 @@ const DojoManagement = () => {
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {/* Sanity check for step 3 completion */}
-                    {step3Progress.status !== 'completed' && (
-                      <Alert severity="error" sx={{ mb: 2 }}>
-                        Please complete Step 3 (extraction pipeline) before running template processing.
-                      </Alert>
-                    )}
                     
                     <Button
                       variant="contained"
@@ -2181,21 +2089,6 @@ const DojoManagement = () => {
                       </Button>
                     )}
 
-                    {/* Progress bar for Step 4 */}
-                    {step4Progress.status !== 'idle' && (
-                      <Box sx={{ width: '100%' }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          Progress: {step4Progress.completed}/{step4Progress.total} {step4Progress.status === 'processing' ? 'processing...' : 
-                           step4Progress.status === 'completed' ? 'completed' : 
-                           step4Progress.status === 'error' ? 'error' : ''}
-                        </Typography>
-                        <LinearProgress 
-                          variant="determinate" 
-                          value={step4Progress.total > 0 ? (step4Progress.completed / step4Progress.total) * 100 : 0}
-                          sx={{ height: 8, borderRadius: 4 }}
-                        />
-                      </Box>
-                    )}
 
                     {/* Run after step 3 checkbox for Step 4 */}
                     <FormControlLabel
@@ -2208,22 +2101,6 @@ const DojoManagement = () => {
                       }
                       label="Run after Step 3 is completed"
                     />
-                  </Box>
-                </Grid>
-                <Grid item xs={12}>
-                  <Box sx={{ mt: 2 }}>
-                    <Alert severity={
-                      step4Progress.status === 'completed' ? 'success' : 
-                      step4Progress.status === 'error' ? 'error' : 'info'
-                    } sx={{ mb: 2 }}>
-                      {step4Progress.status === 'completed' ? 
-                        'Template processing completed! Results and slide images are now available for gallery display.' : 
-                        step4Progress.status === 'error' ? 
-                          'Template processing failed. Please check the logs and try again.' :
-                        step4Progress.status === 'processing' && currentStep4Deck ? 
-                          `Analyzing: ${currentStep4Deck}` : 
-                          'This will process all decks from the current sample through the selected healthcare template to generate complete analysis results and extract slide images for gallery thumbnails.'}
-                    </Alert>
                   </Box>
                 </Grid>
               </Grid>
