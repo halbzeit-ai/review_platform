@@ -798,18 +798,11 @@ const DojoManagement = () => {
 
       if (response.ok) {
         const progressData = await response.json();
-        console.log('Progress data received:', progressData);
         
         // Update current deck being processed for each step
         setCurrentStep2Deck(progressData.step2?.current_deck || '');
         setCurrentStep3Deck(progressData.step3?.current_deck || '');
         setCurrentStep4Deck(progressData.step4?.current_deck || '');
-        
-        console.log('Setting deck names:', {
-          step2: progressData.step2?.current_deck,
-          step3: progressData.step3?.current_deck,
-          step4: progressData.step4?.current_deck
-        });
         
         // Update step progress statuses and counts
         setStep3Progress(prev => ({ 
@@ -826,14 +819,10 @@ const DojoManagement = () => {
         }));
         
         // Update visual analysis progress for step 2
-        const newAnalysisProgress = {
-          completed: progressData.step2?.progress || 0,
-          total: progressData.step2?.total || 0
-        };
-        console.log('Setting analysis progress:', newAnalysisProgress);
         setAnalysisProgress(prev => ({
           ...prev,
-          ...newAnalysisProgress
+          completed: progressData.step2?.progress || 0,
+          total: progressData.step2?.total || 0
         }));
         setVisualAnalysisStatus(progressData.step2?.status || 'idle');
         
@@ -1900,11 +1889,6 @@ const DojoManagement = () => {
                         />
                       </Box>
                     )}
-                    
-                    {/* Debug info - remove after fixing */}
-                    <Typography variant="caption" color="text.secondary">
-                      Debug: Status={visualAnalysisStatus}, Progress={analysisProgress.completed}/{analysisProgress.total}, CurrentDeck="{currentStep2Deck}"
-                    </Typography>
                     
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <Button 
