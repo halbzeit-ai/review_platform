@@ -85,8 +85,11 @@ async def get_deck_analysis(
 ):
     """Get slide-by-slide analysis for a specific deck"""
     try:
+        logger.info(f"Getting deck analysis for company_id='{company_id}', deck_id={deck_id}, user={current_user.email}")
+        
         # Check access permissions
         if not check_project_access(current_user, company_id):
+            logger.warning(f"Access denied for user {current_user.email} to company {company_id}")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You don't have access to this project"
@@ -137,27 +140,89 @@ async def get_deck_analysis(
                     detail="Deck doesn't belong to this company"
                 )
         
-        # Load analysis results
-        if not results_file_path:
+        # Load analysis results - check multiple locations
+        analysis_found = False
+        results_data = None
+        
+        # First try the database results_file_path if available
+        if results_file_path:
+            if results_file_path.startswith('/'):
+                results_full_path = results_file_path
+            else:
+                results_full_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, results_file_path)
+            
+            if os.path.exists(results_full_path):
+                try:
+                    with open(results_full_path, 'r') as f:
+                        results_data = json.load(f)
+                        analysis_found = True
+                        logger.info(f"Found analysis results at database path: {results_full_path}")
+                except Exception as e:
+                    logger.warning(f"Could not load results from database path {results_full_path}: {e}")
+        
+        # If not found via database path, look in dojo structure
+        if not analysis_found:
+            deck_name = os.path.splitext(os.path.basename(file_path))[0]
+            filesystem_deck_name = deck_name.replace(' ', '_')
+            
+            # Look in dojo analysis directory for matching folders
+            dojo_analysis_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis")
+            logger.info(f"Searching for analysis results in dojo structure: {dojo_analysis_path}")
+            
+            if os.path.exists(dojo_analysis_path):
+                for dir_name in os.listdir(dojo_analysis_path):
+                    if deck_name in dir_name or filesystem_deck_name in dir_name:
+                        potential_results_path = os.path.join(dojo_analysis_path, dir_name, "analysis_results.json")
+                        logger.info(f"Checking for results file: {potential_results_path}")
+                        
+                        if os.path.exists(potential_results_path):
+                            try:
+                                with open(potential_results_path, 'r') as f:
+                                    results_data = json.load(f)
+                                    analysis_found = True
+                                    logger.info(f"Found analysis results at dojo path: {potential_results_path}")
+                                    break
+                            except Exception as e:
+                                logger.warning(f"Could not load results from dojo path {potential_results_path}: {e}")
+        
+        # If still no results found, create minimal results from slide images
+        if not analysis_found:
+            logger.warning(f"No analysis_results.json found for deck {deck_id}, creating from slide images")
+            dojo_analysis_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis")
+            deck_name = os.path.splitext(os.path.basename(file_path))[0]
+            filesystem_deck_name = deck_name.replace(' ', '_')
+            
+            if os.path.exists(dojo_analysis_path):
+                for dir_name in os.listdir(dojo_analysis_path):
+                    if deck_name in dir_name or filesystem_deck_name in dir_name:
+                        potential_dir = os.path.join(dojo_analysis_path, dir_name)
+                        if os.path.exists(potential_dir):
+                            slide_files = sorted([f for f in os.listdir(potential_dir) if f.startswith('slide_') and f.endswith(('.jpg', '.png'))])
+                            if slide_files:
+                                # Create minimal results data from slide images
+                                visual_results = []
+                                for i, slide_file in enumerate(slide_files, 1):
+                                    slide_path = os.path.join(potential_dir, slide_file)
+                                    visual_results.append({
+                                        "page_number": i,
+                                        "slide_image_path": slide_path,
+                                        "description": f"Slide {i} analysis not available",
+                                        "deck_name": deck_name
+                                    })
+                                
+                                results_data = {
+                                    "visual_analysis_results": visual_results,
+                                    "processing_metadata": {"source": "slide_images_only"}
+                                }
+                                analysis_found = True
+                                logger.info(f"Created minimal results from {len(slide_files)} slide images")
+                                break
+        
+        if not analysis_found:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Analysis results not found for this deck"
             )
-        
-        if results_file_path.startswith('/'):
-            results_full_path = results_file_path
-        else:
-            results_full_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, results_file_path)
-        
-        if not os.path.exists(results_full_path):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Analysis results file not found"
-            )
-        
-        # Load the results JSON
-        with open(results_full_path, 'r') as f:
-            results_data = json.load(f)
         
         # Extract visual analysis results
         visual_results = results_data.get("visual_analysis_results", [])
