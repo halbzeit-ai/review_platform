@@ -1967,6 +1967,62 @@ async def run_template_processing_batch(
         
         logger.info(f"Template processing completed for experiment {request.experiment_id}: {successful_processing}/{len(template_processing_results)} successful template analyses, {thumbnail_generation_success}/{len(template_processing_results)} successful thumbnail generations")
         
+        # Mark decks as having dojo experiment results for "Show Results" functionality
+        # We'll extend the results endpoint to handle dojo database results instead of files
+        for result in template_processing_results:
+            deck_id = result["deck_id"]
+            
+            # Update the pitch_deck to indicate it has dojo experiment results
+            # Use a special marker in results_file_path to indicate database-stored results
+            dojo_results_marker = f"dojo_experiment:{request.experiment_id}"
+            
+            try:
+                # First check if this is a project_document or pitch_deck
+                project_doc_result = db.execute(text("""
+                    SELECT pd.id FROM project_documents pd
+                    WHERE pd.id = :deck_id AND pd.document_type = 'pitch_deck' AND pd.is_active = TRUE
+                """), {"deck_id": deck_id}).fetchone()
+                
+                if project_doc_result:
+                    # This is a project_document - find the corresponding pitch_deck by filename
+                    pitch_deck_result = db.execute(text("""
+                        SELECT pd.id FROM pitch_decks pd
+                        WHERE pd.file_name = :filename AND pd.data_source = 'dojo'
+                        ORDER BY pd.created_at DESC LIMIT 1
+                    """), {"filename": result["filename"]}).fetchone()
+                    
+                    if pitch_deck_result:
+                        pitch_deck_id = pitch_deck_result[0]
+                        # Update pitch_deck to indicate dojo experiment results available
+                        db.execute(text("""
+                            UPDATE pitch_decks 
+                            SET results_file_path = :results_marker
+                            WHERE id = :pitch_deck_id
+                        """), {
+                            "results_marker": dojo_results_marker,
+                            "pitch_deck_id": pitch_deck_id
+                        })
+                        logger.info(f"Marked pitch_deck {pitch_deck_id} as having dojo experiment results")
+                else:
+                    # This is already a pitch_deck ID, update directly
+                    db.execute(text("""
+                        UPDATE pitch_decks 
+                        SET results_file_path = :results_marker
+                        WHERE id = :deck_id
+                    """), {
+                        "results_marker": dojo_results_marker,
+                        "deck_id": deck_id
+                    })
+                    logger.info(f"Marked pitch_deck {deck_id} as having dojo experiment results")
+                
+            except Exception as e:
+                logger.error(f"Failed to mark deck {deck_id} as having results: {e}")
+                continue
+        
+        # Commit the results markers
+        db.commit()
+        logger.info(f"Marked {len(template_processing_results)} decks as having dojo experiment results")
+        
         # Update progress tracker - step 4 completed successfully
         progress_tracker["step4"]["status"] = "completed"
         progress_tracker["step4"]["current_deck"] = ""
