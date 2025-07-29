@@ -92,9 +92,10 @@ async def get_deck_analysis(
                 detail="You don't have access to this project"
             )
         
-        # Get deck information
+        # Get deck information - check both pitch_decks and project_documents tables
+        # First try pitch_decks table (legacy)
         deck_query = text("""
-        SELECT pd.id, pd.file_path, pd.results_file_path, u.email, u.company_name
+        SELECT pd.id, pd.file_path, pd.results_file_path, u.email, u.company_name, 'pitch_decks' as source
         FROM pitch_decks pd
         JOIN users u ON pd.user_id = u.id
         WHERE pd.id = :deck_id
@@ -102,13 +103,26 @@ async def get_deck_analysis(
         
         deck_result = db.execute(deck_query, {"deck_id": deck_id}).fetchone()
         
+        # If not found in pitch_decks, try project_documents table
+        if not deck_result:
+            logger.info(f"Deck {deck_id} not found in pitch_decks, checking project_documents")
+            project_deck_query = text("""
+            SELECT pd.id, pd.file_path, NULL as results_file_path, u.email, u.company_name, 'project_documents' as source
+            FROM project_documents pd
+            JOIN projects p ON pd.project_id = p.id
+            JOIN users u ON pd.uploaded_by = u.id
+            WHERE pd.id = :deck_id AND pd.document_type = 'pitch_deck' AND pd.is_active = TRUE
+            """)
+            
+            deck_result = db.execute(project_deck_query, {"deck_id": deck_id}).fetchone()
+        
         if not deck_result:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Deck {deck_id} not found"
             )
         
-        deck_id_db, file_path, results_file_path, user_email, company_name = deck_result
+        deck_id_db, file_path, results_file_path, user_email, company_name, source_table = deck_result
         
         # Verify this deck belongs to the requested company (skip for GP admin access)
         if current_user.role != "gp":
