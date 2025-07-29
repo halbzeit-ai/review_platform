@@ -411,7 +411,8 @@ async def add_dojo_companies_from_experiment(
             SELECT id, experiment_name, extraction_type, text_model_used, 
                    extraction_prompt, created_at, results_json, pitch_deck_ids,
                    classification_enabled, classification_results_json,
-                   company_name_results_json, funding_amount_results_json
+                   company_name_results_json, funding_amount_results_json,
+                   template_processing_results_json, template_processing_completed_at
             FROM extraction_experiments 
             WHERE id = :experiment_id
         """), {"experiment_id": request.experiment_id}).fetchone()
@@ -427,6 +428,7 @@ async def add_dojo_companies_from_experiment(
         classification_data = json.loads(experiment[9]) if experiment[9] else {}
         company_name_data = json.loads(experiment[10]) if experiment[10] else {}
         funding_amount_data = json.loads(experiment[11]) if experiment[11] else {}
+        template_processing_data = json.loads(experiment[12]) if experiment[12] else {}
         
         # Check if experiment has required data
         if not experiment[8]:  # classification_enabled
@@ -446,6 +448,7 @@ async def add_dojo_companies_from_experiment(
         classification_lookup = {}
         company_name_lookup = {}
         funding_amount_lookup = {}
+        template_processing_lookup = {}
         
         # Build lookups for classification and company name data
         if classification_data.get("classification_by_deck"):
@@ -461,6 +464,19 @@ async def add_dojo_companies_from_experiment(
             for result in funding_amount_data["funding_amount_results"]:
                 funding_amount_lookup[result.get("deck_id")] = result.get("funding_amount")
             logger.info(f"Funding amount lookup keys: {list(funding_amount_lookup.keys())}")
+        
+        # Build template processing lookup
+        if template_processing_data.get("template_processing_results"):
+            for result in template_processing_data["template_processing_results"]:
+                deck_id = result.get("deck_id")
+                if deck_id:
+                    template_processing_lookup[deck_id] = {
+                        "template_analysis": result.get("template_analysis"),
+                        "template_used": result.get("template_used"),
+                        "thumbnail_path": result.get("thumbnail_path"),
+                        "slide_images": result.get("slide_images", [])
+                    }
+            logger.info(f"Template processing lookup keys: {list(template_processing_lookup.keys())}")
         
         # Process each result to create companies/projects
         companies_added = 0
@@ -553,11 +569,21 @@ async def add_dojo_companies_from_experiment(
                 "created_at": datetime.utcnow().isoformat(),
                 "original_filename": result.get("filename"),
                 "classification": classification_info,
-                "ai_extracted_company_name": company_name_lookup.get(deck_id)
+                "ai_extracted_company_name": company_name_lookup.get(deck_id),
+                "template_processing": template_processing_lookup.get(deck_id)
             }
             
             # Get funding from the lookup (if available) or fallback to funding_extraction
             funding_sought_value = funding_amount_lookup.get(deck_id) or funding_extraction or "TBD"
+            
+            # Get company offering - prefer template analysis if available, fallback to extraction
+            template_info = template_processing_lookup.get(deck_id)
+            if template_info and template_info.get("template_analysis"):
+                company_offering_text = template_info["template_analysis"][:2000]  # Use template analysis
+                logger.info(f"Deck {deck_id}: Using template analysis for company offering")
+            else:
+                company_offering_text = offering_extraction[:2000]  # Fallback to extraction
+                logger.info(f"Deck {deck_id}: Using extraction result for company offering")
             
             logger.info(f"Deck {deck_id}: funding='{funding_sought_value}'")
             
@@ -566,7 +592,7 @@ async def add_dojo_companies_from_experiment(
                 "project_name": project_name,
                 "funding_round": "analysis",
                 "funding_sought": funding_sought_value,
-                "company_offering": offering_extraction[:2000],  # Limit to 2000 chars
+                "company_offering": company_offering_text,
                 "tags": json.dumps(["dojo", "experiment", "ai-extracted", (primary_sector or "digital-health").lower().replace(" ", "-")]),
                 "metadata": json.dumps(metadata),
                 "created_at": datetime.utcnow(),
