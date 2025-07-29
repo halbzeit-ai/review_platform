@@ -138,9 +138,7 @@ const DojoManagement = () => {
   const [extractionSample, setExtractionSample] = useState([]);
   const [visualAnalysisStatus, setVisualAnalysisStatus] = useState('idle');
   const [selectedVisionModel, setSelectedVisionModel] = useState('');
-  const [visualAnalysisPrompt, setVisualAnalysisPrompt] = useState('');
   const [selectedTextModel, setSelectedTextModel] = useState('');
-  const [extractionPrompt, setExtractionPrompt] = useState('');
   const [currentAnalysisController, setCurrentAnalysisController] = useState(null);
   const [clearingCache, setClearingCache] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState({ completed: 0, total: 0 });
@@ -511,8 +509,6 @@ const DojoManagement = () => {
           setSelectedTextModel(modelOptions[0].model_name);
         }
         
-        // Load actual prompts from backend
-        loadPipelinePrompts(token);
       } else {
         setGpuStatus('error');
         throw new Error('Failed to fetch models');
@@ -527,38 +523,6 @@ const DojoManagement = () => {
     }
   };
 
-  const loadPipelinePrompts = async (token) => {
-    try {
-      const response = await fetch('/api/pipeline/prompts', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const prompts = data.prompts;
-        
-        // Set the actual prompts from the database
-        if (prompts.image_analysis) {
-          setVisualAnalysisPrompt(prompts.image_analysis);
-        }
-        if (prompts.offering_extraction) {
-          setExtractionPrompt(prompts.offering_extraction);
-        }
-        
-        console.log('Loaded pipeline prompts:', prompts);
-      } else {
-        console.error('Failed to load pipeline prompts');
-        // Fallback to empty prompts so user can enter their own
-        setVisualAnalysisPrompt('');
-        setExtractionPrompt('');
-      }
-    } catch (err) {
-      console.error('Error loading pipeline prompts:', err);
-      // Fallback to empty prompts so user can enter their own
-      setVisualAnalysisPrompt('');
-      setExtractionPrompt('');
-    }
-  };
 
   const loadCachedDecksCount = async () => {
     try {
@@ -656,8 +620,7 @@ const DojoManagement = () => {
         },
         body: JSON.stringify({
           deck_ids: deckIds,
-          vision_model: selectedVisionModel,
-          analysis_prompt: visualAnalysisPrompt
+          vision_model: selectedVisionModel
         }),
         signal: controller.signal
       });
@@ -979,7 +942,6 @@ const DojoManagement = () => {
           experiment_name: experimentName,
           deck_ids: deckIds,
           text_model: selectedTextModel,
-          extraction_prompt: extractionPrompt,
           use_cached_visual: true
         })
       });
@@ -1028,7 +990,6 @@ const DojoManagement = () => {
           experiment_name: experimentName,
           deck_ids: deckIds,
           text_model: selectedTextModel,
-          extraction_prompt: extractionPrompt,
           use_cached_visual: true
         })
       });
@@ -1348,7 +1309,6 @@ const DojoManagement = () => {
             experiment_name: experimentName,
             deck_ids: deckIds,
             text_model: selectedTextModel || 'gemma3:27b',
-            extraction_prompt: extractionPrompt || 'Extract company offering',
             use_cached_visual: true
           })
         });
@@ -1855,8 +1815,8 @@ const DojoManagement = () => {
               </Box>
             </Paper>
 
-            {/* Step 2: Visual Analysis (greyed out until step 1 is complete) */}
-            <Paper sx={{ p: 3, mb: 3, bgcolor: extractionSample.length === 0 ? 'grey.100' : 'grey.50', opacity: extractionSample.length === 0 ? 0.6 : 1 }}>
+            {/* Step 2: Visual Analysis */}
+            <Paper sx={{ p: 3, mb: 3, bgcolor: 'grey.50' }}>
               <Typography variant="h6" gutterBottom>
                 Step 2: Visual Analysis Manager
               </Typography>
@@ -1890,23 +1850,19 @@ const DojoManagement = () => {
                     </Select>
                   </FormControl>
                   
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={4}
-                    label="Visual Analysis Prompt"
-                    value={visualAnalysisPrompt}
-                    onChange={(e) => setVisualAnalysisPrompt(e.target.value)}
-                    placeholder={t('prompts.loadingPrompt')}
-                    disabled={extractionSample.length === 0}
-                  />
+                  {/* Sanity check for sample selection */}
+                  {extractionSample.length === 0 && (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                      Please create a sample in Step 1 before running visual analysis.
+                    </Alert>
+                  )}
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <Button 
                       variant="contained"
                       onClick={runVisualAnalysisBatch}
-                      disabled={extractionSample.length === 0 || !selectedVisionModel || !visualAnalysisPrompt || visualAnalysisStatus === 'running'}
+                      disabled={extractionSample.length === 0 || !selectedVisionModel || visualAnalysisStatus === 'running'}
                       startIcon={visualAnalysisStatus === 'running' ? <CircularProgress size={16} /> : <Assessment />}
                     >
                       {visualAnalysisStatus === 'running' ? 'Analyzing...' : 'Run Visual Analysis'}
@@ -1972,8 +1928,8 @@ const DojoManagement = () => {
               </Grid>
             </Paper>
             
-            {/* Step 3: Run Obligatory Extractions (greyed out until step 2 is complete) */}
-            <Paper sx={{ p: 3, mb: 3, bgcolor: !isVisualAnalysisCompleted() ? 'grey.100' : 'grey.50', opacity: !isVisualAnalysisCompleted() ? 0.6 : 1 }}>
+            {/* Step 3: Run Obligatory Extractions */}
+            <Paper sx={{ p: 3, mb: 3, bgcolor: 'grey.50' }}>
               <Typography variant="h6" gutterBottom>
                 Step 3: Run Obligatory Extractions
               </Typography>
@@ -1990,7 +1946,7 @@ const DojoManagement = () => {
                       value={selectedTextModel}
                       onChange={(e) => setSelectedTextModel(e.target.value)}
                       label="Text Model"
-                      disabled={!isVisualAnalysisCompleted() || modelsLoading || gpuStatus === 'error'}
+                      disabled={modelsLoading || gpuStatus === 'error'}
                     >
                       {modelsLoading ? (
                         <MenuItem disabled>
@@ -2011,16 +1967,12 @@ const DojoManagement = () => {
                     </Select>
                   </FormControl>
                   
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={4}
-                    label="Extraction Prompt"
-                    value={extractionPrompt}
-                    onChange={(e) => setExtractionPrompt(e.target.value)}
-                    placeholder={t('prompts.loadingPrompt')}
-                    disabled={!isVisualAnalysisCompleted()}
-                  />
+                  {/* Sanity check for visual analysis */}
+                  {!isVisualAnalysisCompleted() && (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                      Please complete visual analysis in Step 2 before running extraction pipeline.
+                    </Alert>
+                  )}
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -2028,7 +1980,7 @@ const DojoManagement = () => {
                       variant="contained" 
                       color="secondary"
                       onClick={runCompleteExtractionPipeline}
-                      disabled={!isVisualAnalysisCompleted() || !selectedTextModel || !extractionPrompt}
+                      disabled={!isVisualAnalysisCompleted() || !selectedTextModel}
                       startIcon={<DataUsage />}
                     >
                       Run Complete Extraction Pipeline
@@ -2056,7 +2008,7 @@ const DojoManagement = () => {
                         <Checkbox
                           checked={runStep3AfterStep2}
                           onChange={(e) => setRunStep3AfterStep2(e.target.checked)}
-                          disabled={!selectedTextModel || !extractionPrompt}
+                          disabled={!selectedTextModel}
                         />
                       }
                       label="Run after Step 2 is completed"
@@ -2113,6 +2065,13 @@ const DojoManagement = () => {
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {/* Sanity check for step 3 completion */}
+                    {step3Progress.status !== 'completed' && (
+                      <Alert severity="error" sx={{ mb: 2 }}>
+                        Please complete Step 3 (extraction pipeline) before running template processing.
+                      </Alert>
+                    )}
+                    
                     <Button
                       variant="contained"
                       onClick={runTemplateProcessing}
