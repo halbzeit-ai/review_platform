@@ -193,16 +193,60 @@ async def get_deck_analysis(
         if not analysis_found:
             logger.info(f"Checking visual_analysis_cache for deck ID {deck_id}")
             
-            # Query the visual_analysis_cache table
-            cache_query = text("""
-            SELECT analysis_result_json, vision_model_used, created_at
-            FROM visual_analysis_cache 
-            WHERE pitch_deck_id = :deck_id
-            ORDER BY created_at DESC
-            LIMIT 1
-            """)
-            
-            cache_result = db.execute(cache_query, {"deck_id": deck_id}).fetchone()
+            # For project_documents (new system), find the corresponding pitch_deck_id by filename match
+            if source_table == 'project_documents':
+                logger.info(f"Project document deck {deck_id}, finding matching pitch_deck by filename")
+                
+                # Get the filename from project_documents
+                filename_query = text("""
+                    SELECT file_name FROM project_documents 
+                    WHERE id = :deck_id AND document_type = 'pitch_deck' AND is_active = TRUE
+                """)
+                filename_result = db.execute(filename_query, {"deck_id": deck_id}).fetchone()
+                
+                if filename_result:
+                    filename = filename_result[0]
+                    logger.info(f"Looking for pitch_deck with filename: {filename}")
+                    
+                    # Find matching pitch_deck by filename
+                    pitch_deck_query = text("""
+                        SELECT id FROM pitch_decks 
+                        WHERE file_name = :filename AND data_source = 'dojo'
+                        ORDER BY created_at DESC LIMIT 1
+                    """)
+                    pitch_deck_result = db.execute(pitch_deck_query, {"filename": filename}).fetchone()
+                    
+                    if pitch_deck_result:
+                        actual_pitch_deck_id = pitch_deck_result[0]
+                        logger.info(f"Found matching pitch_deck ID {actual_pitch_deck_id} for project document {deck_id}")
+                        
+                        # Query visual_analysis_cache with the actual pitch_deck_id
+                        cache_query = text("""
+                        SELECT analysis_result_json, vision_model_used, created_at
+                        FROM visual_analysis_cache 
+                        WHERE pitch_deck_id = :pitch_deck_id
+                        ORDER BY created_at DESC
+                        LIMIT 1
+                        """)
+                        
+                        cache_result = db.execute(cache_query, {"pitch_deck_id": actual_pitch_deck_id}).fetchone()
+                    else:
+                        logger.warning(f"No matching pitch_deck found for filename: {filename}")
+                        cache_result = None
+                else:
+                    logger.warning(f"Could not get filename for project document {deck_id}")
+                    cache_result = None
+            else:
+                # For legacy pitch_decks table, use deck_id directly
+                cache_query = text("""
+                SELECT analysis_result_json, vision_model_used, created_at
+                FROM visual_analysis_cache 
+                WHERE pitch_deck_id = :deck_id
+                ORDER BY created_at DESC
+                LIMIT 1
+                """)
+                
+                cache_result = db.execute(cache_query, {"deck_id": deck_id}).fetchone()
             
             if cache_result:
                 try:
