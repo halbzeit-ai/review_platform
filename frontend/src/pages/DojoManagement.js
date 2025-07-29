@@ -645,25 +645,24 @@ const DojoManagement = () => {
           if (progressData && progressData.step2) {
             const step2Status = progressData.step2.status;
             
-            // Don't duplicate the state setting - fetchCurrentDeckProgress already handles it
-            
             if (step2Status === 'completed') {
               clearInterval(pollInterval);
               setVisualAnalysisStatus('completed');
+              setCurrentAnalysisController(null);
               // Do a final cache check to get accurate numbers
               await checkAnalysisProgress();
             } else if (step2Status === 'error') {
               clearInterval(pollInterval);
               setVisualAnalysisStatus('error');
+              setCurrentAnalysisController(null);
             }
           } else {
             // Fallback to cache checking if backend progress is not available
             const progress = await checkAnalysisProgress();
-            if (progress && (progress.completed === progress.total || visualAnalysisStatus === 'cancelled')) {
+            if (progress && progress.completed === progress.total) {
               clearInterval(pollInterval);
-              if (progress.completed === progress.total) {
-                setVisualAnalysisStatus('completed');
-              }
+              setVisualAnalysisStatus('completed');
+              setCurrentAnalysisController(null);
             }
           }
         }, 2000); // Check every 2 seconds for more responsive updates
@@ -672,8 +671,14 @@ const DojoManagement = () => {
         controller.pollInterval = pollInterval;
       } else {
         setVisualAnalysisStatus('error');
-        const errorData = await response.json();
-        setError(errorData.detail || 'Failed to run visual analysis');
+        let errorMessage = 'Failed to run visual analysis';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorMessage;
+        } catch (parseError) {
+          console.error('Error parsing error response:', parseError);
+        }
+        setError(errorMessage);
       }
     } catch (err) {
       if (err.name === 'AbortError') {
@@ -686,7 +691,7 @@ const DojoManagement = () => {
         setError('Failed to run visual analysis');
       }
     } finally {
-      // Clear polling interval if it exists
+      // Clear polling interval if it exists - use current state
       if (currentAnalysisController && currentAnalysisController.pollInterval) {
         clearInterval(currentAnalysisController.pollInterval);
       }
@@ -840,11 +845,16 @@ const DojoManagement = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setExtractionSample(data.sample);
         
         // Count completed vs total
         const completed = data.sample.filter(deck => deck.has_visual_cache).length;
         const total = data.sample.length;
+        
+        // Only update sample if there are actual changes to avoid unnecessary re-renders
+        const currentCompleted = extractionSample.filter(deck => deck.has_visual_cache).length;
+        if (completed !== currentCompleted) {
+          setExtractionSample(data.sample);
+        }
         
         // Calculate timing if a new deck was completed
         const currentTime = Date.now();
