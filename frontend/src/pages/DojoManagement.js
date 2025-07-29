@@ -1976,6 +1976,28 @@ const DojoManagement = () => {
                   </Box>
                 </Grid>
               </Grid>
+              
+              {/* Progress Bar for Visual Analysis */}
+              {(visualAnalysisStatus === 'running' || visualAnalysisStatus === 'processing') && analysisProgress.total > 0 && (
+                <Box sx={{ mt: 3 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Processing visual analysis...
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {analysisProgress.completed} / {analysisProgress.total} documents
+                    </Typography>
+                  </Box>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={analysisProgress.total > 0 ? (analysisProgress.completed / analysisProgress.total) * 100 : 0}
+                    sx={{ height: 8, borderRadius: 4 }}
+                  />
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                    {analysisProgress.total > 0 ? Math.round((analysisProgress.completed / analysisProgress.total) * 100) : 0}% complete
+                  </Typography>
+                </Box>
+              )}
             </Paper>
             
             {/* Step 3: Run Obligatory Extractions */}
