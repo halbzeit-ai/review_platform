@@ -765,6 +765,33 @@ async def get_project_decks(
         
         decks = []
         for row in decks_results:
+            # Check if visual analysis is completed by looking for slide images
+            visual_analysis_completed = False
+            company_id = row[2]
+            file_name = row[3]
+            
+            if company_id and file_name:
+                try:
+                    deck_name = os.path.splitext(file_name)[0]
+                    # Check dojo directory structure for slide images
+                    dojo_analysis_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis")
+                    if os.path.exists(dojo_analysis_path):
+                        # Create filesystem-safe version (spaces -> underscores)
+                        filesystem_deck_name = deck_name.replace(' ', '_')
+                        
+                        # Look for directories containing the deck name
+                        for dir_name in os.listdir(dojo_analysis_path):
+                            if filesystem_deck_name in dir_name or deck_name in dir_name:
+                                potential_dir = os.path.join(dojo_analysis_path, dir_name)
+                                if os.path.exists(potential_dir):
+                                    # Check for slide images
+                                    slide_files = [f for f in os.listdir(potential_dir) if f.startswith('slide_') and f.endswith(('.jpg', '.png'))]
+                                    if slide_files:
+                                        visual_analysis_completed = True
+                                        break
+                except Exception as e:
+                    logger.warning(f"Could not check visual analysis for document {row[0]}: {e}")
+            
             deck_data = {
                 "id": row[0],
                 "user_id": row[1],
@@ -779,7 +806,8 @@ async def get_project_decks(
                 "created_at": row[10],
                 "user_email": row[11],
                 "user_first_name": row[12],
-                "user_last_name": row[13]
+                "user_last_name": row[13],
+                "visual_analysis_completed": visual_analysis_completed
             }
             decks.append(deck_data)
         
