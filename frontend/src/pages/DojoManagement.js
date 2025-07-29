@@ -218,6 +218,14 @@ const DojoManagement = () => {
     };
   }, [step3Progress.status, step4Progress.status]);
 
+  // Auto-run Step 4 (template processing) after Step 3 completes if checkbox is enabled
+  useEffect(() => {
+    if (step3Progress.status === 'completed' && runStep4AfterStep3 && selectedTemplate && templateProcessingStatus !== 'processing') {
+      console.log('Auto-triggering Step 4 (template processing) after Step 3 completion');
+      runTemplateProcessing();
+    }
+  }, [step3Progress.status, runStep4AfterStep3, selectedTemplate, templateProcessingStatus]);
+
   // Load cached decks count when checkbox is checked
   useEffect(() => {
     if (selectFromCached) {
@@ -2026,7 +2034,7 @@ const DojoManagement = () => {
             </Paper>
             
             {/* Step 4: Template-Based Processing (greyed out until step 3 is complete) */}
-            <Paper sx={{ p: 3, mb: 3, bgcolor: (!lastExperimentId && !isVisualAnalysisCompleted()) ? 'grey.100' : 'grey.50', opacity: (!lastExperimentId && !isVisualAnalysisCompleted()) ? 0.6 : 1 }}>
+            <Paper sx={{ p: 3, mb: 3, bgcolor: 'grey.50', opacity: 1 }}> {/* Always enabled for full pipeline configuration */}
               <Typography variant="h6" gutterBottom>
                 Step 4: Template-Based Processing
               </Typography>
@@ -2043,7 +2051,7 @@ const DojoManagement = () => {
                       value={selectedTemplate || ''}
                       onChange={(e) => setSelectedTemplate(e.target.value)}
                       label="Healthcare Template"
-                      disabled={!lastExperimentId && !isVisualAnalysisCompleted()}
+                      disabled={false} // Temporarily enabled for full pipeline configuration
                     >
                       {templatesLoading ? (
                         <MenuItem disabled>
@@ -2067,7 +2075,7 @@ const DojoManagement = () => {
                     <Button
                       variant="contained"
                       onClick={runTemplateProcessing}
-                      disabled={(!lastExperimentId && !isVisualAnalysisCompleted()) || !selectedTemplate || templateProcessingStatus === 'processing'}
+                      disabled={!selectedTemplate || templateProcessingStatus === 'processing'} // Enabled when template is selected and not processing
                       startIcon={templateProcessingStatus === 'processing' ? <CircularProgress size={16} /> : <Assessment />}
                       fullWidth
                       sx={{ height: 56 }}
@@ -2098,7 +2106,7 @@ const DojoManagement = () => {
                         <Checkbox
                           checked={runStep4AfterStep3}
                           onChange={(e) => setRunStep4AfterStep3(e.target.checked)}
-                          disabled={(!lastExperimentId && !isVisualAnalysisCompleted()) || !selectedTemplate}
+                          disabled={!selectedTemplate} // Enabled when template is selected
                         />
                       }
                       label="Run after Step 3 is completed"
