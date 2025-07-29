@@ -777,15 +777,27 @@ const DojoManagement = () => {
         setCurrentStep3Deck(progressData.step3?.current_deck || '');
         setCurrentStep4Deck(progressData.step4?.current_deck || '');
         
-        // Update step progress statuses
+        // Update step progress statuses and counts
         setStep3Progress(prev => ({ 
           ...prev, 
+          completed: progressData.step3?.progress || 0,
+          total: progressData.step3?.total || 0,
           status: progressData.step3?.status || 'idle' 
         }));
         setStep4Progress(prev => ({ 
           ...prev, 
+          completed: progressData.step4?.progress || 0,
+          total: progressData.step4?.total || 0,
           status: progressData.step4?.status || 'idle' 
         }));
+        
+        // Update visual analysis progress for step 2
+        setAnalysisProgress(prev => ({
+          ...prev,
+          completed: progressData.step2?.progress || 0,
+          total: progressData.step2?.total || 0
+        }));
+        setVisualAnalysisStatus(progressData.step2?.status || 'idle');
         
         return progressData;
       } else {
@@ -925,6 +937,11 @@ const DojoManagement = () => {
       const deckIds = extractionSample.map(deck => deck.id);
       const experimentName = `test_${Date.now()}`;
       
+      // Initialize step 3 progress
+      setStep3Progress({ completed: 0, total: deckIds.length, status: 'processing' });
+      setCurrentStep3Deck('Starting offering extraction...');
+      setError(null);
+      
       const response = await fetch('/api/dojo/extraction-test/run-offering-extraction', {
         method: 'POST',
         headers: {
@@ -943,13 +960,19 @@ const DojoManagement = () => {
       if (response.ok) {
         const data = await response.json();
         console.log('Extraction test completed:', data);
+        setStep3Progress(prev => ({ ...prev, status: 'completed', completed: deckIds.length }));
+        setCurrentStep3Deck('Offering extraction completed');
         loadExperiments();
       } else {
         const errorData = await response.json();
+        setStep3Progress(prev => ({ ...prev, status: 'error', completed: 0 }));
+        setCurrentStep3Deck('Extraction failed');
         setError(errorData.detail || 'Failed to run extraction test');
       }
     } catch (err) {
       console.error('Error running extraction test:', err);
+      setStep3Progress(prev => ({ ...prev, status: 'error', completed: 0 }));
+      setCurrentStep3Deck('Processing error occurred');
       setError('Failed to run extraction test');
     }
   };
@@ -961,6 +984,11 @@ const DojoManagement = () => {
 
       const deckIds = extractionSample.map(deck => deck.id);
       const experimentName = `pipeline_${Date.now()}`;
+      
+      // Initialize step 3 progress
+      setStep3Progress({ completed: 0, total: deckIds.length, status: 'processing' });
+      setCurrentStep3Deck('Starting complete extraction pipeline...');
+      setError(null);
       
       // Step 3: Run offering extraction
       const offeringResponse = await fetch('/api/dojo/extraction-test/run-offering-extraction', {
@@ -986,6 +1014,12 @@ const DojoManagement = () => {
       const offeringData = await offeringResponse.json();
       const experimentId = offeringData.experiment_id;
       console.log('Step 3 completed: Offering extraction', offeringData);
+      
+      // Update step 3 as completed, initialize step 4
+      setStep3Progress({ completed: deckIds.length, total: deckIds.length, status: 'completed' });
+      setCurrentStep3Deck('Offering extraction completed');
+      setStep4Progress({ completed: 0, total: deckIds.length, status: 'processing' });
+      setCurrentStep4Deck('Starting classification...');
 
       // Step 4: Run classification on the experiment
       const classificationResponse = await fetch('/api/dojo/extraction-test/run-classification', {
@@ -1362,11 +1396,18 @@ const DojoManagement = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        setStep4Progress(prev => ({ ...prev, status: 'error', completed: 0 }));
+        setCurrentStep4Deck('Template processing failed');
         throw new Error(errorData.detail || 'Failed to run template processing');
       }
 
       const result = await response.json();
       console.log('Template processing completed:', result);
+      
+      // Update step 4 as completed
+      const deckCount = extractionSample.length;
+      setStep4Progress(prev => ({ ...prev, status: 'completed', completed: deckCount }));
+      setCurrentStep4Deck('Template processing completed');
       
       setTemplateProcessingStatus('completed');
       
@@ -1375,6 +1416,8 @@ const DojoManagement = () => {
 
     } catch (err) {
       console.error('Error running template processing:', err);
+      setStep4Progress(prev => ({ ...prev, status: 'error', completed: 0 }));
+      setCurrentStep4Deck('Processing error occurred');
       setError(err.message || 'Failed to run template processing');
       setTemplateProcessingStatus('error');
     }
