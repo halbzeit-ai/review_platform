@@ -160,65 +160,48 @@ async def get_deck_analysis(
                 except Exception as e:
                     logger.warning(f"Could not load results from database path {results_full_path}: {e}")
         
-        # If not found via database path, look in dojo structure
+        # If not found via database path, look in dojo results directory
         if not analysis_found:
-            deck_name = os.path.splitext(os.path.basename(file_path))[0]
-            filesystem_deck_name = deck_name.replace(' ', '_')
+            logger.info(f"Searching for dojo results for deck ID {deck_id}")
             
-            # Look in dojo analysis directory for matching folders
-            dojo_analysis_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis")
-            logger.info(f"Searching for analysis results in dojo structure: {dojo_analysis_path}")
+            # Check /mnt/CPU-GPU/results/ for job_[deck_id]_*_results.json files
+            results_dir = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "results")
+            logger.info(f"Checking results directory: {results_dir}")
             
-            if os.path.exists(dojo_analysis_path):
-                logger.info(f"Dojo analysis path exists, listing directories...")
-                available_dirs = os.listdir(dojo_analysis_path)
-                logger.info(f"Available directories: {available_dirs}")
-                
-                for dir_name in available_dirs:
-                    logger.info(f"Checking directory: {dir_name}")
-                    logger.info(f"  Contains deck_name '{deck_name}': {deck_name in dir_name}")
-                    logger.info(f"  Contains filesystem_deck_name '{filesystem_deck_name}': {filesystem_deck_name in dir_name}")
+            if os.path.exists(results_dir):
+                try:
+                    result_files = os.listdir(results_dir)
+                    logger.info(f"Found {len(result_files)} result files")
                     
-                    if deck_name in dir_name or filesystem_deck_name in dir_name:
-                        logger.info(f"Directory {dir_name} matches deck name, checking for analysis files...")
-                        dir_path = os.path.join(dojo_analysis_path, dir_name)
+                    # Look for files matching job_{deck_id}_*_results.json pattern
+                    job_pattern = f"job_{deck_id}_"
+                    matching_files = [f for f in result_files if f.startswith(job_pattern) and f.endswith('_results.json')]
+                    logger.info(f"Files matching pattern '{job_pattern}*_results.json': {matching_files}")
+                    
+                    if matching_files:
+                        # Use the most recent file (sort by timestamp in filename)
+                        matching_files.sort(reverse=True)  # Most recent first
+                        results_file = matching_files[0]
+                        results_file_path = os.path.join(results_dir, results_file)
+                        logger.info(f"Using most recent results file: {results_file_path}")
                         
-                        # Check what files are in this directory
                         try:
-                            dir_contents = os.listdir(dir_path)
-                            logger.info(f"Directory contents: {dir_contents}")
+                            with open(results_file_path, 'r') as f:
+                                results_data = json.load(f)
+                                analysis_found = True
+                                logger.info(f"✅ Found dojo results at: {results_file_path}")
                         except Exception as e:
-                            logger.error(f"Could not list directory {dir_path}: {e}")
-                            continue
-                        
-                        # Try multiple possible analysis file names
-                        possible_analysis_files = [
-                            "analysis_results.json",
-                            "results.json", 
-                            "analysis.json",
-                            "deck_analysis.json"
-                        ]
-                        
-                        for analysis_filename in possible_analysis_files:
-                            potential_results_path = os.path.join(dir_path, analysis_filename)
-                            logger.info(f"Checking for results file: {potential_results_path}")
-                            
-                            if os.path.exists(potential_results_path):
-                                try:
-                                    with open(potential_results_path, 'r') as f:
-                                        results_data = json.load(f)
-                                        analysis_found = True
-                                        logger.info(f"✅ Found analysis results at: {potential_results_path}")
-                                        break
-                                except Exception as e:
-                                    logger.warning(f"Could not load results from {potential_results_path}: {e}")
-                        
-                        if analysis_found:
-                            break
+                            logger.warning(f"Could not load dojo results from {results_file_path}: {e}")
                     else:
-                        logger.info(f"Directory {dir_name} does not match deck name")
+                        logger.warning(f"No result files found matching pattern 'job_{deck_id}_*_results.json'")
+                        # Show some example files for debugging
+                        example_files = result_files[:5] if result_files else []
+                        logger.info(f"Example result files: {example_files}")
+                        
+                except Exception as e:
+                    logger.error(f"Error listing results directory {results_dir}: {e}")
             else:
-                logger.error(f"Dojo analysis path does not exist: {dojo_analysis_path}")
+                logger.error(f"Results directory does not exist: {results_dir}")
         
         # If still no results found, create minimal results from slide images
         if not analysis_found:
@@ -285,8 +268,53 @@ async def get_deck_analysis(
                 detail="Analysis results not found for this deck"
             )
         
-        # Extract visual analysis results
+        # Extract visual analysis results - handle different formats
         visual_results = results_data.get("visual_analysis_results", [])
+        
+        # If no visual_analysis_results, check if this is a dojo-style results file
+        if not visual_results and "company_offering" in results_data:
+            logger.info("Found dojo-style results file, creating visual analysis from slide images")
+            
+            # For dojo results, we need to create visual analysis entries from slide images
+            deck_name = os.path.splitext(os.path.basename(file_path))[0]
+            filesystem_deck_name = deck_name.replace(' ', '_')
+            
+            # Look for slide images in dojo structure
+            dojo_analysis_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis")
+            
+            if os.path.exists(dojo_analysis_path):
+                for dir_name in os.listdir(dojo_analysis_path):
+                    if deck_name in dir_name or filesystem_deck_name in dir_name:
+                        dir_path = os.path.join(dojo_analysis_path, dir_name)
+                        if os.path.exists(dir_path):
+                            slide_files = sorted([f for f in os.listdir(dir_path) if f.startswith('slide_') and f.endswith(('.jpg', '.png'))])
+                            
+                            if slide_files:
+                                logger.info(f"Creating visual analysis from {len(slide_files)} slide images")
+                                
+                                # Extract company offering for slide descriptions
+                                company_offering = results_data.get("company_offering", "")
+                                
+                                # Create visual analysis entries
+                                visual_results = []
+                                for i, slide_file in enumerate(slide_files, 1):
+                                    slide_path = os.path.join(dir_path, slide_file)
+                                    
+                                    # Create meaningful description based on company offering and slide number
+                                    if i == 1:
+                                        description = f"**Company Overview**\n\n{company_offering[:300]}..." if len(company_offering) > 300 else company_offering
+                                    else:
+                                        description = f"**Slide {i} - Pitch Deck Content**\n\nThis slide contains additional details about the company's business model, market opportunity, or technical approach.\n\n*Full analysis available in company offering.*"
+                                    
+                                    visual_results.append({
+                                        "page_number": i,
+                                        "slide_image_path": slide_path,
+                                        "description": description,
+                                        "deck_name": deck_name
+                                    })
+                                
+                                logger.info(f"Created {len(visual_results)} visual analysis entries from dojo results")
+                                break
         
         if not visual_results:
             raise HTTPException(
