@@ -2234,36 +2234,15 @@ async def process_visual_analysis_batch(deck_ids: List[int], vision_model: str):
             # Call GPU pipeline for visual analysis batch with progress simulation
             import asyncio
             
-            # Start a background task to simulate progress updates
-            async def simulate_progress():
-                try:
-                    for i, deck_name in enumerate(deck_names):
-                        progress_tracker["step2"]["current_deck"] = f"Analyzing {deck_name}"
-                        progress_tracker["step2"]["progress"] = i
-                        await asyncio.sleep(10)  # Update every 10 seconds
-                        # Stop if processing completed
-                        if progress_tracker["step2"]["status"] != "processing":
-                            break
-                except Exception as e:
-                    logger.error(f"Error in progress simulation: {e}")
+            # Note: Progress will only update when GPU batch processing completes and results are cached
+            # Individual deck progress is not available during GPU batch processing
             
-            # Start progress simulation task
-            progress_task = asyncio.create_task(simulate_progress())
-            
-            try:
-                result = await gpu_http_client.run_visual_analysis_for_extraction_testing(
-                    deck_ids=deck_ids,
-                    vision_model=vision_model,
-                    analysis_prompt=analysis_prompt,
-                    file_paths=file_paths
-                )
-            finally:
-                # Cancel progress simulation
-                progress_task.cancel()
-                try:
-                    await progress_task
-                except asyncio.CancelledError:
-                    pass
+            result = await gpu_http_client.run_visual_analysis_for_extraction_testing(
+                deck_ids=deck_ids,
+                vision_model=vision_model,
+                analysis_prompt=analysis_prompt,
+                file_paths=file_paths
+            )
             
             if result.get("success"):
                 logger.info("GPU visual analysis batch completed successfully")

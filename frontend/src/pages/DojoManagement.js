@@ -1977,24 +1977,23 @@ const DojoManagement = () => {
                 </Grid>
               </Grid>
               
-              {/* Progress Bar for Visual Analysis */}
-              {(visualAnalysisStatus === 'running' || visualAnalysisStatus === 'processing') && analysisProgress.total > 0 && (
+              {/* Progress Status for Visual Analysis */}
+              {(visualAnalysisStatus === 'running' || visualAnalysisStatus === 'processing') && (
                 <Box sx={{ mt: 3 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                     <Typography variant="body2" color="text.secondary">
-                      Processing visual analysis...
+                      Processing visual analysis on GPU...
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {analysisProgress.completed} / {analysisProgress.total} documents
+                      {analysisProgress.total > 0 ? `${analysisProgress.total} documents` : ''}
                     </Typography>
                   </Box>
                   <LinearProgress 
-                    variant="determinate" 
-                    value={analysisProgress.total > 0 ? (analysisProgress.completed / analysisProgress.total) * 100 : 0}
+                    variant="indeterminate"
                     sx={{ height: 8, borderRadius: 4 }}
                   />
                   <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                    {analysisProgress.total > 0 ? Math.round((analysisProgress.completed / analysisProgress.total) * 100) : 0}% complete
+                    GPU is processing all documents in batch - progress will update when caching results
                   </Typography>
                 </Box>
               )}
