@@ -407,7 +407,7 @@ class ExtractionSampleRequest(BaseModel):
 class VisualAnalysisRequest(BaseModel):
     deck_ids: List[int]
     vision_model: str
-    analysis_prompt: str
+    analysis_prompt: Optional[str] = None  # Optional: will be fetched from database if not provided
 
 class ExtractionTestRequest(BaseModel):
     experiment_name: str
@@ -619,6 +619,20 @@ async def run_visual_analysis_batch(
                 detail="Only GPs can run visual analysis"
             )
         
+        # Get analysis prompt from database if not provided
+        analysis_prompt = request.analysis_prompt
+        if not analysis_prompt:
+            prompt_result = db.execute(text(
+                "SELECT prompt_text FROM pipeline_prompts WHERE stage_name = 'image_analysis' AND is_active = TRUE LIMIT 1"
+            )).fetchone()
+            
+            if prompt_result:
+                analysis_prompt = prompt_result[0]
+            else:
+                # Fallback to default prompt if not found in database
+                analysis_prompt = "Describe this image and make sure to include anything notable about it (include text you see in the image):"
+                logger.warning("No image_analysis prompt found in database, using default")
+        
         # Validate deck IDs exist and are dojo files
         decks = db.query(PitchDeck).filter(
             PitchDeck.id.in_(request.deck_ids),
@@ -638,7 +652,7 @@ async def run_visual_analysis_batch(
         for deck in decks:
             cache_exists = db.execute(text(
                 "SELECT id FROM visual_analysis_cache WHERE pitch_deck_id = :deck_id AND vision_model_used = :model AND prompt_used = :prompt"
-            ), {"deck_id": deck.id, "model": request.vision_model, "prompt": request.analysis_prompt}).scalar()
+            ), {"deck_id": deck.id, "model": request.vision_model, "prompt": analysis_prompt}).scalar()
             
             if cache_exists:
                 cached_count += 1
@@ -651,7 +665,7 @@ async def run_visual_analysis_batch(
                 process_visual_analysis_batch,
                 [deck.id for deck in new_analysis_needed],
                 request.vision_model,
-                request.analysis_prompt,
+                analysis_prompt,
                 db
             )
         

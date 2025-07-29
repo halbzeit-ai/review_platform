@@ -625,8 +625,7 @@ const DojoManagement = () => {
         },
         body: JSON.stringify({
           deck_ids: deckIds,
-          vision_model: selectedVisionModel,
-          analysis_prompt: "Analyze this pitch deck. Describe the company's business model, target market, value proposition, financial projections, team background, and key metrics. Focus on extracting structured information that can be used for investment analysis."
+          vision_model: selectedVisionModel
         }),
         signal: controller.signal
       });
