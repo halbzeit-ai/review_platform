@@ -160,48 +160,107 @@ async def get_deck_analysis(
                 except Exception as e:
                     logger.warning(f"Could not load results from database path {results_full_path}: {e}")
         
-        # If not found via database path, look in dojo results directory
+        # If not found via database path, check visual_analysis_cache table for dojo results
         if not analysis_found:
-            logger.info(f"Searching for dojo results for deck ID {deck_id}")
+            logger.info(f"Checking visual_analysis_cache for deck ID {deck_id}")
             
-            # Check /mnt/CPU-GPU/results/ for job_[deck_id]_*_results.json files
+            # Query the visual_analysis_cache table
+            cache_query = text("""
+            SELECT analysis_result_json, vision_model_used, created_at
+            FROM visual_analysis_cache 
+            WHERE pitch_deck_id = :deck_id
+            ORDER BY created_at DESC
+            LIMIT 1
+            """)
+            
+            cache_result = db.execute(cache_query, {"deck_id": deck_id}).fetchone()
+            
+            if cache_result:
+                try:
+                    cached_analysis_json = cache_result[0]
+                    vision_model = cache_result[1]
+                    created_at = cache_result[2]
+                    
+                    logger.info(f"Found cached visual analysis for deck {deck_id}, model: {vision_model}")
+                    
+                    # Parse the cached analysis JSON
+                    if isinstance(cached_analysis_json, str):
+                        cached_analysis = json.loads(cached_analysis_json)
+                    else:
+                        cached_analysis = cached_analysis_json
+                    
+                    # Create results_data structure from cached analysis
+                    results_data = {
+                        "visual_analysis_results": cached_analysis.get("visual_analysis_results", cached_analysis if isinstance(cached_analysis, list) else []),
+                        "processing_metadata": {
+                            "source": "visual_analysis_cache",
+                            "vision_model": vision_model,
+                            "created_at": str(created_at)
+                        }
+                    }
+                    
+                    analysis_found = True
+                    logger.info(f"✅ Found visual analysis in cache for deck {deck_id}")
+                    
+                except Exception as e:
+                    logger.warning(f"Could not parse cached visual analysis for deck {deck_id}: {e}")
+            else:
+                logger.info(f"No cached visual analysis found for deck {deck_id}")
+                
+                # As a fallback, check if there's any company offering data from experiments
+                logger.info(f"Checking for company offering data in projects table")
+                
+                # Try to find the company offering from the projects table
+                offering_query = text("""
+                SELECT company_offering, project_metadata
+                FROM projects p
+                JOIN project_documents pd ON p.id = pd.project_id
+                WHERE pd.id = :deck_id AND pd.document_type = 'pitch_deck' AND pd.is_active = TRUE
+                """)
+                
+                offering_result = db.execute(offering_query, {"deck_id": deck_id}).fetchone()
+                
+                if offering_result and offering_result[0]:
+                    logger.info(f"Found company offering data for deck {deck_id}")
+                    company_offering = offering_result[0]
+                    project_metadata = offering_result[1] if offering_result[1] else {}
+                    
+                    # Create results using company offering data
+                    results_data = {
+                        "company_offering": company_offering,
+                        "processing_metadata": {
+                            "source": "projects_table_fallback",
+                            "has_visual_analysis": False
+                        },
+                        "project_metadata": project_metadata
+                    }
+                    
+                    analysis_found = True
+                    logger.info(f"✅ Using company offering data as fallback for deck {deck_id}")
+                else:
+                    logger.warning(f"No company offering data found for deck {deck_id}")
+        
+        # If still not found, look in file-based results as final fallback
+        if not analysis_found:
+            logger.info(f"Final fallback: checking file-based results for deck ID {deck_id}")
+            
             results_dir = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "results")
-            logger.info(f"Checking results directory: {results_dir}")
-            
             if os.path.exists(results_dir):
                 try:
                     result_files = os.listdir(results_dir)
-                    logger.info(f"Found {len(result_files)} result files")
-                    
-                    # Look for files matching job_{deck_id}_*_results.json pattern
                     job_pattern = f"job_{deck_id}_"
                     matching_files = [f for f in result_files if f.startswith(job_pattern) and f.endswith('_results.json')]
-                    logger.info(f"Files matching pattern '{job_pattern}*_results.json': {matching_files}")
                     
                     if matching_files:
-                        # Use the most recent file (sort by timestamp in filename)
-                        matching_files.sort(reverse=True)  # Most recent first
-                        results_file = matching_files[0]
-                        results_file_path = os.path.join(results_dir, results_file)
-                        logger.info(f"Using most recent results file: {results_file_path}")
+                        matching_files.sort(reverse=True)
+                        results_file_path = os.path.join(results_dir, matching_files[0])
                         
-                        try:
-                            with open(results_file_path, 'r') as f:
-                                results_data = json.load(f)
-                                analysis_found = True
-                                logger.info(f"✅ Found dojo results at: {results_file_path}")
-                        except Exception as e:
-                            logger.warning(f"Could not load dojo results from {results_file_path}: {e}")
-                    else:
-                        logger.warning(f"No result files found matching pattern 'job_{deck_id}_*_results.json'")
-                        # Show some example files for debugging
-                        example_files = result_files[:5] if result_files else []
-                        logger.info(f"Example result files: {example_files}")
-                        
+                        with open(results_file_path, 'r') as f:
+                            results_data = json.load(f)
+                            analysis_found = True
+                            logger.info(f"✅ Found file-based results at: {results_file_path}")
                 except Exception as e:
-                    logger.error(f"Error listing results directory {results_dir}: {e}")
-            else:
-                logger.error(f"Results directory does not exist: {results_dir}")
+                    logger.warning(f"Error checking file-based results: {e}")
         
         # If still no results found, create minimal results from slide images
         if not analysis_found:
