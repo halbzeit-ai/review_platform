@@ -775,22 +775,36 @@ async def get_project_decks(
                     deck_name = os.path.splitext(file_name)[0]
                     # Check dojo directory structure for slide images
                     dojo_analysis_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis")
+                    logger.info(f"Checking visual analysis for document {row[0]}: deck_name='{deck_name}', dojo_path='{dojo_analysis_path}'")
+                    
                     if os.path.exists(dojo_analysis_path):
                         # Create filesystem-safe version (spaces -> underscores)
                         filesystem_deck_name = deck_name.replace(' ', '_')
+                        logger.info(f"Looking for directories containing: '{deck_name}' or '{filesystem_deck_name}'")
                         
-                        # Look for directories containing the deck name
+                        # Look for directories containing the deck name (with UUID prefix)
                         for dir_name in os.listdir(dojo_analysis_path):
-                            if filesystem_deck_name in dir_name or deck_name in dir_name:
+                            # Check if directory name contains the deck name (original or filesystem-safe)
+                            if (deck_name in dir_name or filesystem_deck_name in dir_name):
                                 potential_dir = os.path.join(dojo_analysis_path, dir_name)
+                                logger.info(f"Found matching directory: {dir_name}")
                                 if os.path.exists(potential_dir):
                                     # Check for slide images
                                     slide_files = [f for f in os.listdir(potential_dir) if f.startswith('slide_') and f.endswith(('.jpg', '.png'))]
+                                    logger.info(f"Found {len(slide_files)} slide files in {dir_name}")
                                     if slide_files:
                                         visual_analysis_completed = True
+                                        logger.info(f"Visual analysis completed for document {row[0]}")
                                         break
+                        
+                        if not visual_analysis_completed:
+                            logger.warning(f"No slide images found for document {row[0]} with deck_name '{deck_name}'")
+                    else:
+                        logger.warning(f"Dojo analysis path does not exist: {dojo_analysis_path}")
                 except Exception as e:
-                    logger.warning(f"Could not check visual analysis for document {row[0]}: {e}")
+                    logger.error(f"Error checking visual analysis for document {row[0]}: {e}")
+                    import traceback
+                    logger.error(f"Traceback: {traceback.format_exc()}")
             
             deck_data = {
                 "id": row[0],
