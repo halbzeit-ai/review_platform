@@ -272,11 +272,43 @@ async def get_deck_analysis(
         # Extract visual analysis results
         visual_results = results_data.get("visual_analysis_results", [])
         
+        # If no visual analysis results, create minimal slide entries with slide images but no analysis text
         if not visual_results:
-            logger.warning(f"No visual analysis results found for deck {deck_id}")
+            logger.warning(f"No visual analysis results found for deck {deck_id}, creating slides with images only")
+            
+            # Look for slide images to create basic slide structure
+            deck_name = os.path.splitext(os.path.basename(file_path))[0]
+            filesystem_deck_name = deck_name.replace(' ', '_')
+            dojo_analysis_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis")
+            
+            if os.path.exists(dojo_analysis_path):
+                for dir_name in os.listdir(dojo_analysis_path):
+                    if deck_name in dir_name or filesystem_deck_name in dir_name:
+                        dir_path = os.path.join(dojo_analysis_path, dir_name)
+                        if os.path.exists(dir_path):
+                            slide_files = sorted([f for f in os.listdir(dir_path) if f.startswith('slide_') and f.endswith(('.jpg', '.png'))])
+                            
+                            if slide_files:
+                                logger.info(f"Creating slide structure from {len(slide_files)} slide images")
+                                
+                                # Create visual analysis entries with images but no analysis text
+                                visual_results = []
+                                for i, slide_file in enumerate(slide_files, 1):
+                                    slide_path = os.path.join(dir_path, slide_file)
+                                    visual_results.append({
+                                        "page_number": i,
+                                        "slide_image_path": slide_path,
+                                        "description": "Visual analysis not available for this slide",
+                                        "deck_name": deck_name
+                                    })
+                                
+                                logger.info(f"Created {len(visual_results)} slide entries with images only")
+                                break
+        
+        if not visual_results:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Visual analysis not found for this deck"
+                detail="No slides found for this deck"
             )
         
         # Extract deck name from file path
