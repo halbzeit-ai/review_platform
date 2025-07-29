@@ -140,6 +140,8 @@ const DojoManagement = () => {
   const [selectedVisionModel, setSelectedVisionModel] = useState('');
   const [selectedTextModel, setSelectedTextModel] = useState('');
   const [currentAnalysisController, setCurrentAnalysisController] = useState(null);
+  const [currentStep3Controller, setCurrentStep3Controller] = useState(null);
+  const [currentStep4Controller, setCurrentStep4Controller] = useState(null);
   const [clearingCache, setClearingCache] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState({ completed: 0, total: 0 });
   const [analysisStartTime, setAnalysisStartTime] = useState(null);
@@ -742,7 +744,27 @@ const DojoManagement = () => {
         clearInterval(currentAnalysisController.pollInterval);
       }
       setCurrentAnalysisController(null);
-      setVisualAnalysisStatus('idle');
+      setVisualAnalysisStatus('cancelled');
+    }
+  };
+
+  // Stop Step 3 extraction pipeline
+  const stopStep3Pipeline = () => {
+    if (currentStep3Controller) {
+      currentStep3Controller.abort();
+      setCurrentStep3Controller(null);
+      setStep3Progress(prev => ({ ...prev, status: 'cancelled' }));
+      setCurrentStep3Deck('Extraction pipeline cancelled');
+    }
+  };
+
+  // Stop Step 4 template processing
+  const stopStep4Processing = () => {
+    if (currentStep4Controller) {
+      currentStep4Controller.abort();
+      setCurrentStep4Controller(null);
+      setStep4Progress(prev => ({ ...prev, status: 'cancelled' }));
+      setCurrentStep4Deck('Template processing cancelled');
     }
   };
 
@@ -972,6 +994,10 @@ const DojoManagement = () => {
       const deckIds = extractionSample.map(deck => deck.id);
       const experimentName = `pipeline_${Date.now()}`;
       
+      // Create AbortController for Step 3
+      const controller = new AbortController();
+      setCurrentStep3Controller(controller);
+      
       // Initialize step 3 progress
       setStep3Progress({ completed: 0, total: deckIds.length, status: 'processing' });
       setCurrentStep3Deck('Starting complete extraction pipeline...');
@@ -989,7 +1015,8 @@ const DojoManagement = () => {
           deck_ids: deckIds,
           text_model: selectedTextModel,
           use_cached_visual: true
-        })
+        }),
+        signal: controller.signal
       });
 
       if (!offeringResponse.ok) {
@@ -1016,7 +1043,8 @@ const DojoManagement = () => {
         },
         body: JSON.stringify({
           experiment_id: experimentId
-        })
+        }),
+        signal: controller.signal
       });
 
       if (!classificationResponse.ok) {
@@ -1037,7 +1065,8 @@ const DojoManagement = () => {
         },
         body: JSON.stringify({
           experiment_id: experimentId
-        })
+        }),
+        signal: controller.signal
       });
 
       if (!companyNameResponse.ok) {
@@ -1058,7 +1087,8 @@ const DojoManagement = () => {
         },
         body: JSON.stringify({
           experiment_id: experimentId
-        })
+        }),
+        signal: controller.signal
       });
 
       if (!fundingAmountResponse.ok) {
@@ -1079,7 +1109,8 @@ const DojoManagement = () => {
         },
         body: JSON.stringify({
           experiment_id: experimentId
-        })
+        }),
+        signal: controller.signal
       });
 
       if (!deckDateResponse.ok) {
@@ -1096,8 +1127,23 @@ const DojoManagement = () => {
       
       console.log('Complete extraction pipeline finished successfully');
       
+      // Clear the controller on successful completion
+      setCurrentStep3Controller(null);
+      
     } catch (err) {
+      // Clear the controller on error or cancellation
+      setCurrentStep3Controller(null);
+      
+      if (err.name === 'AbortError') {
+        console.log('Step 3 extraction pipeline was cancelled');
+        setStep3Progress(prev => ({ ...prev, status: 'cancelled' }));
+        setCurrentStep3Deck('Extraction pipeline cancelled');
+        return;
+      }
+      
       console.error('Error running complete extraction pipeline:', err);
+      setStep3Progress(prev => ({ ...prev, status: 'error' }));
+      setCurrentStep3Deck('Extraction pipeline error');
       setError(err.message || 'Failed to run complete extraction pipeline');
     }
   };
@@ -1282,6 +1328,10 @@ const DojoManagement = () => {
     }
 
     try {
+      // Create AbortController for Step 4
+      const controller = new AbortController();
+      setCurrentStep4Controller(controller);
+      
       setTemplateProcessingStatus('processing');
       setError(null);
 
@@ -1308,7 +1358,8 @@ const DojoManagement = () => {
             deck_ids: deckIds,
             text_model: selectedTextModel || 'gemma3:27b',
             use_cached_visual: true
-          })
+          }),
+          signal: controller.signal
         });
 
         if (!offeringResponse.ok) {
@@ -1336,7 +1387,8 @@ const DojoManagement = () => {
           experiment_id: experimentId,
           template_id: selectedTemplate ? parseInt(selectedTemplate, 10) : null,
           generate_thumbnails: true
-        })
+        }),
+        signal: controller.signal
       });
 
       if (!response.ok) {
@@ -1359,7 +1411,21 @@ const DojoManagement = () => {
       // Refresh experiments to show updated results
       await loadExperiments();
 
+      // Clear the controller on successful completion
+      setCurrentStep4Controller(null);
+
     } catch (err) {
+      // Clear the controller on error or cancellation
+      setCurrentStep4Controller(null);
+      
+      if (err.name === 'AbortError') {
+        console.log('Step 4 template processing was cancelled');
+        setStep4Progress(prev => ({ ...prev, status: 'cancelled' }));
+        setCurrentStep4Deck('Template processing cancelled');
+        setTemplateProcessingStatus('cancelled');
+        return;
+      }
+      
       console.error('Error running template processing:', err);
       setStep4Progress(prev => ({ ...prev, status: 'error', completed: 0 }));
       setCurrentStep4Deck('Processing error occurred');
@@ -1987,11 +2053,23 @@ const DojoManagement = () => {
                       variant="contained" 
                       color="secondary"
                       onClick={runCompleteExtractionPipeline}
-                      disabled={!isVisualAnalysisCompleted() || !selectedTextModel}
-                      startIcon={<DataUsage />}
+                      disabled={!isVisualAnalysisCompleted() || !selectedTextModel || step3Progress.status === 'processing'}
+                      startIcon={step3Progress.status === 'processing' ? <CircularProgress size={16} /> : <DataUsage />}
                     >
-                      Run Complete Extraction Pipeline
+                      {step3Progress.status === 'processing' ? 'Processing...' : 'Run Complete Extraction Pipeline'}
                     </Button>
+
+                    {step3Progress.status === 'processing' && (
+                      <Button 
+                        variant="outlined" 
+                        color="error"
+                        size="small"
+                        onClick={stopStep3Pipeline}
+                        startIcon={<Stop />}
+                      >
+                        Stop
+                      </Button>
+                    )}
 
                     {/* Progress bar for Step 3 */}
                     {step3Progress.status !== 'idle' && (
@@ -2089,6 +2167,19 @@ const DojoManagement = () => {
                     >
                       {step4Progress.status === 'processing' ? 'Processing...' : 'Run Template Processing'}
                     </Button>
+
+                    {step4Progress.status === 'processing' && (
+                      <Button 
+                        variant="outlined" 
+                        color="error"
+                        size="small"
+                        onClick={stopStep4Processing}
+                        startIcon={<Stop />}
+                        fullWidth
+                      >
+                        Stop
+                      </Button>
+                    )}
 
                     {/* Progress bar for Step 4 */}
                     {step4Progress.status !== 'idle' && (
