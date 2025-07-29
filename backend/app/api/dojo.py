@@ -27,6 +27,13 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/dojo", tags=["dojo"])
 
+# In-memory progress tracking for current deck processing
+progress_tracker = {
+    "step2": {"current_deck": "", "status": "idle"},
+    "step3": {"current_deck": "", "status": "idle"}, 
+    "step4": {"current_deck": "", "status": "idle"}
+}
+
 # Dojo configuration
 DOJO_PATH = "/mnt/CPU-GPU/dojo"
 MAX_ZIP_SIZE = 1024 * 1024 * 1024  # 1GB
@@ -534,6 +541,62 @@ async def get_cached_decks_count(
             detail="Failed to get cached decks count"
         )
 
+@router.get("/extraction-test/progress")
+async def get_processing_progress(
+    current_user: User = Depends(get_current_user)
+):
+    """Get current processing progress for all steps"""
+    try:
+        # Only GPs can access progress
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=403,
+                detail="Only GPs can access processing progress"
+            )
+        
+        return progress_tracker
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting processing progress: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to get processing progress"
+        )
+
+@router.post("/extraction-test/update-progress")
+async def update_processing_progress(
+    step: str,
+    current_deck: str = "",
+    status: str = "idle",
+    current_user: User = Depends(get_current_user)
+):
+    """Update current processing progress - called by GPU instance"""
+    try:
+        # Only GPs can update progress
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=403,
+                detail="Only GPs can update processing progress"
+            )
+        
+        if step in progress_tracker:
+            progress_tracker[step]["current_deck"] = current_deck
+            progress_tracker[step]["status"] = status
+            logger.info(f"Updated progress for {step}: {current_deck} ({status})")
+        
+        return {"success": True}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating processing progress: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to update processing progress"
+        )
+
 @router.post("/extraction-test/run-visual-analysis")
 async def run_visual_analysis_batch(
     request: VisualAnalysisRequest,
@@ -711,6 +774,10 @@ async def test_offering_extraction(
                 else:
                     logger.warning(f"No cached visual analysis found for deck {deck.id}")
         
+        # Update progress tracker - start step 3 processing
+        progress_tracker["step3"]["status"] = "processing"
+        progress_tracker["step3"]["current_deck"] = decks[0].file_name if decks else ""
+        
         # Call GPU pipeline for offering extraction
         gpu_result = await gpu_http_client.run_offering_extraction(
             deck_ids=request.deck_ids,
@@ -772,15 +839,25 @@ async def test_offering_extraction(
         
         logger.info(f"Extraction test completed: {request.experiment_name} (ID: {experiment_id})")
         
+        # Update progress tracker - step 3 completed successfully
+        progress_tracker["step3"]["status"] = "completed"
+        progress_tracker["step3"]["current_deck"] = ""
+        
         # Add experiment_id to response
         response_data = experiment_data.copy()
         response_data["experiment_id"] = experiment_id
         return response_data
         
     except HTTPException:
+        # Update progress tracker - step 3 error
+        progress_tracker["step3"]["status"] = "error"
+        progress_tracker["step3"]["current_deck"] = ""
         raise
     except Exception as e:
         logger.error(f"Error running extraction test: {e}")
+        # Update progress tracker - step 3 error
+        progress_tracker["step3"]["status"] = "error" 
+        progress_tracker["step3"]["current_deck"] = ""
         raise HTTPException(
             status_code=500,
             detail="Failed to run extraction test"
@@ -1783,6 +1860,10 @@ async def run_template_processing_batch(
                     "prompt": default_template[2]  # Using description as prompt for now
                 }
         
+        # Update progress tracker - start step 4 processing
+        progress_tracker["step4"]["status"] = "processing"
+        progress_tracker["step4"]["current_deck"] = decks[0].file_name if decks else ""
+        
         # Use GPU pipeline for template processing
         from ..services.gpu_http_client import gpu_http_client
         
@@ -1886,6 +1967,10 @@ async def run_template_processing_batch(
         
         logger.info(f"Template processing completed for experiment {request.experiment_id}: {successful_processing}/{len(template_processing_results)} successful template analyses, {thumbnail_generation_success}/{len(template_processing_results)} successful thumbnail generations")
         
+        # Update progress tracker - step 4 completed successfully
+        progress_tracker["step4"]["status"] = "completed"
+        progress_tracker["step4"]["current_deck"] = ""
+        
         return {
             "message": "Template processing completed successfully",
             "experiment_id": request.experiment_id,
@@ -1894,9 +1979,15 @@ async def run_template_processing_batch(
         }
         
     except HTTPException:
+        # Update progress tracker - step 4 error
+        progress_tracker["step4"]["status"] = "error"
+        progress_tracker["step4"]["current_deck"] = ""
         raise
     except Exception as e:
         logger.error(f"Error running template processing: {e}")
+        # Update progress tracker - step 4 error
+        progress_tracker["step4"]["status"] = "error"
+        progress_tracker["step4"]["current_deck"] = ""
         raise HTTPException(
             status_code=500,
             detail="Failed to run template processing"
@@ -2010,18 +2101,25 @@ async def process_visual_analysis_batch(deck_ids: List[int], vision_model: str, 
     try:
         logger.info(f"Starting visual analysis batch for {len(deck_ids)} decks using GPU pipeline")
         
+        # Update progress tracker - start processing
+        progress_tracker["step2"]["status"] = "processing"
+        progress_tracker["step2"]["current_deck"] = ""
+        
         # Get deck information and file paths
         decks = db.query(PitchDeck).filter(PitchDeck.id.in_(deck_ids)).all()
         if not decks:
             logger.error("No decks found for visual analysis batch")
+            progress_tracker["step2"]["status"] = "error"
             return
         
         # Prepare file paths for GPU processing
         file_paths = []
         deck_id_to_deck = {}
+        deck_names = []
         for deck in decks:
             deck_id_to_deck[deck.id] = deck
             file_paths.append(deck.file_path)
+            deck_names.append(deck.file_name or f"deck_{deck.id}.pdf")
         
         # Import GPU HTTP client
         from ..services.gpu_http_client import gpu_http_client
@@ -2039,8 +2137,12 @@ async def process_visual_analysis_batch(deck_ids: List[int], vision_model: str, 
             
             # Cache results from GPU processing
             batch_results = result.get("results", {})
-            for deck_id in deck_ids:
+            for i, deck_id in enumerate(deck_ids):
                 try:
+                    # Update progress tracker with current deck being processed
+                    current_deck_name = deck_names[i] if i < len(deck_names) else f"deck_{deck_id}.pdf"
+                    progress_tracker["step2"]["current_deck"] = current_deck_name
+                    
                     if str(deck_id) in batch_results:
                         deck_result = batch_results[str(deck_id)]
                         
@@ -2068,8 +2170,17 @@ async def process_visual_analysis_batch(deck_ids: List[int], vision_model: str, 
             
             db.commit()
             logger.info(f"Visual analysis batch caching completed for {len(deck_ids)} decks")
+            # Update progress tracker - completed successfully
+            progress_tracker["step2"]["status"] = "completed"
+            progress_tracker["step2"]["current_deck"] = ""
         else:
             logger.error(f"GPU visual analysis batch failed: {result.get('error', 'Unknown error')}")
+            # Update progress tracker - error
+            progress_tracker["step2"]["status"] = "error"
+            progress_tracker["step2"]["current_deck"] = ""
         
     except Exception as e:
         logger.error(f"Error in visual analysis batch processing: {e}")
+        # Update progress tracker - error
+        progress_tracker["step2"]["status"] = "error"
+        progress_tracker["step2"]["current_deck"] = ""

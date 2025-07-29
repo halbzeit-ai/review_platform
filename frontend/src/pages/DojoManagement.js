@@ -184,11 +184,39 @@ const DojoManagement = () => {
   const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
   const [testDataStats, setTestDataStats] = useState(null);
 
+  // Sequential pipeline execution states
+  const [runStep3AfterStep2, setRunStep3AfterStep2] = useState(false);
+  const [runStep4AfterStep3, setRunStep4AfterStep3] = useState(false);
+  const [step3Progress, setStep3Progress] = useState({ completed: 0, total: 0, status: 'idle' });
+  const [step4Progress, setStep4Progress] = useState({ completed: 0, total: 0, status: 'idle' });
+  
+  // Current deck being processed for each step
+  const [currentStep2Deck, setCurrentStep2Deck] = useState('');
+  const [currentStep3Deck, setCurrentStep3Deck] = useState('');
+  const [currentStep4Deck, setCurrentStep4Deck] = useState('');
+
   useEffect(() => {
     loadDojoData();
     loadAvailableModels();
     loadAvailableTemplates();
   }, []);
+
+  // General polling for current deck progress when any step is processing
+  useEffect(() => {
+    let pollInterval;
+    
+    if (step3Progress.status === 'processing' || step4Progress.status === 'processing') {
+      pollInterval = setInterval(async () => {
+        await fetchCurrentDeckProgress();
+      }, 2000); // Poll every 2 seconds for current deck updates
+    }
+    
+    return () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+    };
+  }, [step3Progress.status, step4Progress.status]);
 
   // Load cached decks count when checkbox is checked
   useEffect(() => {
@@ -539,13 +567,27 @@ const DojoManagement = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setCachedDecksCount(data.cached_count || 0);
+        const count = data.cached_count || 0;
+        setCachedDecksCount(count);
+        
+        // If no cached decks available, auto-uncheck the "cached only" option
+        if (count === 0 && selectFromCached) {
+          setSelectFromCached(false);
+        }
       } else {
         setCachedDecksCount(0);
+        // Auto-uncheck if API call failed
+        if (selectFromCached) {
+          setSelectFromCached(false);
+        }
       }
     } catch (err) {
       console.error('Error loading cached decks count:', err);
       setCachedDecksCount(0);
+      // Auto-uncheck if API call failed
+      if (selectFromCached) {
+        setSelectFromCached(false);
+      }
     } finally {
       setLoadingCachedCount(false);
     }
@@ -627,6 +669,7 @@ const DojoManagement = () => {
         // Start polling for progress updates
         const pollInterval = setInterval(async () => {
           const progress = await checkAnalysisProgress();
+          await fetchCurrentDeckProgress(); // Also fetch current deck being processed
           if (progress && (progress.completed === progress.total || visualAnalysisStatus === 'cancelled')) {
             clearInterval(pollInterval);
             if (progress.completed === progress.total) {
@@ -712,6 +755,46 @@ const DojoManagement = () => {
       }
       setCurrentAnalysisController(null);
       setVisualAnalysisStatus('idle');
+    }
+  };
+
+  const fetchCurrentDeckProgress = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+
+      const response = await fetch('/api/dojo/extraction-test/progress', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const progressData = await response.json();
+        
+        // Update current deck being processed for each step
+        setCurrentStep2Deck(progressData.step2?.current_deck || '');
+        setCurrentStep3Deck(progressData.step3?.current_deck || '');
+        setCurrentStep4Deck(progressData.step4?.current_deck || '');
+        
+        // Update step progress statuses
+        setStep3Progress(prev => ({ 
+          ...prev, 
+          status: progressData.step3?.status || 'idle' 
+        }));
+        setStep4Progress(prev => ({ 
+          ...prev, 
+          status: progressData.step4?.status || 'idle' 
+        }));
+        
+        return progressData;
+      } else {
+        console.error('Failed to fetch current deck progress');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error fetching current deck progress:', error);
+      return null;
     }
   };
 
@@ -1762,7 +1845,11 @@ const DojoManagement = () => {
                     
                     {visualAnalysisStatus !== 'idle' && (
                       <Alert severity={isVisualAnalysisCompleted() ? 'success' : 'info'}>
-                        Visual analysis {isVisualAnalysisCompleted() ? 'completed successfully' : `status: ${visualAnalysisStatus}`}
+                        {isVisualAnalysisCompleted() ? 
+                          'Visual analysis completed successfully' : 
+                          visualAnalysisStatus === 'running' && currentStep2Deck ? 
+                            `Analyzing: ${currentStep2Deck}` : 
+                            `Visual analysis status: ${visualAnalysisStatus}`}
                       </Alert>
                     )}
                   </Box>
@@ -1770,10 +1857,10 @@ const DojoManagement = () => {
               </Grid>
             </Paper>
             
-            {/* Steps 3-7: Complete Extraction Pipeline (greyed out until step 2 is complete) */}
+            {/* Step 3: Run Obligatory Extractions (greyed out until step 2 is complete) */}
             <Paper sx={{ p: 3, mb: 3, bgcolor: !isVisualAnalysisCompleted() ? 'grey.100' : 'grey.50', opacity: !isVisualAnalysisCompleted() ? 0.6 : 1 }}>
               <Typography variant="h6" gutterBottom>
-                Steps 3-7: Complete Extraction Pipeline
+                Step 3: Run Obligatory Extractions
               </Typography>
               
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -1831,19 +1918,52 @@ const DojoManagement = () => {
                     >
                       Run Complete Extraction Pipeline
                     </Button>
+
+                    {/* Progress bar for Step 3 */}
+                    {step3Progress.status !== 'idle' && (
+                      <Box sx={{ width: '100%' }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          Progress: {step3Progress.completed}/{step3Progress.total} 
+                          {step3Progress.status === 'processing' ? 'processing...' : 
+                           step3Progress.status === 'completed' ? 'completed' : 
+                           step3Progress.status === 'error' ? 'error' : ''}
+                        </Typography>
+                        <LinearProgress 
+                          variant="determinate" 
+                          value={step3Progress.total > 0 ? (step3Progress.completed / step3Progress.total) * 100 : 0}
+                          sx={{ height: 8, borderRadius: 4 }}
+                        />
+                      </Box>
+                    )}
+
+                    {/* Run after step 2 checkbox for Step 3 */}
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={runStep3AfterStep2}
+                          onChange={(e) => setRunStep3AfterStep2(e.target.checked)}
+                          disabled={!selectedTextModel || !extractionPrompt}
+                        />
+                      }
+                      label="Run after Step 2 is completed"
+                    />
                     
-                    <Alert severity="info">
-                      This will run the complete pipeline: offering extraction, classification, and company name extraction. All results will be saved for comparison.
+                    <Alert severity={step3Progress.status === 'completed' ? 'success' : 'info'}>
+                      {step3Progress.status === 'completed' ? 
+                        'Complete extraction pipeline completed successfully' : 
+                        step3Progress.status === 'processing' && currentStep3Deck ? 
+                          `Analyzing: ${currentStep3Deck}` : 
+                          'This will run the complete pipeline: offering extraction, classification, and company name extraction. All results will be saved for comparison.'}
                     </Alert>
                   </Box>
                 </Grid>
               </Grid>
             </Paper>
             
-            {/* Step 8: Template-Based Processing (greyed out until step 3-7 is complete) */}
+            {/* Step 4: Template-Based Processing (greyed out until step 3 is complete) */}
             <Paper sx={{ p: 3, mb: 3, bgcolor: (!lastExperimentId && !isVisualAnalysisCompleted()) ? 'grey.100' : 'grey.50', opacity: (!lastExperimentId && !isVisualAnalysisCompleted()) ? 0.6 : 1 }}>
               <Typography variant="h6" gutterBottom>
-                Step 8: Template-Based Processing & Results Generation
+                Step 4: Template-Based Processing
               </Typography>
               
               <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -1878,32 +1998,62 @@ const DojoManagement = () => {
                   </FormControl>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Button
-                    variant="contained"
-                    onClick={runTemplateProcessing}
-                    disabled={(!lastExperimentId && !isVisualAnalysisCompleted()) || !selectedTemplate || templateProcessingStatus === 'processing'}
-                    startIcon={templateProcessingStatus === 'processing' ? <CircularProgress size={16} /> : <Assessment />}
-                    fullWidth
-                    sx={{ height: 56 }}
-                  >
-                    {templateProcessingStatus === 'processing' ? 'Processing...' : 'Run Template Processing'}
-                  </Button>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Button
+                      variant="contained"
+                      onClick={runTemplateProcessing}
+                      disabled={(!lastExperimentId && !isVisualAnalysisCompleted()) || !selectedTemplate || templateProcessingStatus === 'processing'}
+                      startIcon={templateProcessingStatus === 'processing' ? <CircularProgress size={16} /> : <Assessment />}
+                      fullWidth
+                      sx={{ height: 56 }}
+                    >
+                      {templateProcessingStatus === 'processing' ? 'Processing...' : 'Run Template Processing'}
+                    </Button>
+
+                    {/* Progress bar for Step 4 */}
+                    {step4Progress.status !== 'idle' && (
+                      <Box sx={{ width: '100%' }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          Progress: {step4Progress.completed}/{step4Progress.total} 
+                          {step4Progress.status === 'processing' ? 'processing...' : 
+                           step4Progress.status === 'completed' ? 'completed' : 
+                           step4Progress.status === 'error' ? 'error' : ''}
+                        </Typography>
+                        <LinearProgress 
+                          variant="determinate" 
+                          value={step4Progress.total > 0 ? (step4Progress.completed / step4Progress.total) * 100 : 0}
+                          sx={{ height: 8, borderRadius: 4 }}
+                        />
+                      </Box>
+                    )}
+
+                    {/* Run after step 3 checkbox for Step 4 */}
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={runStep4AfterStep3}
+                          onChange={(e) => setRunStep4AfterStep3(e.target.checked)}
+                          disabled={(!lastExperimentId && !isVisualAnalysisCompleted()) || !selectedTemplate}
+                        />
+                      }
+                      label="Run after Step 3 is completed"
+                    />
+                  </Box>
                 </Grid>
                 <Grid item xs={12}>
                   <Box sx={{ mt: 2 }}>
-                    <Alert severity="info" sx={{ mb: 2 }}>
-                      This will process all decks from the current sample through the selected healthcare template to generate complete analysis results and extract slide images for gallery thumbnails.
+                    <Alert severity={
+                      step4Progress.status === 'completed' ? 'success' : 
+                      step4Progress.status === 'error' ? 'error' : 'info'
+                    } sx={{ mb: 2 }}>
+                      {step4Progress.status === 'completed' ? 
+                        'Template processing completed! Results and slide images are now available for gallery display.' : 
+                        step4Progress.status === 'error' ? 
+                          'Template processing failed. Please check the logs and try again.' :
+                        step4Progress.status === 'processing' && currentStep4Deck ? 
+                          `Analyzing: ${currentStep4Deck}` : 
+                          'This will process all decks from the current sample through the selected healthcare template to generate complete analysis results and extract slide images for gallery thumbnails.'}
                     </Alert>
-                    {templateProcessingStatus === 'completed' && (
-                      <Alert severity="success">
-                        Template processing completed! Results and slide images are now available for gallery display.
-                      </Alert>
-                    )}
-                    {templateProcessingStatus === 'error' && (
-                      <Alert severity="error">
-                        Template processing failed. Please check the logs and try again.
-                      </Alert>
-                    )}
                   </Box>
                 </Grid>
               </Grid>
