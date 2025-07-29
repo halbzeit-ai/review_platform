@@ -218,6 +218,32 @@ async def get_deck_analysis(
                                 logger.info(f"Created minimal results from {len(slide_files)} slide images")
                                 break
         
+        # Development fallback - create mock results if no shared filesystem access
+        if not analysis_found and not os.path.exists(settings.SHARED_FILESYSTEM_MOUNT_PATH):
+            logger.warning(f"Development mode: Creating mock analysis results for deck {deck_id}")
+            deck_name = os.path.splitext(os.path.basename(file_path))[0]
+            
+            # Create mock visual results with placeholder data
+            mock_slides = []
+            for i in range(1, 6):  # Mock 5 slides
+                mock_slides.append({
+                    "page_number": i,
+                    "slide_image_path": f"/mock/path/slide_{i}.jpg",
+                    "description": f"**Slide {i} Analysis**\n\nThis is mock analysis data for development purposes. In the actual system, this would contain AI-generated insights about slide {i} of the pitch deck.\n\n• Key points would be highlighted here\n• Business model insights\n• Market analysis\n• Technical details",
+                    "deck_name": deck_name
+                })
+            
+            results_data = {
+                "visual_analysis_results": mock_slides,
+                "processing_metadata": {
+                    "source": "development_mock",
+                    "vision_model": "Mock Development Model",
+                    "created_at": "2024-01-01T00:00:00Z"
+                }
+            }
+            analysis_found = True
+            logger.info(f"Created mock development results for deck {deck_id}")
+        
         if not analysis_found:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -499,7 +525,63 @@ async def get_slide_image(
         logger.info(f"File exists: {os.path.exists(image_path)}")
         
         if not os.path.exists(image_path):
-            # Add more debug info
+            # Development fallback - create placeholder image if shared filesystem doesn't exist
+            if not os.path.exists(settings.SHARED_FILESYSTEM_MOUNT_PATH):
+                logger.warning(f"Development mode: Serving placeholder image for {slide_filename}")
+                
+                # Create a simple placeholder image using PIL
+                try:
+                    from PIL import Image, ImageDraw, ImageFont
+                    import io
+                    
+                    # Create a 800x600 placeholder image
+                    img = Image.new('RGB', (800, 600), color='#f0f0f0')
+                    draw = ImageDraw.Draw(img)
+                    
+                    # Add text
+                    slide_num = slide_filename.replace('slide_', '').replace('.jpg', '').replace('.png', '')
+                    text_lines = [
+                        f"Slide {slide_num}",
+                        "Development Mode",
+                        "Placeholder Image",
+                        "",
+                        f"Deck: {deck_name}",
+                        f"Company: {company_id}"
+                    ]
+                    
+                    # Draw text
+                    y_offset = 200
+                    for line in text_lines:
+                        # Get text size (approximate)
+                        text_width = len(line) * 12
+                        x = (800 - text_width) // 2
+                        draw.text((x, y_offset), line, fill='#666666')
+                        y_offset += 40
+                    
+                    # Save to bytes
+                    img_byte_arr = io.BytesIO()
+                    img.save(img_byte_arr, format='JPEG', quality=85)
+                    img_byte_arr.seek(0)
+                    
+                    from fastapi.responses import StreamingResponse
+                    return StreamingResponse(
+                        io.BytesIO(img_byte_arr.getvalue()),
+                        media_type="image/jpeg",
+                        headers={"Content-Disposition": f"inline; filename={slide_filename}"}
+                    )
+                    
+                except ImportError:
+                    logger.warning("PIL not available, serving text placeholder")
+                    # Fallback to text response if PIL is not available
+                    placeholder_text = f"Slide {slide_filename} - Development Placeholder\nDeck: {deck_name}\nCompany: {company_id}"
+                    from fastapi.responses import Response
+                    return Response(
+                        content=placeholder_text,
+                        media_type="text/plain",
+                        headers={"Content-Disposition": f"inline; filename={slide_filename}.txt"}
+                    )
+            
+            # Add more debug info for production
             parent_dir = os.path.dirname(image_path)
             logger.error(f"Image not found: {image_path}")
             logger.error(f"Parent directory exists: {os.path.exists(parent_dir)}")
