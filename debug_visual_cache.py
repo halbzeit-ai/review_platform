@@ -7,16 +7,27 @@ import os
 import sys
 import json
 
-# Add the backend to Python path
-sys.path.append('/home/ramin/halbzeit-ai/review_platform/backend')
+# Add the backend to Python path - production setup
+sys.path.append('/opt/review-platform/backend')
+sys.path.append('/opt/review-platform')
 
 try:
-    from app.db.database import get_db
+    from backend.app.db.database import get_db
     from sqlalchemy import text
 except ImportError as e:
     print(f"Import error: {e}")
-    print("Make sure you're running this from the production server")
-    sys.exit(1)
+    print("Trying alternative import paths...")
+    try:
+        # Alternative path for production
+        sys.path.append('/opt/review-platform/backend/app')
+        from db.database import get_db
+        from sqlalchemy import text
+    except ImportError as e2:
+        print(f"Second import error: {e2}")
+        print("Please run this from the production server in the correct directory")
+        print("Current working directory:", os.getcwd())
+        print("Python path:", sys.path)
+        sys.exit(1)
 
 def main():
     print("=== VISUAL ANALYSIS CACHE DEBUG ===")

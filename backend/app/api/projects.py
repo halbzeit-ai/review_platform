@@ -330,15 +330,21 @@ async def get_deck_analysis(
         # Extract visual analysis results - handle different formats
         visual_results = results_data.get("visual_analysis_results", [])
         
-        # If no visual_analysis_results, check if this is a dojo-style results file
-        if not visual_results and "company_offering" in results_data:
-            logger.info("Found dojo-style results file, creating visual analysis from slide images")
+        # If no visual_analysis_results, check if this is a projects table fallback with company offering
+        if not visual_results and ("company_offering" in results_data or results_data.get("processing_metadata", {}).get("source") == "projects_table_fallback"):
+            logger.info("Creating visual analysis from company offering and slide images")
             
-            # For dojo results, we need to create visual analysis entries from slide images
-            deck_name = os.path.splitext(os.path.basename(file_path))[0]
-            filesystem_deck_name = deck_name.replace(' ', '_')
+            # Get company offering from results_data or query it if needed
+            company_offering = results_data.get("company_offering", "")
+            
+            # If we don't have company offering in results_data, it means we found it via the projects table fallback
+            if not company_offering and results_data.get("processing_metadata", {}).get("source") == "projects_table_fallback":
+                # The company offering should already be in results_data from the projects table query
+                company_offering = results_data.get("company_offering", "No company offering available")
             
             # Look for slide images in dojo structure
+            deck_name = os.path.splitext(os.path.basename(file_path))[0]
+            filesystem_deck_name = deck_name.replace(' ', '_')
             dojo_analysis_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis")
             
             if os.path.exists(dojo_analysis_path):
@@ -349,21 +355,29 @@ async def get_deck_analysis(
                             slide_files = sorted([f for f in os.listdir(dir_path) if f.startswith('slide_') and f.endswith(('.jpg', '.png'))])
                             
                             if slide_files:
-                                logger.info(f"Creating visual analysis from {len(slide_files)} slide images")
+                                logger.info(f"Creating visual analysis from company offering and {len(slide_files)} slide images")
                                 
-                                # Extract company offering for slide descriptions
-                                company_offering = results_data.get("company_offering", "")
+                                # Split company offering into logical sections for different slides
+                                offering_parts = company_offering.split('\n\n') if company_offering else []
                                 
                                 # Create visual analysis entries
                                 visual_results = []
                                 for i, slide_file in enumerate(slide_files, 1):
                                     slide_path = os.path.join(dir_path, slide_file)
                                     
-                                    # Create meaningful description based on company offering and slide number
+                                    # Create meaningful descriptions based on company offering
                                     if i == 1:
-                                        description = f"**Company Overview**\n\n{company_offering[:300]}..." if len(company_offering) > 300 else company_offering
+                                        # First slide gets the main company overview
+                                        description = f"**Company Overview - Slide {i}**\n\n{company_offering[:500]}" if company_offering else f"**Slide {i}**\n\nCompany pitch deck slide - detailed analysis not available."
+                                    elif i == 2 and len(offering_parts) > 1:
+                                        # Second slide gets additional details
+                                        description = f"**Business Details - Slide {i}**\n\n{offering_parts[1][:400]}" if len(offering_parts[1]) > 400 else f"**Business Details - Slide {i}**\n\n{offering_parts[1]}"
+                                    elif i == 3 and len(offering_parts) > 2:
+                                        # Third slide gets more details
+                                        description = f"**Market & Technology - Slide {i}**\n\n{offering_parts[2][:400]}" if len(offering_parts[2]) > 400 else f"**Market & Technology - Slide {i}**\n\n{offering_parts[2]}"
                                     else:
-                                        description = f"**Slide {i} - Pitch Deck Content**\n\nThis slide contains additional details about the company's business model, market opportunity, or technical approach.\n\n*Full analysis available in company offering.*"
+                                        # Other slides get generic but informative descriptions
+                                        description = f"**Slide {i} - Pitch Content**\n\nThis slide contains additional information about the company's value proposition, market opportunity, business model, or technical approach.\n\n*This deck has been processed through the dojo analysis system. The complete company overview and business details are available in the first few slides.*"
                                     
                                     visual_results.append({
                                         "page_number": i,
@@ -372,7 +386,7 @@ async def get_deck_analysis(
                                         "deck_name": deck_name
                                     })
                                 
-                                logger.info(f"Created {len(visual_results)} visual analysis entries from dojo results")
+                                logger.info(f"✅ Created {len(visual_results)} visual analysis entries from company offering data")
                                 break
         
         if not visual_results:
