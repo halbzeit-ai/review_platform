@@ -224,11 +224,9 @@ const DojoManagement = () => {
     }
   }, [step3Progress.status, runStep4AfterStep3, selectedTemplate, step4Progress.status]);
 
-  // Load cached decks count when checkbox is checked
+  // Load cached decks count on component mount and when checkbox is checked
   useEffect(() => {
-    if (selectFromCached) {
-      loadCachedDecksCount();
-    }
+    loadCachedDecksCount();
   }, [selectFromCached]);
 
   const loadDojoData = useCallback(async () => {
@@ -1780,20 +1778,39 @@ const DojoManagement = () => {
                   }
                 />
                 
+                {/* Always show cached decks count */}
+                <Box sx={{ mt: 2, mb: 2 }}>
+                  {loadingCachedCount ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CircularProgress size={14} />
+                      <Typography variant="body2" color="text.secondary">
+                        Checking cached decks...
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="body2" color="text.secondary">
+                        📊 {cachedDecksCount} decks have cached visual analysis
+                      </Typography>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={clearAnalysisCache}
+                        disabled={clearingCache}
+                        startIcon={clearingCache ? <CircularProgress size={16} /> : <Clear />}
+                        color="error"
+                      >
+                        {clearingCache ? 'Clearing...' : 'Clear Cache'}
+                      </Button>
+                    </Box>
+                  )}
+                </Box>
+                
                 {selectFromCached && (
                   <Box sx={{ ml: 4, mt: 1 }}>
-                    {loadingCachedCount ? (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <CircularProgress size={14} />
-                        <Typography variant="caption" color="text.secondary">
-                          Checking cached decks...
-                        </Typography>
-                      </Box>
-                    ) : (
-                      <Typography variant="caption" color="text.secondary">
-                        {cachedDecksCount} cached decks available
-                      </Typography>
-                    )}
+                    <Typography variant="caption" color="text.secondary">
+                      ✓ Sample will prioritize cached decks for faster processing
+                    </Typography>
                   </Box>
                 )}
               </Box>
@@ -1892,16 +1909,6 @@ const DojoManagement = () => {
                     )}
                     
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Button 
-                        variant="outlined" 
-                        size="small"
-                        onClick={clearAnalysisCache}
-                        disabled={clearingCache || visualAnalysisStatus === 'running'}
-                        startIcon={clearingCache ? <CircularProgress size={16} /> : <Clear />}
-                      >
-                        {clearingCache ? 'Clearing...' : 'Clear Cache'}
-                      </Button>
-                      
                       <Button 
                         variant="outlined" 
                         color="error"
