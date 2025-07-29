@@ -710,13 +710,14 @@ async def clear_visual_analysis_cache(
                 detail="Some deck IDs not found or not dojo files"
             )
         
-        # Clear cache entries for these decks
+        # Clear ALL cache entries for these decks (regardless of model/prompt combination)
         deleted_count = 0
         for deck_id in request.deck_ids:
             result = db.execute(text(
                 "DELETE FROM visual_analysis_cache WHERE pitch_deck_id = :deck_id"
             ), {"deck_id": deck_id})
             deleted_count += result.rowcount
+            logger.info(f"Cleared {result.rowcount} cache entries for deck {deck_id}")
         
         db.commit()
         
