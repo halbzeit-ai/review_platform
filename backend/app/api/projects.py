@@ -517,14 +517,44 @@ async def get_slide_image(
                 detail="You don't have access to this project"
             )
         
-        # Construct image path
-        image_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id, "analysis", deck_name, slide_filename)
+        # Construct image path - check multiple possible locations
+        possible_paths = [
+            # Dojo structure (most likely)
+            os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis", deck_name, slide_filename),
+            # Company-based structure (fallback)
+            os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id, "analysis", deck_name, slide_filename),
+        ]
+        
+        image_path = None
+        for path in possible_paths:
+            logger.info(f"Checking image path: {path}")
+            if os.path.exists(path):
+                image_path = path
+                logger.info(f"Found image at: {path}")
+                break
+        
+        if not image_path:
+            # Try to find the image in any directory that contains the deck name
+            dojo_analysis_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis")
+            if os.path.exists(dojo_analysis_path):
+                logger.info(f"Searching in dojo analysis directories for deck containing: {deck_name}")
+                for dir_name in os.listdir(dojo_analysis_path):
+                    if deck_name in dir_name:
+                        potential_path = os.path.join(dojo_analysis_path, dir_name, slide_filename)
+                        logger.info(f"Checking potential path: {potential_path}")
+                        if os.path.exists(potential_path):
+                            image_path = potential_path
+                            logger.info(f"Found image in directory: {dir_name}")
+                            break
         
         # Debug logging
-        logger.info(f"Looking for image at: {image_path}")
-        logger.info(f"File exists: {os.path.exists(image_path)}")
+        if image_path:
+            logger.info(f"Final image path: {image_path}")
+            logger.info(f"File exists: {os.path.exists(image_path)}")
+        else:
+            logger.error(f"No valid image path found for {slide_filename}")
         
-        if not os.path.exists(image_path):
+        if not image_path or not os.path.exists(image_path):
             # Development fallback - create placeholder image if shared filesystem doesn't exist
             if not os.path.exists(settings.SHARED_FILESYSTEM_MOUNT_PATH):
                 logger.warning(f"Development mode: Serving placeholder image for {slide_filename}")
@@ -582,15 +612,24 @@ async def get_slide_image(
                     )
             
             # Add more debug info for production
-            parent_dir = os.path.dirname(image_path)
-            logger.error(f"Image not found: {image_path}")
-            logger.error(f"Parent directory exists: {os.path.exists(parent_dir)}")
-            if os.path.exists(parent_dir):
-                logger.error(f"Files in parent directory: {os.listdir(parent_dir)}")
+            if image_path:
+                parent_dir = os.path.dirname(image_path)
+                logger.error(f"Image not found: {image_path}")
+                logger.error(f"Parent directory exists: {os.path.exists(parent_dir)}")
+                if os.path.exists(parent_dir):
+                    logger.error(f"Files in parent directory: {os.listdir(parent_dir)}")
+            else:
+                logger.error(f"No valid path found for slide {slide_filename} in deck {deck_name}")
+                
+                # List what directories are actually available
+                dojo_analysis_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis")
+                if os.path.exists(dojo_analysis_path):
+                    available_dirs = os.listdir(dojo_analysis_path)
+                    logger.error(f"Available analysis directories: {available_dirs}")
             
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Slide image not found: {image_path}"
+                detail=f"Slide image not found: {slide_filename} for deck {deck_name}"
             )
         
         # Return image file
