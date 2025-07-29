@@ -478,6 +478,61 @@ async def get_project_results(
                 detail="Analysis results not found for this deck"
             )
         
+        # Check if this is a dojo experiment marker
+        if results_file_path.startswith("dojo_experiment:"):
+            logger.info(f"Loading dojo experiment results for deck {deck_id}")
+            experiment_id = results_file_path.split("dojo_experiment:")[1]
+            
+            # Get template processing results from database
+            experiment_query = text("""
+                SELECT template_processing_results_json, experiment_name 
+                FROM extraction_experiments 
+                WHERE id = :experiment_id
+            """)
+            
+            experiment_result = db.execute(experiment_query, {"experiment_id": experiment_id}).fetchone()
+            
+            if not experiment_result or not experiment_result[0]:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Template processing results not found for this dojo experiment"
+                )
+            
+            # Parse template processing data
+            template_processing_data = json.loads(experiment_result[0])
+            
+            # Find results for this specific deck
+            deck_results = None
+            if template_processing_data.get("template_processing_results"):
+                for result in template_processing_data["template_processing_results"]:
+                    if result.get("deck_id") == deck_id:
+                        deck_results = result
+                        break
+            
+            if not deck_results:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Template processing results not found for this deck"
+                )
+            
+            # Format results for frontend consumption
+            results_data = {
+                "experiment_name": experiment_result[1],
+                "template_used": deck_results.get("template_used"),
+                "template_analysis": deck_results.get("template_analysis"),
+                "thumbnail_path": deck_results.get("thumbnail_path"),
+                "slide_images": deck_results.get("slide_images", []),
+                "analysis_metadata": {
+                    "source": "dojo_experiment",
+                    "experiment_id": experiment_id,
+                    "processed_at": template_processing_data.get("processed_at")
+                }
+            }
+            
+            logger.info(f"Loaded dojo experiment results for deck {deck_id} from experiment {experiment_id}")
+            return results_data
+        
+        # Handle regular file-based results
         if results_file_path.startswith('/'):
             results_full_path = results_file_path
         else:

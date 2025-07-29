@@ -150,17 +150,87 @@ const ProjectResults = ({ companyId, deckId }) => {
     );
   }
 
+  // Check if this is a dojo template processing result
+  const isDojoTemplateResult = results.analysis_metadata?.source === 'dojo_experiment';
+
   return (
     <Box>
-      {/* Company Summary - Always First */}
-      <Card variant="outlined" sx={{ mb: 3, bgcolor: 'primary.50' }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom color="primary">
-            {t('results.companyOverview')}
-          </Typography>
-          <Box sx={{ mb: 2 }}>
-            {formatText(results.company_offering || 'No company summary available')}
-          </Box>
+      {/* Dojo Template Processing Results */}
+      {isDojoTemplateResult ? (
+        <>
+          {/* Template Processing Header */}
+          <Card variant="outlined" sx={{ mb: 3, bgcolor: 'info.50' }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom color="info.main">
+                Template Analysis Results
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Template: {results.template_used} | Experiment: {results.experiment_name}
+              </Typography>
+              {results.analysis_metadata?.processed_at && (
+                <Typography variant="body2" color="text.secondary">
+                  Processed: {new Date(results.analysis_metadata.processed_at).toLocaleString()}
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Template Analysis Content */}
+          <Card variant="outlined" sx={{ mb: 3 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Analysis
+              </Typography>
+              <Box sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                {formatText(results.template_analysis || 'No template analysis available')}
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Slide Images (if available) */}
+          {results.slide_images && results.slide_images.length > 0 && (
+            <Card variant="outlined" sx={{ mb: 3 }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Slide Images ({results.slide_images.length})
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Slide images generated during template processing
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {results.slide_images.slice(0, 6).map((imagePath, index) => (
+                    <Chip 
+                      key={index}
+                      label={`Slide ${index + 1}`}
+                      variant="outlined"
+                      size="small"
+                    />
+                  ))}
+                  {results.slide_images.length > 6 && (
+                    <Chip 
+                      label={`+${results.slide_images.length - 6} more`}
+                      variant="outlined"
+                      size="small"
+                      color="primary"
+                    />
+                  )}
+                </Box>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      ) : (
+        <>
+          {/* Regular Analysis Results */}
+          {/* Company Summary - Always First */}
+          <Card variant="outlined" sx={{ mb: 3, bgcolor: 'primary.50' }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom color="primary">
+                {t('results.companyOverview')}
+              </Typography>
+              <Box sx={{ mb: 2 }}>
+                {formatText(results.company_offering || 'No company summary available')}
+              </Box>
           {results.key_points && results.key_points.length > 0 && (
             <Box>
               <Typography variant="subtitle2" gutterBottom>
@@ -544,6 +614,8 @@ const ProjectResults = ({ companyId, deckId }) => {
           </Box>
         )}
       </Paper>
+        </>
+      )}
     </Box>
   );
 };
