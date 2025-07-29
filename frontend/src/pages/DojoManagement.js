@@ -678,14 +678,11 @@ const DojoManagement = () => {
         const pollInterval = setInterval(async () => {
           const progressData = await fetchCurrentDeckProgress();
           
-          // During active processing, use backend progress tracker instead of cache checking
+          // During active processing, use backend progress tracker for status transitions
           if (progressData && progressData.step2) {
             const step2Status = progressData.step2.status;
-            const step2Progress = progressData.step2.progress || 0;
-            const step2Total = progressData.step2.total || total;
             
-            // Update analysis progress from backend progress tracker
-            setAnalysisProgress({ completed: step2Progress, total: step2Total });
+            // Don't duplicate the state setting - fetchCurrentDeckProgress already handles it
             
             if (step2Status === 'completed') {
               clearInterval(pollInterval);
@@ -801,11 +798,18 @@ const DojoManagement = () => {
 
       if (response.ok) {
         const progressData = await response.json();
+        console.log('Progress data received:', progressData);
         
         // Update current deck being processed for each step
         setCurrentStep2Deck(progressData.step2?.current_deck || '');
         setCurrentStep3Deck(progressData.step3?.current_deck || '');
         setCurrentStep4Deck(progressData.step4?.current_deck || '');
+        
+        console.log('Setting deck names:', {
+          step2: progressData.step2?.current_deck,
+          step3: progressData.step3?.current_deck,
+          step4: progressData.step4?.current_deck
+        });
         
         // Update step progress statuses and counts
         setStep3Progress(prev => ({ 
@@ -822,10 +826,14 @@ const DojoManagement = () => {
         }));
         
         // Update visual analysis progress for step 2
-        setAnalysisProgress(prev => ({
-          ...prev,
+        const newAnalysisProgress = {
           completed: progressData.step2?.progress || 0,
           total: progressData.step2?.total || 0
+        };
+        console.log('Setting analysis progress:', newAnalysisProgress);
+        setAnalysisProgress(prev => ({
+          ...prev,
+          ...newAnalysisProgress
         }));
         setVisualAnalysisStatus(progressData.step2?.status || 'idle');
         
@@ -1887,11 +1895,16 @@ const DojoManagement = () => {
                         </Box>
                         <LinearProgress 
                           variant="determinate" 
-                          value={(analysisProgress.completed / analysisProgress.total) * 100}
+                          value={analysisProgress.total > 0 ? (analysisProgress.completed / analysisProgress.total) * 100 : 0}
                           sx={{ mb: 1 }}
                         />
                       </Box>
                     )}
+                    
+                    {/* Debug info - remove after fixing */}
+                    <Typography variant="caption" color="text.secondary">
+                      Debug: Status={visualAnalysisStatus}, Progress={analysisProgress.completed}/{analysisProgress.total}, CurrentDeck="{currentStep2Deck}"
+                    </Typography>
                     
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <Button 
