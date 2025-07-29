@@ -735,30 +735,33 @@ async def get_project_decks(
                 detail="Project not found"
             )
         
-        # Get all pitch decks for this project
+        # Get all project documents (pitch decks) for this project
         decks_query = text("""
             SELECT 
                 pd.id,
-                pd.user_id,
-                pd.company_id,
+                pd.uploaded_by as user_id,
+                p.company_id,
                 pd.file_name,
                 pd.file_path,
-                pd.results_file_path,
+                NULL as results_file_path,
                 pd.processing_status,
-                pd.ai_analysis_results,
-                pd.ai_extracted_startup_name,
-                pd.data_source,
-                pd.created_at,
+                NULL as ai_analysis_results,
+                NULL as ai_extracted_startup_name,
+                'project_documents' as data_source,
+                pd.upload_date as created_at,
                 u.email as user_email,
                 u.first_name,
                 u.last_name
-            FROM pitch_decks pd
-            LEFT JOIN users u ON pd.user_id = u.id
-            WHERE pd.company_id = :company_id
-            ORDER BY pd.created_at DESC
+            FROM project_documents pd
+            JOIN projects p ON pd.project_id = p.id
+            LEFT JOIN users u ON pd.uploaded_by = u.id
+            WHERE pd.project_id = :project_id 
+            AND pd.document_type = 'pitch_deck'
+            AND pd.is_active = TRUE
+            ORDER BY pd.upload_date DESC
         """)
         
-        decks_results = db.execute(decks_query, {"company_id": project_result[1]}).fetchall()
+        decks_results = db.execute(decks_query, {"project_id": project_id}).fetchall()
         
         decks = []
         for row in decks_results:
