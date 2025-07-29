@@ -170,20 +170,55 @@ async def get_deck_analysis(
             logger.info(f"Searching for analysis results in dojo structure: {dojo_analysis_path}")
             
             if os.path.exists(dojo_analysis_path):
-                for dir_name in os.listdir(dojo_analysis_path):
+                logger.info(f"Dojo analysis path exists, listing directories...")
+                available_dirs = os.listdir(dojo_analysis_path)
+                logger.info(f"Available directories: {available_dirs}")
+                
+                for dir_name in available_dirs:
+                    logger.info(f"Checking directory: {dir_name}")
+                    logger.info(f"  Contains deck_name '{deck_name}': {deck_name in dir_name}")
+                    logger.info(f"  Contains filesystem_deck_name '{filesystem_deck_name}': {filesystem_deck_name in dir_name}")
+                    
                     if deck_name in dir_name or filesystem_deck_name in dir_name:
-                        potential_results_path = os.path.join(dojo_analysis_path, dir_name, "analysis_results.json")
-                        logger.info(f"Checking for results file: {potential_results_path}")
+                        logger.info(f"Directory {dir_name} matches deck name, checking for analysis files...")
+                        dir_path = os.path.join(dojo_analysis_path, dir_name)
                         
-                        if os.path.exists(potential_results_path):
-                            try:
-                                with open(potential_results_path, 'r') as f:
-                                    results_data = json.load(f)
-                                    analysis_found = True
-                                    logger.info(f"Found analysis results at dojo path: {potential_results_path}")
-                                    break
-                            except Exception as e:
-                                logger.warning(f"Could not load results from dojo path {potential_results_path}: {e}")
+                        # Check what files are in this directory
+                        try:
+                            dir_contents = os.listdir(dir_path)
+                            logger.info(f"Directory contents: {dir_contents}")
+                        except Exception as e:
+                            logger.error(f"Could not list directory {dir_path}: {e}")
+                            continue
+                        
+                        # Try multiple possible analysis file names
+                        possible_analysis_files = [
+                            "analysis_results.json",
+                            "results.json", 
+                            "analysis.json",
+                            "deck_analysis.json"
+                        ]
+                        
+                        for analysis_filename in possible_analysis_files:
+                            potential_results_path = os.path.join(dir_path, analysis_filename)
+                            logger.info(f"Checking for results file: {potential_results_path}")
+                            
+                            if os.path.exists(potential_results_path):
+                                try:
+                                    with open(potential_results_path, 'r') as f:
+                                        results_data = json.load(f)
+                                        analysis_found = True
+                                        logger.info(f"✅ Found analysis results at: {potential_results_path}")
+                                        break
+                                except Exception as e:
+                                    logger.warning(f"Could not load results from {potential_results_path}: {e}")
+                        
+                        if analysis_found:
+                            break
+                    else:
+                        logger.info(f"Directory {dir_name} does not match deck name")
+            else:
+                logger.error(f"Dojo analysis path does not exist: {dojo_analysis_path}")
         
         # If still no results found, create minimal results from slide images
         if not analysis_found:
