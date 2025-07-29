@@ -127,18 +127,19 @@ async def get_deck_analysis(
         
         deck_id_db, file_path, results_file_path, user_email, company_name, source_table = deck_result
         
-        # Verify this deck belongs to the requested company (skip for GP admin access)
-        if current_user.role != "gp":
-            if company_name:
-                import re
-                deck_company_id = re.sub(r'[^a-z0-9-]', '', company_name.lower().replace(' ', '-'))
-            else:
-                deck_company_id = user_email.split('@')[0]
-            if deck_company_id != company_id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Deck doesn't belong to this company"
-                )
+        # Verify this deck belongs to the requested company (for ALL users including GPs)
+        if company_name:
+            import re
+            deck_company_id = re.sub(r'[^a-z0-9-]', '', company_name.lower().replace(' ', '-'))
+        else:
+            deck_company_id = user_email.split('@')[0]
+        
+        if deck_company_id != company_id:
+            logger.warning(f"Security violation: User {current_user.email} ({current_user.role}) attempted to access deck {deck_id} via company {company_id}, but deck belongs to {deck_company_id}")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Deck {deck_id} does not belong to company {company_id}. Please access this deck through the correct company path."
+            )
         
         # Load analysis results - check multiple locations
         analysis_found = False
