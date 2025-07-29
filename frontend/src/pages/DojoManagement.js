@@ -597,7 +597,9 @@ const DojoManagement = () => {
   };
 
   const runVisualAnalysis = async () => {
+    console.log('🚀 Starting runVisualAnalysis');
     try {
+      console.log('📝 Setting visual analysis status to running');
       setVisualAnalysisStatus('running');
       // Reset timing states for fresh analysis
       setAnalysisStartTime(null);
@@ -611,7 +613,10 @@ const DojoManagement = () => {
       setCurrentAnalysisController(controller);
 
       const deckIds = extractionSample.map(deck => deck.id);
+      console.log('📊 Extracted deck IDs:', deckIds);
+      console.log('🎯 Selected vision model:', selectedVisionModel);
       
+      console.log('🌐 Making API request to run-visual-analysis');
       const response = await fetch('/api/dojo/extraction-test/run-visual-analysis', {
         method: 'POST',
         headers: {
@@ -625,41 +630,52 @@ const DojoManagement = () => {
         signal: controller.signal
       });
 
+      console.log('📡 API response status:', response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log('Visual analysis batch started:', data);
+        console.log('✅ Visual analysis batch started:', data);
         
         // Initialize progress tracking
         const total = extractionSample.length;
         const startTime = Date.now();
+        console.log('📈 Initializing progress tracking - total:', total);
         setAnalysisProgress({ completed: 0, total });
         setAnalysisStartTime(startTime);
         setLastDeckCompletedTime(null);
         setProcessingTimes([]);
         
+        console.log('⏰ Starting polling interval');
         // Start polling for progress updates
         const pollInterval = setInterval(async () => {
+          console.log('🔄 Polling for progress updates...');
           const progressData = await fetchCurrentDeckProgress();
+          console.log('📊 Progress data received:', progressData);
           
           // During active processing, use backend progress tracker for status transitions
           if (progressData && progressData.step2) {
             const step2Status = progressData.step2.status;
+            console.log('🔍 Step2 status:', step2Status);
             
             if (step2Status === 'completed') {
+              console.log('✅ Step2 completed - clearing interval');
               clearInterval(pollInterval);
               setVisualAnalysisStatus('completed');
               setCurrentAnalysisController(null);
               // Do a final cache check to get accurate numbers
               await checkAnalysisProgress();
             } else if (step2Status === 'error') {
+              console.log('❌ Step2 error - clearing interval');
               clearInterval(pollInterval);
               setVisualAnalysisStatus('error');
               setCurrentAnalysisController(null);
             }
           } else {
+            console.log('🔄 Using fallback cache checking');
             // Fallback to cache checking if backend progress is not available
             const progress = await checkAnalysisProgress();
+            console.log('📊 Cache progress:', progress);
             if (progress && progress.completed === progress.total) {
+              console.log('✅ Cache checking shows completion - clearing interval');
               clearInterval(pollInterval);
               setVisualAnalysisStatus('completed');
               setCurrentAnalysisController(null);
@@ -670,32 +686,40 @@ const DojoManagement = () => {
         // Store interval ID so we can clear it if stopped
         controller.pollInterval = pollInterval;
       } else {
+        console.log('❌ API request failed with status:', response.status);
         setVisualAnalysisStatus('error');
         let errorMessage = 'Failed to run visual analysis';
         try {
           const errorData = await response.json();
+          console.log('📄 Error data:', errorData);
           errorMessage = errorData.detail || errorMessage;
         } catch (parseError) {
-          console.error('Error parsing error response:', parseError);
+          console.error('❌ Error parsing error response:', parseError);
         }
         setError(errorMessage);
       }
     } catch (err) {
+      console.log('🚨 Exception caught in runVisualAnalysis:', err);
       if (err.name === 'AbortError') {
+        console.log('🛑 Analysis was aborted');
         setVisualAnalysisStatus('cancelled');
         console.log('Visual analysis cancelled by user');
         setError('Visual analysis cancelled');
       } else {
+        console.log('❌ Unexpected error:', err);
         setVisualAnalysisStatus('error');
         console.error('Error running visual analysis:', err);
         setError('Failed to run visual analysis');
       }
     } finally {
+      console.log('🧹 Running cleanup in finally block');
       // Clear polling interval if it exists - use current state
       if (currentAnalysisController && currentAnalysisController.pollInterval) {
+        console.log('⏰ Clearing polling interval');
         clearInterval(currentAnalysisController.pollInterval);
       }
       setCurrentAnalysisController(null);
+      console.log('✅ Cleanup completed');
     }
   };
 
@@ -826,11 +850,13 @@ const DojoManagement = () => {
   };
 
   const checkAnalysisProgress = async () => {
+    console.log('🔍 Checking analysis progress...');
     try {
       const user = JSON.parse(localStorage.getItem('user'));
       const token = user?.token;
 
       // Re-fetch the current sample to get updated cache status
+      console.log('🌐 Fetching sample for progress check');
       const response = await fetch('/api/dojo/extraction-test/sample', {
         method: 'POST',
         headers: {
@@ -845,14 +871,18 @@ const DojoManagement = () => {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('📊 Sample data received:', data);
         
         // Count completed vs total
         const completed = data.sample.filter(deck => deck.has_visual_cache).length;
         const total = data.sample.length;
+        console.log(`📈 Progress: ${completed}/${total} completed`);
         
         // Only update sample if there are actual changes to avoid unnecessary re-renders
         const currentCompleted = extractionSample.filter(deck => deck.has_visual_cache).length;
+        console.log(`🔄 Current completed: ${currentCompleted}, New completed: ${completed}`);
         if (completed !== currentCompleted) {
+          console.log('✨ Updating extraction sample');
           setExtractionSample(data.sample);
         }
         
@@ -879,11 +909,14 @@ const DojoManagement = () => {
         
         setAnalysisProgress({ completed, total });
         
-        return { completed, total, processingTimes: newProcessingTimes };
+        const result = { completed, total, processingTimes: newProcessingTimes };
+        console.log('📤 Returning progress result:', result);
+        return result;
       }
     } catch (err) {
-      console.error('Error checking analysis progress:', err);
+      console.error('❌ Error checking analysis progress:', err);
     }
+    console.log('❌ Returning null from checkAnalysisProgress');
     return null;
   };
 
