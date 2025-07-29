@@ -1174,16 +1174,14 @@ const DojoManagement = () => {
     }
   };
 
-  const viewExperimentDetails = async (experiment) => {
-    setSelectedExperiment(experiment);
-    setExperimentDetailsOpen(true);
+  const loadExperimentDetails = async (experimentId) => {
     setLoadingExperimentDetails(true);
     
     try {
       const user = JSON.parse(localStorage.getItem('user'));
       const token = user?.token;
 
-      const response = await fetch(`/api/dojo/extraction-test/experiments/${experiment.id}`, {
+      const response = await fetch(`/api/dojo/extraction-test/experiments/${experimentId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -1198,6 +1196,12 @@ const DojoManagement = () => {
     } finally {
       setLoadingExperimentDetails(false);
     }
+  };
+
+  const viewExperimentDetails = async (experiment) => {
+    setSelectedExperiment(experiment);
+    setExperimentDetailsOpen(true);
+    await loadExperimentDetails(experiment.id);
   };
 
   const getSampleFromExperiment = async (experiment) => {
@@ -1310,50 +1314,6 @@ const DojoManagement = () => {
   };
 
   // Classification enrichment function
-  const runClassificationEnrichment = async (experimentId) => {
-    setClassificationLoading(true);
-    try {
-      const user = JSON.parse(localStorage.getItem('user'));
-      const token = user?.token;
-
-      const response = await fetch('/api/dojo/extraction-test/run-classification', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          experiment_id: experimentId
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to run classification enrichment');
-      }
-
-      const data = await response.json();
-      
-      // Store classification results
-      setClassificationResults(prev => ({
-        ...prev,
-        [experimentId]: data
-      }));
-
-      // Refresh experiments list to show updated status
-      await loadExperiments();
-      
-      // If experiment details is open for this experiment, refresh it
-      if (selectedExperiment?.id === experimentId) {
-        await viewExperimentDetails(selectedExperiment);
-      }
-
-    } catch (err) {
-      console.error('Error running classification:', err);
-      setError(err.message || 'Failed to run classification');
-    } finally {
-      setClassificationLoading(false);
-    }
-  };
 
   // Run template-based processing for experiment results
   const runTemplateProcessing = async () => {
@@ -1472,6 +1432,91 @@ const DojoManagement = () => {
     );
     
     return hasClassification && hasOfferingExtraction && hasCompanyName;
+  };
+
+  // Run missing extractions for experiment
+  const runClassificationEnrichment = async (experimentId) => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+      
+      const response = await fetch('/api/dojo/extraction-test/run-classification', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ experiment_id: experimentId })
+      });
+      
+      if (response.ok) {
+        setError(null);
+        // Reload experiment details to show classification data
+        await loadExperimentDetails(experimentId);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Failed to run classification');
+      }
+    } catch (err) {
+      console.error('Error running classification:', err);
+      setError('Failed to run classification');
+    }
+  };
+  
+  const runFundingAmountExtraction = async (experimentId) => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+      
+      const response = await fetch('/api/dojo/extraction-test/run-funding-amount-extraction', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ experiment_id: experimentId })
+      });
+      
+      if (response.ok) {
+        setError(null);
+        // Reload experiment details to show funding data
+        await loadExperimentDetails(experimentId);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Failed to run funding extraction');
+      }
+    } catch (err) {
+      console.error('Error running funding extraction:', err);
+      setError('Failed to run funding extraction');
+    }
+  };
+  
+  const runCompanyNameExtraction = async (experimentId) => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+      
+      const response = await fetch('/api/dojo/extraction-test/run-company-name-extraction', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ experiment_id: experimentId })
+      });
+      
+      if (response.ok) {
+        setError(null);
+        // Reload experiment details to show company name data
+        await loadExperimentDetails(experimentId);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Failed to run company name extraction');
+      }
+    } catch (err) {
+      console.error('Error running company name extraction:', err);
+      setError('Failed to run company name extraction');
+    }
   };
 
   // Add companies from experiment to projects database
@@ -2809,17 +2854,59 @@ const DojoManagement = () => {
             <Typography>No experiment details available</Typography>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setExperimentDetailsOpen(false)}>
-            Close
-          </Button>
-          <Button 
-            variant="contained" 
-            disabled={!canAddDojoCompanies(experimentDetails)}
-            onClick={addDojoCompanies}
-          >
-            Add Dojo Companies
-          </Button>
+        <DialogActions sx={{ flexDirection: 'column', gap: 2, alignItems: 'stretch' }}>
+          {/* Missing extractions panel */}
+          {experimentDetails && (
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', width: '100%' }}>
+              {!experimentDetails.classification_enabled && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => runClassificationEnrichment(experimentDetails.id)}
+                  sx={{ minWidth: 120 }}
+                >
+                  Run Classification
+                </Button>
+              )}
+              {!experimentDetails.funding_amount_completed_at && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => runFundingAmountExtraction(experimentDetails.id)}
+                  sx={{ minWidth: 120 }}
+                >
+                  Run Funding Extraction
+                </Button>
+              )}
+              {!experimentDetails.company_name_completed_at && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => runCompanyNameExtraction(experimentDetails.id)}
+                  sx={{ minWidth: 120 }}
+                >
+                  Run Company Names
+                </Button>
+              )}
+            </Box>
+          )}
+          
+          {/* Main action buttons */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+            <Button onClick={() => setExperimentDetailsOpen(false)}>
+              Close
+            </Button>
+            <Button 
+              variant="contained" 
+              disabled={!canAddDojoCompanies(experimentDetails)}
+              onClick={addDojoCompanies}
+            >
+              Add Dojo Companies
+            </Button>
+          </Box>
         </DialogActions>
       </Dialog>
 
