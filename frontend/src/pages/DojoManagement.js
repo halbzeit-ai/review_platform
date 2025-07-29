@@ -711,15 +711,9 @@ const DojoManagement = () => {
         console.error('Error running visual analysis:', err);
         setError('Failed to run visual analysis');
       }
-    } finally {
-      console.log('🧹 Running cleanup in finally block');
-      // Clear polling interval if it exists - use current state
-      if (currentAnalysisController && currentAnalysisController.pollInterval) {
-        console.log('⏰ Clearing polling interval');
-        clearInterval(currentAnalysisController.pollInterval);
-      }
+      // Only clear controller on error/abort - successful processing continues with polling
+      console.log('🧹 Clearing controller due to error/abort');
       setCurrentAnalysisController(null);
-      console.log('✅ Cleanup completed');
     }
   };
 
