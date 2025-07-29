@@ -664,9 +664,7 @@ async def run_visual_analysis_batch(
             background_tasks.add_task(
                 process_visual_analysis_batch,
                 [deck.id for deck in new_analysis_needed],
-                request.vision_model,
-                analysis_prompt,
-                db
+                request.vision_model
             )
         
         logger.info(f"Visual analysis batch started: {len(new_analysis_needed)} new, {cached_count} cached")
@@ -2186,119 +2184,140 @@ async def get_cached_visual_analysis_for_gpu(
             "error": str(e)
         }
 
-async def process_visual_analysis_batch(deck_ids: List[int], vision_model: str, analysis_prompt: str, db: Session):
+async def process_visual_analysis_batch(deck_ids: List[int], vision_model: str):
     """Background task to process visual analysis for multiple decks using GPU pipeline"""
     try:
         logger.info(f"Starting visual analysis batch for {len(deck_ids)} decks using GPU pipeline")
         
-        # Update progress tracker - start processing
-        progress_tracker["step2"]["status"] = "processing"
-        progress_tracker["step2"]["current_deck"] = "Starting visual analysis..."
-        progress_tracker["step2"]["progress"] = 0
-        progress_tracker["step2"]["total"] = len(deck_ids)
-        
-        # Get deck information and file paths
-        decks = db.query(PitchDeck).filter(PitchDeck.id.in_(deck_ids)).all()
-        if not decks:
-            logger.error("No decks found for visual analysis batch")
-            progress_tracker["step2"]["status"] = "error"
-            return
-        
-        # Prepare file paths for GPU processing
-        file_paths = []
-        deck_id_to_deck = {}
-        deck_names = []
-        for deck in decks:
-            deck_id_to_deck[deck.id] = deck
-            file_paths.append(deck.file_path)
-            deck_names.append(deck.file_name or f"deck_{deck.id}.pdf")
-        
-        # Import GPU HTTP client
-        from ..services.gpu_http_client import gpu_http_client
-        
-        # Call GPU pipeline for visual analysis batch with progress simulation
-        import asyncio
-        
-        # Start a background task to simulate progress updates
-        async def simulate_progress():
-            try:
-                for i, deck_name in enumerate(deck_names):
-                    progress_tracker["step2"]["current_deck"] = f"Analyzing {deck_name}"
-                    progress_tracker["step2"]["progress"] = i
-                    await asyncio.sleep(10)  # Update every 10 seconds
-                    # Stop if processing completed
-                    if progress_tracker["step2"]["status"] != "processing":
-                        break
-            except Exception as e:
-                logger.error(f"Error in progress simulation: {e}")
-        
-        # Start progress simulation task
-        progress_task = asyncio.create_task(simulate_progress())
+        # Get fresh database connection for background task
+        from ..db.database import get_db
+        db = next(get_db())
         
         try:
-            result = await gpu_http_client.run_visual_analysis_for_extraction_testing(
-                deck_ids=deck_ids,
-                vision_model=vision_model,
-                analysis_prompt=analysis_prompt,
-                file_paths=file_paths
-            )
-        finally:
-            # Cancel progress simulation
-            progress_task.cancel()
-            try:
-                await progress_task
-            except asyncio.CancelledError:
-                pass
-        
-        if result.get("success"):
-            logger.info("GPU visual analysis batch completed successfully")
+            # Get analysis prompt from database 
+            prompt_result = db.execute(text(
+                "SELECT prompt_text FROM pipeline_prompts WHERE stage_name = 'image_analysis' AND is_active = TRUE LIMIT 1"
+            )).fetchone()
             
-            # Cache results from GPU processing
-            batch_results = result.get("results", {})
-            for i, deck_id in enumerate(deck_ids):
-                try:
-                    # Update progress tracker with current deck being processed
-                    current_deck_name = deck_names[i] if i < len(deck_names) else f"deck_{deck_id}.pdf"
-                    progress_tracker["step2"]["current_deck"] = f"Caching results for {current_deck_name}"
-                    progress_tracker["step2"]["progress"] = i + 1
-                    
-                    if str(deck_id) in batch_results:
-                        deck_result = batch_results[str(deck_id)]
-                        
-                        if "error" in deck_result:
-                            logger.error(f"GPU processing error for deck {deck_id}: {deck_result['error']}")
-                            continue
-                        
-                        # Cache the visual analysis result
-                        db.execute(text(
-                            "INSERT INTO visual_analysis_cache (pitch_deck_id, analysis_result_json, vision_model_used, prompt_used) VALUES (:deck_id, :result, :model, :prompt) ON CONFLICT (pitch_deck_id, vision_model_used, prompt_used) DO UPDATE SET analysis_result_json = :result, created_at = CURRENT_TIMESTAMP"
-                        ), {
-                            "deck_id": deck_id,
-                            "result": json.dumps(deck_result),
-                            "model": vision_model,
-                            "prompt": analysis_prompt
-                        })
-                        
-                        logger.info(f"Cached GPU visual analysis result for deck {deck_id}")
-                    else:
-                        logger.warning(f"No result returned for deck {deck_id}")
-                        
-                except Exception as e:
-                    logger.error(f"Error caching visual analysis for deck {deck_id}: {e}")
-                    continue
+            if prompt_result:
+                analysis_prompt = prompt_result[0]
+            else:
+                # Fallback to default prompt if not found in database
+                analysis_prompt = "Describe this image and make sure to include anything notable about it (include text you see in the image):"
+                logger.warning("No image_analysis prompt found in database, using default")
             
-            db.commit()
-            logger.info(f"Visual analysis batch caching completed for {len(deck_ids)} decks")
-            # Update progress tracker - completed successfully
-            progress_tracker["step2"]["status"] = "completed"
-            progress_tracker["step2"]["current_deck"] = "Visual analysis completed"
-            progress_tracker["step2"]["progress"] = len(deck_ids)
-        else:
-            logger.error(f"GPU visual analysis batch failed: {result.get('error', 'Unknown error')}")
-            # Update progress tracker - error
-            progress_tracker["step2"]["status"] = "error"
-            progress_tracker["step2"]["current_deck"] = "GPU processing failed"
+            # Update progress tracker - start processing
+            progress_tracker["step2"]["status"] = "processing"
+            progress_tracker["step2"]["current_deck"] = "Starting visual analysis..."
             progress_tracker["step2"]["progress"] = 0
+            progress_tracker["step2"]["total"] = len(deck_ids)
+            
+            # Get deck information and file paths
+            decks = db.query(PitchDeck).filter(PitchDeck.id.in_(deck_ids)).all()
+            if not decks:
+                logger.error("No decks found for visual analysis batch")
+                progress_tracker["step2"]["status"] = "error"
+                return
+            
+            # Prepare file paths for GPU processing
+            file_paths = []
+            deck_id_to_deck = {}
+            deck_names = []
+            for deck in decks:
+                deck_id_to_deck[deck.id] = deck
+                file_paths.append(deck.file_path)
+                deck_names.append(deck.file_name or f"deck_{deck.id}.pdf")
+            
+            # Import GPU HTTP client
+            from ..services.gpu_http_client import gpu_http_client
+            
+            # Call GPU pipeline for visual analysis batch with progress simulation
+            import asyncio
+            
+            # Start a background task to simulate progress updates
+            async def simulate_progress():
+                try:
+                    for i, deck_name in enumerate(deck_names):
+                        progress_tracker["step2"]["current_deck"] = f"Analyzing {deck_name}"
+                        progress_tracker["step2"]["progress"] = i
+                        await asyncio.sleep(10)  # Update every 10 seconds
+                        # Stop if processing completed
+                        if progress_tracker["step2"]["status"] != "processing":
+                            break
+                except Exception as e:
+                    logger.error(f"Error in progress simulation: {e}")
+            
+            # Start progress simulation task
+            progress_task = asyncio.create_task(simulate_progress())
+            
+            try:
+                result = await gpu_http_client.run_visual_analysis_for_extraction_testing(
+                    deck_ids=deck_ids,
+                    vision_model=vision_model,
+                    analysis_prompt=analysis_prompt,
+                    file_paths=file_paths
+                )
+            finally:
+                # Cancel progress simulation
+                progress_task.cancel()
+                try:
+                    await progress_task
+                except asyncio.CancelledError:
+                    pass
+            
+            if result.get("success"):
+                logger.info("GPU visual analysis batch completed successfully")
+                
+                # Cache results from GPU processing
+                batch_results = result.get("results", {})
+                for i, deck_id in enumerate(deck_ids):
+                    try:
+                        # Update progress tracker with current deck being processed
+                        current_deck_name = deck_names[i] if i < len(deck_names) else f"deck_{deck_id}.pdf"
+                        progress_tracker["step2"]["current_deck"] = f"Caching results for {current_deck_name}"
+                        progress_tracker["step2"]["progress"] = i + 1
+                        
+                        if str(deck_id) in batch_results:
+                            deck_result = batch_results[str(deck_id)]
+                            
+                            if "error" in deck_result:
+                                logger.error(f"GPU processing error for deck {deck_id}: {deck_result['error']}")
+                                continue
+                            
+                            # Cache the visual analysis result
+                            db.execute(text(
+                                "INSERT INTO visual_analysis_cache (pitch_deck_id, analysis_result_json, vision_model_used, prompt_used) VALUES (:deck_id, :result, :model, :prompt) ON CONFLICT (pitch_deck_id, vision_model_used, prompt_used) DO UPDATE SET analysis_result_json = :result, created_at = CURRENT_TIMESTAMP"
+                            ), {
+                                "deck_id": deck_id,
+                                "result": json.dumps(deck_result),
+                                "model": vision_model,
+                                "prompt": analysis_prompt
+                            })
+                            
+                            logger.info(f"Cached GPU visual analysis result for deck {deck_id}")
+                        else:
+                            logger.warning(f"No result returned for deck {deck_id}")
+                            
+                    except Exception as e:
+                        logger.error(f"Error caching visual analysis for deck {deck_id}: {e}")
+                        continue
+                
+                db.commit()
+                logger.info(f"Visual analysis batch caching completed for {len(deck_ids)} decks")
+                # Update progress tracker - completed successfully
+                progress_tracker["step2"]["status"] = "completed"
+                progress_tracker["step2"]["current_deck"] = "Visual analysis completed"
+                progress_tracker["step2"]["progress"] = len(deck_ids)
+            else:
+                logger.error(f"GPU visual analysis batch failed: {result.get('error', 'Unknown error')}")
+                # Update progress tracker - error
+                progress_tracker["step2"]["status"] = "error"
+                progress_tracker["step2"]["current_deck"] = "GPU processing failed"
+                progress_tracker["step2"]["progress"] = 0
+        
+        finally:
+            # Close the database connection
+            db.close()
         
     except Exception as e:
         logger.error(f"Error in visual analysis batch processing: {e}")
