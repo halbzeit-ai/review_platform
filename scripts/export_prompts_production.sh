@@ -4,9 +4,9 @@
 
 echo "📥 Exporting prompts from production database..."
 
-# Export prompts table to SQL file
+# Export pipeline_prompts table to SQL file
 pg_dump postgresql://review_user:review_password@localhost:5432/review-platform \
-    --table=prompts \
+    --table=pipeline_prompts \
     --data-only \
     --inserts \
     --no-owner \
@@ -18,7 +18,7 @@ if [ $? -eq 0 ]; then
     echo ""
     echo "📋 Exported prompts:"
     psql postgresql://review_user:review_password@localhost:5432/review-platform -c \
-        "SELECT name, version, is_active FROM prompts ORDER BY name, version" 
+        "SELECT stage_name, is_active, LENGTH(prompt_text) as length FROM pipeline_prompts ORDER BY stage_name" 
     echo ""
     echo "📌 Next steps:"
     echo "   1. Copy this file to dev server: scp /tmp/production_prompts.sql root@65.108.32.143:/tmp/"

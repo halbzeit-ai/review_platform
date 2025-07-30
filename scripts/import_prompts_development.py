@@ -25,37 +25,38 @@ def import_prompts():
         conn = psycopg2.connect(DEV_DB_URL)
         cur = conn.cursor()
         
-        # Check if prompts table exists
-        print("🔍 Checking prompts table...")
+        # Check if pipeline_prompts table exists
+        print("🔍 Checking pipeline_prompts table...")
         cur.execute("""
             SELECT EXISTS (
                 SELECT FROM information_schema.tables 
                 WHERE table_schema = 'public' 
-                AND table_name = 'prompts'
+                AND table_name = 'pipeline_prompts'
             );
         """)
         
         if not cur.fetchone()[0]:
-            print("📋 Creating prompts table...")
+            print("📋 Creating pipeline_prompts table...")
             cur.execute("""
-                CREATE TABLE prompts (
+                CREATE TABLE pipeline_prompts (
                     id SERIAL PRIMARY KEY,
-                    name VARCHAR(255) NOT NULL,
-                    content TEXT NOT NULL,
-                    version INTEGER DEFAULT 1,
+                    stage_name VARCHAR(255) NOT NULL,
+                    prompt_text TEXT NOT NULL,
+                    description TEXT,
                     is_active BOOLEAN DEFAULT true,
+                    created_by VARCHAR(255) DEFAULT 'system',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
                 
-                CREATE INDEX idx_prompts_name_active ON prompts(name, is_active);
+                CREATE INDEX idx_pipeline_prompts_stage_active ON pipeline_prompts(stage_name, is_active);
             """)
             conn.commit()
             print("✅ Table created")
         
         # Clear existing prompts
         print("🧹 Clearing existing prompts...")
-        cur.execute("DELETE FROM prompts")
+        cur.execute("DELETE FROM pipeline_prompts")
         
         # Read and execute import file
         print("📤 Importing prompts...")
@@ -69,20 +70,20 @@ def import_prompts():
         # Verify import
         print("\n🔍 Verifying imported prompts...")
         cur.execute("""
-            SELECT name, version, is_active,
-                   LENGTH(content) as content_length
-            FROM prompts
+            SELECT stage_name, is_active,
+                   LENGTH(prompt_text) as content_length
+            FROM pipeline_prompts
             WHERE is_active = true
-            ORDER BY name
+            ORDER BY stage_name
         """)
         
         prompts = cur.fetchall()
         print(f"\n✅ Imported {len(prompts)} active prompts:")
-        for name, version, is_active, length in prompts:
-            print(f"   • {name} v{version} ({length} chars)")
+        for stage_name, is_active, length in prompts:
+            print(f"   • {stage_name} ({length} chars)")
         
         # Show all prompt names
-        cur.execute("SELECT DISTINCT name FROM prompts ORDER BY name")
+        cur.execute("SELECT DISTINCT stage_name FROM pipeline_prompts ORDER BY stage_name")
         all_names = [row[0] for row in cur.fetchall()]
         
         print(f"\n📋 All prompt types: {', '.join(all_names)}")
