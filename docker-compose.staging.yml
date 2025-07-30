@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  # Staging Frontend
+  frontend-staging:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.staging
+    ports:
+      - "3001:80"
+    environment:
+      - NODE_ENV=production
+      - REACT_APP_API_URL=http://localhost:8001/api
+      - REACT_APP_ENVIRONMENT=staging
+    volumes:
+      - ./frontend/build:/usr/share/nginx/html:ro
+    depends_on:
+      - backend-staging
+    restart: unless-stopped
+    container_name: review-platform-frontend-staging
+
+  # Staging Backend
+  backend-staging:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.staging
+    ports:
+      - "8001:8000"
+    environment:
+      - ENVIRONMENT=staging
+      - DATABASE_URL=postgresql://staging_user:staging_password@host.docker.internal:5432/review_staging
+      - GPU_INSTANCE_HOST=${GPU_INSTANCE_HOST}
+      - SHARED_FILESYSTEM_MOUNT_PATH=/mnt/shared
+      - FRONTEND_URL=http://localhost:3001
+    volumes:
+      - /mnt/dev-CPU-GPU:/mnt/shared:rw  # Mount shared filesystem
+      - ./backend:/app:ro
+      - staging_uploads:/tmp/uploads
+    depends_on:
+      - postgres-staging
+    restart: unless-stopped
+    container_name: review-platform-backend-staging
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  # Staging PostgreSQL (separate from development)
+  postgres-staging:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: review_staging
+      POSTGRES_USER: staging_user
+      POSTGRES_PASSWORD: staging_password
+    ports:
+      - "5433:5432"  # Different port from development PostgreSQL
+    volumes:
+      - postgres_staging_data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+    container_name: review-platform-postgres-staging
+
+  # Redis for caching (staging)
+  redis-staging:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"  # Different port from development Redis
+    volumes:
+      - redis_staging_data:/data
+    restart: unless-stopped
+    container_name: review-platform-redis-staging
+
+  # MailHog for email testing (staging)
+  mailhog-staging:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1026:1025"  # SMTP port (different from dev)
+      - "8026:8025"  # Web UI port (different from dev)
+    restart: unless-stopped
+    container_name: review-platform-mailhog-staging
+
+volumes:
+  postgres_staging_data:
+    driver: local
+  redis_staging_data:
+    driver: local
+  staging_uploads:
+    driver: local
+
+networks:
+  default:
+    name: review-platform-staging

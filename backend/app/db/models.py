@@ -157,3 +157,36 @@ class ProjectInteraction(Base):
     project = relationship("Project", back_populates="interactions")
     document = relationship("ProjectDocument")
     creator = relationship("User")
+
+class PipelinePrompt(Base):
+    __tablename__ = "pipeline_prompts"
+    id = Column(Integer, primary_key=True, index=True)
+    stage_name = Column(String, nullable=False, index=True)
+    prompt_text = Column(Text, nullable=False)
+    is_active = Column(Boolean, default=True, index=True)
+    created_by = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class VisualAnalysisCache(Base):
+    __tablename__ = "visual_analysis_cache"
+    id = Column(Integer, primary_key=True, index=True)
+    pitch_deck_id = Column(Integer, ForeignKey("pitch_decks.id", ondelete="CASCADE"), nullable=False, index=True)
+    analysis_result_json = Column(Text, nullable=False)  # Store full visual analysis JSON
+    vision_model_used = Column(String(255), nullable=False)  # e.g., "gemma3:12b"
+    prompt_used = Column(Text, nullable=False)  # Store the prompt used for visual analysis
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    
+    # Relationships
+    pitch_deck = relationship("PitchDeck")
+
+class ExtractionExperiment(Base):
+    __tablename__ = "extraction_experiments"
+    id = Column(Integer, primary_key=True, index=True)
+    experiment_name = Column(String(255), nullable=False, index=True)
+    pitch_deck_ids = Column(Text, nullable=False)  # JSON array of deck IDs in sample (SQLite doesn't support arrays)
+    extraction_type = Column(String(50), nullable=False, default='company_offering')
+    text_model_used = Column(String(255), nullable=False)  # Model used for extraction
+    extraction_prompt = Column(Text, nullable=False)  # Custom prompt for extraction
+    results_json = Column(Text, nullable=False)  # Store all extraction results
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
