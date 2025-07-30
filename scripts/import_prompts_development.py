@@ -8,16 +8,16 @@ import psycopg2
 import os
 import sys
 
-DEV_DB_URL = "postgresql://dev_user:!dev_Halbzeit1024@localhost:5432/review_dev"
-IMPORT_FILE = "/tmp/production_prompts.sql"
+DEV_DB_URL = "postgresql://dev_user:!dev_Halbzeit1024@65.108.32.143:5432/review_dev"  
+IMPORT_FILE = "/mnt/dev-shared/temp/production_prompts.sql"
 
 def import_prompts():
     """Import prompts from production export"""
     
     if not os.path.exists(IMPORT_FILE):
         print(f"❌ Import file not found: {IMPORT_FILE}")
-        print("   Please copy the export file from production first:")
-        print("   scp root@65.108.32.168:/tmp/production_prompts.sql /tmp/")
+        print("   Please run the export script on production first:")
+        print("   ./scripts/export_prompts_production.sh")
         sys.exit(1)
     
     try:

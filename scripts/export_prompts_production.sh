@@ -11,18 +11,18 @@ pg_dump postgresql://review_user:review_password@localhost:5432/review-platform 
     --inserts \
     --no-owner \
     --no-privileges \
-    > /tmp/production_prompts.sql
+    > /mnt/CPU-GPU/temp/production_prompts.sql
 
 if [ $? -eq 0 ]; then
-    echo "✅ Prompts exported to /tmp/production_prompts.sql"
+    echo "✅ Prompts exported to /mnt/CPU-GPU/temp/production_prompts.sql"
     echo ""
     echo "📋 Exported prompts:"
     psql postgresql://review_user:review_password@localhost:5432/review-platform -c \
         "SELECT stage_name, is_active, LENGTH(prompt_text) as length FROM pipeline_prompts ORDER BY stage_name" 
     echo ""
     echo "📌 Next steps:"
-    echo "   1. Copy this file to dev server: scp /tmp/production_prompts.sql root@65.108.32.143:/tmp/"
-    echo "   2. Run import script on dev server"
+    echo "   1. File is now available on shared filesystem at /mnt/CPU-GPU/temp/production_prompts.sql"
+    echo "   2. Run import script on dev server to import into development database"
 else
     echo "❌ Export failed"
     exit 1
