@@ -26,6 +26,23 @@ async def update_deck_results(
 ):
     """Internal endpoint for GPU processing to update deck results"""
     try:
+        logger.info(f"🔍 DEBUG: Received update request for deck {request.pitch_deck_id}")
+        logger.info(f"🔍 DEBUG: Results file: {request.results_file_path}")
+        logger.info(f"🔍 DEBUG: Status: {request.processing_status}")
+        
+        # Check if the deck exists first
+        check_query = text("SELECT id, file_name FROM pitch_decks WHERE id = :pitch_deck_id")
+        check_result = db.execute(check_query, {"pitch_deck_id": request.pitch_deck_id})
+        deck = check_result.fetchone()
+        
+        if deck:
+            logger.info(f"🔍 DEBUG: Found deck {deck[0]}: {deck[1]}")
+        else:
+            logger.error(f"🔍 DEBUG: No deck found with ID {request.pitch_deck_id}")
+            # List all existing decks for debugging
+            all_decks = db.execute(text("SELECT id, file_name FROM pitch_decks ORDER BY id")).fetchall()
+            logger.error(f"🔍 DEBUG: Available decks: {[(d[0], d[1]) for d in all_decks]}")
+        
         # Update the pitch_decks table
         update_query = text("""
             UPDATE pitch_decks 
@@ -40,6 +57,7 @@ async def update_deck_results(
         })
         
         db.commit()
+        logger.info(f"🔍 DEBUG: Update affected {result.rowcount} rows")
         
         if result.rowcount == 0:
             raise HTTPException(

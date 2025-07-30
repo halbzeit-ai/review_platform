@@ -44,7 +44,9 @@ progress_tracker = {
 }
 
 # Dojo configuration
-DOJO_PATH = "/mnt/CPU-GPU/dojo"
+# Use environment-aware path
+import os as _os
+DOJO_PATH = _os.getenv("DOJO_PATH", "/mnt/dev-shared/dojo")  # Development: /mnt/dev-shared/dojo, Production: /mnt/CPU-GPU/dojo
 MAX_ZIP_SIZE = 1024 * 1024 * 1024  # 1GB
 ALLOWED_EXTENSIONS = {'.pdf'}
 
@@ -422,7 +424,7 @@ class ExtractionTestRequest(BaseModel):
     experiment_name: str
     deck_ids: List[int]
     text_model: str
-    extraction_prompt: str
+    extraction_prompt: Optional[str] = None  # Optional, will be looked up from database
     use_cached_visual: bool = True
 
 @router.post("/extraction-test/sample")
@@ -825,11 +827,26 @@ async def test_offering_extraction(
         progress_tracker["step3"]["progress"] = 0
         progress_tracker["step3"]["total"] = len(decks)
         
+        # Get extraction prompt from database if not provided
+        extraction_prompt = request.extraction_prompt
+        if not extraction_prompt:
+            prompt_result = db.execute(text(
+                "SELECT prompt_text FROM pipeline_prompts WHERE stage_name = 'offering_extraction' LIMIT 1"
+            )).fetchone()
+            
+            if not prompt_result:
+                raise HTTPException(
+                    status_code=500,
+                    detail="offering_extraction prompt not found in pipeline_prompts table. Please add this prompt with stage_name='offering_extraction'."
+                )
+            
+            extraction_prompt = prompt_result[0]
+        
         # Call GPU pipeline for offering extraction
         gpu_result = await gpu_http_client.run_offering_extraction(
             deck_ids=request.deck_ids,
             text_model=request.text_model,
-            extraction_prompt=request.extraction_prompt,
+            extraction_prompt=extraction_prompt,
             use_cached_visual=request.use_cached_visual
         )
         
@@ -1405,7 +1422,13 @@ async def enrich_experiment_with_company_names(
             "SELECT prompt_text FROM pipeline_prompts WHERE stage_name = 'startup_name_extraction' LIMIT 1"
         )).fetchone()
         
-        startup_name_prompt = prompt_result[0] if prompt_result else "Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it."
+        if not prompt_result:
+            raise HTTPException(
+                status_code=500,
+                detail="startup_name_extraction prompt not found in pipeline_prompts table. Please add this prompt with stage_name='startup_name_extraction'."
+            )
+        
+        startup_name_prompt = prompt_result[0]
         
         # Use GPU pipeline for company name extraction
         from ..services.gpu_http_client import gpu_http_client
@@ -1561,7 +1584,13 @@ async def enrich_experiment_with_funding_amounts(
             "SELECT prompt_text FROM pipeline_prompts WHERE stage_name = 'funding_amount_extraction' LIMIT 1"
         )).fetchone()
         
-        funding_amount_prompt = prompt_result[0] if prompt_result else "Find the exact funding amount the startup is seeking or has raised from this pitch deck. Look for phrases like 'seeking $X', 'raising $X', 'funding round of $X', or similar. Return only the numerical amount with currency symbol (e.g., '$2.5M', '€500K', '$10 million'). If no specific amount is mentioned, return 'Not specified'."
+        if not prompt_result:
+            raise HTTPException(
+                status_code=500,
+                detail="funding_amount_extraction prompt not found in pipeline_prompts table. Please add this prompt with stage_name='funding_amount_extraction'."
+            )
+        
+        funding_amount_prompt = prompt_result[0]
         
         # Use GPU pipeline for funding amount extraction
         from ..services.gpu_http_client import gpu_http_client
@@ -1709,7 +1738,13 @@ async def enrich_experiment_with_deck_dates(
             "SELECT prompt_text FROM pipeline_prompts WHERE stage_name = 'deck_date_extraction' LIMIT 1"
         )).fetchone()
         
-        deck_date_prompt = prompt_result[0] if prompt_result else "Find the date when this pitch deck was created or last updated. Look for dates on slides, footers, headers, or any text mentioning when the deck was prepared. Common formats include 'March 2024', '2024-03-15', 'Q1 2024', 'Spring 2024', etc. Return only the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date is found, return 'Date not specified'."
+        if not prompt_result:
+            raise HTTPException(
+                status_code=500,
+                detail="deck_date_extraction prompt not found in pipeline_prompts table. Please add this prompt with stage_name='deck_date_extraction'."
+            )
+        
+        deck_date_prompt = prompt_result[0]
         
         # Use GPU pipeline for deck date extraction
         from ..services.gpu_http_client import gpu_http_client
