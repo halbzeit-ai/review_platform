@@ -29,7 +29,16 @@ router = APIRouter(prefix="/dojo", tags=["dojo"])
 
 # In-memory progress tracking for current deck processing
 progress_tracker = {
-    "step2": {"current_deck": "", "status": "idle", "progress": 0, "total": 0},
+    "step2": {
+        "current_deck": "", 
+        "status": "idle", 
+        "progress": 0, 
+        "total": 0,
+        "start_time": None,
+        "completion_time": None,
+        "processing_times": [],
+        "current_deck_start_time": None
+    },
     "step3": {"current_deck": "", "status": "idle", "progress": 0, "total": 0}, 
     "step4": {"current_deck": "", "status": "idle", "progress": 0, "total": 0}
 }
@@ -545,7 +554,7 @@ async def get_cached_decks_count(
 async def get_processing_progress(
     current_user: User = Depends(get_current_user)
 ):
-    """Get current processing progress for all steps"""
+    """Get current processing progress for all steps with enhanced timing data"""
     try:
         # Only GPs can access progress
         if current_user.role != "gp":
@@ -554,7 +563,24 @@ async def get_processing_progress(
                 detail="Only GPs can access processing progress"
             )
         
-        return progress_tracker
+        # Enhance step2 progress with calculated timing data
+        step2_data = progress_tracker["step2"].copy()
+        if step2_data["processing_times"]:
+            # Calculate average processing time
+            avg_time = sum(step2_data["processing_times"]) / len(step2_data["processing_times"])
+            step2_data["average_processing_time"] = avg_time
+            
+            # Calculate total processing time if completed
+            if step2_data.get("start_time") and step2_data.get("completion_time"):
+                step2_data["total_processing_time"] = step2_data["completion_time"] - step2_data["start_time"]
+            elif step2_data.get("start_time"):
+                import time
+                step2_data["total_processing_time"] = time.time() - step2_data["start_time"]
+        
+        enhanced_tracker = progress_tracker.copy()
+        enhanced_tracker["step2"] = step2_data
+        
+        return enhanced_tracker
         
     except HTTPException:
         raise
@@ -2185,9 +2211,10 @@ async def get_cached_visual_analysis_for_gpu(
         }
 
 async def process_visual_analysis_batch(deck_ids: List[int], vision_model: str):
-    """Background task to process visual analysis for multiple decks using GPU pipeline"""
+    """Background task to process visual analysis for multiple decks individually with real-time progress"""
+    import time
     try:
-        logger.info(f"Starting visual analysis batch for {len(deck_ids)} decks using GPU pipeline")
+        logger.info(f"Starting individual visual analysis for {len(deck_ids)} decks using GPU pipeline")
         
         # Get fresh database connection for background task
         from ..db.database import get_db
@@ -2206,11 +2233,16 @@ async def process_visual_analysis_batch(deck_ids: List[int], vision_model: str):
                 analysis_prompt = "Describe this image and make sure to include anything notable about it (include text you see in the image):"
                 logger.warning("No image_analysis prompt found in database, using default")
             
-            # Update progress tracker - start processing
+            # Initialize progress tracker with timing
+            start_time = time.time()
             progress_tracker["step2"]["status"] = "processing"
             progress_tracker["step2"]["current_deck"] = "Starting visual analysis..."
             progress_tracker["step2"]["progress"] = 0
             progress_tracker["step2"]["total"] = len(deck_ids)
+            progress_tracker["step2"]["start_time"] = start_time
+            progress_tracker["step2"]["completion_time"] = None
+            progress_tracker["step2"]["processing_times"] = []
+            progress_tracker["step2"]["current_deck_start_time"] = None
             
             # Get deck information and file paths
             decks = db.query(PitchDeck).filter(PitchDeck.id.in_(deck_ids)).all()
@@ -2219,51 +2251,47 @@ async def process_visual_analysis_batch(deck_ids: List[int], vision_model: str):
                 progress_tracker["step2"]["status"] = "error"
                 return
             
-            # Prepare file paths for GPU processing
-            file_paths = []
-            deck_id_to_deck = {}
-            deck_names = []
-            for deck in decks:
-                deck_id_to_deck[deck.id] = deck
-                file_paths.append(deck.file_path)
-                deck_names.append(deck.file_name or f"deck_{deck.id}.pdf")
+            # Create deck mapping
+            deck_id_to_deck = {deck.id: deck for deck in decks}
             
             # Import GPU HTTP client
             from ..services.gpu_http_client import gpu_http_client
             
-            # Call GPU pipeline for visual analysis batch with progress simulation
-            import asyncio
-            
-            # Note: Progress will only update when GPU batch processing completes and results are cached
-            # Individual deck progress is not available during GPU batch processing
-            
-            result = await gpu_http_client.run_visual_analysis_for_extraction_testing(
-                deck_ids=deck_ids,
-                vision_model=vision_model,
-                analysis_prompt=analysis_prompt,
-                file_paths=file_paths
-            )
-            
-            if result.get("success"):
-                logger.info("GPU visual analysis batch completed successfully")
+            # Process each deck individually with real-time progress updates
+            successful_count = 0
+            for i, deck_id in enumerate(deck_ids):
+                deck = deck_id_to_deck.get(deck_id)
+                if not deck:
+                    logger.warning(f"Deck {deck_id} not found in database")
+                    continue
                 
-                # Cache results from GPU processing
-                batch_results = result.get("results", {})
-                for i, deck_id in enumerate(deck_ids):
-                    try:
-                        # Update progress tracker with current deck being processed
-                        current_deck_name = deck_names[i] if i < len(deck_names) else f"deck_{deck_id}.pdf"
-                        progress_tracker["step2"]["current_deck"] = f"Caching results for {current_deck_name}"
-                        progress_tracker["step2"]["progress"] = i + 1
-                        
-                        if str(deck_id) in batch_results:
-                            deck_result = batch_results[str(deck_id)]
-                            
-                            if "error" in deck_result:
-                                logger.error(f"GPU processing error for deck {deck_id}: {deck_result['error']}")
-                                continue
-                            
-                            # Cache the visual analysis result
+                deck_name = deck.file_name or f"deck_{deck.id}.pdf"
+                deck_start_time = time.time()
+                
+                # Update progress tracker - currently processing this deck
+                progress_tracker["step2"]["current_deck"] = deck_name
+                progress_tracker["step2"]["progress"] = i
+                progress_tracker["step2"]["current_deck_start_time"] = deck_start_time
+                
+                logger.info(f"Processing deck {i+1}/{len(deck_ids)}: {deck_name}")
+                
+                try:
+                    # Process single deck
+                    result = await gpu_http_client.run_visual_analysis_single_deck(
+                        deck_id=deck_id,
+                        vision_model=vision_model,
+                        analysis_prompt=analysis_prompt,
+                        file_path=deck.file_path
+                    )
+                    
+                    deck_end_time = time.time()
+                    deck_processing_time = deck_end_time - deck_start_time
+                    progress_tracker["step2"]["processing_times"].append(deck_processing_time)
+                    
+                    if result.get("success"):
+                        # Cache the result
+                        deck_result = result.get("result", {})
+                        if deck_result:
                             db.execute(text(
                                 "INSERT INTO visual_analysis_cache (pitch_deck_id, analysis_result_json, vision_model_used, prompt_used) VALUES (:deck_id, :result, :model, :prompt) ON CONFLICT (pitch_deck_id, vision_model_used, prompt_used) DO UPDATE SET analysis_result_json = :result, created_at = CURRENT_TIMESTAMP"
                             ), {
@@ -2272,35 +2300,40 @@ async def process_visual_analysis_batch(deck_ids: List[int], vision_model: str):
                                 "model": vision_model,
                                 "prompt": analysis_prompt
                             })
-                            
-                            logger.info(f"Cached GPU visual analysis result for deck {deck_id}")
+                            db.commit()
+                            successful_count += 1
+                            logger.info(f"Successfully processed and cached deck {deck_name} in {deck_processing_time:.1f}s")
                         else:
-                            logger.warning(f"No result returned for deck {deck_id}")
-                            
-                    except Exception as e:
-                        logger.error(f"Error caching visual analysis for deck {deck_id}: {e}")
-                        continue
+                            logger.warning(f"No result returned for deck {deck_name}")
+                    else:
+                        logger.error(f"GPU processing failed for deck {deck_name}: {result.get('error')}")
+                        
+                except Exception as e:
+                    logger.error(f"Error processing deck {deck_name}: {e}")
+                    deck_end_time = time.time()
+                    deck_processing_time = deck_end_time - deck_start_time
+                    progress_tracker["step2"]["processing_times"].append(deck_processing_time)
                 
-                db.commit()
-                logger.info(f"Visual analysis batch caching completed for {len(deck_ids)} decks")
-                # Update progress tracker - completed successfully
-                progress_tracker["step2"]["status"] = "completed"
-                progress_tracker["step2"]["current_deck"] = "Visual analysis completed"
-                progress_tracker["step2"]["progress"] = len(deck_ids)
-            else:
-                logger.error(f"GPU visual analysis batch failed: {result.get('error', 'Unknown error')}")
-                # Update progress tracker - error
-                progress_tracker["step2"]["status"] = "error"
-                progress_tracker["step2"]["current_deck"] = "GPU processing failed"
-                progress_tracker["step2"]["progress"] = 0
+                # Update progress after each deck
+                progress_tracker["step2"]["progress"] = i + 1
+            
+            # Complete processing
+            completion_time = time.time()
+            total_time = completion_time - start_time
+            progress_tracker["step2"]["completion_time"] = completion_time
+            progress_tracker["step2"]["status"] = "completed"
+            progress_tracker["step2"]["current_deck"] = f"Completed: {successful_count}/{len(deck_ids)} decks processed"
+            
+            logger.info(f"Visual analysis completed: {successful_count}/{len(deck_ids)} decks processed in {total_time:.1f}s")
         
         finally:
             # Close the database connection
             db.close()
         
     except Exception as e:
-        logger.error(f"Error in visual analysis batch processing: {e}")
+        logger.error(f"Error in visual analysis processing: {e}")
         # Update progress tracker - error
         progress_tracker["step2"]["status"] = "error"
         progress_tracker["step2"]["current_deck"] = "Processing error occurred"
-        progress_tracker["step2"]["progress"] = 0
+        if progress_tracker["step2"]["start_time"]:
+            progress_tracker["step2"]["completion_time"] = time.time()

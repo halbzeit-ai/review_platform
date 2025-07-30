@@ -147,6 +147,7 @@ const DojoManagement = () => {
   const [analysisStartTime, setAnalysisStartTime] = useState(null);
   const [lastDeckCompletedTime, setLastDeckCompletedTime] = useState(null);
   const [processingTimes, setProcessingTimes] = useState([]);
+  const [step2CompletionData, setStep2CompletionData] = useState(null);
   const [experiments, setExperiments] = useState([]);
   const [availableModels, setAvailableModels] = useState({});
   const [modelsLoading, setModelsLoading] = useState(false);
@@ -653,16 +654,36 @@ const DojoManagement = () => {
           
           // During active processing, use backend progress tracker for status transitions
           if (progressData && progressData.step2) {
-            const step2Status = progressData.step2.status;
-            console.log('🔍 Step2 status:', step2Status);
+            const step2Data = progressData.step2;
+            const step2Status = step2Data.status;
+            console.log('🔍 Step2 status:', step2Status, 'Progress:', step2Data.progress, '/', step2Data.total);
+            
+            // Update real-time progress
+            setAnalysisProgress({
+              completed: step2Data.progress || 0,
+              total: step2Data.total || 0
+            });
+            
+            // Update current deck being processed
+            if (step2Data.current_deck) {
+              setCurrentStep2Deck(step2Data.current_deck);
+            }
             
             if (step2Status === 'completed') {
               console.log('✅ Step2 completed - clearing interval');
               clearInterval(pollInterval);
               setVisualAnalysisStatus('completed');
               setCurrentAnalysisController(null);
-              // Do a final cache check to get accurate numbers
-              await checkAnalysisProgress();
+              
+              // Store completion data for summary
+              setStep2CompletionData({
+                totalDecks: step2Data.total || 0,
+                successfulDecks: step2Data.progress || 0,
+                averageTime: step2Data.average_processing_time || 0,
+                totalTime: step2Data.total_processing_time || 0,
+                processingTimes: step2Data.processing_times || []
+              });
+              
             } else if (step2Status === 'error') {
               console.log('❌ Step2 error - clearing interval');
               clearInterval(pollInterval);
@@ -1976,23 +1997,44 @@ const DojoManagement = () => {
                 </Grid>
               </Grid>
               
-              {/* Progress Status for Visual Analysis */}
+              {/* Real-time Progress for Visual Analysis */}
               {(visualAnalysisStatus === 'running' || visualAnalysisStatus === 'processing') && (
                 <Box sx={{ mt: 3 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                     <Typography variant="body2" color="text.secondary">
-                      Processing visual analysis on GPU...
+                      {currentStep2Deck || 'Processing visual analysis...'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {analysisProgress.total > 0 ? `${analysisProgress.total} documents` : ''}
+                      {analysisProgress.completed} / {analysisProgress.total}
                     </Typography>
                   </Box>
                   <LinearProgress 
-                    variant="indeterminate"
+                    variant="determinate"
+                    value={analysisProgress.total > 0 ? (analysisProgress.completed / analysisProgress.total) * 100 : 0}
                     sx={{ height: 8, borderRadius: 4 }}
                   />
                   <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                    GPU is processing all documents in batch - progress will update when caching results
+                    {analysisProgress.total > 0 ? Math.round((analysisProgress.completed / analysisProgress.total) * 100) : 0}% complete
+                  </Typography>
+                </Box>
+              )}
+              
+              {/* Completion Summary for Visual Analysis */}
+              {visualAnalysisStatus === 'completed' && step2CompletionData && (
+                <Box sx={{ mt: 3, p: 2, bgcolor: 'success.light', borderRadius: 2 }}>
+                  <Typography variant="body2" color="success.dark" sx={{ fontWeight: 'medium' }}>
+                    ✅ Visual Analysis Complete
+                  </Typography>
+                  <Typography variant="caption" color="success.dark" sx={{ display: 'block', mt: 0.5 }}>
+                    {step2CompletionData.successfulDecks} decks processed • Average: {
+                      step2CompletionData.averageTime > 0
+                        ? `${Math.round(step2CompletionData.averageTime)}s per deck`
+                        : 'calculating...'
+                    } • Total: {
+                      step2CompletionData.totalTime > 0
+                        ? formatProcessingTime(step2CompletionData.totalTime * 1000)
+                        : 'calculating...'
+                    }
                   </Typography>
                 </Box>
               )}

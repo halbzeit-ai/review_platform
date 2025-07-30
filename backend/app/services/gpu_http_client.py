@@ -650,6 +650,85 @@ class GPUHTTPClient:
                 "success": False,
                 "error": str(e)
             }
+    
+    async def run_visual_analysis_single_deck(self, deck_id: int, vision_model: str, analysis_prompt: str, file_path: str) -> Dict[str, Any]:
+        """
+        Run visual analysis for a single deck with real-time progress
+        
+        Args:
+            deck_id: Pitch deck ID
+            vision_model: Vision model to use for analysis
+            analysis_prompt: Custom prompt for visual analysis
+            file_path: PDF file path relative to shared filesystem
+            
+        Returns:
+            Single deck processing result
+        """
+        try:
+            if not self.gpu_host:
+                logger.error("GPU_INSTANCE_HOST not configured")
+                return {
+                    "success": False,
+                    "error": "GPU_INSTANCE_HOST not configured"
+                }
+            
+            logger.info(f"Requesting visual analysis for single deck {deck_id} using {vision_model}")
+            
+            payload = {
+                "deck_ids": [deck_id],
+                "vision_model": vision_model,
+                "analysis_prompt": analysis_prompt,
+                "file_paths": [file_path],
+                "extraction_testing": True
+            }
+            
+            async with httpx.AsyncClient(timeout=600.0) as client:  # 10 minutes timeout for single deck
+                response = await client.post(
+                    f"{self.base_url}/run-visual-analysis-batch",
+                    json=payload,
+                    headers={'Content-Type': 'application/json'}
+                )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    logger.info(f"Successfully processed visual analysis for deck {deck_id}")
+                    return {
+                        "success": True,
+                        "result": data.get("results", {}).get(str(deck_id), {}),
+                        "message": data.get("message", "Visual analysis completed")
+                    }
+                else:
+                    logger.error(f"GPU visual analysis failed for deck {deck_id}: {data.get('error')}")
+                    return {
+                        "success": False,
+                        "error": data.get("error", "Unknown GPU processing error")
+                    }
+            else:
+                logger.error(f"HTTP error {response.status_code}: {response.text}")
+                return {
+                    "success": False,
+                    "error": f"HTTP {response.status_code}: {response.text}"
+                }
+                
+        except httpx.TimeoutException:
+            logger.error(f"Timeout processing visual analysis for deck {deck_id}")
+            return {
+                "success": False,
+                "error": "Processing timeout (10 minutes exceeded)"
+            }
+        except httpx.ConnectError:
+            logger.error("Connection error communicating with GPU instance")
+            return {
+                "success": False,
+                "error": "Connection error communicating with GPU instance"
+            }
+        except Exception as e:
+            logger.error(f"Error processing visual analysis for deck {deck_id}: {e}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
 
 # Global instance
 gpu_http_client = GPUHTTPClient()
