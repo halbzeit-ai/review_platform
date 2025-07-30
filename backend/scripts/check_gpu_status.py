@@ -15,7 +15,18 @@ logger = logging.getLogger(__name__)
 
 def check_gpu_server_health():
     """Check if GPU server is responsive"""
-    gpu_url = os.environ.get('GPU_PROCESSING_URL', 'http://localhost:8001')
+    # Get GPU URL based on environment
+    environment = os.environ.get('ENVIRONMENT', 'development')
+    if environment == 'production':
+        gpu_host = os.environ.get('GPU_PRODUCTION', 'localhost')
+    else:
+        gpu_host = os.environ.get('GPU_DEVELOPMENT', 'localhost')
+    
+    # Fallback to legacy variable
+    if gpu_host == 'localhost':
+        gpu_host = os.environ.get('GPU_INSTANCE_HOST', 'localhost')
+    
+    gpu_url = f'http://{gpu_host}:8001'
     
     try:
         # Try to reach GPU server health endpoint
@@ -40,7 +51,18 @@ def check_gpu_server_health():
 
 def check_gpu_processing_status():
     """Check current GPU processing status"""
-    gpu_url = os.environ.get('GPU_PROCESSING_URL', 'http://localhost:8001')
+    # Get GPU URL based on environment
+    environment = os.environ.get('ENVIRONMENT', 'development')
+    if environment == 'production':
+        gpu_host = os.environ.get('GPU_PRODUCTION', 'localhost')
+    else:
+        gpu_host = os.environ.get('GPU_DEVELOPMENT', 'localhost')
+    
+    # Fallback to legacy variable
+    if gpu_host == 'localhost':
+        gpu_host = os.environ.get('GPU_INSTANCE_HOST', 'localhost')
+    
+    gpu_url = f'http://{gpu_host}:8001'
     
     try:
         # Check current processing status
@@ -72,7 +94,18 @@ def check_ollama_models():
 
 def test_simple_processing():
     """Test a simple processing request"""
-    gpu_url = os.environ.get('GPU_PROCESSING_URL', 'http://localhost:8001')
+    # Get GPU URL based on environment
+    environment = os.environ.get('ENVIRONMENT', 'development')
+    if environment == 'production':
+        gpu_host = os.environ.get('GPU_PRODUCTION', 'localhost')
+    else:
+        gpu_host = os.environ.get('GPU_DEVELOPMENT', 'localhost')
+    
+    # Fallback to legacy variable
+    if gpu_host == 'localhost':
+        gpu_host = os.environ.get('GPU_INSTANCE_HOST', 'localhost')
+    
+    gpu_url = f'http://{gpu_host}:8001'
     
     try:
         # Test simple processing

@@ -22,7 +22,16 @@ class DirectGPUProcessingService:
     """Lean service for direct GPU processing without hibernation"""
     
     def __init__(self):
-        self.gpu_host = settings.GPU_INSTANCE_HOST
+        # Determine GPU host based on environment
+        if settings.ENVIRONMENT == "production":
+            self.gpu_host = settings.GPU_PRODUCTION
+        else:
+            self.gpu_host = settings.GPU_DEVELOPMENT
+            
+        # Fallback to legacy setting
+        if not self.gpu_host:
+            self.gpu_host = settings.GPU_INSTANCE_HOST
+            
         self.gpu_user = settings.GPU_INSTANCE_USER
         self.gpu_key_path = settings.GPU_INSTANCE_SSH_KEY_PATH
         self.shared_path = settings.SHARED_FILESYSTEM_MOUNT_PATH

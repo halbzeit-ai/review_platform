@@ -25,13 +25,24 @@ class GPUHTTPClient:
     """HTTP client for GPU model management"""
     
     def __init__(self, gpu_host: Optional[str] = None):
-        self.gpu_host = gpu_host or settings.GPU_INSTANCE_HOST
+        # Determine GPU host based on environment
+        if gpu_host:
+            self.gpu_host = gpu_host
+        elif settings.ENVIRONMENT == "production":
+            self.gpu_host = settings.GPU_PRODUCTION
+        else:
+            self.gpu_host = settings.GPU_DEVELOPMENT
+        
+        # Fallback to legacy setting if new ones aren't configured
+        if not self.gpu_host:
+            self.gpu_host = settings.GPU_INSTANCE_HOST
+            
         self.base_url = f"http://{self.gpu_host}:8001/api"
         self.timeout = 30
         self.pull_timeout = 300  # 5 minutes for model pulls
         
         if not self.gpu_host:
-            logger.warning("GPU_INSTANCE_HOST not configured")
+            logger.warning("GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)")
     
     def is_available(self) -> bool:
         """Check if GPU instance is available"""
@@ -48,7 +59,7 @@ class GPUHTTPClient:
         """
         try:
             if not self.gpu_host:
-                logger.error("GPU_INSTANCE_HOST not configured")
+                logger.error("GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)")
                 return []
             
             logger.info(f"Requesting models from GPU instance: {self.gpu_host}")
@@ -96,7 +107,7 @@ class GPUHTTPClient:
         """
         try:
             if not self.gpu_host:
-                logger.error("GPU_INSTANCE_HOST not configured")
+                logger.error("GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)")
                 return False
             
             logger.info(f"Requesting pull for model {model_name} from GPU instance")
@@ -136,7 +147,7 @@ class GPUHTTPClient:
         """
         try:
             if not self.gpu_host:
-                logger.error("GPU_INSTANCE_HOST not configured")
+                logger.error("GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)")
                 return False
             
             logger.info(f"Requesting deletion of model {model_name} from GPU instance")
@@ -178,7 +189,7 @@ class GPUHTTPClient:
             if not self.gpu_host:
                 return {
                     "online": False,
-                    "error": "GPU_INSTANCE_HOST not configured"
+                    "error": "GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)"
                 }
             
             response = requests.get(
@@ -231,10 +242,10 @@ class GPUHTTPClient:
         """
         try:
             if not self.gpu_host:
-                logger.error("GPU_INSTANCE_HOST not configured")
+                logger.error("GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)")
                 return {
                     "success": False,
-                    "error": "GPU_INSTANCE_HOST not configured"
+                    "error": "GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)"
                 }
             
             logger.info(f"Requesting PDF processing for pitch deck {pitch_deck_id}: {file_path} for company {company_id}")
@@ -309,10 +320,10 @@ class GPUHTTPClient:
         """
         try:
             if not self.gpu_host:
-                logger.error("GPU_INSTANCE_HOST not configured")
+                logger.error("GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)")
                 return {
                     "success": False,
-                    "error": "GPU_INSTANCE_HOST not configured"
+                    "error": "GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)"
                 }
             
             logger.info(f"Requesting visual analysis batch for {len(deck_ids)} decks using {vision_model}")
@@ -389,10 +400,10 @@ class GPUHTTPClient:
         """
         try:
             if not self.gpu_host:
-                logger.error("GPU_INSTANCE_HOST not configured")
+                logger.error("GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)")
                 return {
                     "success": False,
-                    "error": "GPU_INSTANCE_HOST not configured"
+                    "error": "GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)"
                 }
             
             logger.info(f"Requesting offering extraction for {len(deck_ids)} decks using {text_model}")
@@ -465,10 +476,10 @@ class GPUHTTPClient:
         """
         try:
             if not self.gpu_host:
-                logger.error("GPU_INSTANCE_HOST not configured")
+                logger.error("GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)")
                 return {
                     "success": False,
-                    "error": "GPU_INSTANCE_HOST not configured"
+                    "error": "GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)"
                 }
             
             logger.info(f"Requesting classification using model {model_name}")
@@ -544,7 +555,7 @@ class GPUHTTPClient:
             if not self.gpu_host:
                 return {
                     "success": False,
-                    "error": "GPU_INSTANCE_HOST not configured"
+                    "error": "GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)"
                 }
             
             response = requests.get(
@@ -589,10 +600,10 @@ class GPUHTTPClient:
         """
         try:
             if not self.gpu_host:
-                logger.error("GPU_INSTANCE_HOST not configured")
+                logger.error("GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)")
                 return {
                     "success": False,
-                    "error": "GPU_INSTANCE_HOST not configured"
+                    "error": "GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)"
                 }
             
             logger.info(f"Requesting template processing for {len(deck_ids)} decks with thumbnails={generate_thumbnails}")
@@ -666,10 +677,10 @@ class GPUHTTPClient:
         """
         try:
             if not self.gpu_host:
-                logger.error("GPU_INSTANCE_HOST not configured")
+                logger.error("GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)")
                 return {
                     "success": False,
-                    "error": "GPU_INSTANCE_HOST not configured"
+                    "error": "GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)"
                 }
             
             logger.info(f"Requesting visual analysis for single deck {deck_id} using {vision_model}")

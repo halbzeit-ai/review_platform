@@ -28,9 +28,13 @@ class Settings(BaseSettings):
     SHARED_FILESYSTEM_MOUNT_PATH: str = "/mnt/CPU-GPU"
     
     # Direct GPU Processing Configuration
-    GPU_INSTANCE_HOST: str = ""  # IP address of your persistent GPU instance
+    GPU_DEVELOPMENT: str = ""  # IP address of development GPU instance
+    GPU_PRODUCTION: str = ""   # IP address of production GPU instance
     GPU_INSTANCE_USER: str = "root"
     GPU_INSTANCE_SSH_KEY_PATH: str = ""  # Path to SSH private key for GPU instance
+    
+    # Legacy support - will be deprecated
+    GPU_INSTANCE_HOST: str = ""  # IP address of your persistent GPU instance
 
     # Email Configuration (Hetzner)
     SMTP_SERVER: str = "mail.halbzeit.ai"
