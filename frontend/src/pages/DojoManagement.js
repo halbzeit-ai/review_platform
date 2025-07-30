@@ -954,10 +954,8 @@ const DojoManagement = () => {
         // Clear the current sample since cache was cleared
         setExtractionSample([]);
         
-        // Refresh cached count if using cached selection
-        if (selectFromCached) {
-          loadCachedDecksCount();
-        }
+        // Always refresh cached count after clearing cache
+        await loadCachedDecksCount();
         
         // Clear any existing errors
         setError(null);
