@@ -97,5 +97,31 @@ Key principles:
 - git: claude should always add and commit, human should always push 
 - the GPU and the CPU have access to the git repo, i.e. usually no copying between these two is necessary.
 
+## Environment Configuration
+
+The project uses a consistent naming scheme for environment variables to separate service types from environments:
+
+### Server Environment Variables
+- `BACKEND_DEVELOPMENT=http://65.108.32.143:8000` - Backend server in development environment
+- `BACKEND_PRODUCTION=http://65.108.32.168:8000` - Backend server in production environment  
+- `GPU_DEVELOPMENT=135.181.71.17` - GPU server in development environment
+- `GPU_PRODUCTION=135.181.63.133` - GPU server in production environment
+
+### Naming Convention
+**Pattern**: `{SERVICE_TYPE}_{ENVIRONMENT}`
+- **Service Types**: BACKEND, GPU, FRONTEND (if needed)
+- **Environments**: DEVELOPMENT, PRODUCTION, STAGING (if added)
+
+### Environment-Aware Configuration
+- Services automatically select the correct server based on the `ENVIRONMENT` variable
+- GPU HTTP client chooses GPU_DEVELOPMENT for development, GPU_PRODUCTION for production
+- Backend services use BACKEND_DEVELOPMENT for callbacks in development environment
+- Maintains backward compatibility with legacy variables (GPU_INSTANCE_HOST, PRODUCTION_SERVER_URL)
+
+### File Locations
+- Backend environment: `backend/.env`
+- GPU processing environment: `gpu_processing/.env.development`
+- Configuration classes: `backend/app/core/config.py`
+
 ## Development Memories
 - please do remember that you are on a development machine, the UUIDs, filepaths and SQL databases I paste are from the production machine
