@@ -109,10 +109,10 @@ class HealthcareTemplateAnalyzer:
         # Determine the most restrictive model to use for base options
         models_to_check = [self.text_model, self.vision_model, self.scoring_model]
         
-        # Default options for large models
+        # Default options for large models (production-grade)
         options = {
-            'num_ctx': 16384,
-            'num_predict': 2048,
+            'num_ctx': 32768,     # Large context for production models
+            'num_predict': 4096,  # Long output capability for detailed analysis
             'temperature': 0.3,
             'top_p': 0.9,
             'top_k': 40,
