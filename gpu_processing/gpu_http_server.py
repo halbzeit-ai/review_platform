@@ -737,35 +737,49 @@ Please provide a comprehensive analysis focusing on the requested areas."""
                 }), 500
     
     def _get_cached_visual_analysis(self, deck_ids: List[int]) -> Dict[int, Dict]:
-        """Get cached visual analysis from production server for extraction testing"""
+        """Get cached visual analysis directly from database"""
         try:
-            import requests
+            import psycopg2
+            import json
             
-            # Get the backend server URL from environment or use default
-            backend_server = os.getenv("BACKEND_DEVELOPMENT", os.getenv("BACKEND_PRODUCTION", "http://65.108.32.168"))
+            # Get database URL from environment
+            database_url = os.getenv("DATABASE_URL")
+            if not database_url:
+                # Fallback to development database
+                database_url = "postgresql://dev_user:!dev_Halbzeit1024@65.108.32.143:5432/review_dev"
             
-            # Request cached visual analysis data
-            response = requests.post(
-                f"{backend_server}/api/dojo/internal/get-cached-visual-analysis",
-                json={"deck_ids": deck_ids},
-                timeout=30
-            )
+            logger.info(f"Querying database directly for cached visual analysis of {len(deck_ids)} decks")
             
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("success"):
-                    cached_data = data.get("cached_analysis", {})
-                    logger.info(f"Retrieved cached visual analysis for {len(cached_data)} decks")
-                    return cached_data
-                else:
-                    logger.error(f"Failed to get cached visual analysis: {data.get('error', 'Unknown error')}")
-                    return {}
-            else:
-                logger.error(f"HTTP error getting cached visual analysis: {response.status_code} - {response.text}")
-                return {}
+            # Connect to database
+            conn = psycopg2.connect(database_url)
+            cursor = conn.cursor()
+            
+            cached_analysis = {}
+            for deck_id in deck_ids:
+                try:
+                    cursor.execute(
+                        "SELECT analysis_result_json FROM visual_analysis_cache WHERE pitch_deck_id = %s ORDER BY created_at DESC LIMIT 1",
+                        (deck_id,)
+                    )
+                    result = cursor.fetchone()
+                    
+                    if result:
+                        analysis_data = json.loads(result[0])
+                        cached_analysis[deck_id] = analysis_data
+                        logger.debug(f"Found cached visual analysis for deck {deck_id}")
+                    else:
+                        logger.debug(f"No cached visual analysis found for deck {deck_id}")
+                        
+                except Exception as e:
+                    logger.error(f"Error retrieving cached visual analysis for deck {deck_id}: {e}")
+                    continue
+            
+            conn.close()
+            logger.info(f"Retrieved cached visual analysis for {len(cached_analysis)}/{len(deck_ids)} decks via direct database query")
+            return cached_analysis
             
         except Exception as e:
-            logger.error(f"Error getting cached visual analysis: {e}")
+            logger.error(f"Error getting cached visual analysis from database: {e}")
             return {}
     
     def _cache_visual_analysis_result(self, deck_id: int, visual_results: Dict, vision_model: str, analysis_prompt: str):
