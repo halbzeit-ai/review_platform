@@ -27,32 +27,13 @@ def import_prompts():
         
         # Check if pipeline_prompts table exists
         print("🔍 Checking pipeline_prompts table...")
-        cur.execute("""
-            SELECT EXISTS (
-                SELECT FROM information_schema.tables 
-                WHERE table_schema = 'public' 
-                AND table_name = 'pipeline_prompts'
-            );
-        """)
-        
-        if not cur.fetchone()[0]:
-            print("📋 Creating pipeline_prompts table...")
-            cur.execute("""
-                CREATE TABLE pipeline_prompts (
-                    id SERIAL PRIMARY KEY,
-                    stage_name VARCHAR(255) NOT NULL,
-                    prompt_text TEXT NOT NULL,
-                    description TEXT,
-                    is_active BOOLEAN DEFAULT true,
-                    created_by VARCHAR(255) DEFAULT 'system',
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                );
-                
-                CREATE INDEX idx_pipeline_prompts_stage_active ON pipeline_prompts(stage_name, is_active);
-            """)
-            conn.commit()
-            print("✅ Table created")
+        try:
+            cur.execute("SELECT COUNT(*) FROM pipeline_prompts")
+            print("✅ Pipeline_prompts table exists")
+        except psycopg2.Error:
+            print("❌ Pipeline_prompts table does not exist")
+            print("Please run: sudo -u postgres psql review_dev -c \"CREATE TABLE pipeline_prompts...\"")
+            sys.exit(1)
         
         # Clear existing prompts
         print("🧹 Clearing existing prompts...")
