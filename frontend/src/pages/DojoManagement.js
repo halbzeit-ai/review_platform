@@ -1830,6 +1830,7 @@ const DojoManagement = () => {
                     label="Sample Size"
                     onChange={(e) => setSampleSize(e.target.value)}
                   >
+                    <MenuItem value={1}>1 deck</MenuItem>
                     <MenuItem value={10}>10 decks</MenuItem>
                     <MenuItem value={50}>50 decks</MenuItem>
                     <MenuItem value={100}>100 decks</MenuItem>
