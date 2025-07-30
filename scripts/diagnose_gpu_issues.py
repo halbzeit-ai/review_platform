@@ -14,7 +14,7 @@ print("="*40)
 
 # Check environment variables
 print("\n📋 Environment Variables:")
-env_vars = ["PRODUCTION_SERVER_URL", "BACKEND_URL", "SHARED_FILESYSTEM_MOUNT_PATH"]
+env_vars = ["BACKEND_DEVELOPMENT", "BACKEND_PRODUCTION", "SHARED_FILESYSTEM_MOUNT_PATH"]
 for var in env_vars:
     value = os.getenv(var, "NOT SET")
     print(f"  {var}: {value}")
@@ -63,7 +63,7 @@ except ImportError as e:
 
 # Check backend connectivity
 print("\n🌐 Backend Connectivity:")
-backend_url = os.getenv("PRODUCTION_SERVER_URL", "http://65.108.32.143:8000")
+backend_url = os.getenv("BACKEND_DEVELOPMENT", "http://65.108.32.143:8000")
 try:
     response = requests.get(f"{backend_url}/api/health", timeout=5)
     print(f"  ✅ Backend reachable at {backend_url}")

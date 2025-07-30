@@ -742,7 +742,7 @@ Please provide a comprehensive analysis focusing on the requested areas."""
             import requests
             
             # Get the backend server URL from environment or use default
-            backend_server = os.getenv("BACKEND_URL", os.getenv("PRODUCTION_SERVER_URL", "http://65.108.32.168"))
+            backend_server = os.getenv("BACKEND_DEVELOPMENT", os.getenv("BACKEND_PRODUCTION", "http://65.108.32.168"))
             
             # Request cached visual analysis data
             response = requests.post(
@@ -775,7 +775,7 @@ Please provide a comprehensive analysis focusing on the requested areas."""
             import json
             
             # Get the backend server URL from environment or use default
-            backend_server = os.getenv("BACKEND_URL", os.getenv("PRODUCTION_SERVER_URL", "http://65.108.32.168"))
+            backend_server = os.getenv("BACKEND_DEVELOPMENT", os.getenv("BACKEND_PRODUCTION", "http://65.108.32.168"))
             
             # Prepare the cache data
             cache_data = {
@@ -806,7 +806,7 @@ Please provide a comprehensive analysis focusing on the requested areas."""
             import requests
             
             # Get the backend server URL from environment or use default
-            backend_server = os.getenv("BACKEND_URL", os.getenv("PRODUCTION_SERVER_URL", "http://65.108.32.168"))
+            backend_server = os.getenv("BACKEND_DEVELOPMENT", os.getenv("BACKEND_PRODUCTION", "http://65.108.32.168"))
             
             # Prepare the update data
             update_data = {

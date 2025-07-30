@@ -10,8 +10,8 @@ print("="*40)
 
 # Check environment variables
 env_vars = {
-    "PRODUCTION_SERVER_URL": os.getenv("PRODUCTION_SERVER_URL"),
-    "BACKEND_URL": os.getenv("BACKEND_URL"),
+    "BACKEND_DEVELOPMENT": os.getenv("BACKEND_DEVELOPMENT"),
+    "BACKEND_PRODUCTION": os.getenv("BACKEND_PRODUCTION"),
     "DATABASE_URL": os.getenv("DATABASE_URL"),
     "SHARED_FILESYSTEM_MOUNT_PATH": os.getenv("SHARED_FILESYSTEM_MOUNT_PATH")
 }
@@ -22,19 +22,21 @@ for var, value in env_vars.items():
     else:
         print(f"❌ {var}: NOT SET")
 
-# Check if PRODUCTION_SERVER_URL includes port
-prod_url = env_vars["PRODUCTION_SERVER_URL"]
-if prod_url:
-    if ":8000" in prod_url:
-        print("✅ PRODUCTION_SERVER_URL includes port 8000")
-    elif ":80" in prod_url:
-        print("⚠️  PRODUCTION_SERVER_URL has port 80 (should be 8000)")
-    elif prod_url.count(":") == 1:  # Only http: or https:
-        print("❌ PRODUCTION_SERVER_URL missing port number")
-        print("   This will default to port 80!")
-    else:
-        print("✅ PRODUCTION_SERVER_URL appears to have a port")
+# Check if backend URLs include proper ports
+for env_name in ["BACKEND_DEVELOPMENT", "BACKEND_PRODUCTION"]:
+    backend_url = env_vars[env_name]
+    if backend_url:
+        if ":8000" in backend_url:
+            print(f"✅ {env_name} includes port 8000")
+        elif ":80" in backend_url:
+            print(f"⚠️  {env_name} has port 80 (should be 8000)")
+        elif backend_url.count(":") == 1:  # Only http: or https:
+            print(f"❌ {env_name} missing port number")
+            print("   This will default to port 80!")
+        else:
+            print(f"✅ {env_name} appears to have a port")
 
 print("\n" + "="*40)
-print("🔧 To fix the port 80 issue:")
-print("export PRODUCTION_SERVER_URL=http://65.108.32.143:8000")
+print("🔧 To set proper backend URLs:")
+print("export BACKEND_DEVELOPMENT=http://65.108.32.143:8000")
+print("export BACKEND_PRODUCTION=http://65.108.32.168:8000")
