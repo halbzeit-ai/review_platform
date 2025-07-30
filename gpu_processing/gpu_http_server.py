@@ -741,12 +741,12 @@ Please provide a comprehensive analysis focusing on the requested areas."""
         try:
             import requests
             
-            # Get the production server URL from environment or use default
-            production_server = os.getenv("PRODUCTION_SERVER_URL", "http://65.108.32.168")
+            # Get the backend server URL from environment or use default
+            backend_server = os.getenv("BACKEND_URL", os.getenv("PRODUCTION_SERVER_URL", "http://65.108.32.168"))
             
             # Request cached visual analysis data
             response = requests.post(
-                f"{production_server}/api/dojo/internal/get-cached-visual-analysis",
+                f"{backend_server}/api/dojo/internal/get-cached-visual-analysis",
                 json={"deck_ids": deck_ids},
                 timeout=30
             )
@@ -774,8 +774,8 @@ Please provide a comprehensive analysis focusing on the requested areas."""
             import requests
             import json
             
-            # Get the production server URL from environment or use default
-            production_server = os.getenv("PRODUCTION_SERVER_URL", "http://65.108.32.168")
+            # Get the backend server URL from environment or use default
+            backend_server = os.getenv("BACKEND_URL", os.getenv("PRODUCTION_SERVER_URL", "http://65.108.32.168"))
             
             # Prepare the cache data
             cache_data = {
@@ -787,7 +787,7 @@ Please provide a comprehensive analysis focusing on the requested areas."""
             
             # Make HTTP request to cache visual analysis
             response = requests.post(
-                f"{production_server}/api/dojo/internal/cache-visual-analysis",
+                f"{backend_server}/api/dojo/internal/cache-visual-analysis",
                 json=cache_data,
                 timeout=30
             )
@@ -805,8 +805,8 @@ Please provide a comprehensive analysis focusing on the requested areas."""
         try:
             import requests
             
-            # Get the production server URL from environment or use default
-            production_server = os.getenv("PRODUCTION_SERVER_URL", "http://65.108.32.168")
+            # Get the backend server URL from environment or use default
+            backend_server = os.getenv("BACKEND_URL", os.getenv("PRODUCTION_SERVER_URL", "http://65.108.32.168"))
             
             # Prepare the update data
             update_data = {
@@ -817,7 +817,7 @@ Please provide a comprehensive analysis focusing on the requested areas."""
             
             # Make HTTP request to update database
             response = requests.post(
-                f"{production_server}/api/internal/update-deck-results",
+                f"{backend_server}/api/internal/update-deck-results",
                 json=update_data,
                 timeout=30
             )
