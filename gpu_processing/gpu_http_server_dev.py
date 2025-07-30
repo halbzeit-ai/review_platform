@@ -37,14 +37,25 @@ def health_check():
     })
 
 @app.route('/api/process', methods=['POST'])
+@app.route('/api/process-pdf', methods=['POST'])
 def process_pdf():
     """Process a PDF file"""
     data = request.json
-    pdf_filename = data.get('filename')
     
-    if not pdf_filename:
-        return jsonify({"error": "No filename provided"}), 400
+    # Handle both old and new parameter formats
+    pitch_deck_id = data.get('pitch_deck_id')
+    file_path = data.get('file_path')
+    company_id = data.get('company_id')
     
+    # Also support simple filename parameter
+    if not file_path:
+        file_path = data.get('filename')
+    
+    if not file_path:
+        return jsonify({"error": "No file_path or filename provided"}), 400
+    
+    # Extract just the filename from the path
+    pdf_filename = os.path.basename(file_path)
     pdf_path = os.path.join(UPLOADS_DIR, pdf_filename)
     
     if not os.path.exists(pdf_path):
@@ -53,16 +64,28 @@ def process_pdf():
     # For development, create a mock result
     result = {
         "filename": pdf_filename,
+        "pitch_deck_id": pitch_deck_id,
+        "company_id": company_id,
         "processed_at": datetime.now().isoformat(),
         "status": "success",
         "analysis": {
-            "summary": "This is a development mock analysis",
+            "summary": "This is a development mock analysis for your startup pitch deck.",
             "key_points": [
-                "Mock point 1",
-                "Mock point 2",
-                "Mock point 3"
+                "Strong value proposition identified",
+                "Market opportunity well defined",
+                "Team expertise demonstrated"
             ],
-            "score": 85
+            "score": 85,
+            "strengths": [
+                "Clear problem statement",
+                "Innovative solution approach",
+                "Experienced founding team"
+            ],
+            "areas_for_improvement": [
+                "Financial projections need more detail",
+                "Competitive analysis could be expanded",
+                "Go-to-market strategy requires refinement"
+            ]
         }
     }
     
@@ -73,12 +96,14 @@ def process_pdf():
     with open(result_path, 'w') as f:
         json.dump(result, f, indent=2)
     
-    logger.info(f"Processed {pdf_filename}, result saved to {result_filename}")
+    logger.info(f"Processed pitch deck {pitch_deck_id}: {pdf_filename}, result saved to {result_filename}")
     
+    # Return response in the format expected by the backend
     return jsonify({
-        "status": "success",
-        "result_file": result_filename,
-        "result": result
+        "success": True,
+        "results_file": result_filename,
+        "results_path": result_path,
+        "message": f"PDF processed successfully for pitch deck {pitch_deck_id}"
     })
 
 @app.route('/api/models', methods=['GET'])
