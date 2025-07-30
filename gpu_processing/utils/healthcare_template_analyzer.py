@@ -327,7 +327,7 @@ class HealthcareTemplateAnalyzer:
             response = ollama.generate(
                 model=self.text_model,
                 prompt=classification_prompt,
-                options={'num_ctx': 16384, 'temperature': 0.2}  # Low temperature for consistent classification
+                options={'num_ctx': 32768, 'temperature': 0.2}  # Low temperature for consistent classification
             )
             
             # Parse JSON response
