@@ -46,14 +46,28 @@ class HealthcareTemplateAnalyzer:
     def __init__(self, backend_base_url: str = "http://localhost:8000"):
         self.backend_base_url = backend_base_url
         # Use PostgreSQL database connection
-        # Get database host from environment, fallback to CPU server IP
-        db_host = os.getenv('DATABASE_HOST', '65.108.32.168')  # CPU server IP
-        self.database_url = f"postgresql://review_user:review_password@{db_host}:5432/review-platform"
+        # Build database URL from environment variables or use DATABASE_URL directly
+        if os.getenv('DATABASE_URL'):
+            self.database_url = os.getenv('DATABASE_URL')
+        else:
+            db_host = os.getenv('DATABASE_HOST', '65.108.32.168')
+            db_port = os.getenv('DATABASE_PORT', '5432')
+            db_name = os.getenv('DATABASE_NAME', 'review-platform')
+            db_user = os.getenv('DATABASE_USER', 'review_user')
+            db_password = os.getenv('DATABASE_PASSWORD', 'review_password')
+            self.database_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
         
         # Model configuration
-        self.vision_model = self.get_model_by_type("vision") or "gemma3:12b"
-        self.text_model = self.get_model_by_type("text") or "gemma3:12b"
-        self.scoring_model = self.get_model_by_type("scoring") or "phi4:latest"
+        # Check if we should skip database lookups (for development)
+        if os.getenv('SKIP_DB_MODEL_CONFIG', 'false').lower() == 'true':
+            self.vision_model = os.getenv('DEFAULT_VISION_MODEL', 'gemma3:12b')
+            self.text_model = os.getenv('DEFAULT_TEXT_MODEL', 'gemma3:12b')
+            self.scoring_model = os.getenv('DEFAULT_SCORING_MODEL', 'phi4:latest')
+            logger.info("📋 Skipping database model config, using environment defaults")
+        else:
+            self.vision_model = self.get_model_by_type("vision") or os.getenv('DEFAULT_VISION_MODEL', 'gemma3:12b')
+            self.text_model = self.get_model_by_type("text") or os.getenv('DEFAULT_TEXT_MODEL', 'gemma3:12b')
+            self.scoring_model = self.get_model_by_type("scoring") or os.getenv('DEFAULT_SCORING_MODEL', 'phi4:latest')
         
         # Log model configuration
         logger.info(f"🤖 AI Model Configuration:")
