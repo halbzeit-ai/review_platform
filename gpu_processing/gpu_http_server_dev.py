@@ -54,12 +54,24 @@ def process_pdf():
     if not file_path:
         return jsonify({"error": "No file_path or filename provided"}), 400
     
-    # Extract just the filename from the path
+    # The file_path might be a relative path like "uploads/company_name/uuid/filename.pdf"
+    # Remove the "uploads/" prefix if present
+    if file_path.startswith("uploads/"):
+        relative_path = file_path[8:]  # Remove "uploads/" prefix
+    else:
+        relative_path = file_path
+    
+    # Build the full path
+    pdf_path = os.path.join(UPLOADS_DIR, relative_path)
     pdf_filename = os.path.basename(file_path)
-    pdf_path = os.path.join(UPLOADS_DIR, pdf_filename)
+    
+    logger.info(f"Processing request - file_path: {file_path}, pdf_path: {pdf_path}")
     
     if not os.path.exists(pdf_path):
-        return jsonify({"error": f"File not found: {pdf_filename}"}), 404
+        logger.error(f"File not found at {pdf_path}")
+        # List what files exist in the uploads directory for debugging
+        logger.info(f"Files in {UPLOADS_DIR}: {os.listdir(UPLOADS_DIR)}")
+        return jsonify({"error": f"File not found: {pdf_filename} at path {pdf_path}"}), 404
     
     # For development, create a mock result
     result = {
