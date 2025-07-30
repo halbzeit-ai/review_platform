@@ -9,7 +9,7 @@ from datetime import datetime
 
 # Database configurations
 PROD_DB_URL = "postgresql://review_user:review_password@65.108.32.168:5432/review-platform"
-DEV_DB_URL = "postgresql://dev_user:!dev_Halbzeit1024@localhost:5432/review_dev"
+DEV_DB_URL = "postgresql://dev_user:!dev_Halbzeit1024@65.108.32.143:5432/review_dev"
 
 def copy_prompts():
     """Copy all prompts from production to development"""
