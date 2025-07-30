@@ -9,7 +9,7 @@ import os
 import sys
 
 DEV_DB_URL = "postgresql://dev_user:!dev_Halbzeit1024@65.108.32.143:5432/review_dev"  
-IMPORT_FILE = "/mnt/CPU-GPU/temp/production_prompts.sql"
+IMPORT_FILE = "/mnt/production-shared/temp/production_prompts.sql"
 
 def import_prompts():
     """Import prompts from production export"""
