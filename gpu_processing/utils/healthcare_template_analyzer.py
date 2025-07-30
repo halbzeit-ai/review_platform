@@ -6,7 +6,7 @@ Replaces hardcoded prompts with configurable healthcare sector templates
 import os
 import json
 import time
-import signal
+import threading
 from contextlib import contextmanager
 import logging
 import re
@@ -140,37 +140,36 @@ class HealthcareTemplateAnalyzer:
         
         return options
     
-    @contextmanager
-    def _timeout_context(self, seconds=300):
-        """Context manager for timing out long-running operations"""
-        def timeout_handler(signum, frame):
-            raise TimeoutError(f"Operation timed out after {seconds} seconds")
-        
-        # Set the signal alarm
-        old_handler = signal.signal(signal.SIGALRM, timeout_handler)
-        signal.alarm(seconds)
-        
-        try:
-            yield
-        finally:
-            # Restore the old handler and cancel the alarm
-            signal.alarm(0)
-            signal.signal(signal.SIGALRM, old_handler)
-    
     def _safe_ollama_generate(self, model: str, prompt: str, options: dict, timeout: int = 180) -> dict:
-        """Safely call ollama.generate with timeout protection"""
-        try:
-            with self._timeout_context(timeout):
-                logger.info(f"🤖 Generating with model {model} (timeout: {timeout}s, options: {options})")
-                response = ollama.generate(model=model, prompt=prompt, options=options)
+        """Safely call ollama.generate with timeout protection using threading"""
+        result = {"response": None, "error": None}
+        
+        def generate_with_timeout():
+            try:
+                logger.info(f"🤖 Generating with model {model} (timeout: {timeout}s)")
+                result["response"] = ollama.generate(model=model, prompt=prompt, options=options)
                 logger.info(f"✅ Generation completed successfully")
-                return response
-        except TimeoutError as e:
+            except Exception as e:
+                logger.error(f"❌ Model generation failed: {e}")
+                result["error"] = e
+        
+        # Run generation in a separate thread
+        thread = threading.Thread(target=generate_with_timeout)
+        thread.daemon = True
+        thread.start()
+        thread.join(timeout=timeout)
+        
+        if thread.is_alive():
             logger.error(f"⏰ Model generation timed out after {timeout} seconds")
-            raise e
-        except Exception as e:
-            logger.error(f"❌ Model generation failed: {e}")
-            raise e
+            raise TimeoutError(f"Model generation timed out after {timeout} seconds")
+        
+        if result["error"]:
+            raise result["error"]
+        
+        if result["response"] is None:
+            raise RuntimeError("Model generation failed without specific error")
+            
+        return result["response"]
     
     def get_model_by_type(self, model_type: str) -> Optional[str]:
         """Get the active model for a specific type from PostgreSQL database"""
