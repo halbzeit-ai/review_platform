@@ -6,6 +6,8 @@ Replaces hardcoded prompts with configurable healthcare sector templates
 import os
 import json
 import time
+import signal
+from contextlib import contextmanager
 import logging
 import re
 import psycopg2
@@ -69,11 +71,15 @@ class HealthcareTemplateAnalyzer:
             self.text_model = self.get_model_by_type("text") or os.getenv('DEFAULT_TEXT_MODEL', 'gemma3:12b')
             self.scoring_model = self.get_model_by_type("scoring") or os.getenv('DEFAULT_SCORING_MODEL', 'phi4:latest')
         
+        # Set model-appropriate parameters
+        self.model_options = self._get_model_options()
+        
         # Log model configuration
         logger.info(f"🤖 AI Model Configuration:")
         logger.info(f"   📷 Vision Model (slide analysis): {self.vision_model}")
         logger.info(f"   📝 Text Model (offering extraction, name extraction, classification, chapters, questions, specialized analysis): {self.text_model}")
         logger.info(f"   🎯 Scoring Model (question scoring): {self.scoring_model}")
+        logger.info(f"   ⚙️  Model Options: {self.model_options}")
         
         # Analysis results storage
         self.visual_analysis_results = []
@@ -97,6 +103,74 @@ class HealthcareTemplateAnalyzer:
         
         # Project-based storage - read from environment
         self.project_root = os.path.join(os.getenv('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/CPU-GPU'), 'projects')
+    
+    def _get_model_options(self) -> dict:
+        """Get appropriate generation options based on the model type"""
+        # Determine the most restrictive model to use for base options
+        models_to_check = [self.text_model, self.vision_model, self.scoring_model]
+        
+        # Default options for large models
+        options = {
+            'num_ctx': 16384,
+            'num_predict': 2048,
+            'temperature': 0.3,
+            'top_p': 0.9,
+            'top_k': 40,
+            'repeat_penalty': 1.1
+        }
+        
+        # Check if any model is a smaller/mini model and adjust accordingly
+        for model in models_to_check:
+            if any(term in model.lower() for term in ['mini', '3:mini', '2b', 'small']):
+                logger.info(f"🔧 Detected smaller model ({model}), using conservative parameters")
+                options.update({
+                    'num_ctx': 4096,      # Much smaller context for mini models
+                    'num_predict': 1024,  # Shorter output limit
+                    'temperature': 0.3,
+                    'top_p': 0.8,         # More focused sampling
+                    'top_k': 20,          # Fewer candidate tokens
+                    'repeat_penalty': 1.15,  # Higher penalty to prevent loops
+                    'stop': ['\n\n\n', '###', 'END'],  # Add stop sequences
+                })
+                break
+        
+        # Add common stop sequences to prevent runaway generation
+        if 'stop' not in options:
+            options['stop'] = ['\n\n\n', '###', 'END']
+        
+        return options
+    
+    @contextmanager
+    def _timeout_context(self, seconds=300):
+        """Context manager for timing out long-running operations"""
+        def timeout_handler(signum, frame):
+            raise TimeoutError(f"Operation timed out after {seconds} seconds")
+        
+        # Set the signal alarm
+        old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(seconds)
+        
+        try:
+            yield
+        finally:
+            # Restore the old handler and cancel the alarm
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, old_handler)
+    
+    def _safe_ollama_generate(self, model: str, prompt: str, options: dict, timeout: int = 180) -> dict:
+        """Safely call ollama.generate with timeout protection"""
+        try:
+            with self._timeout_context(timeout):
+                logger.info(f"🤖 Generating with model {model} (timeout: {timeout}s, options: {options})")
+                response = ollama.generate(model=model, prompt=prompt, options=options)
+                logger.info(f"✅ Generation completed successfully")
+                return response
+        except TimeoutError as e:
+            logger.error(f"⏰ Model generation timed out after {timeout} seconds")
+            raise e
+        except Exception as e:
+            logger.error(f"❌ Model generation failed: {e}")
+            raise e
     
     def get_model_by_type(self, model_type: str) -> Optional[str]:
         """Get the active model for a specific type from PostgreSQL database"""
@@ -341,7 +415,7 @@ class HealthcareTemplateAnalyzer:
             response = ollama.generate(
                 model=self.text_model,
                 prompt=classification_prompt,
-                options={'num_ctx': 16384, 'temperature': 0.2}  # Low temperature for consistent classification
+                options={**self.model_options, 'temperature': 0.2}  # Low temperature for consistent classification
             )
             
             # Parse JSON response
@@ -990,10 +1064,11 @@ class HealthcareTemplateAnalyzer:
         offering_prompt = f"{self.offering_extraction_prompt}\n\nPitch deck content: {{pitch_deck_content}}"
         
         try:
-            response = ollama.generate(
+            response = self._safe_ollama_generate(
                 model=self.text_model,
                 prompt=offering_prompt.format(pitch_deck_content=full_pitchdeck_text),
-                options={'num_ctx': 32768, 'temperature': 0.3}
+                options=self.model_options,
+                timeout=120  # 2 minutes for offering extraction
             )
             
             self.company_offering = response['response'].strip()
@@ -1024,7 +1099,7 @@ class HealthcareTemplateAnalyzer:
             response = ollama.generate(
                 model=self.text_model,
                 prompt=startup_name_prompt.format(pitch_deck_content=full_pitchdeck_text),
-                options={'num_ctx': 32768, 'temperature': 0.1}  # Lower temperature for more accurate extraction
+                options={**self.model_options, 'temperature': 0.1}  # Lower temperature for more accurate extraction
             )
             
             # Clean up the response to extract just the name
@@ -1077,7 +1152,7 @@ class HealthcareTemplateAnalyzer:
             response = ollama.generate(
                 model=self.text_model,
                 prompt=funding_prompt.format(pitch_deck_content=full_pitchdeck_text),
-                options={'num_ctx': 32768, 'temperature': 0.1}  # Lower temperature for more accurate extraction
+                options={**self.model_options, 'temperature': 0.1}  # Lower temperature for more accurate extraction
             )
             
             # Clean up the response to extract just the funding amount
@@ -1113,7 +1188,7 @@ class HealthcareTemplateAnalyzer:
             response = ollama.generate(
                 model=self.text_model,
                 prompt=date_prompt.format(pitch_deck_content=full_pitchdeck_text),
-                options={'num_ctx': 32768, 'temperature': 0.1}  # Lower temperature for more accurate extraction
+                options={**self.model_options, 'temperature': 0.1}  # Lower temperature for more accurate extraction
             )
             
             # Clean up the response to extract just the date
@@ -1178,7 +1253,7 @@ class HealthcareTemplateAnalyzer:
                     response = ollama.generate(
                         model=self.text_model,
                         prompt=question_prompt,
-                        options={'num_ctx': 32768, 'temperature': 0.1}
+                        options={**self.model_options, 'temperature': 0.1}
                     )
                     
                     question_response = response['response']
@@ -1264,7 +1339,7 @@ class HealthcareTemplateAnalyzer:
             response = ollama.generate(
                 model=self.scoring_model,
                 prompt=scoring_prompt,
-                options={'num_ctx': 32768, 'temperature': 0.1}
+                options={**self.model_options, 'temperature': 0.1}
             )
             
             score_text = response['response'].strip()
@@ -1361,7 +1436,7 @@ class HealthcareTemplateAnalyzer:
             response = ollama.generate(
                 model=self.text_model,
                 prompt=prompt.format(pitch_deck_content=pitch_deck_text),
-                options={'num_ctx': 32768, 'temperature': 0.1}
+                options={**self.model_options, 'temperature': 0.1}
             )
             
             self.specialized_results["clinical_validation"] = response['response']
@@ -1393,7 +1468,7 @@ class HealthcareTemplateAnalyzer:
             response = ollama.generate(
                 model=self.text_model,
                 prompt=prompt.format(pitch_deck_content=pitch_deck_text),
-                options={'num_ctx': 32768, 'temperature': 0.1}
+                options={**self.model_options, 'temperature': 0.1}
             )
             
             self.specialized_results["regulatory_pathway"] = response['response']
@@ -1424,7 +1499,7 @@ class HealthcareTemplateAnalyzer:
             response = ollama.generate(
                 model=self.text_model,
                 prompt=prompt.format(pitch_deck_content=pitch_deck_text),
-                options={'num_ctx': 32768, 'temperature': 0.1}
+                options={**self.model_options, 'temperature': 0.1}
             )
             
             self.specialized_results["scientific_hypothesis"] = response['response']
