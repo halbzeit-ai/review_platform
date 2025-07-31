@@ -727,9 +727,11 @@ async def run_visual_analysis_batch(
             if prompt_result:
                 analysis_prompt = prompt_result[0]
             else:
-                # Fallback to default prompt if not found in database
-                analysis_prompt = "Describe this image and make sure to include anything notable about it (include text you see in the image):"
-                logger.warning("No image_analysis prompt found in database, using default")
+                # No fallback - fail explicitly
+                raise HTTPException(
+                    status_code=500,
+                    detail="image_analysis prompt not found in pipeline_prompts table. Please add this prompt with stage_name='image_analysis'."
+                )
         
         # Validate deck IDs exist and are dojo files
         decks = db.query(PitchDeck).filter(
@@ -2334,9 +2336,11 @@ async def process_visual_analysis_batch(deck_ids: List[int], vision_model: str):
             if prompt_result:
                 analysis_prompt = prompt_result[0]
             else:
-                # Fallback to default prompt if not found in database
-                analysis_prompt = "Describe this image and make sure to include anything notable about it (include text you see in the image):"
-                logger.warning("No image_analysis prompt found in database, using default")
+                # No fallback - fail explicitly
+                raise HTTPException(
+                    status_code=500,
+                    detail="image_analysis prompt not found in pipeline_prompts table. Please add this prompt with stage_name='image_analysis'."
+                )
             
             # Initialize progress tracker with timing
             start_time = time.time()
