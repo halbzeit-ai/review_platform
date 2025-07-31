@@ -333,42 +333,83 @@ async def get_processing_results(
         logger.info(f"No stored results found for pitch deck {pitch_deck_id}")
         results = None
     
-    # If no results in database, try to find and load from file system
+    # If no results in database, check for dojo experiment results or file system
     if not results:
-        logger.info(f"No results in database for pitch deck {pitch_deck_id}, checking file system")
-        
-        # Find the result file using job format: job_{pitch_deck_id}_*_results.json
-        results_dir = f"{settings.SHARED_FILESYSTEM_MOUNT_PATH}/results"
-        pattern = f"{results_dir}/job_{pitch_deck_id}_*_results.json"
-        result_files = glob.glob(pattern)
-        
-        if result_files:
-            # Use the most recent result file
-            result_file = max(result_files, key=os.path.getctime)
-            logger.info(f"Found result file: {result_file}")
+        # Check if this is a dojo experiment result
+        if pitch_deck.results_file_path and pitch_deck.results_file_path.startswith("dojo_experiment:"):
+            experiment_id = pitch_deck.results_file_path.split(":")[1]
+            logger.info(f"Deck {pitch_deck_id} has dojo experiment results from experiment {experiment_id}")
             
             try:
-                with open(result_file, 'r') as f:
-                    results = json.load(f)
+                from sqlalchemy import text
+                experiment_result = db.execute(text("""
+                    SELECT template_processing_results_json 
+                    FROM extraction_experiments 
+                    WHERE id = :experiment_id
+                """), {"experiment_id": experiment_id}).fetchone()
                 
-                # Store results in database for future use
-                pitch_deck.ai_analysis_results = json.dumps(results)
-                
-                # Extract and store the startup name if available
-                startup_name = results.get("startup_name")
-                if startup_name:
-                    pitch_deck.ai_extracted_startup_name = startup_name
-                    logger.info(f"Extracted startup name from results: {startup_name}")
-                
-                db.commit()
-                logger.info(f"Loaded and stored results for pitch deck {pitch_deck_id}")
-                
+                if experiment_result and experiment_result[0]:
+                    template_data = json.loads(experiment_result[0])
+                    # Find this deck's results in the template processing results
+                    template_results = template_data.get("template_processing_results", [])
+                    deck_result = next((r for r in template_results if r["deck_id"] == pitch_deck_id), None)
+                    
+                    if deck_result and deck_result.get("template_analysis"):
+                        # Format the template analysis as results
+                        results = {
+                            "startup_name": pitch_deck.ai_extracted_startup_name or "Unknown",
+                            "template_analysis": deck_result["template_analysis"],
+                            "template_used": deck_result.get("template_used", "Default"),
+                            "processing_source": "dojo_experiment",
+                            "experiment_id": experiment_id
+                        }
+                        logger.info(f"Found dojo experiment results for pitch deck {pitch_deck_id}")
+                    else:
+                        logger.warning(f"No template analysis found for deck {pitch_deck_id} in experiment {experiment_id}")
+                        
             except Exception as e:
-                logger.error(f"Error reading result file {result_file}: {e}")
-                raise HTTPException(status_code=500, detail=f"Error reading results: {str(e)}")
-        else:
-            logger.error(f"No result files found for pitch deck {pitch_deck_id}")
-            raise HTTPException(status_code=404, detail="Results not found")
+                logger.error(f"Error fetching dojo experiment results: {e}")
+        
+        # If still no results, try to find and load from file system
+        if not results:
+            logger.info(f"No results in database for pitch deck {pitch_deck_id}, checking file system")
+            
+            # Find the result file using job format: job_{pitch_deck_id}_*_results.json
+            results_dir = f"{settings.SHARED_FILESYSTEM_MOUNT_PATH}/results"
+            pattern = f"{results_dir}/job_{pitch_deck_id}_*_results.json"
+            result_files = glob.glob(pattern)
+            
+            if result_files:
+                # Use the most recent result file
+                result_file = max(result_files, key=os.path.getctime)
+                logger.info(f"Found result file: {result_file}")
+                
+                try:
+                    with open(result_file, 'r') as f:
+                        results = json.load(f)
+                    
+                    # Store results in database for future use
+                    pitch_deck.ai_analysis_results = json.dumps(results)
+                    
+                    # Extract and store the startup name if available
+                    startup_name = results.get("startup_name")
+                    if startup_name:
+                        pitch_deck.ai_extracted_startup_name = startup_name
+                        logger.info(f"Extracted startup name from results: {startup_name}")
+                    
+                    db.commit()
+                    logger.info(f"Loaded and stored results for pitch deck {pitch_deck_id}")
+                    
+                except Exception as e:
+                    logger.error(f"Error reading result file {result_file}: {e}")
+                    raise HTTPException(status_code=500, detail=f"Error reading results: {str(e)}")
+            else:
+                logger.error(f"No result files found for pitch deck {pitch_deck_id}")
+                raise HTTPException(status_code=404, detail="Results not found")
+    
+    # If we still don't have results, return 404
+    if not results:
+        raise HTTPException(status_code=404, detail="Results not found")
     
     return {
         "pitch_deck_id": pitch_deck_id,
