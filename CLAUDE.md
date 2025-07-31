@@ -37,23 +37,62 @@ This is a startup review platform with a Python FastAPI backend and React fronte
 
 ## Development Commands
 
-### Backend
+### Quick Service Management (Recommended for Claude)
+```bash
+# Start/stop services
+./dev-services.sh start      # Start both frontend and backend
+./dev-services.sh stop       # Stop both services
+./dev-services.sh restart    # Restart both services
+./dev-services.sh status     # Check service health
+./dev-services.sh logs       # Show logs for both services
+./dev-services.sh logs backend  # Show only backend logs
+```
+
+### Database Operations (For Claude)
+```bash
+# Run database migrations with elevated privileges
+./claude-dev-helper.sh migrate migrations/filename.sql
+
+# Check database status
+./claude-dev-helper.sh db-check              # Test connection and show info
+./claude-dev-helper.sh migrate-check         # Check if zip_filename column exists
+
+# Manual database access (if needed)
+sudo -u postgres psql review-platform
+```
+
+### Development Helper Commands
+```bash
+# Comprehensive development test
+./claude-dev-helper.sh quick-test
+
+# Service management via helper
+./claude-dev-helper.sh services start
+./claude-dev-helper.sh services status
+
+# Git status summary
+./claude-dev-helper.sh git-status
+```
+
+### Manual Commands (Fallback if scripts don't work)
+
+#### Backend
 ```bash
 cd backend
 pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 5001 --reload
 ```
 
-### Frontend
+#### Frontend
 ```bash
 cd frontend
 npm install
-npm start        # Development server
+DANGEROUSLY_DISABLE_HOST_CHECK=true npm start  # Development server
 npm run build    # Production build
 npm test         # Run tests
 ```
 
-### Type Checking
+#### Type Checking
 ```bash
 cd backend
 mypy .

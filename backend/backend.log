@@ -5,3 +5,60 @@ INFO:     Started server process [55473]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     127.0.0.1:40798 - "GET /docs HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /main.5d5a904f4a011fb85a3c.hot-update.json HTTP/1.1" 404 Not Found
+INFO:     83.171.161.95:0 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     83.171.161.95:0 - "GET /api/dojo-experiments/stats HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48864 - "GET /docs HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/db/models.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [55473]
+INFO:     Started server process [56680]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/api/dojo.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [56680]
+/opt/review-platform-dev/backend/app/api/dojo.py:515: SyntaxWarning: invalid escape sequence '\s'
+  exp_cleanup_result = db.execute(text("""
+INFO:     Started server process [56693]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/api/dojo.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [56693]
+/opt/review-platform-dev/backend/app/api/dojo.py:515: SyntaxWarning: invalid escape sequence '\s'
+  exp_cleanup_result = db.execute(text("""
+INFO:     Started server process [56699]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/api/dojo.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [56699]
+/opt/review-platform-dev/backend/app/api/dojo.py:515: SyntaxWarning: invalid escape sequence '\s'
+  exp_cleanup_result = db.execute(text("""
+INFO:     Started server process [56704]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:59810 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59822 - "GET /api/dojo/files HTTP/1.1" 403 Forbidden
+INFO:     127.0.0.1:59836 - "GET /api/dojo/stats HTTP/1.1" 403 Forbidden

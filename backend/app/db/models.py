@@ -39,7 +39,7 @@ class PitchDeck(Base):
     ai_analysis_results = Column(Text, nullable=True)  # JSON string of AI analysis results
     ai_extracted_startup_name = Column(String, nullable=True)  # AI-extracted startup name from pitch deck content
     data_source = Column(String, default="startup")  # Source: 'startup' or 'dojo'
-    # zip_filename = Column(String, nullable=True)  # Original ZIP filename for dojo files - TODO: Add after migration
+    zip_filename = Column(String, nullable=True)  # Original ZIP filename for dojo files
     created_at = Column(DateTime, default=datetime.utcnow)
     user = relationship("User")
 
