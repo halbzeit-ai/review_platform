@@ -406,6 +406,21 @@ async def delete_all_dojo_files(
         # Commit all deletions
         db.commit()
         
+        # Clear visual analysis cache for dojo files
+        try:
+            cache_cleared = db.execute(text("""
+                DELETE FROM visual_analysis_cache 
+                WHERE deck_id IN (
+                    SELECT id FROM pitch_decks WHERE data_source = 'dojo'
+                )
+            """))
+            cache_cleared_count = cache_cleared.rowcount
+            db.commit()
+            logger.info(f"Cleared {cache_cleared_count} visual analysis cache entries")
+        except Exception as e:
+            logger.warning(f"Failed to clear visual analysis cache: {e}")
+            # Continue anyway, this is not critical
+        
         logger.info(f"Deleted {deleted_count} dojo files total")
         
         return {

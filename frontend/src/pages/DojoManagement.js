@@ -1234,7 +1234,7 @@ const DojoManagement = () => {
       loadExperiments();
     } else if (newValue === 2) { // Training Data & Management tab (combined)
       loadTestDataStats();
-      loadFiles(); // Load both stats and files for the combined tab
+      loadDojoData(); // Load both stats and files for the combined tab
     }
   };
 
@@ -2621,10 +2621,38 @@ const DojoManagement = () => {
               </CardContent>
             </Card>
 
+            {/* Section 3: Training Files Management */}
             <Typography variant="h6" gutterBottom>
               {t('tabs.trainingFiles')}
             </Typography>
+            
+            {/* PDF Cleanup - moved to top */}
+            <Paper sx={{ p: 3, mb: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Training Files Management
+              </Typography>
+              
+              <Box>
+                <Typography variant="subtitle1" gutterBottom>
+                  Remove All Dojo PDF Files
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Delete all dojo PDF files from both the filesystem and database. 
+                  This will completely remove all uploaded training data files. Use this to clean up after hash mismatches or to upload fresh data.
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={() => setDeleteAllFilesDialogOpen(true)}
+                  disabled={deleteAllFilesLoading}
+                  startIcon={deleteAllFilesLoading ? <CircularProgress size={16} /> : <Delete />}
+                >
+                  {deleteAllFilesLoading ? 'Deleting...' : 'Remove All Dojo PDF Files'}
+                </Button>
+              </Box>
+            </Paper>
 
+            {/* Training Files List */}
             {files.length === 0 ? (
               <Typography variant="body2" color="text.secondary">
                 {t('fileManagement.noFilesUploaded')}
@@ -2683,32 +2711,6 @@ const DojoManagement = () => {
                 </Table>
               </TableContainer>
             )}
-            
-            {/* Section 3: Training Files Management - PDF Cleanup */}
-            <Paper sx={{ p: 3, mt: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Training Files Management
-              </Typography>
-              
-              <Box>
-                <Typography variant="subtitle1" gutterBottom>
-                  Remove All Dojo PDF Files
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Delete all dojo PDF files from both the filesystem and database. 
-                  This will completely remove all uploaded training data files. Use this to clean up after hash mismatches or to upload fresh data.
-                </Typography>
-                <Button
-                  variant="contained"
-                  color="error"
-                  onClick={() => setDeleteAllFilesDialogOpen(true)}
-                  disabled={deleteAllFilesLoading}
-                  startIcon={deleteAllFilesLoading ? <CircularProgress size={16} /> : <Delete />}
-                >
-                  {deleteAllFilesLoading ? 'Deleting...' : 'Remove All Dojo PDF Files'}
-                </Button>
-              </Box>
-            </Paper>
           </Box>
         )}
         
