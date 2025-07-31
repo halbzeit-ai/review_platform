@@ -1,8 +1,6 @@
 INFO:     Will watch for changes in these directories: ['/opt/review-platform-dev/backend']
 INFO:     Uvicorn running on http://0.0.0.0:5001 (Press CTRL+C to quit)
-INFO:     Started reloader process [65851] using StatReload
-INFO:     Started server process [65865]
+INFO:     Started reloader process [67222] using StatReload
+INFO:     Started server process [67236]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     83.171.161.95:0 - "GET /main.3324820c7d2e4686e3c7.hot-update.json HTTP/1.1" 404 Not Found
-INFO:     83.171.161.95:0 - "GET /favicon.ico HTTP/1.1" 404 Not Found
