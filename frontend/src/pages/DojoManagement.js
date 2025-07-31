@@ -1707,7 +1707,14 @@ const DojoManagement = () => {
         setTimeout(() => setAddCompaniesSuccess(''), 8000);
       } else {
         const errorData = await response.json();
-        setError(errorData.detail || 'Failed to cleanup dojo projects');
+        // Handle FastAPI validation errors which have a different structure
+        if (Array.isArray(errorData) && errorData[0]?.msg) {
+          setError(errorData[0].msg);
+        } else if (typeof errorData === 'string') {
+          setError(errorData);
+        } else {
+          setError(errorData.detail || JSON.stringify(errorData) || 'Failed to cleanup dojo projects');
+        }
       }
     } catch (err) {
       console.error('Error cleaning up dojo projects:', err);
@@ -1725,10 +1732,16 @@ const DojoManagement = () => {
       const user = JSON.parse(localStorage.getItem('user'));
       const token = user?.token;
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
+      
       const response = await fetch('/api/dojo/files/all', {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${token}` },
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
 
       if (response.ok) {
         const result = await response.json();
@@ -1741,11 +1754,22 @@ const DojoManagement = () => {
         setTimeout(() => setAddCompaniesSuccess(''), 8000);
       } else {
         const errorData = await response.json();
-        setError(errorData.detail || 'Failed to delete all dojo files');
+        // Handle FastAPI validation errors which have a different structure
+        if (Array.isArray(errorData) && errorData[0]?.msg) {
+          setError(errorData[0].msg);
+        } else if (typeof errorData === 'string') {
+          setError(errorData);
+        } else {
+          setError(errorData.detail || JSON.stringify(errorData) || 'Failed to delete all dojo files');
+        }
       }
     } catch (err) {
       console.error('Error deleting all dojo files:', err);
-      setError('Failed to delete all dojo files');
+      if (err.name === 'AbortError') {
+        setError('Request timed out. The deletion may still be in progress on the server.');
+      } else {
+        setError(err.message || 'Failed to delete all dojo files');
+      }
     } finally {
       setDeleteAllFilesLoading(false);
       setDeleteAllFilesDialogOpen(false);
