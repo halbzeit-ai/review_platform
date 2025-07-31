@@ -1232,8 +1232,9 @@ const DojoManagement = () => {
     setCurrentTab(newValue);
     if (newValue === 1) { // Extraction Experiments History tab
       loadExperiments();
-    } else if (newValue === 3) { // Data Management tab
+    } else if (newValue === 2) { // Training Data & Management tab (combined)
       loadTestDataStats();
+      loadFiles(); // Load both stats and files for the combined tab
     }
   };
 
@@ -1847,8 +1848,7 @@ const DojoManagement = () => {
         <Tabs value={currentTab} onChange={handleTabChange}>
           <Tab label={t('tabs.extractionTestingLab')} />
           <Tab label="Extraction Experiments History" />
-          <Tab label={t('tabs.trainingFiles')} />
-          <Tab label="Data Management" />
+          <Tab label="Training Data & Management" />
         </Tabs>
         
         {/* Tab Panel 0: Extraction Testing Lab */}
@@ -2405,10 +2405,113 @@ const DojoManagement = () => {
           </Box>
         )}
 
-        {/* Tab Panel 2: Training Files */}
+        {/* Tab Panel 2: Training Data & Management (Combined) */}
         {currentTab === 2 && (
           <Box sx={{ mt: 3 }}>
-            {/* Upload Section inside Training Files Tab */}
+            {/* Section 1: Database Management (formerly Data Management tab) */}
+            <Typography variant="h6" gutterBottom>
+              Data Management
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Manage test data and dojo projects. Clean up operations preserve all experimental data.
+            </Typography>
+            
+            {/* Test Data Statistics */}
+            {testDataStats && (
+              <Paper sx={{ p: 3, mb: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  Current Test Data Statistics
+                </Typography>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Card>
+                      <CardContent sx={{ textAlign: 'center' }}>
+                        <Typography variant="h4" color="primary">
+                          {testDataStats.total_test_projects}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Total Test Projects
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Card>
+                      <CardContent sx={{ textAlign: 'center' }}>
+                        <Typography variant="h4" color="info.main">
+                          {testDataStats.dojo_projects}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Dojo Projects
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Card>
+                      <CardContent sx={{ textAlign: 'center' }}>
+                        <Typography variant="h4" color="secondary.main">
+                          {testDataStats.total_test_companies}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Test Companies
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Card>
+                      <CardContent sx={{ textAlign: 'center' }}>
+                        <Typography variant="h4" color="success.main">
+                          {testDataStats.total_test_documents}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Test Documents
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+              </Paper>
+            )}
+            
+            {/* Cleanup Operations - Only the Database Cleanup */}
+            <Paper sx={{ p: 3, mb: 4 }}>
+              <Typography variant="h6" gutterBottom>
+                Database Cleanup Operations
+              </Typography>
+              
+              <Alert severity="info" sx={{ mb: 3 }}>
+                <Typography variant="body2">
+                  <strong>Safety Notice:</strong> This cleanup operation only removes projects and project documents created from experiments. 
+                  All experimental data (experiments, PDFs, results files) are preserved and you can regenerate projects 
+                  by running "Add Dojo Companies" again on any experiment.
+                </Typography>
+              </Alert>
+              
+              <Box>
+                <Typography variant="subtitle1" gutterBottom>
+                  Clean Up Dojo Projects
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Remove all dojo-created projects and their associated documents from the projects database. 
+                  This will clean up the Gallery view while preserving all experimental data for future re-creation.
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="warning"
+                  onClick={() => setCleanupDialogOpen(true)}
+                  disabled={cleanupLoading}
+                  startIcon={cleanupLoading ? <CircularProgress size={16} /> : <Clear />}
+                >
+                  {cleanupLoading ? 'Cleaning...' : 'Clean Up Dojo Projects'}
+                </Button>
+              </Box>
+            </Paper>
+            
+            <Divider sx={{ my: 4 }} />
+            
+            {/* Section 2: Upload Section */}
             <Card sx={{ mb: 3 }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -2580,11 +2683,37 @@ const DojoManagement = () => {
                 </Table>
               </TableContainer>
             )}
+            
+            {/* Section 3: Training Files Management - PDF Cleanup */}
+            <Paper sx={{ p: 3, mt: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Training Files Management
+              </Typography>
+              
+              <Box>
+                <Typography variant="subtitle1" gutterBottom>
+                  Remove All Dojo PDF Files
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Delete all dojo PDF files from both the filesystem and database. 
+                  This will completely remove all uploaded training data files. Use this to clean up after hash mismatches or to upload fresh data.
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={() => setDeleteAllFilesDialogOpen(true)}
+                  disabled={deleteAllFilesLoading}
+                  startIcon={deleteAllFilesLoading ? <CircularProgress size={16} /> : <Delete />}
+                >
+                  {deleteAllFilesLoading ? 'Deleting...' : 'Remove All Dojo PDF Files'}
+                </Button>
+              </Box>
+            </Paper>
           </Box>
         )}
         
-        {/* Tab Panel 3: Data Management */}
-        {currentTab === 3 && (
+        {/* REMOVED - Combined with Tab Panel 2 */}
+        {false && (
           <Box sx={{ mt: 3 }}>
             <Typography variant="h6" gutterBottom>
               Data Management
