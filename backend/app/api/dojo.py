@@ -2158,7 +2158,7 @@ async def run_template_processing_batch(
                         # Update pitch_deck to indicate dojo experiment results available
                         db.execute(text("""
                             UPDATE pitch_decks 
-                            SET results_file_path = :results_marker
+                            SET results_file_path = :results_marker, processing_status = 'completed'
                             WHERE id = :pitch_deck_id
                         """), {
                             "results_marker": dojo_results_marker,
@@ -2169,7 +2169,7 @@ async def run_template_processing_batch(
                     # This is already a pitch_deck ID, update directly
                     db.execute(text("""
                         UPDATE pitch_decks 
-                        SET results_file_path = :results_marker
+                        SET results_file_path = :results_marker, processing_status = 'completed'
                         WHERE id = :deck_id
                     """), {
                         "results_marker": dojo_results_marker,
