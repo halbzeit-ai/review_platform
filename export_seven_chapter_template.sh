@@ -3,6 +3,17 @@
 # Export Seven-Chapter Review template from production database
 # This script extracts the template structure using psql
 
+# First, find the correct database name
+echo "🔍 Finding database..."
+DB_NAME=$(sudo -u postgres psql -t -c "SELECT datname FROM pg_database WHERE datname LIKE 'review%' OR datname LIKE 'platform%' LIMIT 1;" | tr -d ' ')
+
+if [ -z "$DB_NAME" ]; then
+    echo "❌ No review/platform database found. Available databases:"
+    sudo -u postgres psql -l
+    exit 1
+fi
+
+echo "✅ Using database: $DB_NAME"
 echo "🔍 Exporting Seven-Chapter Review template structure..."
 
 # Create export directory
@@ -11,7 +22,7 @@ mkdir -p "$EXPORT_DIR"
 
 # Export template data
 echo "📋 Exporting template information..."
-sudo -u postgres psql review_platform -t -c "
+sudo -u postgres psql "$DB_NAME" -t -c "
 SELECT row_to_json(t) FROM (
     SELECT id, name, description, template_version, healthcare_sector_id, 
            analysis_prompt, specialized_analysis, is_active, is_default
@@ -22,7 +33,7 @@ SELECT row_to_json(t) FROM (
 ) t;" > "$EXPORT_DIR/template.json"
 
 # Get template ID
-TEMPLATE_ID=$(sudo -u postgres psql review_platform -t -c "
+TEMPLATE_ID=$(sudo -u postgres psql "$DB_NAME" -t -c "
 SELECT id FROM analysis_templates 
 WHERE name ILIKE '%Seven-Chapter Review%' 
 ORDER BY id DESC LIMIT 1;" | tr -d ' ')
@@ -31,7 +42,7 @@ echo "✅ Found template ID: $TEMPLATE_ID"
 
 # Export chapters
 echo "📚 Exporting chapters..."
-sudo -u postgres psql review_platform -t -c "
+sudo -u postgres psql "$DB_NAME" -t -c "
 SELECT json_agg(row_to_json(t)) FROM (
     SELECT id, chapter_id, name, description, weight, order_index, 
            is_required, enabled
@@ -42,7 +53,7 @@ SELECT json_agg(row_to_json(t)) FROM (
 
 # Export questions for each chapter
 echo "❓ Exporting questions..."
-sudo -u postgres psql review_platform -t -c "
+sudo -u postgres psql "$DB_NAME" -t -c "
 SELECT json_agg(row_to_json(t)) FROM (
     SELECT cq.*, tc.chapter_id as parent_chapter_id
     FROM chapter_questions cq
@@ -86,7 +97,7 @@ EOF
 
 # Get the full structure and create inserts
 echo "📝 Generating restore SQL..."
-sudo -u postgres psql review_platform -t >> "$EXPORT_DIR/restore_seven_chapter.sql" << EOF
+sudo -u postgres psql "$DB_NAME" -t >> "$EXPORT_DIR/restore_seven_chapter.sql" << EOF
 -- Restore chapters
 SELECT string_agg(
     format(
@@ -122,8 +133,8 @@ echo "   - questions.json: All questions"
 echo "   - restore_seven_chapter.sql: SQL script to restore the structure"
 
 # Show counts
-CHAPTER_COUNT=$(sudo -u postgres psql review_platform -t -c "SELECT COUNT(*) FROM template_chapters WHERE template_id = $TEMPLATE_ID OR analysis_template_id = $TEMPLATE_ID;")
-QUESTION_COUNT=$(sudo -u postgres psql review_platform -t -c "SELECT COUNT(*) FROM chapter_questions cq JOIN template_chapters tc ON cq.chapter_id = tc.id WHERE tc.template_id = $TEMPLATE_ID OR tc.analysis_template_id = $TEMPLATE_ID;")
+CHAPTER_COUNT=$(sudo -u postgres psql "$DB_NAME" -t -c "SELECT COUNT(*) FROM template_chapters WHERE template_id = $TEMPLATE_ID OR analysis_template_id = $TEMPLATE_ID;")
+QUESTION_COUNT=$(sudo -u postgres psql "$DB_NAME" -t -c "SELECT COUNT(*) FROM chapter_questions cq JOIN template_chapters tc ON cq.chapter_id = tc.id WHERE tc.template_id = $TEMPLATE_ID OR tc.analysis_template_id = $TEMPLATE_ID;")
 
 echo ""
 echo "📊 Summary:"
