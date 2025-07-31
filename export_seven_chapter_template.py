@@ -2,11 +2,14 @@
 """
 Export Seven-Chapter Review template structure from production database
 This script extracts the template, its chapters, and all questions
+Run with: sudo -u postgres python3 export_seven_chapter_template.py
 """
 
 import psycopg2
 import json
 from datetime import datetime
+import sys
+import os
 
 # Production database connection
 DB_CONFIG = {
