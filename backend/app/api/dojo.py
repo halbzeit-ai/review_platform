@@ -56,13 +56,13 @@ def ensure_dojo_directory():
     os.makedirs(DOJO_PATH, exist_ok=True)
     logger.info(f"Dojo directory ensured at: {DOJO_PATH}")
 
-async def extract_dojo_zip_only(zip_file_path: str, uploaded_by: int, db: Session):
+async def extract_dojo_zip_only(zip_file_path: str, uploaded_by: int, db: Session, original_filename: str = None):
     """Extract dojo zip file and create database entries (no AI processing)"""
     try:
         logger.info(f"Extracting dojo zip file: {zip_file_path}")
         
         # Get original ZIP filename for database storage
-        zip_filename = os.path.basename(zip_file_path)
+        zip_filename = original_filename if original_filename else os.path.basename(zip_file_path)
         
         # Extract zip file
         extract_dir = os.path.join(DOJO_PATH, f"extract_{uuid.uuid4().hex}")
@@ -126,13 +126,13 @@ async def extract_dojo_zip_only(zip_file_path: str, uploaded_by: int, db: Sessio
         if os.path.exists(zip_file_path):
             os.remove(zip_file_path)
 
-async def process_dojo_zip(zip_file_path: str, uploaded_by: int, db: Session):
+async def process_dojo_zip(zip_file_path: str, uploaded_by: int, db: Session, original_filename: str = None):
     """Background task to process uploaded dojo zip file"""
     try:
         logger.info(f"Processing dojo zip file: {zip_file_path}")
         
         # Get original ZIP filename for database storage
-        zip_filename = os.path.basename(zip_file_path)
+        zip_filename = original_filename if original_filename else os.path.basename(zip_file_path)
         
         # Extract zip file
         extract_dir = os.path.join(DOJO_PATH, f"extract_{uuid.uuid4().hex}")
@@ -243,7 +243,8 @@ async def upload_dojo_zip(
             extract_dojo_zip_only,
             temp_file_path,
             current_user.id,
-            db
+            db,
+            file.filename  # Pass original filename
         )
         
         logger.info(f"Dojo zip upload initiated by {current_user.email}: {file.filename} ({file_size} bytes)")
