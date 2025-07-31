@@ -114,6 +114,12 @@ Key principles:
 - Follow domain-driven design patterns
 - Implement proper error handling with custom exceptions
 
+### CRITICAL: Content Creation Rules
+- **NEVER** create, generate, or invent prompts, questions, templates, or any content unless EXPLICITLY asked by a human
+- **ALWAYS** search for existing content first - check database, migration files, backups, and git history
+- If content appears to be missing, inform the user and ask where to find it rather than creating new content
+- This applies to ALL content types: prompts, questions, templates, analysis criteria, etc.
+
 ## Key Integration Points
 
 - **Shared Filesystem Storage**: Files stored on Datacrunch.io NFS shared filesystem
