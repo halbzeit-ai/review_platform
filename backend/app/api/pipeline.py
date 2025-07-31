@@ -191,67 +191,12 @@ async def reset_prompt_to_default(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Reset prompt to system default"""
-    try:
-        # Only GPs can modify pipeline configuration
-        if current_user.role != "gp":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only GPs can modify pipeline configuration"
-            )
-        
-        # Default prompts mapping
-        default_prompts = {
-            "image_analysis": "Describe this image and make sure to include anything notable about it (include text you see in the image):",
-            "company_offering": "You are an analyst working at a Venture Capital company. Here is the descriptions of a startup's pitchdeck. Your Task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company.",
-            "role_definition": "You are an analyst working at a Venture Capital company. Here is the descriptions of a startup's pitchdeck.",
-            "offering_extraction": "Your Task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company.",
-            "startup_name_extraction": "Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.",
-            "funding_amount_extraction": "Find the exact funding amount the startup is seeking or has raised from this pitch deck. Look for phrases like 'seeking $X', 'raising $X', 'funding round of $X', or similar. Return only the numerical amount with currency symbol (e.g., '$2.5M', '€500K', '$10 million'). If no specific amount is mentioned, return 'Not specified'.",
-            "deck_date_extraction": "Find the date when this pitch deck was created or last updated. Look for dates on slides, footers, headers, or any text mentioning when the deck was prepared. Common formats include 'March 2024', '2024-03-15', 'Q1 2024', 'Spring 2024', etc. Return only the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date is found, return 'Date not specified'.",
-            "question_analysis": "Your task is to find answers to the following questions: ",
-            "scoring_analysis": "Your task is to give a score between 0 and 7 based on how much information is provided for the following questions. Just give a number, no explanations.",
-            "scientific_hypothesis": "You are a medical doctor reviewing a pitchdeck of a health startup. Provide a numbered list of core scientific, health related or medical hypothesis that are addressed by the startup. Do not report market size or any other economic hypotheses. Do not mention the name of the product or the company."
-        }
-        
-        if stage_name not in default_prompts:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No default prompt available for stage '{stage_name}'"
-            )
-        
-        # Reset to default
-        update_query = text("""
-        UPDATE pipeline_prompts 
-        SET prompt_text = :prompt_text, updated_at = CURRENT_TIMESTAMP 
-        WHERE stage_name = :stage_name AND is_active = TRUE
-        """)
-        
-        db.execute(update_query, {
-            "prompt_text": default_prompts[stage_name],
-            "stage_name": stage_name
-        })
-        
-        db.commit()
-        
-        logger.info(f"Reset prompt for stage '{stage_name}' to default by user {current_user.email}")
-        
-        return {
-            "message": f"Successfully reset prompt for stage '{stage_name}' to default",
-            "stage_name": stage_name,
-            "default_prompt": default_prompts[stage_name],
-            "reset_by": current_user.email
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error resetting prompt for stage {stage_name}: {e}")
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to reset prompt for stage '{stage_name}'"
-        )
+    """Reset prompt functionality removed - prompts must be explicitly managed"""
+    # No more default prompts - everything must come from database
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail="Reset to default functionality has been removed. All prompts must be explicitly managed in the database. Please update the prompt directly."
+    )
 
 @router.get("/stages")
 async def get_available_stages(
