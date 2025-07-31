@@ -301,7 +301,7 @@ async def list_dojo_files(
             detail="Failed to list dojo training data"
         )
 
-@router.delete("/files/{file_id}")
+@router.delete("/files/{file_id:int}")
 async def delete_dojo_file(
     file_id: int,
     db: Session = Depends(get_db),
@@ -374,9 +374,30 @@ async def delete_all_dojo_files(
             PitchDeck.data_source == "dojo"
         ).all()
         
+        logger.info(f"Found {len(dojo_files)} dojo files to delete")
+        
+        # Collect deck IDs before deletion for cache cleanup
+        dojo_deck_ids = [f.id for f in dojo_files]
+        
         deleted_count = 0
         deleted_files = []
         errors = []
+        
+        # Clear visual analysis cache BEFORE deleting the files
+        if dojo_deck_ids:
+            try:
+                # Simple approach - delete one by one
+                for deck_id in dojo_deck_ids:
+                    db.execute(text("""
+                        DELETE FROM visual_analysis_cache 
+                        WHERE deck_id = :deck_id
+                    """), {"deck_id": deck_id})
+                db.commit()
+                logger.info(f"Cleared visual analysis cache for {len(dojo_deck_ids)} decks")
+            except Exception as e:
+                logger.warning(f"Failed to clear visual analysis cache: {e}")
+                db.rollback()  # Important: rollback failed transaction
+                # Continue anyway, this is not critical
         
         for dojo_file in dojo_files:
             try:
@@ -386,6 +407,8 @@ async def delete_all_dojo_files(
                     if os.path.exists(full_path):
                         os.remove(full_path)
                         logger.info(f"Deleted physical file: {full_path}")
+                    else:
+                        logger.warning(f"Physical file not found: {full_path}")
                 
                 # Store info before deletion
                 deleted_files.append({
@@ -406,21 +429,6 @@ async def delete_all_dojo_files(
         # Commit all deletions
         db.commit()
         
-        # Clear visual analysis cache for dojo files
-        try:
-            cache_cleared = db.execute(text("""
-                DELETE FROM visual_analysis_cache 
-                WHERE deck_id IN (
-                    SELECT id FROM pitch_decks WHERE data_source = 'dojo'
-                )
-            """))
-            cache_cleared_count = cache_cleared.rowcount
-            db.commit()
-            logger.info(f"Cleared {cache_cleared_count} visual analysis cache entries")
-        except Exception as e:
-            logger.warning(f"Failed to clear visual analysis cache: {e}")
-            # Continue anyway, this is not critical
-        
         logger.info(f"Deleted {deleted_count} dojo files total")
         
         return {
@@ -434,10 +442,13 @@ async def delete_all_dojo_files(
         raise
     except Exception as e:
         logger.error(f"Error deleting all dojo files: {e}")
+        logger.error(f"Exception type: {type(e)}")
+        import traceback
+        logger.error(f"Full traceback: {traceback.format_exc()}")
         db.rollback()
         raise HTTPException(
             status_code=500,
-            detail="Failed to delete all dojo files"
+            detail=f"Failed to delete all dojo files: {str(e)}"
         )
 
 @router.get("/stats")

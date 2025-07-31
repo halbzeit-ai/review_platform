@@ -263,6 +263,9 @@ const DojoManagement = () => {
       const filesData = await filesResponse.json();
       const statsData = await statsResponse.json();
 
+      console.log('Dojo files loaded:', filesData.files?.length || 0, 'files');
+      console.log('Files data:', filesData);
+      
       setFiles(filesData.files || []);
       setStats(statsData);
       setError(null);
@@ -1731,6 +1734,7 @@ const DojoManagement = () => {
   // Delete all dojo PDF files
   const deleteAllDojoFiles = async () => {
     try {
+      console.log('Starting deleteAllDojoFiles...');
       setDeleteAllFilesLoading(true);
       const user = JSON.parse(localStorage.getItem('user'));
       const token = user?.token;
@@ -1738,27 +1742,47 @@ const DojoManagement = () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
       
-      const response = await fetch('/api/dojo/files/all', {
+      console.log('Calling DELETE /api/dojo/files/all...');
+      // Use direct backend URL to bypass proxy issues
+      const backendUrl = window.location.hostname === 'localhost' 
+        ? 'http://localhost:5001' 
+        : `http://${window.location.hostname}:5001`;
+      const response = await fetch(`${backendUrl}/api/dojo/files/all`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
         signal: controller.signal
       });
       
       clearTimeout(timeoutId);
+      console.log('Delete response status:', response.status);
 
       if (response.ok) {
         const result = await response.json();
+        console.log('Delete result:', result);
         setAddCompaniesSuccess(`Successfully deleted ${result.deleted_count} dojo PDF files from filesystem and database. You can now upload a fresh ZIP file.`);
         setError(null);
+        // Close the dialog
+        setDeleteAllFilesDialogOpen(false);
         // Refresh file list and stats
+        console.log('Refreshing data...');
         await loadDojoData();
         await loadTestDataStats();
+        console.log('Data refresh complete');
         // Clear success message after 8 seconds
         setTimeout(() => setAddCompaniesSuccess(''), 8000);
       } else {
         const errorData = await response.json();
+        console.error('Delete failed with error:', errorData);
+        console.error('Error detail:', errorData?.detail);
+        if (errorData?.detail && Array.isArray(errorData.detail)) {
+          console.error('Error detail contents:', JSON.stringify(errorData.detail, null, 2));
+        }
         // Handle FastAPI validation errors which have a different structure
-        if (Array.isArray(errorData) && errorData[0]?.msg) {
+        if (errorData?.detail && Array.isArray(errorData.detail)) {
+          // FastAPI validation error format
+          const errorMsg = errorData.detail.map(err => err.msg || err.message || JSON.stringify(err)).join(', ');
+          setError(errorMsg);
+        } else if (Array.isArray(errorData) && errorData[0]?.msg) {
           setError(errorData[0].msg);
         } else if (typeof errorData === 'string') {
           setError(errorData);
