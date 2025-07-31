@@ -401,13 +401,13 @@ async def delete_all_dojo_files(
                 for deck_id in dojo_deck_ids:
                     db.execute(text("""
                         DELETE FROM visual_analysis_cache 
-                        WHERE deck_id = :deck_id
+                        WHERE pitch_deck_id = :deck_id
                     """), {"deck_id": deck_id})
-                db.commit()
                 logger.info(f"Cleared visual analysis cache for {len(dojo_deck_ids)} decks")
             except Exception as e:
                 logger.warning(f"Failed to clear visual analysis cache: {e}")
-                db.rollback()  # Important: rollback failed transaction
+                db.rollback()
+                # Continue despite cache cleanup failure  # Important: rollback failed transaction
                 # Continue anyway, this is not critical
         
         # Track additional cleanup stats
@@ -508,25 +508,35 @@ async def delete_all_dojo_files(
             logger.info(f"Cleaned up {deleted_projects} project document references")
         except Exception as e:
             logger.warning(f"Failed to clean up project documents: {e}")
+            db.rollback()
             deleted_projects = 0
         
         # 5. Clean up extraction experiment references
         try:
             # Remove any extraction experiments that reference the deleted decks
+            # Simplified approach - just clear experiments that contain dojo deck references
             exp_cleanup_result = db.execute(text("""
                 UPDATE extraction_experiments 
                 SET template_processing_results_json = NULL,
                     results_summary = NULL
-                WHERE template_processing_results_json LIKE '%"deck_id": %'
-                AND template_processing_results_json ~ '"deck_id":\s*(' || 
-                    array_to_string(ARRAY(SELECT id::text FROM pitch_decks WHERE data_source = 'dojo'), '|') || ')'
+                WHERE template_processing_results_json LIKE '%"deck_id":%'
+                AND template_processing_results_json LIKE '%"data_source": "dojo"%'
             """))
             logger.info(f"Cleaned up extraction experiment references")
         except Exception as e:
             logger.warning(f"Failed to clean up extraction experiments: {e}")
+            db.rollback()
         
         # Commit all deletions
-        db.commit()
+        try:
+            db.commit()
+        except Exception as e:
+            logger.error(f"Failed to commit deletions: {e}")
+            db.rollback()
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to commit deletions: {str(e)}"
+            )
         
         logger.info(f"Comprehensive dojo cleanup complete: {deleted_count} files, {deleted_images} image dirs, {deleted_results} result files, {deleted_projects} project docs")
         

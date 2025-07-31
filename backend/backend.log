@@ -113,3 +113,400 @@ INFO:     Finished server process [57305]
 INFO:     Started server process [57311]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
+INFO:     83.171.161.95:60643 - "OPTIONS /api/dojo/files/all HTTP/1.1" 200 OK
+Failed to clear visual analysis cache: (psycopg2.errors.UndefinedColumn) column "deck_id" does not exist
+LINE 3:                         WHERE deck_id = 86
+                                      ^
+
+[SQL: 
+                        DELETE FROM visual_analysis_cache 
+                        WHERE deck_id = %(deck_id)s
+                    ]
+[parameters: {'deck_id': 86}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Failed to clean up extraction experiments: (psycopg2.errors.DatatypeMismatch) argument of AND must be type boolean, not type text
+LINE 6:                 AND template_processing_results_json ~ '"dec...
+                            ^
+
+[SQL: 
+                UPDATE extraction_experiments 
+                SET template_processing_results_json = NULL,
+                    results_summary = NULL
+                WHERE template_processing_results_json LIKE '%%"deck_id": %%'
+                AND template_processing_results_json ~ '"deck_id":\s*(' || 
+                    array_to_string(ARRAY(SELECT id::text FROM pitch_decks WHERE data_source = 'dojo'), '|') || ')'
+            ]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Error deleting all dojo files: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+
+[SQL: DELETE FROM pitch_decks WHERE pitch_decks.id = %(id)s]
+[parameters: [{'id': 86}, {'id': 87}, {'id': 88}, {'id': 89}, {'id': 90}, {'id': 91}, {'id': 92}, {'id': 93}  ... displaying 10 of 24 total bound parameter sets ...  {'id': 108}, {'id': 109}]]
+(Background on this error at: https://sqlalche.me/e/20/2j85)
+Exception type: <class 'sqlalchemy.exc.InternalError'>
+Full traceback: Traceback (most recent call last):
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1938, in _exec_single_context
+    self.dialect.do_executemany(
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/psycopg2.py", line 794, in do_executemany
+    cursor.executemany(statement, parameters)
+psycopg2.errors.InFailedSqlTransaction: current transaction is aborted, commands ignored until end of transaction block
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/opt/review-platform-dev/backend/app/api/dojo.py", line 529, in delete_all_dojo_files
+    db.commit()
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 1969, in commit
+    trans.commit(_to_root=True)
+  File "<string>", line 2, in commit
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 1256, in commit
+    self._prepare_impl()
+  File "<string>", line 2, in _prepare_impl
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 1231, in _prepare_impl
+    self.session.flush()
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 4312, in flush
+    self._flush(objects)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 4447, in _flush
+    with util.safe_reraise():
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 4408, in _flush
+    flush_context.execute()
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py", line 466, in execute
+    rec.execute(self)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py", line 679, in execute
+    util.preloaded.orm_persistence.delete_obj(
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py", line 191, in delete_obj
+    _emit_delete_statements(
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py", line 1457, in _emit_delete_statements
+    c = connection.execute(
+        ^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1416, in execute
+    return meth(
+           ^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 517, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1639, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1848, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1988, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2344, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1938, in _exec_single_context
+    self.dialect.do_executemany(
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/psycopg2.py", line 794, in do_executemany
+    cursor.executemany(statement, parameters)
+sqlalchemy.exc.InternalError: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+
+[SQL: DELETE FROM pitch_decks WHERE pitch_decks.id = %(id)s]
+[parameters: [{'id': 86}, {'id': 87}, {'id': 88}, {'id': 89}, {'id': 90}, {'id': 91}, {'id': 92}, {'id': 93}  ... displaying 10 of 24 total bound parameter sets ...  {'id': 108}, {'id': 109}]]
+(Background on this error at: https://sqlalche.me/e/20/2j85)
+
+INFO:     83.171.161.95:60643 - "DELETE /api/dojo/files/all HTTP/1.1" 500 Internal Server Error
+Failed to clear visual analysis cache: (psycopg2.errors.UndefinedColumn) column "deck_id" does not exist
+LINE 3:                         WHERE deck_id = 86
+                                      ^
+
+[SQL: 
+                        DELETE FROM visual_analysis_cache 
+                        WHERE deck_id = %(deck_id)s
+                    ]
+[parameters: {'deck_id': 86}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+PDF not found: /mnt/dev-shared/dojo/76952452295146d7ad57121aa15f4594_CSM_Long_Pitch_Deck_March_2025.pdf
+PDF not found: /mnt/dev-shared/dojo/58e60fb291b740899462fc333d02f758_25_07_04_EasyRadiology_Pitch.pdf
+PDF not found: /mnt/dev-shared/dojo/f770ac79683f4abb9ae2e0a846ef1203_NC Deck AaviGen March 2025.pdf
+PDF not found: /mnt/dev-shared/dojo/6121112dd3b1404795917af699361116_CatMedica_.pdf
+PDF not found: /mnt/dev-shared/dojo/08724de567544d7b957836132cbc8967_Pitchdeck_MDA.pdf
+PDF not found: /mnt/dev-shared/dojo/dbf574a20e114017aa8cdb565f535aa7_Springboard Health Angels Mar. 20. 2025.pdf
+PDF not found: /mnt/dev-shared/dojo/09d43e5abbae418d9db86a219169d9c8_ETERNAL Pitch Deck.pdf
+PDF not found: /mnt/dev-shared/dojo/72d5f1a644624384845168aff31c41f7_Final presentation deck 110324.pdf
+PDF not found: /mnt/dev-shared/dojo/a73b5eb1963243d9ad5e846209b4f38f_OmniScience Investor Deck Mar 2025.pdf
+PDF not found: /mnt/dev-shared/dojo/3221e63369434a418e116f3fd90189c4_IM DIHESYS FB.pdf
+PDF not found: /mnt/dev-shared/dojo/1e653e60f1fa41209d8360bfcb78d842_Pharmesol Investment Memo - HGM Advisory.docx.pdf
+PDF not found: /mnt/dev-shared/dojo/5ff36ae95fb94b6bad4395205d2bcecd_Tacit overview Feb 2025.pdf
+PDF not found: /mnt/dev-shared/dojo/ea7fa79c9e574b47971d715e41b9cb6c_Digostics IM Deck 05 25.pdf
+PDF not found: /mnt/dev-shared/dojo/0316e6fb30ac4a289c27365ff15f8428_connectom health.pdf
+PDF not found: /mnt/dev-shared/dojo/8ae391390a8b4107b0b9ee478e129840_eversyn_Non-confidential deck_Jan2025.pdf
+PDF not found: /mnt/dev-shared/dojo/8bec401573de45e1844efad9966d03ef_TernaryTx - Molecular Glues By Design (Q12025).pdf
+PDF not found: /mnt/dev-shared/dojo/d8ea839777ed4cfdbb7da669da860068_testblu_OnePager[2].pdf
+PDF not found: /mnt/dev-shared/dojo/abadfb047504476ba7de5ee0523e1a7d_Pitch_radiomics.bio_April2025.pptx.pdf
+PDF not found: /mnt/dev-shared/dojo/981a3fd77fda4f2d8766237a5f4fe593_UpLeap_Investor-Presentation_2025-03.pdf
+PDF not found: /mnt/dev-shared/dojo/70ac5e3820e445008590f9a7cbc81d3d_Actome_short pitch-deck_March 31st 2025.pptx.pdf
+PDF not found: /mnt/dev-shared/dojo/814c5074a01844b2b07b35da41c7bd4a_MovaLife_pitch_202501.pdf
+PDF not found: /mnt/dev-shared/dojo/1563972ecc0a4e308cc636b6d0e1ad4c_2025_Lilio Investment Deck.pdf
+PDF not found: /mnt/dev-shared/dojo/2418a11d8e3d4b3e8878ef582bec31c2_Fusix Biotech_2025v2.pdf
+PDF not found: /mnt/dev-shared/dojo/063bc177f0234e9580826448fe6f0036_company-brief-wikdv.pdf
+Failed to clean up extraction experiments: (psycopg2.errors.DatatypeMismatch) argument of AND must be type boolean, not type text
+LINE 6:                 AND template_processing_results_json ~ '"dec...
+                            ^
+
+[SQL: 
+                UPDATE extraction_experiments 
+                SET template_processing_results_json = NULL,
+                    results_summary = NULL
+                WHERE template_processing_results_json LIKE '%%"deck_id": %%'
+                AND template_processing_results_json ~ '"deck_id":\s*(' || 
+                    array_to_string(ARRAY(SELECT id::text FROM pitch_decks WHERE data_source = 'dojo'), '|') || ')'
+            ]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Error deleting all dojo files: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+
+[SQL: DELETE FROM pitch_decks WHERE pitch_decks.id = %(id)s]
+[parameters: [{'id': 86}, {'id': 87}, {'id': 88}, {'id': 89}, {'id': 90}, {'id': 91}, {'id': 92}, {'id': 93}  ... displaying 10 of 24 total bound parameter sets ...  {'id': 108}, {'id': 109}]]
+(Background on this error at: https://sqlalche.me/e/20/2j85)
+Exception type: <class 'sqlalchemy.exc.InternalError'>
+Full traceback: Traceback (most recent call last):
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1938, in _exec_single_context
+    self.dialect.do_executemany(
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/psycopg2.py", line 794, in do_executemany
+    cursor.executemany(statement, parameters)
+psycopg2.errors.InFailedSqlTransaction: current transaction is aborted, commands ignored until end of transaction block
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/opt/review-platform-dev/backend/app/api/dojo.py", line 529, in delete_all_dojo_files
+    db.commit()
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 1969, in commit
+    trans.commit(_to_root=True)
+  File "<string>", line 2, in commit
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 1256, in commit
+    self._prepare_impl()
+  File "<string>", line 2, in _prepare_impl
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 1231, in _prepare_impl
+    self.session.flush()
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 4312, in flush
+    self._flush(objects)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 4447, in _flush
+    with util.safe_reraise():
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 4408, in _flush
+    flush_context.execute()
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py", line 466, in execute
+    rec.execute(self)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py", line 679, in execute
+    util.preloaded.orm_persistence.delete_obj(
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py", line 191, in delete_obj
+    _emit_delete_statements(
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py", line 1457, in _emit_delete_statements
+    c = connection.execute(
+        ^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1416, in execute
+    return meth(
+           ^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 517, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1639, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1848, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1988, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2344, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1938, in _exec_single_context
+    self.dialect.do_executemany(
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/psycopg2.py", line 794, in do_executemany
+    cursor.executemany(statement, parameters)
+sqlalchemy.exc.InternalError: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+
+[SQL: DELETE FROM pitch_decks WHERE pitch_decks.id = %(id)s]
+[parameters: [{'id': 86}, {'id': 87}, {'id': 88}, {'id': 89}, {'id': 90}, {'id': 91}, {'id': 92}, {'id': 93}  ... displaying 10 of 24 total bound parameter sets ...  {'id': 108}, {'id': 109}]]
+(Background on this error at: https://sqlalche.me/e/20/2j85)
+
+INFO:     83.171.161.95:61806 - "DELETE /api/dojo/files/all HTTP/1.1" 500 Internal Server Error
+INFO:     83.171.161.95:0 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     83.171.161.95:0 - "GET /api/dojo-experiments/stats HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     83.171.161.95:0 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+Failed to clear visual analysis cache: (psycopg2.errors.UndefinedColumn) column "deck_id" does not exist
+LINE 3:                         WHERE deck_id = 86
+                                      ^
+
+[SQL: 
+                        DELETE FROM visual_analysis_cache 
+                        WHERE deck_id = %(deck_id)s
+                    ]
+[parameters: {'deck_id': 86}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+PDF not found: /mnt/dev-shared/dojo/76952452295146d7ad57121aa15f4594_CSM_Long_Pitch_Deck_March_2025.pdf
+PDF not found: /mnt/dev-shared/dojo/58e60fb291b740899462fc333d02f758_25_07_04_EasyRadiology_Pitch.pdf
+PDF not found: /mnt/dev-shared/dojo/f770ac79683f4abb9ae2e0a846ef1203_NC Deck AaviGen March 2025.pdf
+PDF not found: /mnt/dev-shared/dojo/6121112dd3b1404795917af699361116_CatMedica_.pdf
+PDF not found: /mnt/dev-shared/dojo/08724de567544d7b957836132cbc8967_Pitchdeck_MDA.pdf
+PDF not found: /mnt/dev-shared/dojo/dbf574a20e114017aa8cdb565f535aa7_Springboard Health Angels Mar. 20. 2025.pdf
+PDF not found: /mnt/dev-shared/dojo/09d43e5abbae418d9db86a219169d9c8_ETERNAL Pitch Deck.pdf
+PDF not found: /mnt/dev-shared/dojo/72d5f1a644624384845168aff31c41f7_Final presentation deck 110324.pdf
+PDF not found: /mnt/dev-shared/dojo/a73b5eb1963243d9ad5e846209b4f38f_OmniScience Investor Deck Mar 2025.pdf
+PDF not found: /mnt/dev-shared/dojo/3221e63369434a418e116f3fd90189c4_IM DIHESYS FB.pdf
+PDF not found: /mnt/dev-shared/dojo/1e653e60f1fa41209d8360bfcb78d842_Pharmesol Investment Memo - HGM Advisory.docx.pdf
+PDF not found: /mnt/dev-shared/dojo/5ff36ae95fb94b6bad4395205d2bcecd_Tacit overview Feb 2025.pdf
+PDF not found: /mnt/dev-shared/dojo/ea7fa79c9e574b47971d715e41b9cb6c_Digostics IM Deck 05 25.pdf
+PDF not found: /mnt/dev-shared/dojo/0316e6fb30ac4a289c27365ff15f8428_connectom health.pdf
+PDF not found: /mnt/dev-shared/dojo/8ae391390a8b4107b0b9ee478e129840_eversyn_Non-confidential deck_Jan2025.pdf
+PDF not found: /mnt/dev-shared/dojo/8bec401573de45e1844efad9966d03ef_TernaryTx - Molecular Glues By Design (Q12025).pdf
+PDF not found: /mnt/dev-shared/dojo/d8ea839777ed4cfdbb7da669da860068_testblu_OnePager[2].pdf
+PDF not found: /mnt/dev-shared/dojo/abadfb047504476ba7de5ee0523e1a7d_Pitch_radiomics.bio_April2025.pptx.pdf
+PDF not found: /mnt/dev-shared/dojo/981a3fd77fda4f2d8766237a5f4fe593_UpLeap_Investor-Presentation_2025-03.pdf
+PDF not found: /mnt/dev-shared/dojo/70ac5e3820e445008590f9a7cbc81d3d_Actome_short pitch-deck_March 31st 2025.pptx.pdf
+PDF not found: /mnt/dev-shared/dojo/814c5074a01844b2b07b35da41c7bd4a_MovaLife_pitch_202501.pdf
+PDF not found: /mnt/dev-shared/dojo/1563972ecc0a4e308cc636b6d0e1ad4c_2025_Lilio Investment Deck.pdf
+PDF not found: /mnt/dev-shared/dojo/2418a11d8e3d4b3e8878ef582bec31c2_Fusix Biotech_2025v2.pdf
+PDF not found: /mnt/dev-shared/dojo/063bc177f0234e9580826448fe6f0036_company-brief-wikdv.pdf
+Failed to clean up extraction experiments: (psycopg2.errors.DatatypeMismatch) argument of AND must be type boolean, not type text
+LINE 6:                 AND template_processing_results_json ~ '"dec...
+                            ^
+
+[SQL: 
+                UPDATE extraction_experiments 
+                SET template_processing_results_json = NULL,
+                    results_summary = NULL
+                WHERE template_processing_results_json LIKE '%%"deck_id": %%'
+                AND template_processing_results_json ~ '"deck_id":\s*(' || 
+                    array_to_string(ARRAY(SELECT id::text FROM pitch_decks WHERE data_source = 'dojo'), '|') || ')'
+            ]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Error deleting all dojo files: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+
+[SQL: DELETE FROM pitch_decks WHERE pitch_decks.id = %(id)s]
+[parameters: [{'id': 86}, {'id': 87}, {'id': 88}, {'id': 89}, {'id': 90}, {'id': 91}, {'id': 92}, {'id': 93}  ... displaying 10 of 24 total bound parameter sets ...  {'id': 108}, {'id': 109}]]
+(Background on this error at: https://sqlalche.me/e/20/2j85)
+Exception type: <class 'sqlalchemy.exc.InternalError'>
+Full traceback: Traceback (most recent call last):
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1938, in _exec_single_context
+    self.dialect.do_executemany(
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/psycopg2.py", line 794, in do_executemany
+    cursor.executemany(statement, parameters)
+psycopg2.errors.InFailedSqlTransaction: current transaction is aborted, commands ignored until end of transaction block
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/opt/review-platform-dev/backend/app/api/dojo.py", line 529, in delete_all_dojo_files
+    db.commit()
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 1969, in commit
+    trans.commit(_to_root=True)
+  File "<string>", line 2, in commit
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 1256, in commit
+    self._prepare_impl()
+  File "<string>", line 2, in _prepare_impl
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 1231, in _prepare_impl
+    self.session.flush()
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 4312, in flush
+    self._flush(objects)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 4447, in _flush
+    with util.safe_reraise():
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 4408, in _flush
+    flush_context.execute()
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py", line 466, in execute
+    rec.execute(self)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py", line 679, in execute
+    util.preloaded.orm_persistence.delete_obj(
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py", line 191, in delete_obj
+    _emit_delete_statements(
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/orm/persistence.py", line 1457, in _emit_delete_statements
+    c = connection.execute(
+        ^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1416, in execute
+    return meth(
+           ^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 517, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1639, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1848, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1988, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2344, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1938, in _exec_single_context
+    self.dialect.do_executemany(
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/psycopg2.py", line 794, in do_executemany
+    cursor.executemany(statement, parameters)
+sqlalchemy.exc.InternalError: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+
+[SQL: DELETE FROM pitch_decks WHERE pitch_decks.id = %(id)s]
+[parameters: [{'id': 86}, {'id': 87}, {'id': 88}, {'id': 89}, {'id': 90}, {'id': 91}, {'id': 92}, {'id': 93}  ... displaying 10 of 24 total bound parameter sets ...  {'id': 108}, {'id': 109}]]
+(Background on this error at: https://sqlalche.me/e/20/2j85)
+
+INFO:     83.171.161.95:64788 - "DELETE /api/dojo/files/all HTTP/1.1" 500 Internal Server Error
+WARNING:  StatReload detected changes in 'app/api/dojo.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [57311]
+/opt/review-platform-dev/backend/app/api/dojo.py:516: SyntaxWarning: invalid escape sequence '\s'
+  exp_cleanup_result = db.execute(text("""
+INFO:     Started server process [57527]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/api/dojo.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [57527]
+INFO:     Started server process [57534]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/api/dojo.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [57534]
+INFO:     Started server process [57542]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/api/dojo.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [57542]
+INFO:     Started server process [57550]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
