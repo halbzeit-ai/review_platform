@@ -61,6 +61,9 @@ async def extract_dojo_zip_only(zip_file_path: str, uploaded_by: int, db: Sessio
     try:
         logger.info(f"Extracting dojo zip file: {zip_file_path}")
         
+        # Get original ZIP filename for database storage
+        zip_filename = os.path.basename(zip_file_path)
+        
         # Extract zip file
         extract_dir = os.path.join(DOJO_PATH, f"extract_{uuid.uuid4().hex}")
         os.makedirs(extract_dir, exist_ok=True)
@@ -96,6 +99,7 @@ async def extract_dojo_zip_only(zip_file_path: str, uploaded_by: int, db: Sessio
                     file_name=original_name,
                     file_path=f"dojo/{unique_name}",
                     data_source="dojo",
+                    zip_filename=zip_filename,
                     processing_status="pending"  # Ready for manual AI processing
                 )
                 db.add(pitch_deck)
@@ -126,6 +130,9 @@ async def process_dojo_zip(zip_file_path: str, uploaded_by: int, db: Session):
     """Background task to process uploaded dojo zip file"""
     try:
         logger.info(f"Processing dojo zip file: {zip_file_path}")
+        
+        # Get original ZIP filename for database storage
+        zip_filename = os.path.basename(zip_file_path)
         
         # Extract zip file
         extract_dir = os.path.join(DOJO_PATH, f"extract_{uuid.uuid4().hex}")
@@ -162,6 +169,7 @@ async def process_dojo_zip(zip_file_path: str, uploaded_by: int, db: Session):
                     file_name=original_name,
                     file_path=f"dojo/{unique_name}",
                     data_source="dojo",
+                    zip_filename=zip_filename,
                     processing_status="pending"
                 )
                 db.add(pitch_deck)
@@ -283,6 +291,7 @@ async def list_dojo_files(
                 "file_path": file.file_path,
                 "processing_status": file.processing_status,
                 "ai_extracted_startup_name": file.ai_extracted_startup_name,
+                "zip_filename": getattr(file, 'zip_filename', None),  # Handle case where column doesn't exist yet
                 "created_at": file.created_at.isoformat() if file.created_at else None,
                 "has_results": bool(file.ai_analysis_results)
             })

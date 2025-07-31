@@ -2693,6 +2693,7 @@ const DojoManagement = () => {
                   <TableHead>
                     <TableRow>
                       <TableCell>{t('fileManagement.filename')}</TableCell>
+                      <TableCell>ZIP Archive</TableCell>
                       <TableCell>{t('status.title')}</TableCell>
                       <TableCell>{t('fileManagement.startupName')}</TableCell>
                       <TableCell>{t('fileManagement.uploaded')}</TableCell>
@@ -2707,6 +2708,9 @@ const DojoManagement = () => {
                             <Description sx={{ mr: 1 }} />
                             {file.filename}
                           </Box>
+                        </TableCell>
+                        <TableCell>
+                          {file.zip_filename || '-'}
                         </TableCell>
                         <TableCell>
                           <Chip
