@@ -86,6 +86,9 @@ export const getPerformanceMetrics = () =>
 export const updateTemplate = (templateId, templateData) =>
   api.put(`/healthcare-templates/templates/${templateId}`, templateData);
 
+export const addChapterToTemplate = (templateId, chapterData) =>
+  api.post(`/healthcare-templates/templates/${templateId}/chapters`, chapterData);
+
 export const deleteTemplate = (templateId) =>
   api.delete(`/healthcare-templates/templates/${templateId}`);
 

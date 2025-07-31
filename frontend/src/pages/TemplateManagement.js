@@ -53,6 +53,7 @@ import {
   getTemplateDetails,
   customizeTemplate,
   updateTemplate,
+  addChapterToTemplate,
   getMyCustomizations,
   getPipelinePrompts,
   getPipelinePromptByStage,
@@ -444,23 +445,37 @@ const TemplateManagement = () => {
       }
     }, [templateDialogOpen, templateDetails]);
 
-    const addChapter = () => {
-      if (!editedTemplate) return;
+    const addChapter = async () => {
+      if (!editedTemplate || !selectedTemplate) return;
       
-      const newChapter = {
-        id: Date.now(), // Temporary ID
-        name: 'New Chapter',
-        questions: [{
-          id: Date.now() + 1,
-          question_text: '',
-          scoring_criteria: ''
-        }]
-      };
-      
-      setEditedTemplate({
-        ...editedTemplate,
-        chapters: [...editedTemplate.chapters, newChapter]
-      });
+      try {
+        setSaving(true);
+        
+        // Call API to add chapter to template
+        const chapterData = {
+          name: 'New Chapter',
+          description: '',
+          weight: 1.0,
+          is_required: true,
+          enabled: true
+        };
+        
+        console.log('Adding chapter to template:', selectedTemplate.id);
+        const response = await addChapterToTemplate(selectedTemplate.id, chapterData);
+        console.log('Chapter added successfully:', response.data);
+        
+        // Refresh the template details to show the new chapter
+        const detailsResponse = await getTemplateDetails(selectedTemplate.id);
+        const details = detailsResponse.data || detailsResponse;
+        setSelectedTemplate({...selectedTemplate, chapters: details.chapters || []});
+        setTemplateDetails(details);
+        
+      } catch (error) {
+        console.error('Error adding chapter:', error);
+        setError('Failed to add chapter: ' + (error.response?.data?.detail || error.message));
+      } finally {
+        setSaving(false);
+      }
     };
 
     const updateChapter = (chapterIndex, field, value) => {
