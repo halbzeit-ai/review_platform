@@ -1,11 +1,7 @@
 INFO:     Will watch for changes in these directories: ['/opt/review-platform-dev/backend']
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [25349] using StatReload
-INFO:     Started server process [25356]
+INFO:     Uvicorn running on http://0.0.0.0:5001 (Press CTRL+C to quit)
+INFO:     Started reloader process [55460] using StatReload
+INFO:     Started server process [55473]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [25356]
-INFO:     Stopping reloader process [25349]
+INFO:     127.0.0.1:40798 - "GET /docs HTTP/1.1" 200 OK
