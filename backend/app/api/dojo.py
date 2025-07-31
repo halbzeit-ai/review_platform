@@ -10,6 +10,7 @@ import os
 import zipfile
 import shutil
 import logging
+import glob
 from pathlib import Path
 import uuid
 import json
@@ -399,16 +400,72 @@ async def delete_all_dojo_files(
                 db.rollback()  # Important: rollback failed transaction
                 # Continue anyway, this is not critical
         
+        # Track additional cleanup stats
+        deleted_images = 0
+        deleted_results = 0
+        deleted_projects = 0
+        
         for dojo_file in dojo_files:
             try:
-                # Delete physical file
+                deck_id = dojo_file.id
+                deck_name = os.path.splitext(dojo_file.file_name)[0] if dojo_file.file_name else str(deck_id)
+                
+                # 1. Delete original PDF file
                 if dojo_file.file_path:
                     full_path = os.path.join("/mnt/dev-shared", dojo_file.file_path)
                     if os.path.exists(full_path):
                         os.remove(full_path)
-                        logger.info(f"Deleted physical file: {full_path}")
+                        logger.info(f"Deleted PDF: {full_path}")
                     else:
-                        logger.warning(f"Physical file not found: {full_path}")
+                        logger.warning(f"PDF not found: {full_path}")
+                
+                # 2. Delete slide images from analysis directories
+                analysis_base = "/mnt/dev-shared/projects"
+                possible_image_dirs = [
+                    os.path.join(analysis_base, "dojo", "analysis", deck_name),
+                    os.path.join(analysis_base, "dojo", "analysis", deck_name.replace(' ', '_')),
+                    os.path.join(analysis_base, "dojo", "analysis", f"job_{deck_id}_{deck_name}"),
+                ]
+                
+                # Also check for UUID-prefixed directories in dojo analysis
+                dojo_analysis_path = os.path.join(analysis_base, "dojo", "analysis")
+                if os.path.exists(dojo_analysis_path):
+                    try:
+                        for dir_name in os.listdir(dojo_analysis_path):
+                            if deck_name in dir_name or str(deck_id) in dir_name:
+                                possible_image_dirs.append(os.path.join(dojo_analysis_path, dir_name))
+                    except Exception as e:
+                        logger.warning(f"Could not scan dojo analysis directory: {e}")
+                
+                for image_dir in possible_image_dirs:
+                    if os.path.exists(image_dir):
+                        try:
+                            shutil.rmtree(image_dir)
+                            deleted_images += 1
+                            logger.info(f"Deleted image directory: {image_dir}")
+                        except Exception as e:
+                            logger.warning(f"Failed to delete image directory {image_dir}: {e}")
+                
+                # 3. Delete analysis results files
+                results_dir = "/mnt/dev-shared/results"
+                if os.path.exists(results_dir):
+                    try:
+                        # Look for job_<deck_id>_* files
+                        result_patterns = [
+                            os.path.join(results_dir, f"job_{deck_id}_*"),
+                            os.path.join(results_dir, f"*_{deck_id}_*"),
+                        ]
+                        
+                        for pattern in result_patterns:
+                            for result_file in glob.glob(pattern):
+                                try:
+                                    os.remove(result_file)
+                                    deleted_results += 1
+                                    logger.info(f"Deleted result file: {result_file}")
+                                except Exception as e:
+                                    logger.warning(f"Failed to delete result file {result_file}: {e}")
+                    except Exception as e:
+                        logger.warning(f"Error scanning results directory: {e}")
                 
                 # Store info before deletion
                 deleted_files.append({
@@ -426,15 +483,50 @@ async def delete_all_dojo_files(
                 errors.append(error_msg)
                 logger.error(error_msg)
         
+        # 4. Clean up project documents that reference dojo decks
+        try:
+            # Find project documents that reference the deleted dojo files
+            project_docs_result = db.execute(text("""
+                DELETE FROM project_documents 
+                WHERE file_path IN (
+                    SELECT file_path FROM pitch_decks WHERE data_source = 'dojo'
+                ) OR document_type = 'pitch_deck' AND file_name IN (
+                    SELECT file_name FROM pitch_decks WHERE data_source = 'dojo'  
+                )
+            """))
+            deleted_projects = project_docs_result.rowcount
+            logger.info(f"Cleaned up {deleted_projects} project document references")
+        except Exception as e:
+            logger.warning(f"Failed to clean up project documents: {e}")
+            deleted_projects = 0
+        
+        # 5. Clean up extraction experiment references
+        try:
+            # Remove any extraction experiments that reference the deleted decks
+            exp_cleanup_result = db.execute(text("""
+                UPDATE extraction_experiments 
+                SET template_processing_results_json = NULL,
+                    results_summary = NULL
+                WHERE template_processing_results_json LIKE '%"deck_id": %'
+                AND template_processing_results_json ~ '"deck_id":\s*(' || 
+                    array_to_string(ARRAY(SELECT id::text FROM pitch_decks WHERE data_source = 'dojo'), '|') || ')'
+            """))
+            logger.info(f"Cleaned up extraction experiment references")
+        except Exception as e:
+            logger.warning(f"Failed to clean up extraction experiments: {e}")
+        
         # Commit all deletions
         db.commit()
         
-        logger.info(f"Deleted {deleted_count} dojo files total")
+        logger.info(f"Comprehensive dojo cleanup complete: {deleted_count} files, {deleted_images} image dirs, {deleted_results} result files, {deleted_projects} project docs")
         
         return {
-            "message": f"Successfully deleted {deleted_count} dojo files",
+            "message": f"Successfully deleted {deleted_count} dojo files and all related data",
             "deleted_count": deleted_count,
             "deleted_files": deleted_files,
+            "deleted_images": deleted_images,
+            "deleted_results": deleted_results,
+            "deleted_projects": deleted_projects,
             "errors": errors if errors else None
         }
         

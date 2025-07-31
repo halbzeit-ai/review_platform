@@ -1759,7 +1759,13 @@ const DojoManagement = () => {
       if (response.ok) {
         const result = await response.json();
         console.log('Delete result:', result);
-        setAddCompaniesSuccess(`Successfully deleted ${result.deleted_count} dojo PDF files from filesystem and database. You can now upload a fresh ZIP file.`);
+        const stats = [];
+        stats.push(`${result.deleted_count} PDF files`);
+        if (result.deleted_images) stats.push(`${result.deleted_images} image directories`);
+        if (result.deleted_results) stats.push(`${result.deleted_results} result files`);
+        if (result.deleted_projects) stats.push(`${result.deleted_projects} project references`);
+        
+        setAddCompaniesSuccess(`Successfully deleted ${stats.join(', ')} and cleared visual analysis cache. Complete cleanup finished - you can now upload fresh training data.`);
         setError(null);
         // Close the dialog
         setDeleteAllFilesDialogOpen(false);
@@ -2661,8 +2667,8 @@ const DojoManagement = () => {
                   Remove All Dojo PDF Files
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Delete all dojo PDF files from both the filesystem and database. 
-                  This will completely remove all uploaded training data files. Use this to clean up after hash mismatches or to upload fresh data.
+                  Comprehensive cleanup: Delete all dojo PDF files, slide images, analysis results, and database references. 
+                  This completely removes all training data and related files from the system. Use this for a fresh start.
                 </Typography>
                 <Button
                   variant="contained"
@@ -2924,7 +2930,13 @@ const DojoManagement = () => {
               Delete all PDF files from the filesystem ({files?.length || 0} files)
             </Typography>
             <Typography component="li" variant="body2">
-              Remove all corresponding database entries
+              Remove all slide images and analysis directories
+            </Typography>
+            <Typography component="li" variant="body2">
+              Delete all analysis result files
+            </Typography>
+            <Typography component="li" variant="body2">
+              Remove all corresponding database entries and project references
             </Typography>
             <Typography component="li" variant="body2" color="warning.main">
               <strong>Clear all visual analysis cache</strong> (will be regenerated on next use)
