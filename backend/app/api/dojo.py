@@ -415,6 +415,23 @@ async def delete_all_dojo_files(
         deleted_results = 0
         deleted_projects = 0
         
+        # FIRST: Delete ALL actual files in dojo directory (regardless of DB paths)
+        try:
+            import glob
+            dojo_filesystem_files = glob.glob("/mnt/dev-shared/dojo/*.pdf")
+            filesystem_deleted = 0
+            for file_path in dojo_filesystem_files:
+                try:
+                    os.remove(file_path)
+                    filesystem_deleted += 1
+                    logger.info(f"Deleted filesystem file: {file_path}")
+                except Exception as e:
+                    logger.warning(f"Could not delete {file_path}: {e}")
+            
+            logger.info(f"Deleted {filesystem_deleted} files from filesystem")
+        except Exception as e:
+            logger.warning(f"Error during filesystem cleanup: {e}")
+        
         for dojo_file in dojo_files:
             try:
                 deck_id = dojo_file.id
@@ -517,8 +534,7 @@ async def delete_all_dojo_files(
             # Simplified approach - just clear experiments that contain dojo deck references
             exp_cleanup_result = db.execute(text("""
                 UPDATE extraction_experiments 
-                SET template_processing_results_json = NULL,
-                    results_summary = NULL
+                SET template_processing_results_json = NULL
                 WHERE template_processing_results_json LIKE '%"deck_id":%'
                 AND template_processing_results_json LIKE '%"data_source": "dojo"%'
             """))
