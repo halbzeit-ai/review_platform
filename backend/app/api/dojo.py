@@ -955,7 +955,7 @@ async def test_offering_extraction(
             "experiment_name": request.experiment_name,
             "extraction_type": "company_offering",
             "text_model_used": request.text_model,
-            "extraction_prompt": request.extraction_prompt,
+            "extraction_prompt": extraction_prompt,
             "results": extraction_results,
             "total_decks": len(extraction_results),
             "successful_extractions": len([r for r in extraction_results if not r["offering_extraction"].startswith("Error:")]),
@@ -970,7 +970,7 @@ async def test_offering_extraction(
             "deck_ids": request.deck_ids,
             "type": "company_offering", 
             "model": request.text_model,
-            "prompt": request.extraction_prompt,
+            "prompt": extraction_prompt,
             "results": json.dumps(experiment_data)
         })
         experiment_id = result.fetchone()[0]
