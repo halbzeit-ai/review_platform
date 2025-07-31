@@ -697,3 +697,13 @@ SUCCESS: Found slide image at: /mnt/dev-shared/projects/ismaning-dev/analysis/Br
 SUCCESS: Found slide image at: /mnt/dev-shared/projects/ismaning-dev/analysis/BrainStorm-Therapeutics-pitch-deck-01312025/slide_1.jpg
 INFO:     83.171.161.95:0 - "GET /api/documents/19/thumbnail/slide/1 HTTP/1.1" 200 OK
 INFO:     83.171.161.95:0 - "GET /api/documents/19/thumbnail/slide/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60346 - "GET /api/healthcare-templates/templates/9 HTTP/1.1" 403 Forbidden
+INFO:     127.0.0.1:56418 - "GET /api/healthcare-templates/templates HTTP/1.1" 403 Forbidden
+WARNING:  StatReload detected changes in 'app/api/healthcare_templates.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [60335]
+INFO:     Started server process [65740]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.

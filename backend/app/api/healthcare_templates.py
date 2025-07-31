@@ -772,6 +772,109 @@ async def migrate_template_defaults(
             detail="Failed to migrate templates"
         )
 
+@router.post("/templates/{template_id}/chapters", response_model=Dict[str, Any])
+async def add_chapter_to_template(
+    template_id: int,
+    chapter_data: Dict[str, Any],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Add a new chapter to a template"""
+    try:
+        # Check if user is GP
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only GPs can add chapters to templates"
+            )
+        
+        # Check if template exists and is editable
+        template_check_query = text("""
+        SELECT id, name, is_default 
+        FROM analysis_templates 
+        WHERE id = :template_id AND is_active = TRUE
+        """)
+        
+        template_result = db.execute(template_check_query, {"template_id": template_id}).fetchone()
+        
+        if not template_result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Template {template_id} not found"
+            )
+        
+        # Prevent adding chapters to default templates
+        if template_result[2]:  # is_default
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot add chapters to default templates"
+            )
+        
+        # Get the highest order_index for this template
+        max_order_query = text("""
+        SELECT COALESCE(MAX(order_index), 0) as max_order
+        FROM template_chapters
+        WHERE template_id = :template_id OR analysis_template_id = :template_id
+        """)
+        
+        max_order_result = db.execute(max_order_query, {"template_id": template_id}).fetchone()
+        next_order = (max_order_result[0] or 0) + 1
+        
+        # Create chapter_id from name (lowercase, replace spaces with underscores)
+        chapter_name = chapter_data.get("name", "").strip()
+        if not chapter_name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Chapter name is required"
+            )
+        
+        chapter_id = chapter_name.lower().replace(" ", "_").replace("-", "_")
+        # Remove any non-alphanumeric characters except underscores
+        import re
+        chapter_id = re.sub(r'[^a-z0-9_]', '', chapter_id)
+        
+        # Insert the new chapter
+        insert_query = text("""
+        INSERT INTO template_chapters (
+            template_id, analysis_template_id, chapter_id, name, description, 
+            weight, order_index, is_required, enabled
+        ) VALUES (
+            :template_id, :template_id, :chapter_id, :name, :description,
+            :weight, :order_index, :is_required, :enabled
+        )
+        """)
+        
+        db.execute(insert_query, {
+            "template_id": template_id,
+            "chapter_id": chapter_id,
+            "name": chapter_name,
+            "description": chapter_data.get("description", ""),
+            "weight": chapter_data.get("weight", 1.0),
+            "order_index": next_order,
+            "is_required": chapter_data.get("is_required", True),
+            "enabled": chapter_data.get("enabled", True)
+        })
+        
+        db.commit()
+        
+        logger.info(f"Added chapter '{chapter_name}' to template {template_id} by GP {current_user.email}")
+        
+        return {
+            "message": f"Chapter '{chapter_name}' added successfully",
+            "chapter_id": chapter_id,
+            "order_index": next_order
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error adding chapter to template {template_id}: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to add chapter"
+        )
+
 @router.get("/performance-metrics", response_model=Dict[str, Any])
 async def get_performance_metrics(
     db: Session = Depends(get_db),
