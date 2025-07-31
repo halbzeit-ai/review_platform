@@ -1712,8 +1712,10 @@ const DojoManagement = () => {
           setError(errorData[0].msg);
         } else if (typeof errorData === 'string') {
           setError(errorData);
+        } else if (errorData?.detail) {
+          setError(errorData.detail);
         } else {
-          setError(errorData.detail || JSON.stringify(errorData) || 'Failed to cleanup dojo projects');
+          setError(JSON.stringify(errorData) || 'Failed to cleanup dojo projects');
         }
       }
     } catch (err) {
@@ -1759,8 +1761,10 @@ const DojoManagement = () => {
           setError(errorData[0].msg);
         } else if (typeof errorData === 'string') {
           setError(errorData);
+        } else if (errorData?.detail) {
+          setError(errorData.detail);
         } else {
-          setError(errorData.detail || JSON.stringify(errorData) || 'Failed to delete all dojo files');
+          setError(JSON.stringify(errorData) || 'Failed to delete all dojo files');
         }
       }
     } catch (err) {
@@ -1825,7 +1829,7 @@ const DojoManagement = () => {
       {/* Error Alert */}
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
+          {typeof error === 'string' ? error : JSON.stringify(error)}
         </Alert>
       )}
 
