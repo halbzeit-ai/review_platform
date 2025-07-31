@@ -1,0 +1,311 @@
+{
+  "total_questions": 34,
+  "questions": [
+    {
+      "chapter_key": "problem_analysis",
+      "chapter_name": "Problem Analysis",
+      "question_id": 1,
+      "question_code": "target_problem",
+      "question_text": "Who has the problem?",
+      "scoring_criteria": "Clear identification of target audience with specific demographics and characteristics",
+      "healthcare_focus": "Understanding the patient population and healthcare stakeholders affected"
+    },
+    {
+      "chapter_key": "problem_analysis",
+      "chapter_name": "Problem Analysis",
+      "question_id": 2,
+      "question_code": "problem_nature",
+      "question_text": "What exactly is the nature of the problem?",
+      "scoring_criteria": "Detailed problem description with root cause analysis",
+      "healthcare_focus": "Medical or healthcare-specific problem definition with clinical significance"
+    },
+    {
+      "chapter_key": "problem_analysis",
+      "chapter_name": "Problem Analysis",
+      "question_id": 3,
+      "question_code": "pain_points",
+      "question_text": "What are the pain points?",
+      "scoring_criteria": "Specific pain points with impact assessment",
+      "healthcare_focus": "Clinical pain points affecting patient outcomes or healthcare delivery"
+    },
+    {
+      "chapter_key": "problem_analysis",
+      "chapter_name": "Problem Analysis",
+      "question_id": 4,
+      "question_code": "problem_quantification",
+      "question_text": "Can the problem be quantified?",
+      "scoring_criteria": "Quantitative data supporting problem scope and impact",
+      "healthcare_focus": "Clinical metrics, patient numbers, or healthcare cost implications"
+    },
+    {
+      "chapter_key": "solution_approach",
+      "chapter_name": "Solution Approach",
+      "question_id": 5,
+      "question_code": "solution_description",
+      "question_text": "What exactly does the startup's solution look like?",
+      "scoring_criteria": "Clear, detailed solution description with implementation approach",
+      "healthcare_focus": "Clinical mechanism, therapeutic approach, or healthcare delivery method"
+    },
+    {
+      "chapter_key": "solution_approach",
+      "chapter_name": "Solution Approach",
+      "question_id": 6,
+      "question_code": "differentiation",
+      "question_text": "What distinguishes it from existing solutions?",
+      "scoring_criteria": "Clear competitive differentiation with unique value proposition",
+      "healthcare_focus": "Clinical advantages, regulatory benefits, or improved patient outcomes"
+    },
+    {
+      "chapter_key": "solution_approach",
+      "chapter_name": "Solution Approach",
+      "question_id": 7,
+      "question_code": "current_solutions",
+      "question_text": "How does the customer solve the problem currently?",
+      "scoring_criteria": "Understanding of current alternatives and their limitations",
+      "healthcare_focus": "Current standard of care, existing treatments, or workflow solutions"
+    },
+    {
+      "chapter_key": "solution_approach",
+      "chapter_name": "Solution Approach",
+      "question_id": 8,
+      "question_code": "competitive_landscape",
+      "question_text": "Are there competitors and what does their solution & positioning look like?",
+      "scoring_criteria": "Comprehensive competitive analysis with positioning comparison",
+      "healthcare_focus": "Competitive healthcare solutions, regulatory status, and market positioning"
+    },
+    {
+      "chapter_key": "solution_approach",
+      "chapter_name": "Solution Approach",
+      "question_id": 9,
+      "question_code": "quantified_advantage",
+      "question_text": "Can the startup quantify their advantage?",
+      "scoring_criteria": "Quantitative metrics demonstrating competitive advantage",
+      "healthcare_focus": "Clinical efficacy data, cost savings, or improved health outcomes"
+    },
+    {
+      "chapter_key": "product_market_fit",
+      "chapter_name": "Product Market Fit",
+      "question_id": 10,
+      "question_code": "paying_customers",
+      "question_text": "Does the startup have paying customers?",
+      "scoring_criteria": "Evidence of paying customers with revenue generation",
+      "healthcare_focus": "Healthcare providers, patients, or payers actually purchasing the solution"
+    },
+    {
+      "chapter_key": "product_market_fit",
+      "chapter_name": "Product Market Fit",
+      "question_id": 11,
+      "question_code": "pilot_customers",
+      "question_text": "Does the startup have non-paying but convinced pilot customers?",
+      "scoring_criteria": "Pilot customers demonstrating product validation and commitment",
+      "healthcare_focus": "Healthcare institutions, clinicians, or patients engaged in pilots"
+    },
+    {
+      "chapter_key": "product_market_fit",
+      "chapter_name": "Product Market Fit",
+      "question_id": 12,
+      "question_code": "customer_acquisition",
+      "question_text": "How did the startup find pilot customers?",
+      "scoring_criteria": "Clear customer acquisition strategy with repeatable process",
+      "healthcare_focus": "Healthcare-specific acquisition channels and relationship building"
+    },
+    {
+      "chapter_key": "product_market_fit",
+      "chapter_name": "Product Market Fit",
+      "question_id": 13,
+      "question_code": "customer_satisfaction",
+      "question_text": "What do users & payers love about the startup's solution?",
+      "scoring_criteria": "Specific customer feedback highlighting value proposition",
+      "healthcare_focus": "Clinical outcomes, workflow improvements, or patient satisfaction"
+    },
+    {
+      "chapter_key": "product_market_fit",
+      "chapter_name": "Product Market Fit",
+      "question_id": 14,
+      "question_code": "churn_analysis",
+      "question_text": "What is the churn and the reasons for it?",
+      "scoring_criteria": "Churn metrics with root cause analysis and mitigation strategies",
+      "healthcare_focus": "Healthcare-specific retention challenges and solutions"
+    },
+    {
+      "chapter_key": "monetization",
+      "chapter_name": "Monetization",
+      "question_id": 15,
+      "question_code": "payer_identification",
+      "question_text": "Who will pay for it?",
+      "scoring_criteria": "Clear identification of paying customers and decision makers",
+      "healthcare_focus": "Healthcare payers, insurance, providers, or patients as payment sources"
+    },
+    {
+      "chapter_key": "monetization",
+      "chapter_name": "Monetization",
+      "question_id": 16,
+      "question_code": "payer_vs_user",
+      "question_text": "Are the users paying themselves or someone else?",
+      "scoring_criteria": "Clear distinction between users and payers with rationale",
+      "healthcare_focus": "Healthcare stakeholder payment dynamics and reimbursement models"
+    },
+    {
+      "chapter_key": "monetization",
+      "chapter_name": "Monetization",
+      "question_id": 17,
+      "question_code": "decision_making",
+      "question_text": "What does the buyer's decision-making structure look like?",
+      "scoring_criteria": "Understanding of decision-making process and key stakeholders",
+      "healthcare_focus": "Healthcare procurement, clinical committees, or administrative approval processes"
+    },
+    {
+      "chapter_key": "monetization",
+      "chapter_name": "Monetization",
+      "question_id": 18,
+      "question_code": "sales_cycle",
+      "question_text": "How much time elapses between startup's initial contact with the customer and payment?",
+      "scoring_criteria": "Clear sales cycle timeline with key milestones",
+      "healthcare_focus": "Healthcare-specific sales cycles including regulatory and compliance considerations"
+    },
+    {
+      "chapter_key": "monetization",
+      "chapter_name": "Monetization",
+      "question_id": 19,
+      "question_code": "pricing_strategy",
+      "question_text": "How did did the startup design their pricing and why?",
+      "scoring_criteria": "Pricing strategy with market research and value-based rationale",
+      "healthcare_focus": "Healthcare pricing models, reimbursement alignment, and value-based care"
+    },
+    {
+      "chapter_key": "monetization",
+      "chapter_name": "Monetization",
+      "question_id": 20,
+      "question_code": "unit_economics",
+      "question_text": "What are the startup's margins and unit economics?",
+      "scoring_criteria": "Clear unit economics with margin analysis and scalability",
+      "healthcare_focus": "Healthcare-specific cost structure and regulatory compliance costs"
+    },
+    {
+      "chapter_key": "financials",
+      "chapter_name": "Financials",
+      "question_id": 21,
+      "question_code": "monthly_burn",
+      "question_text": "What is the startup's current monthly burn?",
+      "scoring_criteria": "Current burn rate with detailed breakdown",
+      "healthcare_focus": "Healthcare-specific operational costs and regulatory compliance expenses"
+    },
+    {
+      "chapter_key": "financials",
+      "chapter_name": "Financials",
+      "question_id": 22,
+      "question_code": "monthly_sales",
+      "question_text": "What are the startup's monthly sales?",
+      "scoring_criteria": "Monthly revenue with growth trends and predictability",
+      "healthcare_focus": "Healthcare revenue recognition and reimbursement timing"
+    },
+    {
+      "chapter_key": "financials",
+      "chapter_name": "Financials",
+      "question_id": 23,
+      "question_code": "financial_fluctuations",
+      "question_text": "Are there major fluctuations in revenues and why?",
+      "scoring_criteria": "Understanding of financial volatility with explanations",
+      "healthcare_focus": "Healthcare-specific seasonality, reimbursement cycles, or regulatory impacts"
+    },
+    {
+      "chapter_key": "financials",
+      "chapter_name": "Financials",
+      "question_id": 24,
+      "question_code": "annual_burn",
+      "question_text": "How much money did the startup burn last year?",
+      "scoring_criteria": "Historical burn rate with efficiency analysis",
+      "healthcare_focus": "Healthcare development costs, clinical trials, or regulatory expenses"
+    },
+    {
+      "chapter_key": "financials",
+      "chapter_name": "Financials",
+      "question_id": 25,
+      "question_code": "funding_requirements",
+      "question_text": "How much funding is the startup looking for and why exactly this amount?",
+      "scoring_criteria": "Specific funding amount with detailed justification and milestones",
+      "healthcare_focus": "Healthcare-specific funding needs for clinical trials, regulatory approval, or market access"
+    },
+    {
+      "chapter_key": "use_of_funds",
+      "chapter_name": "Use of Funds",
+      "question_id": 26,
+      "question_code": "fund_allocation",
+      "question_text": "What will the startup do with the money?",
+      "scoring_criteria": "Detailed fund allocation with specific use cases and timelines",
+      "healthcare_focus": "Healthcare-specific investments in clinical development, regulatory processes, or market access"
+    },
+    {
+      "chapter_key": "use_of_funds",
+      "chapter_name": "Use of Funds",
+      "question_id": 27,
+      "question_code": "priority_deficits",
+      "question_text": "Is there a ranked list of deficits regarding the startup's business setup to address?",
+      "scoring_criteria": "Prioritized list of organizational gaps with investment rationale",
+      "healthcare_focus": "Healthcare-specific capabilities like clinical expertise, regulatory affairs, or quality systems"
+    },
+    {
+      "chapter_key": "use_of_funds",
+      "chapter_name": "Use of Funds",
+      "question_id": 28,
+      "question_code": "investment_strategy",
+      "question_text": "Can the startup explain its strategy how to invest the funds?",
+      "scoring_criteria": "Clear investment strategy with risk management and milestone planning",
+      "healthcare_focus": "Healthcare development strategy including clinical phases and regulatory pathways"
+    },
+    {
+      "chapter_key": "use_of_funds",
+      "chapter_name": "Use of Funds",
+      "question_id": 29,
+      "question_code": "future_state",
+      "question_text": "What will the startup look like at the end of this investment period?",
+      "scoring_criteria": "Clear vision of future state with specific metrics and capabilities",
+      "healthcare_focus": "Healthcare milestones including clinical data, regulatory approvals, or market penetration"
+    },
+    {
+      "chapter_key": "organization",
+      "chapter_name": "Organization",
+      "question_id": 30,
+      "question_code": "team_experience",
+      "question_text": "Who are the people behind the startup and what experience do they have?",
+      "scoring_criteria": "Team backgrounds with relevant experience and track record",
+      "healthcare_focus": "Healthcare industry experience, clinical expertise, or regulatory knowledge"
+    },
+    {
+      "chapter_key": "organization",
+      "chapter_name": "Organization",
+      "question_id": 31,
+      "question_code": "organizational_maturity",
+      "question_text": "How can the startup's organizational maturity be described and quantified?",
+      "scoring_criteria": "Organizational structure, processes, and governance maturity",
+      "healthcare_focus": "Healthcare-specific organizational requirements like quality systems or clinical governance"
+    },
+    {
+      "chapter_key": "organization",
+      "chapter_name": "Organization",
+      "question_id": 32,
+      "question_code": "team_composition",
+      "question_text": "How many people are working in the startup and how are they allocated per unit?",
+      "scoring_criteria": "Team size and composition with functional distribution",
+      "healthcare_focus": "Healthcare-specific roles including clinical, regulatory, and quality assurance"
+    },
+    {
+      "chapter_key": "organization",
+      "chapter_name": "Organization",
+      "question_id": 33,
+      "question_code": "skill_gaps",
+      "question_text": "What skills are missing in the startup's management team?",
+      "scoring_criteria": "Identified skill gaps with plans for addressing them",
+      "healthcare_focus": "Healthcare-specific expertise gaps in clinical development, regulatory affairs, or commercial strategy"
+    },
+    {
+      "chapter_key": "organization",
+      "chapter_name": "Organization",
+      "question_id": 34,
+      "question_code": "urgent_hiring",
+      "question_text": "What are the most urgent positions in the startup that need to be filled?",
+      "scoring_criteria": "Prioritized hiring needs with impact on business objectives",
+      "healthcare_focus": "Critical healthcare roles for clinical development, regulatory compliance, or market access"
+    }
+  ]
+}
