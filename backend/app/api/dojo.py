@@ -330,7 +330,7 @@ async def delete_dojo_file(
         
         # Delete physical file
         if dojo_file.file_path:
-            full_path = os.path.join("/mnt/CPU-GPU", dojo_file.file_path)
+            full_path = os.path.join("/mnt/dev-shared", dojo_file.file_path)
             if os.path.exists(full_path):
                 os.remove(full_path)
         
@@ -353,6 +353,76 @@ async def delete_dojo_file(
         raise HTTPException(
             status_code=500,
             detail="Failed to delete dojo file"
+        )
+
+@router.delete("/files/all")
+async def delete_all_dojo_files(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete all dojo PDF files from filesystem and database"""
+    try:
+        # Only GPs can delete all dojo data
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=403,
+                detail="Only GPs can delete all dojo training data"
+            )
+        
+        # Find all dojo files
+        dojo_files = db.query(PitchDeck).filter(
+            PitchDeck.data_source == "dojo"
+        ).all()
+        
+        deleted_count = 0
+        deleted_files = []
+        errors = []
+        
+        for dojo_file in dojo_files:
+            try:
+                # Delete physical file
+                if dojo_file.file_path:
+                    full_path = os.path.join("/mnt/dev-shared", dojo_file.file_path)
+                    if os.path.exists(full_path):
+                        os.remove(full_path)
+                        logger.info(f"Deleted physical file: {full_path}")
+                
+                # Store info before deletion
+                deleted_files.append({
+                    "id": dojo_file.id,
+                    "filename": dojo_file.file_name,
+                    "file_path": dojo_file.file_path
+                })
+                
+                # Delete database record
+                db.delete(dojo_file)
+                deleted_count += 1
+                
+            except Exception as e:
+                error_msg = f"Failed to delete file {dojo_file.id} ({dojo_file.file_name}): {str(e)}"
+                errors.append(error_msg)
+                logger.error(error_msg)
+        
+        # Commit all deletions
+        db.commit()
+        
+        logger.info(f"Deleted {deleted_count} dojo files total")
+        
+        return {
+            "message": f"Successfully deleted {deleted_count} dojo files",
+            "deleted_count": deleted_count,
+            "deleted_files": deleted_files,
+            "errors": errors if errors else None
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting all dojo files: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to delete all dojo files"
         )
 
 @router.get("/stats")

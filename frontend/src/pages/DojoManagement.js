@@ -183,6 +183,8 @@ const DojoManagement = () => {
   // Data management states
   const [cleanupLoading, setCleanupLoading] = useState(false);
   const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
+  const [deleteAllFilesLoading, setDeleteAllFilesLoading] = useState(false);
+  const [deleteAllFilesDialogOpen, setDeleteAllFilesDialogOpen] = useState(false);
   const [testDataStats, setTestDataStats] = useState(null);
 
   // Sequential pipeline execution states
@@ -1716,6 +1718,40 @@ const DojoManagement = () => {
     }
   };
 
+  // Delete all dojo PDF files
+  const deleteAllDojoFiles = async () => {
+    try {
+      setDeleteAllFilesLoading(true);
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+
+      const response = await fetch('/api/dojo/files/all', {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setAddCompaniesSuccess(`Successfully deleted ${result.deleted_count} dojo PDF files from filesystem and database. You can now upload a fresh ZIP file.`);
+        setError(null);
+        // Refresh file list and stats
+        await loadDojoData();
+        await loadTestDataStats();
+        // Clear success message after 8 seconds
+        setTimeout(() => setAddCompaniesSuccess(''), 8000);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Failed to delete all dojo files');
+      }
+    } catch (err) {
+      console.error('Error deleting all dojo files:', err);
+      setError('Failed to delete all dojo files');
+    } finally {
+      setDeleteAllFilesLoading(false);
+      setDeleteAllFilesDialogOpen(false);
+    }
+  };
+
   const getStatusIcon = (status) => {
     switch (status) {
       case 'completed':
@@ -2621,6 +2657,25 @@ const DojoManagement = () => {
                     {cleanupLoading ? 'Cleaning...' : 'Clean Up Dojo Projects'}
                   </Button>
                 </Box>
+                
+                <Box>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Remove All Dojo PDF Files
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Delete all dojo PDF files from both the filesystem and database. 
+                    This will completely remove all uploaded training data files. Use this to clean up after hash mismatches or to upload fresh data.
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    onClick={() => setDeleteAllFilesDialogOpen(true)}
+                    disabled={deleteAllFilesLoading}
+                    startIcon={deleteAllFilesLoading ? <CircularProgress size={16} /> : <Delete />}
+                  >
+                    {deleteAllFilesLoading ? 'Deleting...' : 'Remove All Dojo PDF Files'}
+                  </Button>
+                </Box>
               </Box>
             </Paper>
           </Box>
@@ -2667,6 +2722,51 @@ const DojoManagement = () => {
             startIcon={cleanupLoading ? <CircularProgress size={16} /> : null}
           >
             {cleanupLoading ? 'Cleaning...' : 'Clean Up Projects'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Delete All Files Confirmation Dialog */}
+      <Dialog
+        open={deleteAllFilesDialogOpen}
+        onClose={() => !deleteAllFilesLoading && setDeleteAllFilesDialogOpen(false)}
+      >
+        <DialogTitle>Remove All Dojo PDF Files</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 2 }}>
+            Are you sure you want to delete ALL dojo PDF files? This will:
+          </Typography>
+          <Box component="ul" sx={{ pl: 2 }}>
+            <Typography component="li" variant="body2">
+              Delete all PDF files from the filesystem ({files?.length || 0} files)
+            </Typography>
+            <Typography component="li" variant="body2">
+              Remove all corresponding database entries
+            </Typography>
+            <Typography component="li" variant="body2" color="warning.main">
+              <strong>Clear all visual analysis cache</strong> (will be regenerated on next use)
+            </Typography>
+            <Typography component="li" variant="body2" color="success.main">
+              <strong>Preserve</strong> all experimental data and results
+            </Typography>
+          </Box>
+          
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            This action cannot be undone. Use this to resolve hash mismatches or when uploading fresh training data.
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteAllFilesDialogOpen(false)} disabled={deleteAllFilesLoading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={deleteAllDojoFiles}
+            color="error"
+            variant="contained"
+            disabled={deleteAllFilesLoading}
+            startIcon={deleteAllFilesLoading ? <CircularProgress size={16} /> : null}
+          >
+            {deleteAllFilesLoading ? 'Deleting All Files...' : 'Delete All Files'}
           </Button>
         </DialogActions>
       </Dialog>
