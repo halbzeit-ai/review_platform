@@ -803,8 +803,22 @@ async def get_processing_progress(
                 import time
                 step2_data["total_processing_time"] = time.time() - step2_data["start_time"]
         
+        # Enhance step3 progress with calculated timing data
+        step3_data = progress_tracker["step3"].copy()
+        if step3_data.get("start_time"):
+            # Calculate total processing time if completed
+            if step3_data.get("completion_time"):
+                step3_data["total_processing_time"] = step3_data["completion_time"] - step3_data["start_time"]
+                # Calculate average time per extraction type (5 types)
+                step3_data["average_processing_time"] = step3_data["total_processing_time"] / 5
+            else:
+                import time
+                step3_data["total_processing_time"] = time.time() - step3_data["start_time"]
+                step3_data["average_processing_time"] = step3_data["total_processing_time"] / max(step3_data.get("progress", 1), 1)
+        
         enhanced_tracker = progress_tracker.copy()
         enhanced_tracker["step2"] = step2_data
+        enhanced_tracker["step3"] = step3_data
         
         return enhanced_tracker
         
@@ -1048,10 +1062,14 @@ async def test_offering_extraction(
                     logger.warning(f"No cached visual analysis found for deck {deck.id}")
         
         # Update progress tracker - start step 3 processing
+        import time
+        start_time = time.time()
         progress_tracker["step3"]["status"] = "processing"
         progress_tracker["step3"]["current_deck"] = "Starting offering extraction..."
         progress_tracker["step3"]["progress"] = 0
         progress_tracker["step3"]["total"] = len(decks)
+        progress_tracker["step3"]["start_time"] = start_time
+        progress_tracker["step3"]["processing_times"] = []
         
         # Get extraction prompt from database if not provided
         extraction_prompt = request.extraction_prompt
@@ -1384,6 +1402,57 @@ async def get_experiment_details(
             detail="Failed to get experiment details"
         )
 
+@router.delete("/extraction-test/experiments")
+async def delete_extraction_experiments(
+    experiment_ids: List[int],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete multiple extraction experiments"""
+    try:
+        # Only GPs can delete extraction experiments
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=403,
+                detail="Only GPs can delete extraction experiments"
+            )
+        
+        if not experiment_ids:
+            raise HTTPException(
+                status_code=400,
+                detail="No experiment IDs provided"
+            )
+        
+        # Delete experiments
+        deleted_count = 0
+        for experiment_id in experiment_ids:
+            result = db.execute(text(
+                "DELETE FROM extraction_experiments WHERE id = :experiment_id"
+            ), {"experiment_id": experiment_id})
+            
+            if result.rowcount > 0:
+                deleted_count += 1
+        
+        db.commit()
+        
+        logger.info(f"Deleted {deleted_count} extraction experiments by user {current_user.id}")
+        
+        return {
+            "success": True,
+            "deleted_count": deleted_count,
+            "message": f"Successfully deleted {deleted_count} experiment(s)"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting extraction experiments: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to delete experiments"
+        )
+
 # ==================== CLASSIFICATION ENRICHMENT ====================
 
 class ClassificationEnrichmentRequest(BaseModel):
@@ -1442,6 +1511,12 @@ async def enrich_experiment_with_classification(
                 "completed_at": experiment[10].isoformat() if experiment[10] else None,
                 "statistics": existing_classification.get("statistics", {})
             }
+        
+        # Update progress tracker - start classification
+        progress_tracker["step3"]["status"] = "processing"
+        progress_tracker["step3"]["current_deck"] = "Starting classification..."
+        progress_tracker["step3"]["progress"] = 1
+        progress_tracker["step3"]["total"] = 5
         
         # Initialize startup classifier
         from ..services.startup_classifier import StartupClassifier
@@ -1574,6 +1649,10 @@ async def enrich_experiment_with_classification(
         
         logger.info(f"Classification enrichment completed for experiment {request.experiment_id}: {successful_classifications}/{len(classification_results)} successful")
         
+        # Update progress tracker - classification completed
+        progress_tracker["step3"]["current_deck"] = "Classification completed"
+        progress_tracker["step3"]["progress"] = 2
+        
         return {
             "message": "Classification enrichment completed successfully",
             "experiment_id": request.experiment_id,
@@ -1655,6 +1734,12 @@ async def enrich_experiment_with_company_names(
             )
         
         startup_name_prompt = prompt_result[0]
+        
+        # Update progress tracker - start company name extraction
+        progress_tracker["step3"]["status"] = "processing"
+        progress_tracker["step3"]["current_deck"] = "Starting company name extraction..."
+        progress_tracker["step3"]["progress"] = 2
+        progress_tracker["step3"]["total"] = 5
         
         # Use GPU pipeline for company name extraction
         from ..services.gpu_http_client import gpu_http_client
@@ -1750,6 +1835,10 @@ async def enrich_experiment_with_company_names(
         
         logger.info(f"Company name extraction completed for experiment {request.experiment_id}: {successful_extractions}/{len(company_name_results)} successful")
         
+        # Update progress tracker - company name extraction completed
+        progress_tracker["step3"]["current_deck"] = "Company name extraction completed"
+        progress_tracker["step3"]["progress"] = 3
+        
         return {
             "message": "Company name extraction completed successfully",
             "experiment_id": request.experiment_id,
@@ -1817,6 +1906,12 @@ async def enrich_experiment_with_funding_amounts(
             )
         
         funding_amount_prompt = prompt_result[0]
+        
+        # Update progress tracker - start funding amount extraction
+        progress_tracker["step3"]["status"] = "processing"
+        progress_tracker["step3"]["current_deck"] = "Starting funding amount extraction..."
+        progress_tracker["step3"]["progress"] = 3
+        progress_tracker["step3"]["total"] = 5
         
         # Use GPU pipeline for funding amount extraction
         from ..services.gpu_http_client import gpu_http_client
@@ -1904,6 +1999,10 @@ async def enrich_experiment_with_funding_amounts(
         
         logger.info(f"Funding amount extraction completed for experiment {request.experiment_id}: {successful_extractions}/{len(funding_amount_results)} successful")
         
+        # Update progress tracker - funding amount extraction completed
+        progress_tracker["step3"]["current_deck"] = "Funding amount extraction completed"
+        progress_tracker["step3"]["progress"] = 4
+        
         return {
             "message": "Funding amount extraction completed successfully",
             "experiment_id": request.experiment_id,
@@ -1971,6 +2070,12 @@ async def enrich_experiment_with_deck_dates(
             )
         
         deck_date_prompt = prompt_result[0]
+        
+        # Update progress tracker - start deck date extraction
+        progress_tracker["step3"]["status"] = "processing"
+        progress_tracker["step3"]["current_deck"] = "Starting deck date extraction..."
+        progress_tracker["step3"]["progress"] = 4
+        progress_tracker["step3"]["total"] = 5
         
         # Use GPU pipeline for deck date extraction
         from ..services.gpu_http_client import gpu_http_client
@@ -2057,6 +2162,14 @@ async def enrich_experiment_with_deck_dates(
         db.commit()
         
         logger.info(f"Deck date extraction completed for experiment {request.experiment_id}: {successful_extractions}/{len(deck_date_results)} successful")
+        
+        # Update progress tracker - all extractions completed
+        import time
+        completion_time = time.time()
+        progress_tracker["step3"]["status"] = "completed"
+        progress_tracker["step3"]["current_deck"] = "All obligatory extractions completed"
+        progress_tracker["step3"]["progress"] = 5
+        progress_tracker["step3"]["completion_time"] = completion_time
         
         return {
             "message": "Deck date extraction completed successfully",

@@ -36,7 +36,8 @@ import {
   FormControl,
   InputLabel,
   Checkbox,
-  FormControlLabel
+  FormControlLabel,
+  Snackbar
 } from '@mui/material';
 import {
   CloudUpload,
@@ -148,6 +149,8 @@ const DojoManagement = () => {
   const [lastDeckCompletedTime, setLastDeckCompletedTime] = useState(null);
   const [processingTimes, setProcessingTimes] = useState([]);
   const [step2CompletionData, setStep2CompletionData] = useState(null);
+  const [step3CompletionData, setStep3CompletionData] = useState(null);
+  const [step3StartTime, setStep3StartTime] = useState(null);
   const [experiments, setExperiments] = useState([]);
   const [availableModels, setAvailableModels] = useState({});
   const [modelsLoading, setModelsLoading] = useState(false);
@@ -158,6 +161,10 @@ const DojoManagement = () => {
   const [loadingExperimentDetails, setLoadingExperimentDetails] = useState(false);
   const [comparisonMode, setComparisonMode] = useState(false);
   const [selectedExperiments, setSelectedExperiments] = useState([]);
+  const [deleteMode, setDeleteMode] = useState(false);
+  const [selectedForDelete, setSelectedForDelete] = useState([]);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [templateProcessingStatus, setTemplateProcessingStatus] = useState('');
   const [availableTemplates, setAvailableTemplates] = useState([]);
@@ -196,7 +203,9 @@ const DojoManagement = () => {
   // Current deck being processed for each step
   const [currentStep2Deck, setCurrentStep2Deck] = useState('');
   const [currentStep3Deck, setCurrentStep3Deck] = useState('');
+  const [currentStep3Extraction, setCurrentStep3Extraction] = useState('');
   const [currentStep4Deck, setCurrentStep4Deck] = useState('');
+  const [currentStep4Chapter, setCurrentStep4Chapter] = useState('');
 
   useEffect(() => {
     loadDojoData();
@@ -836,6 +845,27 @@ const DojoManagement = () => {
         setCurrentStep3Deck(progressData.step3?.current_deck || '');
         setCurrentStep4Deck(progressData.step4?.current_deck || '');
         
+        // Update Step 3 extraction type based on progress
+        if (progressData.step3?.status === 'processing') {
+          const step3Progress = progressData.step3.progress || 0;
+          const step3Total = progressData.step3.total || 5;
+          
+          // Map progress to extraction types
+          if (step3Progress === 0) {
+            setCurrentStep3Extraction('Company Offering Extraction');
+          } else if (step3Progress === 1) {
+            setCurrentStep3Extraction('Startup Classification');
+          } else if (step3Progress === 2) {
+            setCurrentStep3Extraction('Company Name Extraction');
+          } else if (step3Progress === 3) {
+            setCurrentStep3Extraction('Funding Amount Extraction');  
+          } else if (step3Progress === 4) {
+            setCurrentStep3Extraction('Deck Date Extraction');
+          } else if (step3Progress >= 5) {
+            setCurrentStep3Extraction('All Extractions Completed');
+          }
+        }
+        
         // Update step progress statuses and counts
         setStep3Progress(prev => ({ 
           ...prev, 
@@ -1059,9 +1089,13 @@ const DojoManagement = () => {
       const controller = new AbortController();
       setCurrentStep3Controller(controller);
       
-      // Initialize step 3 progress
-      setStep3Progress({ completed: 0, total: deckIds.length, status: 'processing' });
-      setCurrentStep3Deck('Starting complete extraction pipeline...');
+      // Initialize step 3 progress - let backend handle the progress updates
+      const startTime = Date.now();
+      setStep3StartTime(startTime);
+      setStep3Progress({ completed: 0, total: 5, status: 'processing' }); // 5 extraction types
+      setCurrentStep3Deck('Initializing extraction pipeline...');
+      setCurrentStep3Extraction('Company Offering Extraction');
+      setStep3CompletionData(null); // Clear any previous completion data
       setError(null);
       
       // Step 3: Run offering extraction
@@ -1087,13 +1121,9 @@ const DojoManagement = () => {
 
       const offeringData = await offeringResponse.json();
       const experimentId = offeringData.experiment_id;
-      console.log('Step 3 completed: Offering extraction', offeringData);
+      console.log('Step 3.1 completed: Offering extraction', offeringData);
       
-      // Update step 3 as completed, initialize step 4
-      setStep3Progress({ completed: deckIds.length, total: deckIds.length, status: 'completed' });
-      setCurrentStep3Deck('Offering extraction completed');
-      setStep4Progress({ completed: 0, total: deckIds.length, status: 'processing' });
-      setCurrentStep4Deck('Starting classification...');
+      // Let backend handle progress updates
 
       // Step 4: Run classification on the experiment
       const classificationResponse = await fetch('/api/dojo/extraction-test/run-classification', {
@@ -1114,8 +1144,10 @@ const DojoManagement = () => {
         // Continue even if classification fails
       } else {
         const classificationData = await classificationResponse.json();
-        console.log('Step 4 completed: Classification', classificationData);
+        console.log('Step 3.2 completed: Classification', classificationData);
       }
+
+      // Let backend handle progress updates
 
       // Step 5: Run company name extraction
       const companyNameResponse = await fetch('/api/dojo/extraction-test/run-company-name-extraction', {
@@ -1136,8 +1168,10 @@ const DojoManagement = () => {
         // Continue even if company name extraction fails
       } else {
         const companyNameData = await companyNameResponse.json();
-        console.log('Step 5 completed: Company name extraction', companyNameData);
+        console.log('Step 3.3 completed: Company name extraction', companyNameData);
       }
+
+      // Let backend handle progress updates
 
       // Step 6: Run funding amount extraction
       const fundingAmountResponse = await fetch('/api/dojo/extraction-test/run-funding-amount-extraction', {
@@ -1158,8 +1192,10 @@ const DojoManagement = () => {
         // Continue even if funding amount extraction fails
       } else {
         const fundingAmountData = await fundingAmountResponse.json();
-        console.log('Step 6 completed: Funding amount extraction', fundingAmountData);
+        console.log('Step 3.4 completed: Funding amount extraction', fundingAmountData);
       }
+
+      // Let backend handle progress updates
 
       // Step 7: Run deck date extraction
       const deckDateResponse = await fetch('/api/dojo/extraction-test/run-deck-date-extraction', {
@@ -1180,7 +1216,31 @@ const DojoManagement = () => {
         // Continue even if deck date extraction fails
       } else {
         const deckDateData = await deckDateResponse.json();
-        console.log('Step 7 completed: Deck date extraction', deckDateData);
+        console.log('Step 3.5 completed: Deck date extraction', deckDateData);
+      }
+
+      // Update progress for final completion (5/5)
+      setStep3Progress({ completed: 5, total: 5, status: 'completed' });
+      setCurrentStep3Deck('Complete extraction pipeline finished successfully!');
+      setCurrentStep3Extraction('All Extractions Completed');
+
+      // Get completion data from backend progress tracker
+      const progressResponse = await fetch('/api/dojo/extraction-test/progress', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (progressResponse.ok) {
+        const progressData = await progressResponse.json();
+        const step3Data = progressData.step3;
+        
+        if (step3Data && step3Data.total_processing_time) {
+          setStep3CompletionData({
+            totalExtractions: 5,
+            successfulExtractions: 5, // All 5 extraction types completed
+            averageTime: step3Data.average_processing_time || 0,
+            totalTime: step3Data.total_processing_time || 0
+          });
+        }
       }
 
       // Refresh experiments list
@@ -1228,6 +1288,61 @@ const DojoManagement = () => {
       }
     } catch (err) {
       console.error('Error loading experiments:', err);
+    }
+  };
+
+  const handleDeleteExperiments = () => {
+    if (selectedForDelete.length === 0) return;
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteExperiments = async () => {
+    setDeleteConfirmOpen(false);
+    
+    try {
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = user?.token;
+
+      const response = await fetch('/api/dojo/extraction-test/experiments', {
+        method: 'DELETE',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(selectedForDelete)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log(`Successfully deleted ${result.deleted_count} experiments`);
+        
+        // Reset delete mode and reload experiments
+        setDeleteMode(false);
+        setSelectedForDelete([]);
+        await loadExperiments();
+        
+        // Show success message
+        setSnackbar({ 
+          open: true, 
+          message: `Successfully deleted ${result.deleted_count} experiment(s)`, 
+          severity: 'success' 
+        });
+      } else {
+        const error = await response.text();
+        console.error('Delete failed:', error);
+        setSnackbar({ 
+          open: true, 
+          message: 'Failed to delete experiments. Please try again.', 
+          severity: 'error' 
+        });
+      }
+    } catch (err) {
+      console.error('Error deleting experiments:', err);
+      setSnackbar({ 
+        open: true, 
+        message: 'Error deleting experiments. Please try again.', 
+        severity: 'error' 
+      });
     }
   };
 
@@ -1363,6 +1478,21 @@ const DojoManagement = () => {
   const toggleComparisonMode = () => {
     setComparisonMode(!comparisonMode);
     setSelectedExperiments([]);
+    // Exit delete mode when entering comparison mode
+    if (!comparisonMode) {
+      setDeleteMode(false);
+      setSelectedForDelete([]);
+    }
+  };
+
+  const toggleDeleteMode = () => {
+    setDeleteMode(!deleteMode);
+    setSelectedForDelete([]);
+    // Exit comparison mode when entering delete mode
+    if (!deleteMode) {
+      setComparisonMode(false);
+      setSelectedExperiments([]);
+    }
   };
 
   const handleExperimentSelection = (experimentId) => {
@@ -2178,12 +2308,12 @@ const DojoManagement = () => {
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <Button 
                       variant="contained" 
-                      color="secondary"
+                      color="primary"
                       onClick={runCompleteExtractionPipeline}
                       disabled={!isVisualAnalysisCompleted() || !selectedTextModel || step3Progress.status === 'processing'}
                       startIcon={step3Progress.status === 'processing' ? <CircularProgress size={16} /> : <DataUsage />}
                     >
-                      {step3Progress.status === 'processing' ? 'Processing...' : 'Run Complete Extraction Pipeline'}
+                      {step3Progress.status === 'processing' ? 'Processing...' : 'Run Obligatory Extractions'}
                     </Button>
 
                     {step3Progress.status === 'processing' && (
@@ -2196,6 +2326,48 @@ const DojoManagement = () => {
                       >
                         Stop
                       </Button>
+                    )}
+
+                    {/* Real-time Progress for Step 3 Obligatory Extractions */}
+                    {step3Progress.status === 'processing' && (
+                      <Box sx={{ mt: 3 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            {currentStep3Extraction || 'Processing extractions...'}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {step3Progress.completed} / {step3Progress.total}
+                          </Typography>
+                        </Box>
+                        <LinearProgress 
+                          variant="determinate"
+                          value={step3Progress.total > 0 ? (step3Progress.completed / step3Progress.total) * 100 : 0}
+                          sx={{ height: 8, borderRadius: 4 }}
+                        />
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                          {currentStep3Deck || 'Processing obligatory extractions...'}
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {/* Completion Summary for Step 3 Obligatory Extractions */}
+                    {step3Progress.status === 'completed' && step3CompletionData && (
+                      <Box sx={{ mt: 3, p: 2, bgcolor: 'success.light', borderRadius: 2 }}>
+                        <Typography variant="body2" color="success.dark" sx={{ fontWeight: 'medium' }}>
+                          ✅ Obligatory Extractions Complete
+                        </Typography>
+                        <Typography variant="caption" color="success.dark" sx={{ display: 'block', mt: 0.5 }}>
+                          {step3CompletionData.totalExtractions} extraction types completed • Average: {
+                            step3CompletionData.averageTime > 0
+                              ? `${Math.round(step3CompletionData.averageTime)}s per extraction`
+                              : 'calculating...'
+                          } • Total: {
+                            step3CompletionData.totalTime > 0
+                              ? formatProcessingTime(step3CompletionData.totalTime * 1000)
+                              : 'calculating...'
+                          }
+                        </Typography>
+                      </Box>
                     )}
 
                     {/* Run after step 2 checkbox for Step 3 */}
@@ -2309,9 +2481,18 @@ const DojoManagement = () => {
                     size="small" 
                     variant={comparisonMode ? 'contained' : 'outlined'}
                     onClick={toggleComparisonMode}
-                    disabled={experiments.length < 2}
+                    disabled={experiments.length < 2 || deleteMode}
                   >
                     {comparisonMode ? 'Exit Comparison' : 'Compare Experiments'}
+                  </Button>
+                  <Button 
+                    size="small" 
+                    variant={deleteMode ? 'contained' : 'outlined'}
+                    color={deleteMode ? 'error' : 'primary'}
+                    onClick={toggleDeleteMode}
+                    disabled={experiments.length === 0 || comparisonMode}
+                  >
+                    {deleteMode ? 'Cancel Delete' : 'Delete Experiments'}
                   </Button>
                   {comparisonMode && selectedExperiments.length >= 2 && (
                     <Button 
@@ -2321,6 +2502,16 @@ const DojoManagement = () => {
                       onClick={() => {/* TODO: Open comparison view */}}
                     >
                       Compare ({selectedExperiments.length})
+                    </Button>
+                  )}
+                  {deleteMode && selectedForDelete.length > 0 && (
+                    <Button 
+                      size="small" 
+                      variant="contained" 
+                      color="error"
+                      onClick={handleDeleteExperiments}
+                    >
+                      Delete Selected ({selectedForDelete.length})
                     </Button>
                   )}
                 </Box>
@@ -2335,7 +2526,7 @@ const DojoManagement = () => {
                   <Table>
                     <TableHead>
                       <TableRow>
-                        {comparisonMode && <TableCell padding="checkbox"></TableCell>}
+                        {(comparisonMode || deleteMode) && <TableCell padding="checkbox"></TableCell>}
                         <TableCell>Experiment Name</TableCell>
                         <TableCell>Text Model</TableCell>
                         <TableCell>Obligatory Extractions</TableCell>
@@ -2347,15 +2538,23 @@ const DojoManagement = () => {
                     <TableBody>
                       {experiments.map((experiment) => (
                         <TableRow key={experiment.id}>
-                          {comparisonMode && (
+                          {(comparisonMode || deleteMode) && (
                             <TableCell padding="checkbox">
                               <Checkbox
-                                checked={selectedExperiments.includes(experiment.id)}
+                                checked={comparisonMode ? selectedExperiments.includes(experiment.id) : selectedForDelete.includes(experiment.id)}
                                 onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedExperiments([...selectedExperiments, experiment.id]);
-                                  } else {
-                                    setSelectedExperiments(selectedExperiments.filter(id => id !== experiment.id));
+                                  if (comparisonMode) {
+                                    if (e.target.checked) {
+                                      setSelectedExperiments([...selectedExperiments, experiment.id]);
+                                    } else {
+                                      setSelectedExperiments(selectedExperiments.filter(id => id !== experiment.id));
+                                    }
+                                  } else if (deleteMode) {
+                                    if (e.target.checked) {
+                                      setSelectedForDelete([...selectedForDelete, experiment.id]);
+                                    } else {
+                                      setSelectedForDelete(selectedForDelete.filter(id => id !== experiment.id));
+                                    }
                                   }
                                 }}
                               />
@@ -3358,6 +3557,56 @@ const DojoManagement = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Confirm Deletion
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete {selectedForDelete.length} experiment(s)? 
+            This action cannot be undone and will permanently remove all experiment data.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setDeleteConfirmOpen(false)}
+            color="primary"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={confirmDeleteExperiments}
+            color="error"
+            variant="contained"
+          >
+            Delete {selectedForDelete.length} Experiment{selectedForDelete.length !== 1 ? 's' : ''}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Success/Error Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

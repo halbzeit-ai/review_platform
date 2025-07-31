@@ -43,6 +43,17 @@ case "$1" in
         sudo -u postgres psql review_dev
         ;;
     
+    query)
+        if [ -z "$2" ]; then
+            echo -e "${RED}❌ Please provide SQL query${NC}"
+            echo "Usage: $0 query \"SELECT * FROM table_name;\""
+            exit 1
+        fi
+        
+        echo -e "${YELLOW}Running query...${NC}"
+        sudo -u postgres psql review_dev -c "$2"
+        ;;
+    
     db-check)
         echo -e "${YELLOW}Testing database connection...${NC}"
         cd /opt/review-platform-dev/backend
@@ -131,6 +142,7 @@ finally:
         echo ""
         echo "Database Commands:"
         echo "  migrate <file>     - Run database migration with elevated privileges"
+        echo "  query \"SQL\"        - Run SQL query on database"
         echo "  migrate-check      - Check if zip_filename column exists"
         echo "  db-connect         - Connect to database as postgres user"
         echo "  db-check          - Test database connection and show info"
