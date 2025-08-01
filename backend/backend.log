@@ -405,3 +405,1236 @@ INFO:     135.181.71.17:52766 - "POST /api/dojo/internal/get-cached-visual-analy
 INFO:     65.108.32.143:51064 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
 INFO:     65.108.32.143:51080 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
 INFO:     176.65.148.92:33842 - "CONNECT example.com%3A443 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:60376 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60360 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60400 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60386 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60414 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60430 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60446 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60448 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60454 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60470 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60482 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:60492 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60504 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
+INFO:     135.181.71.17:52876 - "POST /api/dojo/internal/get-cached-visual-analysis HTTP/1.1" 200 OK
+Could not get deck filename for Problem Analysis: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Problem Analysis"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Problem Analys...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Problem Analysis'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:52886 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34944 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34952 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34968 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Solution Approach: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Solution Approach"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Solution Appro...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Solution Approach'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:50842 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34980 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:32968 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:32980 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:32982 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Product Market Fit: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Product Market Fit"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Product Market...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Product Market Fit'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:50844 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:32988 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:32998 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35488 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35490 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Monetization: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Monetization"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Monetization'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Monetization'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:37164 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35492 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:42270 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:35500 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:34678 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:35506 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:34694 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:34142 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34150 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34156 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34166 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Financials: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Financials"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Financials'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Financials'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:46728 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34172 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51968 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51982 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51996 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:52012 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:52014 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53820 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Use of Funds: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Use of Funds"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Use of Funds'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Use of Funds'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:44372 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53830 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53840 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53846 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Organization: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Organization"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Organization'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Organization'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:44380 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53850 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46808 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46810 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46814 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Problem Analysis: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Problem Analysis"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Problem Analys...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Problem Analysis'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:39682 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46824 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46834 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54400 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Solution Approach: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Solution Approach"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Solution Appro...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Solution Approach'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:46042 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54402 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54406 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54418 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:33324 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:54434 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:47914 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:33328 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:47926 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Product Market Fit: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Product Market Fit"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Product Market...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Product Market Fit'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:58958 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:33344 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:47942 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:47950 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:47954 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Monetization: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Monetization"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Monetization'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Monetization'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:47350 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36824 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36836 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36850 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36866 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Financials: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Financials"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Financials'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Financials'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:47366 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36878 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54054 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54058 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Use of Funds: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Use of Funds"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Use of Funds'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Use of Funds'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:37966 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54062 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54066 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54068 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Organization: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Organization"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Organization'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Organization'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:49420 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58580 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58592 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58602 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Problem Analysis: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Problem Analysis"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Problem Analys...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Problem Analysis'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:49436 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58614 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58620 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51978 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51982 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Solution Approach: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Solution Approach"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Solution Appro...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Solution Approach'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:56720 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51988 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51992 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:52008 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49798 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Product Market Fit: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Product Market Fit"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Product Market...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Product Market Fit'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:53302 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49806 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49808 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49814 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49828 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36494 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36506 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Monetization: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Monetization"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Monetization'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Monetization'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:47124 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36512 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36528 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36530 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45648 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45658 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Financials: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Financials"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Financials'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Financials'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:58528 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45668 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45672 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45684 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:32890 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Use of Funds: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Use of Funds"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Use of Funds'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Use of Funds'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:40210 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:32892 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:32906 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:32914 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:32928 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36076 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Organization: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Organization"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Organization'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Organization'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:59024 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36084 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36096 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36104 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:54828 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:36110 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Problem Analysis: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Problem Analysis"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Problem Analys...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Problem Analysis'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:53900 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34566 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:54844 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:34560 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:34568 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:54854 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:34580 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:34574 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:34592 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:34580 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:34598 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34380 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34394 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34408 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Solution Approach: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Solution Approach"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Solution Appro...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Solution Approach'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:59490 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34414 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:39178 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:34428 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:39186 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:50314 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50328 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Product Market Fit: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Product Market Fit"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Product Market...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Product Market Fit'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:52620 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:56654 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:50336 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50344 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50358 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34428 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34432 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34444 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34456 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34464 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:52914 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Monetization: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Monetization"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Monetization'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Monetization'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:33964 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:49562 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:52924 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:52934 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:49570 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:52950 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:56608 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:52958 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46238 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46252 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46258 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46270 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Financials: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Financials"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Financials'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Financials'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:57672 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46278 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53612 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53626 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53630 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53638 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53640 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Use of Funds: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Use of Funds"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Use of Funds'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Use of Funds'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:53886 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43698 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43706 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Organization: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Organization"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Organization'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Organization'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:53894 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43718 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43728 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43738 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55704 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55718 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55730 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Problem Analysis: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Problem Analysis"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Problem Analys...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Problem Analysis'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:34080 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55738 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55742 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41184 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41190 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41198 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41200 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Solution Approach: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Solution Approach"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Solution Appro...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Solution Approach'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:50746 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41208 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53734 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53738 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Product Market Fit: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Product Market Fit"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Product Market...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Product Market Fit'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:54734 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53746 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53748 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53754 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42136 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42148 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42154 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Monetization: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Monetization"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Monetization'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Monetization'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:54494 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42156 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42158 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:44500 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:44510 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Financials: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Financials"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Financials'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Financials'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:35230 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:44514 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:44524 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:44530 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40972 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40982 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Use of Funds: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Use of Funds"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Use of Funds'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Use of Funds'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:35980 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40988 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40998 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41002 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:52846 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:52862 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Organization: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Organization"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Organization'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Organization'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:39328 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:52868 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:52882 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:52892 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36918 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Problem Analysis: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Problem Analysis"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Problem Analys...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Problem Analysis'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:41802 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36934 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36938 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36946 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36952 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46806 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46818 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46828 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46838 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46854 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45974 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45988 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45994 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Solution Approach: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Solution Approach"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Solution Appro...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Solution Approach'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:44358 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46004 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46012 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43380 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43388 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43392 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43400 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43404 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Product Market Fit: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Product Market Fit"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Product Market...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Product Market Fit'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:34490 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50450 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50466 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50482 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50498 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50508 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Monetization: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Monetization"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Monetization'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Monetization'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:33806 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60188 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60196 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60212 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60226 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60228 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49510 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49524 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49538 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Financials: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Financials"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Financials'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Financials'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:46014 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49542 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49556 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46288 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46304 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46310 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46326 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46338 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35234 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Use of Funds: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Use of Funds"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Use of Funds'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Use of Funds'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:35672 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35238 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35254 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35256 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35264 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58712 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58722 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Organization: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Organization"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Organization'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Organization'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:48466 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58734 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58744 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58750 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:33328 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:33332 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:33338 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:33344 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:33354 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Problem Analysis: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Problem Analysis"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Problem Analys...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Problem Analysis'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:41658 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42362 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42368 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42370 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42374 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Solution Approach: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Solution Approach"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Solution Appro...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Solution Approach'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:49212 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42380 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:57228 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:57230 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:57240 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:57256 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Product Market Fit: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Product Market Fit"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Product Market...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Product Market Fit'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:58708 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:57270 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38032 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Monetization: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Monetization"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Monetization'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Monetization'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:58724 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38036 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38044 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38056 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38072 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49188 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49196 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Financials: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Financials"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Financials'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Financials'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:48946 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49204 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49210 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49224 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40948 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Use of Funds: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Use of Funds"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Use of Funds'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Use of Funds'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:52930 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40962 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40976 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Organization: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Organization"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Organization'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Organization'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:52942 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40990 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40996 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53496 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53512 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53526 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Problem Analysis: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Problem Analysis"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Problem Analys...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Problem Analysis'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:41696 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53532 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53542 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46328 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46330 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:47900 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:46342 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46346 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Solution Approach: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Solution Approach"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Solution Appro...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Solution Approach'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:57382 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:47914 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:46358 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:44288 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:38518 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38524 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38538 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38552 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38554 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:33598 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Product Market Fit: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Product Market Fit"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Product Market...
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Product Market Fit'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:41992 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:33606 - "POST /api/dojo/internal/get-cached-visual-analysis HTTP/1.1" 200 OK
+INFO:     65.108.32.143:33616 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:33620 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:33634 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:33648 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43576 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43584 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43588 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Monetization: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Monetization"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Monetization'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Monetization'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:39050 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43592 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43594 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:56938 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:56952 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:56964 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:56972 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:56986 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51048 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51054 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51066 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Financials: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Financials"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Financials'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Financials'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:35808 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51082 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51084 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46162 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46172 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46184 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46188 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46190 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51236 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Could not get deck filename for Use of Funds: (psycopg2.errors.InvalidTextRepresentation) invalid input syntax for type integer: "Use of Funds"
+LINE 1: SELECT file_name FROM pitch_decks WHERE id = 'Use of Funds'
+                                                     ^
+
+[SQL: SELECT file_name FROM pitch_decks WHERE id = %(deck_id)s]
+[parameters: {'deck_id': 'Use of Funds'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h)
+INFO:     135.181.71.17:44420 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51246 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51258 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51264 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51268 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:56184 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Error in template processing: Server disconnected without sending a response.
+GPU template processing failed: Server disconnected without sending a response.
+INFO:     65.108.32.143:34934 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
+INFO:     65.108.32.143:56198 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+INFO:     65.108.32.143:56214 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+INFO:     65.108.32.143:56220 - "GET /api/dojo/extraction-test/experiments/18 HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42148 - "POST /api/dojo-experiments/add-companies HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51284 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51296 - "GET /api/dojo-experiments/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51304 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:52332 - "DELETE /api/dojo-experiments/cleanup-dojo-projects HTTP/1.1" 200 OK
+INFO:     65.108.32.143:52346 - "GET /api/dojo-experiments/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:52354 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+INFO:     65.108.32.143:52360 - "GET /api/dojo/extraction-test/experiments/18 HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40470 - "POST /api/dojo-experiments/add-companies HTTP/1.1" 200 OK
+INFO:     83.171.161.95:60712 - "OPTIONS /api/healthcare-templates/performance-metrics HTTP/1.1" 200 OK
+INFO:     83.171.161.95:61767 - "OPTIONS /api/healthcare-templates/performance-metrics HTTP/1.1" 200 OK
+INFO:     83.171.161.95:60276 - "OPTIONS /api/project-management/all-projects?include_test_data=false&limit=100&offset=0 HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64553 - "OPTIONS /api/project-management/all-projects?include_test_data=false&limit=100&offset=0 HTTP/1.1" 200 OK
+INFO:     83.171.161.95:60276 - "GET /api/project-management/all-projects?include_test_data=false&limit=100&offset=0 HTTP/1.1" 200 OK
+INFO:     83.171.161.95:60712 - "GET /api/healthcare-templates/performance-metrics HTTP/1.1" 200 OK
+INFO:     83.171.161.95:61767 - "GET /api/healthcare-templates/performance-metrics HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64553 - "GET /api/project-management/all-projects?include_test_data=false&limit=100&offset=0 HTTP/1.1" 200 OK
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/ismaning-dev/analysis/BrainStorm-Therapeutics-pitch-deck-01312025/slide_1.jpg
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/ismaning-dev/analysis/BrainStorm-Therapeutics-pitch-deck-01312025/slide_1.jpg
+INFO:     65.108.32.143:40474 - "GET /api/documents/19/thumbnail/slide/1 HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64553 - "OPTIONS /api/project-management/all-projects?include_test_data=true&limit=100&offset=0 HTTP/1.1" 200 OK
+INFO:     83.171.161.95:60276 - "GET /api/healthcare-templates/performance-metrics HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64553 - "GET /api/project-management/all-projects?include_test_data=true&limit=100&offset=0 HTTP/1.1" 200 OK
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/dojo/analysis/5defbdadbfef42e89fb412f5130d6b50_Pharmesol Investment Memo - HGM Advisory.docx/slide_1.jpg
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/dojo/analysis/5defbdadbfef42e89fb412f5130d6b50_Pharmesol Investment Memo - HGM Advisory.docx/slide_1.jpg
+INFO:     65.108.32.143:40482 - "GET /api/documents/59/thumbnail/slide/1 HTTP/1.1" 200 OK
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/dojo/analysis/b871628a8c0f46c3bf9e1f7a16835878_ETERNAL Pitch Deck/slide_1.jpg
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/dojo/analysis/b871628a8c0f46c3bf9e1f7a16835878_ETERNAL Pitch Deck/slide_1.jpg
+INFO:     65.108.32.143:40492 - "GET /api/documents/57/thumbnail/slide/1 HTTP/1.1" 200 OK
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/dojo/analysis/fe192ec3712145e79bd441a825622201_Final presentation deck 110324/slide_1.jpg
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/dojo/analysis/fe192ec3712145e79bd441a825622201_Final presentation deck 110324/slide_1.jpg
+INFO:     65.108.32.143:40508 - "GET /api/documents/55/thumbnail/slide/1 HTTP/1.1" 200 OK
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/dojo/analysis/e9c7881f649e4198917fc48e60fbf57b_UpLeap_Investor-Presentation_2025-03/slide_1.jpg
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/dojo/analysis/e9c7881f649e4198917fc48e60fbf57b_UpLeap_Investor-Presentation_2025-03/slide_1.jpg
+INFO:     65.108.32.143:40524 - "GET /api/documents/53/thumbnail/slide/1 HTTP/1.1" 200 OK
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/dojo/analysis/82e7d90e39224b9cad3a65c878fb4a05_OmniScience Investor Deck Mar 2025/slide_1.jpg
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/dojo/analysis/82e7d90e39224b9cad3a65c878fb4a05_OmniScience Investor Deck Mar 2025/slide_1.jpg
+INFO:     65.108.32.143:40528 - "GET /api/documents/51/thumbnail/slide/1 HTTP/1.1" 200 OK
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/dojo/analysis/4f94a5f1ffa248269d7012e82f7f71d5_Actome_short pitch-deck_March 31st 2025.pptx/slide_1.jpg
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/dojo/analysis/4f94a5f1ffa248269d7012e82f7f71d5_Actome_short pitch-deck_March 31st 2025.pptx/slide_1.jpg
+INFO:     65.108.32.143:40534 - "GET /api/documents/49/thumbnail/slide/1 HTTP/1.1" 200 OK
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/dojo/analysis/4cae9ccc55184c588ea73be6c50b3280_2025_Lilio Investment Deck/slide_1.jpg
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/dojo/analysis/4cae9ccc55184c588ea73be6c50b3280_2025_Lilio Investment Deck/slide_1.jpg
+INFO:     65.108.32.143:40546 - "GET /api/documents/47/thumbnail/slide/1 HTTP/1.1" 200 OK
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/dojo/analysis/9622d2cb969549c485ff4bde3eb94472_eversyn_Non-confidential deck_Jan2025/slide_1.jpg
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/dojo/analysis/9622d2cb969549c485ff4bde3eb94472_eversyn_Non-confidential deck_Jan2025/slide_1.jpg
+INFO:     65.108.32.143:40552 - "GET /api/documents/45/thumbnail/slide/1 HTTP/1.1" 200 OK
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/dojo/analysis/4234c9732a8e4af4ab9feb1679333227_NC Deck AaviGen March 2025/slide_1.jpg
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/dojo/analysis/4234c9732a8e4af4ab9feb1679333227_NC Deck AaviGen March 2025/slide_1.jpg
+INFO:     65.108.32.143:40560 - "GET /api/documents/43/thumbnail/slide/1 HTTP/1.1" 200 OK
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/dojo/analysis/1c36e86935a74685afa8b7b0738525df_TernaryTx - Molecular Glues By Design (Q12025)/slide_1.jpg
+SUCCESS: Found slide image at: /mnt/dev-shared/projects/dojo/analysis/1c36e86935a74685afa8b7b0738525df_TernaryTx - Molecular Glues By Design (Q12025)/slide_1.jpg
+INFO:     65.108.32.143:40572 - "GET /api/documents/41/thumbnail/slide/1 HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65183 - "OPTIONS /api/project-management/projects/17/decks HTTP/1.1" 200 OK
+INFO:     83.171.161.95:59258 - "OPTIONS /api/project-management/projects/17/decks HTTP/1.1" 200 OK
+INFO:     83.171.161.95:60815 - "GET /api/project-management/all-projects?include_test_data=false&limit=100&offset=0 HTTP/1.1" 200 OK
+INFO:     83.171.161.95:63367 - "GET /api/project-management/all-projects?include_test_data=false&limit=100&offset=0 HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65183 - "GET /api/project-management/projects/17/decks HTTP/1.1" 200 OK
+INFO:     83.171.161.95:59258 - "GET /api/project-management/projects/17/decks HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/deck-analysis/51 HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/deck-analysis/51 HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/deck-analysis/51 HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/deck-analysis/51 HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_1.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_1.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_1.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_1.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_2.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_2.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_2.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_2.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_3.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_3.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_3.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_3.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_4.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_4.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_4.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_4.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_5.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_5.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_5.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_5.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_6.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_6.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_6.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_6.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_7.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_7.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_7.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_7.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_8.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_8.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_8.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_8.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_9.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_9.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_10.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_10.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_11.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_11.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_12.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_12.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_13.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_13.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_14.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_14.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_15.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_15.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_16.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_16.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_17.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_17.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_18.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_18.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_19.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_19.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_20.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_20.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_21.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_21.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_22.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_22.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_23.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_23.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_24.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_24.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_25.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_25.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_26.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_26.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_27.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_27.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_28.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_28.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_29.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_29.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_30.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_30.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_31.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_31.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_32.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_32.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_32.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_33.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_33.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_33.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_33.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_34.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_34.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_34.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_34.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_35.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_35.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_35.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_35.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_36.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_36.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_36.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_36.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_37.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_37.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_37.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_37.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_38.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_38.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_38.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_38.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_39.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_39.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_39.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_39.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_40.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_40.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_40.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_40.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_41.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_41.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_41.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_41.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_42.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_42.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_42.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_42.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_43.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_43.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_43.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_43.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_44.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_44.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_44.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_45.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_45.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_45.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_45.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_46.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_46.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_46.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_47.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_47.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_47.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_47.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_48.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_48.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_48.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_48.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_49.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "OPTIONS /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_49.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64512 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_49.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:65101 - "GET /api/projects/omniscience/slide-image/82e7d90e39224b9cad3a65c878fb4a05_OmniScience%20Investor%20Deck%20Mar%202025/slide_49.jpg HTTP/1.1" 200 OK
+INFO:     83.171.161.95:62467 - "OPTIONS /api/decks HTTP/1.1" 200 OK
+INFO:     83.171.161.95:59335 - "OPTIONS /api/project-management/my-projects?limit=100&offset=0 HTTP/1.1" 200 OK
+INFO:     83.171.161.95:60039 - "OPTIONS /api/decks HTTP/1.1" 200 OK
+INFO:     83.171.161.95:61295 - "OPTIONS /api/project-management/my-projects?limit=100&offset=0 HTTP/1.1" 200 OK
+INFO:     83.171.161.95:62467 - "GET /api/decks HTTP/1.1" 307 Temporary Redirect
+INFO:     83.171.161.95:60039 - "GET /api/decks HTTP/1.1" 307 Temporary Redirect
+INFO:     83.171.161.95:59335 - "GET /api/project-management/my-projects?limit=100&offset=0 HTTP/1.1" 403 Forbidden
+INFO:     83.171.161.95:61295 - "GET /api/project-management/my-projects?limit=100&offset=0 HTTP/1.1" 403 Forbidden
+INFO:     83.171.161.95:62467 - "OPTIONS /api/decks/ HTTP/1.1" 200 OK
+INFO:     83.171.161.95:60039 - "OPTIONS /api/decks/ HTTP/1.1" 200 OK
+INFO:     83.171.161.95:61295 - "GET /api/decks/ HTTP/1.1" 200 OK
+INFO:     83.171.161.95:59335 - "GET /api/decks/ HTTP/1.1" 200 OK
+INFO:     83.171.161.95:62547 - "OPTIONS /api/projects/omniscience/results/118 HTTP/1.1" 200 OK
+INFO:     83.171.161.95:62075 - "OPTIONS /api/projects/omniscience/results/118 HTTP/1.1" 200 OK
+INFO:     83.171.161.95:62547 - "GET /api/projects/omniscience/results/118 HTTP/1.1" 404 Not Found
+INFO:     83.171.161.95:62075 - "GET /api/projects/omniscience/results/118 HTTP/1.1" 404 Not Found
+INFO:     83.171.161.95:62547 - "GET /api/decks HTTP/1.1" 307 Temporary Redirect
+INFO:     83.171.161.95:65009 - "GET /api/decks HTTP/1.1" 307 Temporary Redirect
+INFO:     83.171.161.95:62371 - "GET /api/project-management/my-projects?limit=100&offset=0 HTTP/1.1" 403 Forbidden
+INFO:     83.171.161.95:62075 - "GET /api/project-management/my-projects?limit=100&offset=0 HTTP/1.1" 403 Forbidden
+INFO:     83.171.161.95:65009 - "GET /api/decks/ HTTP/1.1" 200 OK
+INFO:     83.171.161.95:62547 - "GET /api/decks/ HTTP/1.1" 200 OK
+INFO:     83.171.161.95:64278 - "GET /api/healthcare-templates/performance-metrics HTTP/1.1" 200 OK
+INFO:     83.171.161.95:60353 - "GET /api/healthcare-templates/performance-metrics HTTP/1.1" 200 OK
+INFO:     83.171.161.95:61662 - "GET /api/project-management/all-projects?include_test_data=true&limit=100&offset=0 HTTP/1.1" 200 OK
+INFO:     83.171.161.95:61180 - "GET /api/project-management/all-projects?include_test_data=true&limit=100&offset=0 HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42322 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42316 - "GET /api/dojo/files HTTP/1.1" 200 OK
+Connection error communicating with GPU instance
+INFO:     65.108.32.143:42334 - "GET /api/config/models HTTP/1.1" 200 OK
+Connection error communicating with GPU instance
+INFO:     65.108.32.143:42360 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42362 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42342 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42368 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42372 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42350 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42384 - "GET /api/dojo/files HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:41410 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:50022 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:41424 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:50034 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:41438 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:50040 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:56050 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:55312 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:55328 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:44138 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:44152 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:44162 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:39588 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:39598 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:39606 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:43324 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:51838 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:52766 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:41438 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:52782 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:41444 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:60720 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:60732 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:60736 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:54676 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:42622 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:42628 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:40632 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:40638 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:53098 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:44208 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:44220 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:38328 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:50714 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:37242 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:37244 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:46678 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:46688 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:46692 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:37656 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:37670 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:57806 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:51694 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:51702 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:51706 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:55366 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:55372 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:55386 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:48796 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:48802 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:48806 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:58552 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:40906 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:40916 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:58936 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:58952 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:58960 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found

@@ -361,6 +361,11 @@ class GPUHTTPServer:
                             logger.error(f"No visual analysis results in cached data for deck {deck_id}")
                             continue
                         
+                        # Extract deck name from visual analysis data
+                        deck_name = "Unknown"
+                        if deck_visual_data['visual_analysis_results']:
+                            deck_name = deck_visual_data['visual_analysis_results'][0].get('deck_name', f'deck_{deck_id}')
+                        
                         # Get extraction results (offering, name, classification, etc.) from database
                         extraction_data = self._get_extraction_results_for_deck(deck_id)
                         
@@ -396,13 +401,14 @@ class GPUHTTPServer:
                             continue
                         
                         # Set progress callback
-                        def progress_callback(chapter_name: str, deck_id: int):
+                        def progress_callback(deck_id: int, chapter_name: str):
                             # Call backend to update progress
                             requests.post(
                                 f"{self.backend_url}/api/dojo/template-progress-callback",
                                 json={
                                     "chapter_name": chapter_name,
-                                    "deck_id": deck_id
+                                    "deck_id": deck_id,
+                                    "deck_name": deck_name  # Pass deck name for better progress display
                                 }
                             )
                         

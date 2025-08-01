@@ -295,7 +295,7 @@ class HealthcareTemplateAnalyzer:
             
             if result:
                 logger.info(f"✅ Using configured {stage_name} prompt from PostgreSQL:")
-                logger.info(f"📝 Prompt: {result[0]}")
+                logger.info(f"📝 Prompt: {result[0][:200]}{'...' if len(result[0]) > 200 else ''}")
                 return result[0]
             else:
                 logger.warning(f"❌ No {stage_name} prompt found in PostgreSQL database")
