@@ -227,6 +227,9 @@ kill -9 PID
 
 # Check backend logs
 tail -f backend.log
+
+# Check GPU processing logs (from development CPU)
+tail -f /mnt/dev-shared/logs/gpu_processing.log
 ```
 
 ### Frontend Development
