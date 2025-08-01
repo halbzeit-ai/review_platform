@@ -647,8 +647,8 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                     try:
                         logger.info(f"Processing deck {deck_id} with template '{template_name}'")
                         
-                        # Get visual analysis for this deck (keys are strings, not integers)
-                        deck_visual_data = cached_visual_data.get(str(deck_id), {})
+                        # Get visual analysis for this deck (keys are integers after conversion)
+                        deck_visual_data = cached_visual_data.get(deck_id, {})
                         
                         if not deck_visual_data:
                             logger.warning(f"No cached visual analysis found for deck {deck_id}")

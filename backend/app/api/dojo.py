@@ -2437,7 +2437,7 @@ async def run_template_processing_batch(
                             SET results_file_path = :results_marker, processing_status = 'completed'
                             WHERE id = :pitch_deck_id
                         """), {
-                            "results_marker": dojo_results_marker,
+                            "results_marker": template_results_marker,
                             "pitch_deck_id": pitch_deck_id
                         })
                         logger.info(f"Marked pitch_deck {pitch_deck_id} as having dojo experiment results")
