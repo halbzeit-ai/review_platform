@@ -730,8 +730,32 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                                 analyzer = HealthcareTemplateAnalyzer()
                                 
                                 # The analyzer will load the template from database using template_id
-                                # We need to temporarily override the classification to use the selected template
-                                analyzer.template_config = analyzer._load_template_from_database(template_info['id'])
+                                # We need to set the template config before calling analyze_pdf
+                                try:
+                                    # Load template configuration
+                                    template_config = analyzer._load_template_from_database(template_info['id'])
+                                    if not template_config:
+                                        logger.error(f"Failed to load template {template_info['id']} from database")
+                                        raise ValueError(f"Template {template_info['id']} not found in database")
+                                    
+                                    # Set the template config on the analyzer
+                                    analyzer.template_config = template_config
+                                    logger.info(f"Loaded template '{template_config.get('name', 'Unknown')}' for deck {deck_id}")
+                                    
+                                    # Also need to set the visual analysis results from cache
+                                    if 'visual_analysis_results' in deck_visual_data:
+                                        analyzer.visual_analysis_results = deck_visual_data['visual_analysis_results']
+                                        logger.info(f"Set {len(analyzer.visual_analysis_results)} visual analysis results for deck {deck_id}")
+                                    else:
+                                        logger.warning(f"No visual_analysis_results in cached data for deck {deck_id}")
+                                        # Try alternative format
+                                        if isinstance(deck_visual_data.get('visual_analysis'), list):
+                                            analyzer.visual_analysis_results = deck_visual_data['visual_analysis']
+                                            logger.info(f"Set {len(analyzer.visual_analysis_results)} visual analysis results from alternative format")
+                                    
+                                except Exception as e:
+                                    logger.error(f"Error loading template configuration: {e}")
+                                    raise
                                 
                                 # Run the analysis with progress callback - template_only for Step 4
                                 analysis_results = analyzer.analyze_pdf(
