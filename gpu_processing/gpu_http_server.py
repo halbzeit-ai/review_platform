@@ -20,9 +20,12 @@ from pathlib import Path
 from main import PDFProcessor
 from config.processing_config import config
 
-# Configure logging to write to shared filesystem
+# Configure logging to write to shared filesystem - NO FALLBACKS!
 import os
-shared_filesystem_path = os.getenv('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/CPU-GPU')
+shared_filesystem_path = os.getenv('SHARED_FILESYSTEM_MOUNT_PATH')
+if not shared_filesystem_path:
+    raise ValueError("SHARED_FILESYSTEM_MOUNT_PATH environment variable is required but not set!")
+
 log_file_path = os.path.join(shared_filesystem_path, 'logs', 'gpu_processing.log')
 
 # Ensure logs directory exists
