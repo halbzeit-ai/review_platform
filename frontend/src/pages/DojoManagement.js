@@ -37,7 +37,8 @@ import {
   InputLabel,
   Checkbox,
   FormControlLabel,
-  Snackbar
+  Snackbar,
+  Container
 } from '@mui/material';
 import {
   CloudUpload,
@@ -59,6 +60,22 @@ import { useTranslation } from 'react-i18next';
 const DojoManagement = () => {
   const { t } = useTranslation(['dojo', 'common']);
   const navigate = useNavigate();
+  
+  // Check user role - dojo is GP-only functionality
+  const [userRole, setUserRole] = useState(null);
+  const [checkingRole, setCheckingRole] = useState(true);
+  
+  useEffect(() => {
+    const checkUserRole = () => {
+      const user = JSON.parse(localStorage.getItem('user') || 'null');
+      if (user && user.role) {
+        setUserRole(user.role);
+      }
+      setCheckingRole(false);
+    };
+    
+    checkUserRole();
+  }, []);
 
   // Helper function to format upload speed
   const formatUploadSpeed = (bytesPerSecond) => {
@@ -910,8 +927,12 @@ const DojoManagement = () => {
         setVisualAnalysisStatus(progressData.step2?.status || 'idle');
         
         return progressData;
+      } else if (response.status === 403) {
+        // Handle 403 Forbidden gracefully - user doesn't have GP role
+        console.log('Progress endpoint access denied - GP role required');
+        return null;
       } else {
-        console.error('Failed to fetch current deck progress');
+        console.error('Failed to fetch current deck progress:', response.status);
         return null;
       }
     } catch (error) {
@@ -1548,6 +1569,10 @@ const DojoManagement = () => {
       setTemplateProcessingStatus('processing');
       setError(null);
       
+      // Initialize step 4 progress
+      setStep4Progress(prev => ({ ...prev, status: 'processing', completed: 0, total: extractionSample.length }));
+      setCurrentStep4Deck('Starting template processing...');
+      
       // Track start time and clear previous completion data
       const startTime = Date.now();
       setStep4StartTime(startTime);
@@ -1975,11 +2000,37 @@ const DojoManagement = () => {
     }
   };
 
-  if (loading) {
+  if (loading || checkingRole) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
         <CircularProgress />
       </Box>
+    );
+  }
+
+  // Check if user has GP role - dojo functionality is GP-only
+  if (userRole !== 'gp') {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Paper sx={{ p: 4, textAlign: 'center' }}>
+          <Typography variant="h4" gutterBottom color="text.secondary">
+            Access Restricted
+          </Typography>
+          <Typography variant="body1" paragraph>
+            The Dojo management system is restricted to General Partners (GPs) only.
+          </Typography>
+          <Typography variant="body2" color="text.secondary" paragraph>
+            This area allows GPs to work with large datasets of pitch decks to improve AI prompts and templates.
+          </Typography>
+          <Button 
+            variant="contained" 
+            onClick={() => navigate('/dashboard')}
+            sx={{ mt: 2 }}
+          >
+            Return to Dashboard
+          </Button>
+        </Paper>
+      </Container>
     );
   }
 

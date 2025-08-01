@@ -1,349 +1,83 @@
 INFO:     Will watch for changes in these directories: ['/opt/review-platform-dev/backend']
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [96270] using StatReload
-INFO:     Started server process [96286]
+INFO:     Started reloader process [99377] using StatReload
+INFO:     Started server process [99388]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     65.108.32.143:33448 - "GET /main.5e9c8156e7c22b505c9e.hot-update.json HTTP/1.1" 404 Not Found
-INFO:     65.108.32.143:33458 - "GET /api/dojo/files HTTP/1.1" 200 OK
-Connection error communicating with GPU instance
-INFO:     65.108.32.143:33474 - "GET /api/dojo/stats HTTP/1.1" 200 OK
-INFO:     65.108.32.143:33476 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
-INFO:     65.108.32.143:33492 - "GET /api/config/models HTTP/1.1" 200 OK
-INFO:     65.108.32.143:33522 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
-INFO:     65.108.32.143:33508 - "GET /api/dojo/files HTTP/1.1" 200 OK
-INFO:     65.108.32.143:33536 - "GET /api/dojo/stats HTTP/1.1" 200 OK
-Connection error communicating with GPU instance
-INFO:     65.108.32.143:33542 - "GET /api/config/models HTTP/1.1" 200 OK
-INFO:     65.108.32.143:33554 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
-INFO:     65.108.32.143:33564 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
-INFO:     65.108.32.143:33580 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     65.108.32.143:42788 - "GET /api/dojo/stats HTTP/1.1" 200 OK
-INFO:     65.108.32.143:42782 - "GET /api/dojo/files HTTP/1.1" 200 OK
-INFO:     65.108.32.143:42806 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
-INFO:     65.108.32.143:42794 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
-INFO:     65.108.32.143:42822 - "GET /api/config/models HTTP/1.1" 200 OK
-INFO:     65.108.32.143:42830 - "GET /api/dojo/files HTTP/1.1" 200 OK
-INFO:     65.108.32.143:42834 - "GET /api/dojo/stats HTTP/1.1" 200 OK
-INFO:     65.108.32.143:42836 - "GET /api/config/models HTTP/1.1" 200 OK
-INFO:     65.108.32.143:42846 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
-INFO:     65.108.32.143:42852 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
-INFO:     65.108.32.143:42868 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     65.108.32.143:42882 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
-INFO:     65.108.32.143:42898 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
-INFO:     135.181.71.17:46230 - "POST /api/dojo/internal/get-cached-visual-analysis HTTP/1.1" 200 OK
-INFO:     65.108.32.143:33812 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
-INFO:     65.108.32.143:33824 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60342 - "GET /main.f9e3e3dab72534a5524d.hot-update.json HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:60360 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60354 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60366 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60368 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60370 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60376 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60382 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60394 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60400 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60410 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:44114 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
 WARNING:  Unsupported upgrade request.
 WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     88.204.136.220:45190 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+INFO:     168.100.174.143:51886 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
 WARNING:  Unsupported upgrade request.
 WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     88.204.136.220:45198 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+INFO:     168.100.174.143:60472 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:44122 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
 WARNING:  Unsupported upgrade request.
 WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     88.204.136.220:58234 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+INFO:     168.100.174.143:60484 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+INFO:     135.181.71.17:45984 - "POST /api/dojo/internal/get-cached-visual-analysis HTTP/1.1" 200 OK
+INFO:     135.181.71.17:45996 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60692 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60704 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     135.181.71.17:46008 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60706 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60714 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38270 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38282 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     135.181.71.17:55514 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
 WARNING:  Unsupported upgrade request.
 WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     23.20.61.199:48020 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+INFO:     132.145.134.96:35546 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:38284 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38288 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
 WARNING:  Unsupported upgrade request.
 WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     23.20.61.199:48026 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     23.20.61.199:48926 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     34.124.115.63:40284 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     34.124.115.63:40290 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     34.124.115.63:38700 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
-INFO:     65.108.32.143:35540 - "GET /api/dojo/stats HTTP/1.1" 200 OK
-INFO:     65.108.32.143:35538 - "GET /api/dojo/files HTTP/1.1" 200 OK
-INFO:     65.108.32.143:35550 - "GET /api/config/models HTTP/1.1" 200 OK
-INFO:     65.108.32.143:35580 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
-INFO:     65.108.32.143:35588 - "GET /api/dojo/files HTTP/1.1" 200 OK
-INFO:     65.108.32.143:35566 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
-INFO:     65.108.32.143:35592 - "GET /api/dojo/stats HTTP/1.1" 200 OK
-INFO:     65.108.32.143:35594 - "GET /api/config/models HTTP/1.1" 200 OK
-INFO:     65.108.32.143:35596 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
-INFO:     65.108.32.143:35608 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
-INFO:     65.108.32.143:35622 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     65.108.32.143:35638 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
-INFO:     65.108.32.143:35648 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
-INFO:     135.181.71.17:60466 - "POST /api/dojo/internal/get-cached-visual-analysis HTTP/1.1" 200 OK
-INFO:     65.108.32.143:57032 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
-INFO:     65.108.32.143:57042 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56792 - "GET /api/dojo/files HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56804 - "GET /api/dojo/stats HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56828 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56816 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56838 - "GET /api/dojo/files HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56854 - "GET /api/config/models HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56858 - "GET /api/dojo/stats HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56866 - "GET /api/config/models HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56876 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56880 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56894 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     65.108.32.143:56904 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
-INFO:     65.108.32.143:35536 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
-INFO:     135.181.71.17:55694 - "POST /api/dojo/internal/get-cached-visual-analysis HTTP/1.1" 200 OK
-INFO:     65.108.32.143:35550 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
-INFO:     65.108.32.143:35558 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     168.100.174.143:39616 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     168.100.174.143:39626 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     168.100.174.143:39638 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     132.145.134.96:33904 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     132.145.134.96:33918 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     132.145.134.96:33928 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
-INFO:     65.108.32.143:43850 - "GET /api/dojo/stats HTTP/1.1" 200 OK
-INFO:     65.108.32.143:43838 - "GET /api/dojo/files HTTP/1.1" 200 OK
-INFO:     65.108.32.143:43854 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
-INFO:     65.108.32.143:43864 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
-INFO:     65.108.32.143:43872 - "GET /api/dojo/files HTTP/1.1" 200 OK
-INFO:     65.108.32.143:43866 - "GET /api/config/models HTTP/1.1" 200 OK
-INFO:     65.108.32.143:43876 - "GET /api/config/models HTTP/1.1" 200 OK
-INFO:     65.108.32.143:43878 - "GET /api/dojo/stats HTTP/1.1" 200 OK
-INFO:     65.108.32.143:43890 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
-INFO:     65.108.32.143:43904 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
-INFO:     65.108.32.143:43906 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     65.108.32.143:43910 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
-INFO:     65.108.32.143:43914 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
-INFO:     135.181.71.17:45070 - "POST /api/dojo/internal/get-cached-visual-analysis HTTP/1.1" 200 OK
-INFO:     65.108.32.143:43930 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
-INFO:     65.108.32.143:41438 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     88.204.136.220:40064 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     88.204.136.220:40080 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     88.204.136.220:40082 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
-INFO:     65.108.32.143:56874 - "GET /api/dojo/files HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56888 - "GET /api/dojo/files HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56890 - "GET /api/config/models HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56908 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56922 - "GET /api/dojo/stats HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56900 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56936 - "GET /api/dojo/stats HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56950 - "GET /api/config/models HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56964 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56976 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
-INFO:     65.108.32.143:56982 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
-INFO:     65.108.32.143:60094 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
-INFO:     65.108.32.143:60098 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
-INFO:     135.181.71.17:58952 - "POST /api/dojo/internal/get-cached-visual-analysis HTTP/1.1" 200 OK
-INFO:     135.181.71.17:58954 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:42536 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:32988 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     23.20.61.199:48930 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
-INFO:     135.181.71.17:40010 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     23.20.61.199:36900 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     23.20.61.199:36912 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
-INFO:     135.181.71.17:44470 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:44482 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:58032 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:58968 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:58972 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:59040 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:58808 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     34.124.115.63:36352 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     34.124.115.63:36364 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     34.124.115.63:40908 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
-INFO:     135.181.71.17:42006 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:40544 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:43446 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:43462 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:50390 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:59038 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:42152 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:55992 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:45992 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:36456 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:36460 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:38080 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:55760 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:52418 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:46196 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:51306 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:51310 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:38302 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:45868 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:45882 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:52886 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:38318 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:35664 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:50712 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     168.100.174.143:55304 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     168.100.174.143:55312 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
-INFO:     135.181.71.17:44416 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     168.100.174.143:55316 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     132.145.134.96:54218 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
-INFO:     135.181.71.17:34888 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     132.145.134.96:54232 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     132.145.134.96:54240 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
-INFO:     135.181.71.17:34536 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:53190 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:60398 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:58298 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:58304 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:60974 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:60986 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:38116 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:38132 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:35028 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:60684 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:60698 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:51000 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:41072 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:57656 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:40542 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:47898 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:54230 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:54232 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:42934 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:46884 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:33988 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:55616 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:52374 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-INFO:     135.181.71.17:42938 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     88.204.136.220:32882 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
-INFO:     135.181.71.17:56294 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     88.204.136.220:32890 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     88.204.136.220:32892 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
-INFO:     135.181.71.17:51414 - "POST /api/dojo/template-progress-callback HTTP/1.1" 200 OK
+INFO:     132.145.134.96:35558 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
 Error processing template processing batch: Server disconnected without sending a response.
 GPU template processing failed: Server disconnected without sending a response.
-INFO:     65.108.32.143:57116 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
-INFO:     65.108.32.143:51640 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60676 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38294 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
 WARNING:  Unsupported upgrade request.
 WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     23.20.61.199:36648 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+INFO:     132.145.134.96:33616 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
 WARNING:  Unsupported upgrade request.
 WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     23.20.61.199:36650 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+INFO:     88.204.136.220:33926 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
 WARNING:  Unsupported upgrade request.
 WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     23.20.61.199:36664 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
-WARNING:  StatReload detected changes in 'app/api/dojo.py'. Reloading...
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-INFO:     Application shutdown complete.
-INFO:     Finished server process [96286]
-INFO:     Started server process [97703]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         WARNING:  StatReload detected changes in 'app/api/dojo.py'. Reloading...
-INFO:     Started server process [97701]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-ERROR:    Traceback (most recent call last):
-  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
-    return runner.run(main)
-           ^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
-    return self._loop.run_until_complete(task)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
-    return future.result()
-           ^^^^^^^^^^^^^^^
-  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 79, in serve
-    await self.startup(sockets=sockets)
-  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 129, in startup
-    server = await loop.create_server(
-             ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/asyncio/base_events.py", line 1597, in create_server
-    server._start_serving()
-  File "/usr/lib/python3.12/asyncio/base_events.py", line 317, in _start_serving
-    sock.listen(self._backlog)
-OSError: [Errno 98] Address already in use
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/starlette/routing.py", line 747, in lifespan
-    await receive()
-  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/lifespan/on.py", line 137, in receive
-    return await self.receive_queue.get()
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/asyncio/queues.py", line 158, in get
-    await getter
-asyncio.exceptions.CancelledError
-
-Process SpawnProcess-13:
-Traceback (most recent call last):
-  File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
-    self.run()
-  File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
-    self._target(*self._args, **self._kwargs)
-  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/_subprocess.py", line 78, in subprocess_started
-    target(sockets=sockets)
-  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 62, in run
-    return asyncio.run(self.serve(sockets=sockets))
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
-    return runner.run(main)
-           ^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
-    return self._loop.run_until_complete(task)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
-    return future.result()
-           ^^^^^^^^^^^^^^^
-  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 79, in serve
-    await self.startup(sockets=sockets)
-  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 129, in startup
-    server = await loop.create_server(
-             ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/asyncio/base_events.py", line 1597, in create_server
-    server._start_serving()
-  File "/usr/lib/python3.12/asyncio/base_events.py", line 317, in _start_serving
-    sock.listen(self._backlog)
-OSError: [Errno 98] Address already in use
+INFO:     88.204.136.220:33932 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:33936 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:33942 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:49202 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:47398 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:47412 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:39018 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:39024 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:39032 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found

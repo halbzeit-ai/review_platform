@@ -768,13 +768,17 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                                     logger.error(f"Template config error traceback: {traceback.format_exc()}")
                                     raise
                                 
-                                # Run the analysis with progress callback - template_only for Step 4
+                                # Run the analysis with progress callback 
+                                # Use template_only=False when visual analysis results are available from cache
+                                has_visual_analysis = hasattr(analyzer, 'visual_analysis_results') and len(analyzer.visual_analysis_results) > 0
+                                logger.info(f"Running template analysis with visual_analysis_available={has_visual_analysis}")
+                                
                                 analysis_results = analyzer.analyze_pdf(
                                     full_pdf_path, 
                                     company_id="dojo",
                                     progress_callback=progress_callback,
                                     deck_id=deck_id,
-                                    template_only=True
+                                    template_only=not has_visual_analysis  # Only skip visual analysis if we don't have cached results
                                 )
                                 
                                 # Extract the formatted template analysis

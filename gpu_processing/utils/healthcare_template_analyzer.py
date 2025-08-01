@@ -962,8 +962,11 @@ class HealthcareTemplateAnalyzer:
         
         try:
             if not template_only:
-                # Step 1: Convert PDF to images and analyze each page
-                self._analyze_visual_content(pdf_path, company_id)
+                # Step 1: Convert PDF to images and analyze each page (skip if already have results)
+                if not self.visual_analysis_results:
+                    self._analyze_visual_content(pdf_path, company_id)
+                else:
+                    logger.info(f"Using cached visual analysis results ({len(self.visual_analysis_results)} pages)")
             else:
                 logger.info("Skipping visual analysis in template_only mode")
             
