@@ -18,3 +18,58 @@ INFO:     65.108.32.143:51484 - "GET /api/dojo/extraction-test/cached-count HTTP
 INFO:     65.108.32.143:46254 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
 INFO:     65.108.32.143:46262 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
 INFO:     65.108.32.143:46274 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:32908 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:32914 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:32920 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:58320 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58334 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58348 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58340 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58344 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58350 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58358 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58362 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58364 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58374 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58388 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41256 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
+INFO:     135.181.71.17:45860 - "POST /api/dojo/internal/get-cached-visual-analysis HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41268 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41264 - "POST /api/dojo/extraction-test/run-offering-extraction HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41284 - "POST /api/dojo/extraction-test/run-classification HTTP/1.1" 200 OK
+INFO:     135.181.71.17:55804 - "POST /api/dojo/internal/get-cached-visual-analysis HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41294 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41286 - "POST /api/dojo/extraction-test/run-company-name-extraction HTTP/1.1" 200 OK
+INFO:     135.181.71.17:55806 - "POST /api/dojo/internal/get-cached-visual-analysis HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41296 - "POST /api/dojo/extraction-test/run-funding-amount-extraction HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40692 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     135.181.71.17:55820 - "POST /api/dojo/internal/get-cached-visual-analysis HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40688 - "POST /api/dojo/extraction-test/run-deck-date-extraction HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40704 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40718 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:41924 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:41928 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:41934 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:55144 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+INFO:     65.108.32.143:47958 - "GET /api/dojo/extraction-test/experiments/16 HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:58768 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:58770 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:43378 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found

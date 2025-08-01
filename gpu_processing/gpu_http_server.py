@@ -1058,16 +1058,11 @@ Please provide a comprehensive analysis focusing on the requested areas."""
             
             logger.info(f"Retrieving cached visual analysis for {len(deck_ids)} decks via HTTP from backend")
             
-            # Direct backend URL configuration - no environment variable dependency
-            # TODO: Make this configurable via database or config file later
-            backend_server = "http://65.108.32.143:8000"  # Development backend
-            logger.info(f"Using hardcoded backend server for development: {backend_server}")
-            
-            logger.info(f"Using backend server: {backend_server}")
+            logger.info(f"Using backend server: {self.backend_url}")
             
             # Call the backend endpoint to get cached visual analysis
             response = requests.post(
-                f"{backend_server}/api/dojo/internal/get-cached-visual-analysis",
+                f"{self.backend_url}/api/dojo/internal/get-cached-visual-analysis",
                 json={"deck_ids": deck_ids},
                 timeout=30
             )
@@ -1185,9 +1180,7 @@ Please provide a comprehensive analysis focusing on the requested areas."""
             import requests
             import json
             
-            # Direct backend URL configuration - no environment variable dependency
-            backend_server = "http://65.108.32.143:8000"  # Development backend
-            logger.info(f"Using hardcoded backend server for caching: {backend_server}")
+            logger.info(f"Using backend server for caching: {self.backend_url}")
             
             # Prepare the cache data
             cache_data = {
@@ -1199,7 +1192,7 @@ Please provide a comprehensive analysis focusing on the requested areas."""
             
             # Make HTTP request to cache visual analysis
             response = requests.post(
-                f"{backend_server}/api/dojo/internal/cache-visual-analysis",
+                f"{self.backend_url}/api/dojo/internal/cache-visual-analysis",
                 json=cache_data,
                 timeout=30
             )
@@ -1217,9 +1210,7 @@ Please provide a comprehensive analysis focusing on the requested areas."""
         try:
             import requests
             
-            # Direct backend URL configuration - no environment variable dependency
-            backend_server = "http://65.108.32.143:8000"  # Development backend
-            logger.info(f"Using hardcoded backend server for caching: {backend_server}")
+            logger.info(f"Using backend server for database updates: {self.backend_url}")
             
             # Prepare the update data
             update_data = {
@@ -1230,7 +1221,7 @@ Please provide a comprehensive analysis focusing on the requested areas."""
             
             # Make HTTP request to update database
             response = requests.post(
-                f"{backend_server}/api/internal/update-deck-results",
+                f"{self.backend_url}/api/internal/update-deck-results",
                 json=update_data,
                 timeout=30
             )
