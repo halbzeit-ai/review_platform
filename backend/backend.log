@@ -408,3 +408,49 @@ INFO:     34.124.115.63:53638 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNY
 WARNING:  Unsupported upgrade request.
 WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
 INFO:     34.124.115.63:53642 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:41658 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41672 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41708 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41686 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41694 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41678 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41724 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41738 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41750 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41756 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41762 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:41370 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41384 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
+INFO:     135.181.71.17:39984 - "POST /api/dojo/internal/get-cached-visual-analysis HTTP/1.1" 200 OK
+Error processing template processing batch: Server disconnected without sending a response.
+GPU template processing failed: Server disconnected without sending a response.
+Failed to mark deck 131 as having results: name 'dojo_results_marker' is not defined
+Failed to mark deck 129 as having results: name 'dojo_results_marker' is not defined
+Failed to mark deck 116 as having results: name 'dojo_results_marker' is not defined
+Failed to mark deck 125 as having results: name 'dojo_results_marker' is not defined
+Failed to mark deck 112 as having results: name 'dojo_results_marker' is not defined
+Failed to mark deck 120 as having results: name 'dojo_results_marker' is not defined
+Failed to mark deck 118 as having results: name 'dojo_results_marker' is not defined
+Failed to mark deck 128 as having results: name 'dojo_results_marker' is not defined
+Failed to mark deck 124 as having results: name 'dojo_results_marker' is not defined
+Failed to mark deck 117 as having results: name 'dojo_results_marker' is not defined
+INFO:     65.108.32.143:41394 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
+INFO:     65.108.32.143:57574 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:51546 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:51562 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:46532 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:43936 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:43950 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:60312 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found

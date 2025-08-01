@@ -951,8 +951,11 @@ class HealthcareTemplateAnalyzer:
         logger.info("Cleared previous analysis state")
         
         try:
-            # Step 1: Convert PDF to images and analyze each page
-            self._analyze_visual_content(pdf_path, company_id)
+            if not template_only:
+                # Step 1: Convert PDF to images and analyze each page
+                self._analyze_visual_content(pdf_path, company_id)
+            else:
+                logger.info("Skipping visual analysis in template_only mode")
             
             if not template_only:
                 # Step 2: Generate company offering summary
