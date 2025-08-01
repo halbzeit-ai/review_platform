@@ -1101,6 +1101,31 @@ Please provide a comprehensive analysis focusing on the requested areas."""
         except Exception as e:
             logger.error(f"Error getting extraction results for deck {deck_id}: {e}")
             return {}
+
+    def _load_template_from_db(self, template_id: int) -> Dict[str, Any]:
+        """Load template configuration from database via HTTP"""
+        try:
+            import requests
+            
+            logger.info(f"Loading template {template_id} from backend")
+            
+            # Call backend to get template configuration
+            response = requests.get(
+                f"{self.backend_url}/api/healthcare-templates/templates/{template_id}/complete",
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                template_data = response.json()
+                logger.info(f"Loaded template '{template_data.get('name', 'Unknown')}' with {len(template_data.get('chapters', []))} chapters")
+                return template_data
+            else:
+                logger.error(f"Failed to load template {template_id}: {response.status_code}")
+                return {}
+                
+        except Exception as e:
+            logger.error(f"Error loading template {template_id}: {e}")
+            return {}
     
     def _cache_visual_analysis_result(self, deck_id: int, visual_results: Dict, vision_model: str, analysis_prompt: str):
         """Cache visual analysis result immediately to backend"""
