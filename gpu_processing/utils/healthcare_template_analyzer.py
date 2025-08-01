@@ -939,6 +939,10 @@ class HealthcareTemplateAnalyzer:
         logger.info(f"   🎯 Scoring Model (question scoring): {self.scoring_model}")
         
         # Clear state from previous analysis sessions
+        # But preserve template_config if we're in template_only mode
+        preserve_template_config = template_only and self.template_config is not None
+        preserved_config = self.template_config if preserve_template_config else None
+        
         self.visual_analysis_results = []
         self.company_offering = ""
         self.startup_name = None
@@ -948,7 +952,13 @@ class HealthcareTemplateAnalyzer:
         self.template_config = None
         self.chapter_results = {}
         self.question_results = {}
-        logger.info("Cleared previous analysis state")
+        
+        # Restore template config if we're in template_only mode
+        if preserve_template_config:
+            self.template_config = preserved_config
+            logger.info("Cleared previous analysis state (preserved template config for template_only mode)")
+        else:
+            logger.info("Cleared previous analysis state")
         
         try:
             if not template_only:

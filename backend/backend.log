@@ -111,3 +111,19 @@ INFO:     132.145.134.96:33918 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aG
 WARNING:  Unsupported upgrade request.
 WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
 INFO:     132.145.134.96:33928 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:43850 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43838 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43854 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43864 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43872 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43866 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43876 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43878 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43890 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43904 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43906 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:43910 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43914 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
+INFO:     135.181.71.17:45070 - "POST /api/dojo/internal/get-cached-visual-analysis HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43930 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
+INFO:     65.108.32.143:41438 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
