@@ -339,6 +339,9 @@ class GPUHTTPServer:
                 
                 logger.info(f"Starting template-only processing for {len(deck_ids)} decks using template {template_id}")
                 
+                # Get cached visual analysis for all decks at once
+                cached_analysis = self._get_cached_visual_analysis(deck_ids)
+                
                 # Load template configuration
                 from utils.healthcare_template_analyzer import HealthcareTemplateAnalyzer
                 
@@ -347,22 +350,15 @@ class GPUHTTPServer:
                 
                 for deck_id in deck_ids:
                     try:
-                        # Get cached visual analysis from backend
-                        visual_data_response = requests.post(
-                            f"{self.backend_url}/api/dojo/internal/get-cached-visual-analysis",
-                            json={"deck_ids": [deck_id]},
-                            headers={'Content-Type': 'application/json'}
-                        )
-                        
-                        if visual_data_response.status_code != 200:
-                            logger.error(f"Failed to get cached visual analysis for deck {deck_id}")
+                        # Check if we have cached visual analysis for this deck
+                        if deck_id not in cached_analysis:
+                            logger.error(f"No cached visual analysis found for deck {deck_id}")
                             continue
                         
-                        visual_data = visual_data_response.json()
-                        deck_visual_data = visual_data.get('results', {}).get(str(deck_id), {})
+                        deck_visual_data = cached_analysis[deck_id]
                         
                         if not deck_visual_data or 'visual_analysis_results' not in deck_visual_data:
-                            logger.error(f"No cached visual analysis found for deck {deck_id}")
+                            logger.error(f"No visual analysis results in cached data for deck {deck_id}")
                             continue
                         
                         # Get extraction results (offering, name, classification, etc.) from database
