@@ -733,13 +733,17 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                                 # We need to set the template config before calling analyze_pdf
                                 try:
                                     # Load template configuration
+                                    logger.info(f"DEBUG: Loading template {template_info['id']} for deck {deck_id}")
                                     template_config = analyzer._load_template_from_database(template_info['id'])
+                                    logger.info(f"DEBUG: Template config result: {template_config is not None}")
+                                    
                                     if not template_config:
                                         logger.error(f"Failed to load template {template_info['id']} from database")
                                         raise ValueError(f"Template {template_info['id']} not found in database")
                                     
                                     # Set the template config on the analyzer
                                     analyzer.template_config = template_config
+                                    logger.info(f"DEBUG: Set analyzer.template_config = {analyzer.template_config is not None}")
                                     logger.info(f"Loaded template '{template_config.get('name', 'Unknown')}' for deck {deck_id}")
                                     
                                     # Also need to set the visual analysis results from cache
@@ -752,9 +756,13 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                                         if isinstance(deck_visual_data.get('visual_analysis'), list):
                                             analyzer.visual_analysis_results = deck_visual_data['visual_analysis']
                                             logger.info(f"Set {len(analyzer.visual_analysis_results)} visual analysis results from alternative format")
+                                        else:
+                                            logger.error(f"No visual analysis data found in any format for deck {deck_id}")
                                     
                                 except Exception as e:
+                                    import traceback
                                     logger.error(f"Error loading template configuration: {e}")
+                                    logger.error(f"Template config error traceback: {traceback.format_exc()}")
                                     raise
                                 
                                 # Run the analysis with progress callback - template_only for Step 4
