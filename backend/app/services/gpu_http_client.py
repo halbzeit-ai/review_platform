@@ -37,12 +37,20 @@ class GPUHTTPClient:
         if not self.gpu_host:
             self.gpu_host = settings.GPU_INSTANCE_HOST
             
+        # Determine backend service URL for callbacks
+        if settings.ENVIRONMENT == "production":
+            self.backend_service_url = settings.BACKEND_PRODUCTION
+        else:
+            self.backend_service_url = settings.BACKEND_DEVELOPMENT
+            
         self.base_url = f"http://{self.gpu_host}:8001/api"
         self.timeout = 30
         self.pull_timeout = 300  # 5 minutes for model pulls
         
         if not self.gpu_host:
             logger.warning("GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)")
+        if not self.backend_service_url:
+            logger.warning("Backend service URL not configured (BACKEND_DEVELOPMENT/BACKEND_PRODUCTION)")
     
     def is_available(self) -> bool:
         """Check if GPU instance is available"""

@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     # Direct GPU Processing Configuration
     GPU_DEVELOPMENT: str = ""  # IP address of development GPU instance
     GPU_PRODUCTION: str = ""   # IP address of production GPU instance
+    
+    # Backend URLs for GPU callbacks
+    BACKEND_DEVELOPMENT: str = ""  # Backend URL for development environment
+    BACKEND_PRODUCTION: str = ""   # Backend URL for production environment
     GPU_INSTANCE_USER: str = "root"
     GPU_INSTANCE_SSH_KEY_PATH: str = ""  # Path to SSH private key for GPU instance
     

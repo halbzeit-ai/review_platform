@@ -3127,3 +3127,27 @@ INFO:     65.108.32.143:36308 - "GET /api/dojo/files HTTP/1.1" 200 OK
 INFO:     65.108.32.143:36334 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
 INFO:     65.108.32.143:36322 - "GET /api/dojo/stats HTTP/1.1" 200 OK
 INFO:     65.108.32.143:36350 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51042 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35300 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35310 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
+Error processing template processing batch: 'GPUHTTPClient' object has no attribute 'backend_service_url'
+GPU template processing failed: 'GPUHTTPClient' object has no attribute 'backend_service_url'
+INFO:     65.108.32.143:54992 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55008 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/core/config.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [83173]
+INFO:     Started server process [83727]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/services/gpu_http_client.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [83727]
+Backend service URL not configured (BACKEND_DEVELOPMENT/BACKEND_PRODUCTION)
+INFO:     Started server process [83736]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
