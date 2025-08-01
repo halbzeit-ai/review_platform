@@ -53,7 +53,15 @@ class GPUHTTPServer:
     
     def __init__(self):
         self.app = app
-        self.pdf_processor = PDFProcessor(mount_path=config.mount_path)
+        # Get backend URL from environment variables
+        environment = os.getenv('ENVIRONMENT', 'development').lower()
+        if environment == 'production':
+            self.backend_url = os.getenv('BACKEND_PRODUCTION', 'http://65.108.32.168:8000')
+        else:
+            self.backend_url = os.getenv('BACKEND_DEVELOPMENT', 'http://65.108.32.143:8000')
+        
+        logger.info(f"Initialized GPUHTTPServer with backend URL: {self.backend_url}")
+        self.pdf_processor = PDFProcessor(mount_path=config.mount_path, backend_url=self.backend_url)
         self.setup_routes()
     
     def setup_routes(self):
