@@ -863,14 +863,20 @@ Please provide a comprehensive analysis focusing on the requested areas."""
             
             logger.info(f"Retrieving cached visual analysis for {len(deck_ids)} decks via HTTP from backend")
             
+            # Debug environment variables
+            environment = os.getenv("ENVIRONMENT", "development")  # Default to development
+            backend_dev = os.getenv("BACKEND_DEVELOPMENT")
+            backend_prod = os.getenv("BACKEND_PRODUCTION")
+            logger.info(f"Environment: '{environment}', BACKEND_DEVELOPMENT: '{backend_dev}', BACKEND_PRODUCTION: '{backend_prod}'")
+            
             # Get backend server URL
             backend_server = None
-            if os.getenv("ENVIRONMENT") == "production":
-                backend_server = os.getenv("BACKEND_PRODUCTION")
+            if environment == "production":
+                backend_server = backend_prod
                 if not backend_server:
                     raise ValueError("BACKEND_PRODUCTION environment variable is required but not set!")
             else:
-                backend_server = os.getenv("BACKEND_DEVELOPMENT") 
+                backend_server = backend_dev
                 if not backend_server:
                     raise ValueError("BACKEND_DEVELOPMENT environment variable is required but not set!")
             

@@ -875,3 +875,103 @@ INFO:     23.20.61.199:47910 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcH
 WARNING:  Unsupported upgrade request.
 WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
 INFO:     23.20.61.199:47922 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:44774 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:44776 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:38826 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:36646 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36634 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36660 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36670 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36678 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36684 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36694 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36696 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36706 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36708 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36720 - "POST /api/dojo/extraction-test/clear-all-cache HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36128 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36130 - "POST /api/dojo/extraction-test/run-visual-analysis HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36144 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36158 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36172 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:47600 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:47606 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:47616 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:47624 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:47630 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50554 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50568 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50570 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50586 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54010 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54018 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54024 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54038 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54052 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51898 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51900 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51904 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51914 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:51926 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50072 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50086 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50096 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50106 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50114 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53968 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53976 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53992 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53996 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54010 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38534 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38540 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38542 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38556 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38564 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53790 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53800 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53804 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53814 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53824 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55446 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55458 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55468 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55476 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46984 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46988 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:47000 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:47010 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:47024 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60824 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60828 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60834 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60846 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60860 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Error running template processing: 'TemplateProcessingRequest' object has no attribute 'experiment_id'
+INFO:     65.108.32.143:55474 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 500 Internal Server Error
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:37016 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:37030 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:48364 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+Error running template processing: 'TemplateProcessingRequest' object has no attribute 'experiment_id'
+INFO:     65.108.32.143:42658 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 500 Internal Server Error
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:54822 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:32998 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:33010 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
