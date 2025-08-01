@@ -614,8 +614,8 @@ class GPUHTTPServer:
                         visual_context = ""
                         visual_used = False
                         
-                        if use_cached_visual and str(deck_id) in cached_analysis:
-                            visual_data = cached_analysis[str(deck_id)]
+                        if use_cached_visual and deck_id in cached_analysis:
+                            visual_data = cached_analysis[deck_id]
                             if visual_data.get("visual_analysis_results"):
                                 # Format visual analysis for text extraction
                                 visual_descriptions = []

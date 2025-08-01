@@ -32,8 +32,9 @@ This is a startup review platform with a Python FastAPI backend and React fronte
   - `src/utils/`: Utility functions (theme, etc.)
 
 ### Database
-- SQLite for development (`backend/sql_app.db`)
-- PostgreSQL for production (as indicated in PRD)
+- **Development**: PostgreSQL database `review_dev`
+- **Production**: PostgreSQL database `review-platform` 
+- **Legacy**: SQLite for development (`backend/sql_app.db`) - deprecated
 
 ## Development Commands
 
