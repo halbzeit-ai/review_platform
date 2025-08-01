@@ -87,23 +87,22 @@ def load_environment_config() -> Settings:
     """Load configuration based on current environment"""
     environment = get_environment()
     
-    # Determine environment file path
-    env_file_map = {
-        "development": "environments/development.env",
-        "staging": "environments/staging.env", 
-        "production": "environments/production.env"
-    }
-    
-    env_file = env_file_map.get(environment, ".env")
-    
-    # Check if environment file exists
-    if os.path.exists(env_file):
-        # Load environment-specific settings
-        class EnvironmentSettings(Settings):
+    # Load environment-specific settings based on detected environment
+    if environment == "development" and os.path.exists("../environments/development.env"):
+        class DevelopmentSettings(Settings):
             class Config:
-                env_file = env_file
-        
-        return EnvironmentSettings()
+                env_file = "../environments/development.env"
+        return DevelopmentSettings()
+    elif environment == "staging" and os.path.exists("../environments/staging.env"):
+        class StagingSettings(Settings):
+            class Config:
+                env_file = "../environments/staging.env"
+        return StagingSettings()
+    elif environment == "production" and os.path.exists("../environments/production.env"):
+        class ProductionSettings(Settings):
+            class Config:
+                env_file = "../environments/production.env"
+        return ProductionSettings()
     else:
         # Fall back to default settings with .env
         return Settings()
