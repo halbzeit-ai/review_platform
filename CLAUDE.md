@@ -277,6 +277,55 @@ Then parse each JSON column to extract data for the specific deck_id.
 
 **Critical**: If you skip Step 3, Step 4 will have no company offering, name, classification, funding amount, or deck date - leading to poor template analysis quality.
 
+## GPU-Backend Communication Architecture
+
+### Data Access Patterns
+The GPU server uses three distinct patterns for accessing backend data:
+
+#### ✅ Direct PostgreSQL Connection (Preferred)
+- **Pattern**: GPU → PostgreSQL database directly
+- **Use cases**: Model configurations, pipeline prompts, template loading, sector data
+- **Authentication**: Database credentials (configured via environment variables)
+- **Examples**:
+  - `analyzer.get_model_by_type("vision")` - model configurations
+  - `analyzer._get_pipeline_prompt("offering_extraction")` - pipeline prompts  
+  - `analyzer._load_template_config(template_id)` - template configurations
+- **Why it works**: GPU server has PostgreSQL credentials configured
+
+#### ✅ Internal HTTP Endpoints (Safe)
+- **Pattern**: GPU → Backend HTTP API (internal endpoints)
+- **Use cases**: Real-time data exchange, progress updates, caching
+- **Authentication**: None required (internal endpoints)
+- **Examples**:
+  - `POST /api/dojo/internal/get-cached-visual-analysis` - fetch cached visual analysis
+  - `POST /api/dojo/internal/cache-visual-analysis` - cache visual analysis results
+  - `POST /api/dojo/template-progress-callback` - progress updates
+  - `POST /api/internal/update-deck-results` - deck result updates
+- **Why it works**: These endpoints only require `db: Session = Depends(get_db)`
+
+#### ❌ User-Authenticated HTTP Endpoints (Problematic)
+- **Pattern**: GPU → Backend HTTP API (user endpoints)
+- **Use cases**: Should be avoided for GPU server calls
+- **Authentication**: Requires `current_user: User = Depends(get_current_user)`
+- **Examples**:
+  - `GET /api/healthcare-templates/templates/{id}` - template details
+  - Most user-facing API endpoints
+- **Why it fails**: GPU server has no user authentication credentials
+
+### Architecture Guidelines
+
+**For GPU Server Development:**
+1. **Prefer direct PostgreSQL access** for configuration and static data
+2. **Use internal HTTP endpoints** for real-time data exchange
+3. **Avoid user-authenticated endpoints** - they will return 403 Forbidden
+4. **When adding new GPU features**, ensure data access follows these patterns
+
+**Common Error Pattern:**
+```
+HTTP 403 Forbidden on /api/some-endpoint
+```
+**Solution**: Check if endpoint requires `current_user` parameter, use direct DB or internal endpoint instead.
+
 ## Debugging Best Practices
 
 ### Database Schema Investigation

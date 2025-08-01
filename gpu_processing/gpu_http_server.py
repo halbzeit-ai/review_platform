@@ -407,8 +407,8 @@ class GPUHTTPServer:
                             )
                         
                         # Store progress callback and deck_id for chapter processing
-                        analyzer._progress_callback = progress_callback
-                        analyzer._current_deck_id = deck_id
+                        analyzer.progress_callback = progress_callback
+                        analyzer.current_deck_id = deck_id
                         
                         # Execute ONLY template analysis (no visual analysis, no extractions)
                         analyzer._execute_template_analysis()
