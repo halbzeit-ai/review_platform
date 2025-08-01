@@ -889,8 +889,18 @@ Please provide a comprehensive analysis focusing on the requested areas."""
             import requests
             import json
             
-            # Get the backend server URL from environment or use default
-            backend_server = os.getenv("BACKEND_DEVELOPMENT", os.getenv("BACKEND_PRODUCTION", "http://65.108.32.168"))
+            # Get the backend server URL from environment - NO FALLBACKS!
+            backend_server = None
+            if os.getenv("ENVIRONMENT") == "production":
+                backend_server = os.getenv("BACKEND_PRODUCTION")
+                if not backend_server:
+                    raise ValueError("BACKEND_PRODUCTION environment variable is required but not set!")
+            else:
+                backend_server = os.getenv("BACKEND_DEVELOPMENT") 
+                if not backend_server:
+                    raise ValueError("BACKEND_DEVELOPMENT environment variable is required but not set!")
+            
+            logger.info(f"Using backend server for caching: {backend_server}")
             
             # Prepare the cache data
             cache_data = {
@@ -920,8 +930,18 @@ Please provide a comprehensive analysis focusing on the requested areas."""
         try:
             import requests
             
-            # Get the backend server URL from environment or use default
-            backend_server = os.getenv("BACKEND_DEVELOPMENT", os.getenv("BACKEND_PRODUCTION", "http://65.108.32.168"))
+            # Get the backend server URL from environment - NO FALLBACKS!
+            backend_server = None
+            if os.getenv("ENVIRONMENT") == "production":
+                backend_server = os.getenv("BACKEND_PRODUCTION")
+                if not backend_server:
+                    raise ValueError("BACKEND_PRODUCTION environment variable is required but not set!")
+            else:
+                backend_server = os.getenv("BACKEND_DEVELOPMENT") 
+                if not backend_server:
+                    raise ValueError("BACKEND_DEVELOPMENT environment variable is required but not set!")
+            
+            logger.info(f"Using backend server for caching: {backend_server}")
             
             # Prepare the update data
             update_data = {
