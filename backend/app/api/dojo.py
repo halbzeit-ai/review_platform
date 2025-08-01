@@ -2406,9 +2406,33 @@ async def run_template_processing_batch(
         
         logger.info(f"Template processing completed for current sample: {successful_processing}/{len(template_processing_results)} successful template analyses, {thumbnail_generation_success}/{len(template_processing_results)} successful thumbnail generations")
         
-        # Mark decks as having template processing results for "Show Results" functionality
+        # Store template processing results in the database for each deck
         for result in template_processing_results:
             deck_id = result["deck_id"]
+            
+            # Store the template analysis result in the database
+            if result.get("template_analysis") and result.get("processing_success"):
+                try:
+                    # Store the full template analysis in the template_processing_results_json column
+                    # Also set results_file_path to indicate results are available
+                    db.execute(text("""
+                        UPDATE pitch_decks 
+                        SET template_processing_results_json = :results_json,
+                            results_file_path = :results_marker
+                        WHERE id = :deck_id
+                    """), {
+                        "deck_id": deck_id,
+                        "results_json": json.dumps({
+                            "template_analysis": result["template_analysis"],
+                            "template_used": result["template_used"],
+                            "processed_at": datetime.utcnow().isoformat(),
+                            "thumbnails": result.get("thumbnail_info", {}).get("thumbnails", [])
+                        }),
+                        "results_marker": f"template_processed_{deck_id}"
+                    })
+                    logger.info(f"Stored template processing results for deck {deck_id}")
+                except Exception as e:
+                    logger.error(f"Failed to store template results for deck {deck_id}: {e}")
             
             # Update the pitch_deck to indicate it has template processing results
             # Use a special marker in results_file_path to indicate template-processed results

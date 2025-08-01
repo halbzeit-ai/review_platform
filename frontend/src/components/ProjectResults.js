@@ -151,7 +151,8 @@ const ProjectResults = ({ companyId, deckId }) => {
   }
 
   // Check if this is a dojo template processing result
-  const isDojoTemplateResult = results.analysis_metadata?.source === 'dojo_experiment';
+  const isDojoTemplateResult = results.analysis_metadata?.source === 'dojo_experiment' || 
+                               results.analysis_metadata?.source === 'template_processing';
 
   return (
     <Box>
@@ -165,7 +166,7 @@ const ProjectResults = ({ companyId, deckId }) => {
                 Template Analysis Results
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Template: {results.template_used} | Experiment: {results.experiment_name}
+                Template: {results.template_used} {results.experiment_name && `| Experiment: ${results.experiment_name}`}
               </Typography>
               {results.analysis_metadata?.processed_at && (
                 <Typography variant="body2" color="text.secondary">

@@ -473,13 +473,58 @@ async def get_project_results(
         
         # Load analysis results
         if not results_file_path:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Analysis results not found for this deck"
-            )
+            # Check if template processing results exist
+            template_check = db.execute(text("""
+                SELECT template_processing_results_json 
+                FROM pitch_decks 
+                WHERE id = :deck_id AND template_processing_results_json IS NOT NULL
+            """), {"deck_id": deck_id}).fetchone()
+            
+            if not template_check:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Analysis results not found for this deck"
+                )
+            else:
+                # Use template processing results
+                results_file_path = f"template_processed_{deck_id}"
+        
+        # Check if this is a template processing marker
+        if results_file_path.startswith("template_processed_"):
+            logger.info(f"Loading template processing results for deck {deck_id}")
+            
+            # Get template processing results from database
+            template_query = text("""
+                SELECT template_processing_results_json 
+                FROM pitch_decks 
+                WHERE id = :deck_id
+            """)
+            
+            template_result = db.execute(template_query, {"deck_id": deck_id}).fetchone()
+            
+            if not template_result or not template_result[0]:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Template processing results not found for this deck"
+                )
+            
+            # Parse template processing data
+            template_data = json.loads(template_result[0])
+            
+            # Format results for frontend consumption - return the raw template analysis
+            return {
+                "template_analysis": template_data.get("template_analysis", ""),
+                "template_used": template_data.get("template_used", "Unknown"),
+                "processed_at": template_data.get("processed_at"),
+                "thumbnails": template_data.get("thumbnails", []),
+                "analysis_metadata": {
+                    "source": "template_processing",
+                    "deck_id": deck_id
+                }
+            }
         
         # Check if this is a dojo experiment marker
-        if results_file_path.startswith("dojo_experiment:"):
+        elif results_file_path.startswith("dojo_experiment:"):
             logger.info(f"Loading dojo experiment results for deck {deck_id}")
             experiment_id = results_file_path.split("dojo_experiment:")[1]
             
