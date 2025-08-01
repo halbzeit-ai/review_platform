@@ -2558,7 +2558,7 @@ async def get_cached_visual_analysis_for_gpu(
                 "error": "deck_ids is required"
             }
         
-        logger.info(f"GPU requesting cached visual analysis for {len(deck_ids)} decks")
+        logger.info(f"GPU requesting cached visual analysis for {len(deck_ids)} decks: {deck_ids}")
         
         cached_analysis = {}
         for deck_id in deck_ids:
@@ -2569,9 +2569,9 @@ async def get_cached_visual_analysis_for_gpu(
                 
                 if cache_result:
                     cached_analysis[deck_id] = json.loads(cache_result[0])
-                    logger.debug(f"Found cached visual analysis for deck {deck_id}")
+                    logger.info(f"DEBUG: Found cached visual analysis for deck {deck_id}, keys: {list(cached_analysis[deck_id].keys())}")
                 else:
-                    logger.debug(f"No cached visual analysis found for deck {deck_id}")
+                    logger.warning(f"DEBUG: No cached visual analysis found for deck {deck_id}")
                     
             except Exception as e:
                 logger.error(f"Error retrieving cached visual analysis for deck {deck_id}: {e}")

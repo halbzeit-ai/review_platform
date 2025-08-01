@@ -639,6 +639,8 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                 
                 # Get cached visual analysis for all decks
                 cached_visual_data = self._get_cached_visual_analysis(deck_ids)
+                logger.info(f"DEBUG: Retrieved cached visual data for {len(cached_visual_data)} decks out of {len(deck_ids)} requested")
+                logger.info(f"DEBUG: Cached data keys: {list(cached_visual_data.keys())}")
                 
                 # Process each deck
                 processing_results = []
@@ -649,6 +651,9 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                         
                         # Get visual analysis for this deck (keys are integers after conversion)
                         deck_visual_data = cached_visual_data.get(deck_id, {})
+                        logger.info(f"DEBUG: deck_id={deck_id} (type: {type(deck_id)}), has data: {bool(deck_visual_data)}")
+                        if deck_visual_data:
+                            logger.info(f"DEBUG: deck_visual_data keys: {list(deck_visual_data.keys())[:5]}")
                         
                         if not deck_visual_data:
                             logger.warning(f"No cached visual analysis found for deck {deck_id}")
@@ -881,8 +886,10 @@ Please provide a comprehensive analysis focusing on the requested areas."""
                 data = response.json()
                 if data.get("success"):
                     cached_analysis = data.get("cached_analysis", {})
+                    logger.info(f"DEBUG: Raw cached_analysis keys: {list(cached_analysis.keys())}")
                     # Convert string keys to integers for consistency
                     cached_analysis_int_keys = {int(k): v for k, v in cached_analysis.items()}
+                    logger.info(f"DEBUG: Converted keys: {list(cached_analysis_int_keys.keys())}")
                     logger.info(f"Retrieved cached visual analysis for {len(cached_analysis)}/{len(deck_ids)} decks via HTTP from backend")
                     return cached_analysis_int_keys
                 else:
