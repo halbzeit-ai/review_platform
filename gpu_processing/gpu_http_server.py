@@ -682,7 +682,10 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                         filename = deck_visual_data.get('filename', f'deck_{deck_id}')
                         
                         # Check if we should use the healthcare template analyzer for chapter-by-chapter analysis
+                        logger.info(f"DEBUG: template_info = {template_info}")
+                        logger.info(f"DEBUG: template_info.get('id') = {template_info.get('id') if template_info else 'template_info is None'}")
                         use_chapter_analysis = template_info and template_info.get('id') is not None
+                        logger.info(f"DEBUG: use_chapter_analysis = {use_chapter_analysis}")
                         
                         if use_chapter_analysis:
                             # Use healthcare template analyzer for chapter-by-chapter analysis
@@ -782,6 +785,7 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                                 template_analysis = "Error: Could not find PDF file for analysis"
                         else:
                             # Fall back to simple prompt-based analysis
+                            logger.info(f"DEBUG: Using fallback prompt-based analysis for deck {deck_id}")
                             full_prompt = f"""Based on the following visual analysis of a healthcare startup pitch deck, {template_prompt}
 
 Visual Analysis:
