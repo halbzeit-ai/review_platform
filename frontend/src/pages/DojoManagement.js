@@ -779,31 +779,29 @@ const DojoManagement = () => {
     await runVisualAnalysis();
   };
 
-  // Clear analysis cache function
+  // Clear analysis cache function - clears ALL cache, not just current sample
   const clearAnalysisCache = async () => {
     setClearingCache(true);
     try {
       const user = JSON.parse(localStorage.getItem('user'));
       const token = user?.token;
       
-      const deckIds = extractionSample.map(deck => deck.id);
-      
-      const response = await fetch('/api/dojo/extraction-test/clear-cache', {
+      const response = await fetch('/api/dojo/extraction-test/clear-all-cache', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          deck_ids: deckIds
-        })
+        }
       });
 
       if (response.ok) {
-        // Clear the current sample since cache was cleared
-        setExtractionSample([]);
+        const result = await response.json();
+        // Update cached count immediately to 0
+        setCachedDecksCount(0);
         setError(null);
-        console.log('Visual analysis cache cleared successfully');
+        console.log(`Cleared all visual analysis cache: ${result.deleted_cache_entries} entries deleted`);
+        // Optional: Show success message to user
+        // You can add a snackbar/toast here if desired
       } else {
         const errorData = await response.json();
         setError(errorData.detail || 'Failed to clear cache');
@@ -1537,8 +1535,8 @@ const DojoManagement = () => {
 
   // Run template-based processing for experiment results
   const runTemplateProcessing = async () => {
-    if ((!lastExperimentId && !isVisualAnalysisCompleted()) || !selectedTemplate) {
-      setError('Please select a template and ensure visual analysis is completed');
+    if (!isVisualAnalysisCompleted() || !selectedTemplate || extractionSample.length === 0) {
+      setError('Please select a template, ensure visual analysis is completed, and have an active sample');
       return;
     }
 
@@ -1558,45 +1556,15 @@ const DojoManagement = () => {
       const user = JSON.parse(localStorage.getItem('user'));
       const token = user?.token;
 
-      // Use the existing experiment ID or create a new one
-      let experimentId = lastExperimentId;
+      // Use current extraction sample directly for template processing
+      if (extractionSample.length === 0) {
+        throw new Error('No extraction sample available. Please run Step 1 first.');
+      }
       
-      if (!experimentId && extractionSample.length > 0) {
-        // If no experiment ID but we have a sample, we need to create a new experiment first
-        const deckIds = extractionSample.map(item => item.id);
-        const experimentName = `template_processing_${Date.now()}`;
-        
-        // Create experiment by running offering extraction first (required for experiment creation)
-        const offeringResponse = await fetch('/api/dojo/extraction-test/run-offering-extraction', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            experiment_name: experimentName,
-            deck_ids: deckIds,
-            text_model: selectedTextModel || 'gemma3:27b',
-            use_cached_visual: true
-          }),
-          signal: controller.signal
-        });
+      const deckIds = extractionSample.map(item => item.id);
+      console.log('Running template processing on current sample:', deckIds);
 
-        if (!offeringResponse.ok) {
-          const errorData = await offeringResponse.json();
-          throw new Error(errorData.detail || 'Failed to create experiment for template processing');
-        }
-
-        const offeringData = await offeringResponse.json();
-        experimentId = offeringData.experiment_id;
-        console.log('Created experiment for template processing:', experimentId);
-      }
-
-      if (!experimentId) {
-        throw new Error('No experiment available for template processing');
-      }
-
-      // Run batch template processing on the entire experiment
+      // Run template processing directly on current sample deck IDs
       const response = await fetch('/api/dojo/extraction-test/run-template-processing', {
         method: 'POST',
         headers: {
@@ -1604,7 +1572,7 @@ const DojoManagement = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          experiment_id: experimentId,
+          deck_ids: deckIds,
           template_id: selectedTemplate ? parseInt(selectedTemplate, 10) : null,
           generate_thumbnails: true
         }),
@@ -2165,7 +2133,7 @@ const DojoManagement = () => {
                         startIcon={clearingCache ? <CircularProgress size={16} /> : <Clear />}
                         color="error"
                       >
-                        {clearingCache ? 'Clearing...' : 'Clear Cache'}
+                        {clearingCache ? 'Clearing...' : 'Clear All Cache'}
                       </Button>
                     </Box>
                   )}

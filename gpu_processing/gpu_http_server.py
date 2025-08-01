@@ -856,49 +856,50 @@ Please provide a comprehensive analysis focusing on the requested areas."""
             return f"Error formatting analysis results: {str(e)}"
     
     def _get_cached_visual_analysis(self, deck_ids: List[int]) -> Dict[int, Dict]:
-        """Get cached visual analysis directly from database"""
+        """Get cached visual analysis via HTTP from backend"""
         try:
-            import psycopg2
+            import requests
             import json
             
-            # Get database URL from environment
-            database_url = os.getenv("DATABASE_URL")
-            if not database_url:
-                # Fallback to development database
-                database_url = "postgresql://dev_user:!dev_Halbzeit1024@65.108.32.143:5432/review_dev"
+            logger.info(f"Retrieving cached visual analysis for {len(deck_ids)} decks via HTTP from backend")
             
-            logger.info(f"Querying database directly for cached visual analysis of {len(deck_ids)} decks")
+            # Get backend server URL
+            backend_server = None
+            if os.getenv("ENVIRONMENT") == "production":
+                backend_server = os.getenv("BACKEND_PRODUCTION")
+                if not backend_server:
+                    raise ValueError("BACKEND_PRODUCTION environment variable is required but not set!")
+            else:
+                backend_server = os.getenv("BACKEND_DEVELOPMENT") 
+                if not backend_server:
+                    raise ValueError("BACKEND_DEVELOPMENT environment variable is required but not set!")
             
-            # Connect to database
-            conn = psycopg2.connect(database_url)
-            cursor = conn.cursor()
+            logger.info(f"Using backend server: {backend_server}")
             
-            cached_analysis = {}
-            for deck_id in deck_ids:
-                try:
-                    cursor.execute(
-                        "SELECT analysis_result_json FROM visual_analysis_cache WHERE pitch_deck_id = %s ORDER BY created_at DESC LIMIT 1",
-                        (deck_id,)
-                    )
-                    result = cursor.fetchone()
-                    
-                    if result:
-                        analysis_data = json.loads(result[0])
-                        cached_analysis[deck_id] = analysis_data
-                        logger.debug(f"Found cached visual analysis for deck {deck_id}")
-                    else:
-                        logger.debug(f"No cached visual analysis found for deck {deck_id}")
-                        
-                except Exception as e:
-                    logger.error(f"Error retrieving cached visual analysis for deck {deck_id}: {e}")
-                    continue
+            # Call the backend endpoint to get cached visual analysis
+            response = requests.post(
+                f"{backend_server}/api/dojo/internal/get-cached-visual-analysis",
+                json={"deck_ids": deck_ids},
+                timeout=30
+            )
             
-            conn.close()
-            logger.info(f"Retrieved cached visual analysis for {len(cached_analysis)}/{len(deck_ids)} decks via direct database query")
-            return cached_analysis
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    cached_analysis = data.get("cached_analysis", {})
+                    # Convert string keys to integers for consistency
+                    cached_analysis_int_keys = {int(k): v for k, v in cached_analysis.items()}
+                    logger.info(f"Retrieved cached visual analysis for {len(cached_analysis)}/{len(deck_ids)} decks via HTTP from backend")
+                    return cached_analysis_int_keys
+                else:
+                    logger.error(f"Backend returned error: {data.get('error', 'Unknown error')}")
+                    return {}
+            else:
+                logger.error(f"HTTP request failed with status {response.status_code}: {response.text}")
+                return {}
             
         except Exception as e:
-            logger.error(f"Error getting cached visual analysis from database: {e}")
+            logger.error(f"Error getting cached visual analysis from backend: {e}")
             return {}
     
     def _cache_visual_analysis_result(self, deck_id: int, visual_results: Dict, vision_model: str, analysis_prompt: str):

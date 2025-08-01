@@ -1018,6 +1018,47 @@ async def clear_visual_analysis_cache(
             detail="Failed to clear visual analysis cache"
         )
 
+@router.post("/extraction-test/clear-all-cache")
+async def clear_all_visual_analysis_cache(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Clear ALL visual analysis cache entries (not just current sample)"""
+    try:
+        # Only GPs can clear cache
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=403,
+                detail="Only GPs can clear visual analysis cache"
+            )
+        
+        # Get count before deletion for reporting
+        count_result = db.execute(text("SELECT COUNT(*) FROM visual_analysis_cache")).fetchone()
+        total_entries = count_result[0] if count_result else 0
+        
+        # Clear ALL cache entries
+        result = db.execute(text("DELETE FROM visual_analysis_cache"))
+        deleted_count = result.rowcount
+        
+        db.commit()
+        
+        logger.info(f"Cleared ALL visual analysis cache: {deleted_count} entries deleted")
+        
+        return {
+            "message": f"Cleared all visual analysis cache entries",
+            "deleted_cache_entries": deleted_count,
+            "total_entries_before": total_entries
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error clearing all visual analysis cache: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to clear all visual analysis cache"
+        )
+
 @router.post("/extraction-test/run-offering-extraction")
 async def test_offering_extraction(
     request: ExtractionTestRequest,
@@ -1679,7 +1720,7 @@ class DeckDateExtractionRequest(BaseModel):
     experiment_id: int
 
 class TemplateProcessingRequest(BaseModel):
-    experiment_id: int
+    deck_ids: List[int]  # Direct deck IDs from current sample
     template_id: Optional[int] = None  # Optional: use default if not specified
     generate_thumbnails: bool = True
 
@@ -2193,7 +2234,7 @@ async def run_template_processing_batch(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Process all decks from an experiment through the template analysis pipeline with thumbnail generation"""
+    """Process decks from current sample through template analysis pipeline with thumbnail generation"""
     try:
         # Only GPs can run template processing
         if current_user.role != "gp":
@@ -2202,32 +2243,14 @@ async def run_template_processing_batch(
                 detail="Only GPs can run template processing"
             )
         
-        # Get the experiment
-        experiment = db.execute(text("""
-            SELECT id, experiment_name, extraction_type, text_model_used, 
-                   extraction_prompt, created_at, results_json, pitch_deck_ids
-            FROM extraction_experiments 
-            WHERE id = :experiment_id
-        """), {"experiment_id": request.experiment_id}).fetchone()
+        # Use deck IDs directly from the request (current sample)
+        deck_ids = request.deck_ids
         
-        if not experiment:
-            raise HTTPException(
-                status_code=404,
-                detail="Experiment not found"
-            )
-        
-        # Parse existing results
-        results_data = json.loads(experiment[6]) if experiment[6] else {}
-        results = results_data.get("results", [])
-        
-        if not results:
+        if not deck_ids:
             raise HTTPException(
                 status_code=400,
-                detail="Experiment has no extraction results to process through template analysis"
+                detail="No deck IDs provided"
             )
-        
-        # Get deck IDs for processing
-        deck_ids = experiment[7]  # pitch_deck_ids
         
         # Validate deck IDs exist and are dojo files
         decks = db.query(PitchDeck).filter(

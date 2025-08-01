@@ -113,109 +113,208 @@ WARNING:  Unsupported upgrade request.
 WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
 INFO:     168.100.174.143:33468 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
 WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     168.100.174.143:33482 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     132.145.134.96:44420 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     132.145.134.96:44434 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     132.145.134.96:44444 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     88.204.136.220:36380 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     88.204.136.220:42524 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     88.204.136.220:42534 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     23.20.61.199:47344 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     23.20.61.199:47360 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     23.20.61.199:56628 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     34.124.115.63:55192 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     34.124.115.63:55206 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     34.124.115.63:55222 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     168.100.174.143:49292 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     168.100.174.143:49294 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     168.100.174.143:49304 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     132.145.134.96:47386 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     132.145.134.96:47396 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     132.145.134.96:48808 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     88.204.136.220:57798 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     88.204.136.220:48514 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     88.204.136.220:48526 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     88.204.136.220:48536 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     23.20.61.199:45840 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     23.20.61.199:45844 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     23.20.61.199:45850 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     34.124.115.63:39040 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     34.124.115.63:39046 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     34.124.115.63:39048 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     168.100.174.143:47586 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     168.100.174.143:46622 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     168.100.174.143:46626 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     132.145.134.96:45596 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
-INFO:     132.145.134.96:45608 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
-WARNING:  Unsupported upgrade request.
-WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+WARNING:  No supported WebSocket library detected. Please use "pipWARNING:  StatReload detected changes in 'app/api/dojo.py'. Reloading...
+INFO:     Started server process [87256]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+ERROR:    Traceback (most recent call last):
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 79, in serve
+    await self.startup(sockets=sockets)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 129, in startup
+    server = await loop.create_server(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 1597, in create_server
+    server._start_serving()
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 317, in _start_serving
+    sock.listen(self._backlog)
+OSError: [Errno 98] Address already in use
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/starlette/routing.py", line 747, in lifespan
+    await receive()
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/lifespan/on.py", line 137, in receive
+    return await self.receive_queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/queues.py", line 158, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+Process SpawnProcess-2:
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/_subprocess.py", line 78, in subprocess_started
+    target(sockets=sockets)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 62, in run
+    return asyncio.run(self.serve(sockets=sockets))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 79, in serve
+    await self.startup(sockets=sockets)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 129, in startup
+    server = await loop.create_server(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 1597, in create_server
+    server._start_serving()
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 317, in _start_serving
+    sock.listen(self._backlog)
+OSError: [Errno 98] Address already in use
+WARNING:  StatReload detected changes in 'app/api/dojo.py'. Reloading...
+INFO:     Started server process [88163]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+ERROR:    Traceback (most recent call last):
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 79, in serve
+    await self.startup(sockets=sockets)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 129, in startup
+    server = await loop.create_server(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 1597, in create_server
+    server._start_serving()
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 317, in _start_serving
+    sock.listen(self._backlog)
+OSError: [Errno 98] Address already in use
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/starlette/routing.py", line 747, in lifespan
+    await receive()
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/lifespan/on.py", line 137, in receive
+    return await self.receive_queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/queues.py", line 158, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+Process SpawnProcess-3:
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/_subprocess.py", line 78, in subprocess_started
+    target(sockets=sockets)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 62, in run
+    return asyncio.run(self.serve(sockets=sockets))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 79, in serve
+    await self.startup(sockets=sockets)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 129, in startup
+    server = await loop.create_server(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 1597, in create_server
+    server._start_serving()
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 317, in _start_serving
+    sock.listen(self._backlog)
+OSError: [Errno 98] Address already in use
+WARNING:  StatReload detected changes in 'app/api/dojo.py'. Reloading...
+INFO:     Started server process [88209]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+ERROR:    Traceback (most recent call last):
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 79, in serve
+    await self.startup(sockets=sockets)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 129, in startup
+    server = await loop.create_server(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 1597, in create_server
+    server._start_serving()
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 317, in _start_serving
+    sock.listen(self._backlog)
+OSError: [Errno 98] Address already in use
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/starlette/routing.py", line 747, in lifespan
+    await receive()
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/lifespan/on.py", line 137, in receive
+    return await self.receive_queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/queues.py", line 158, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+Process SpawnProcess-4:
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/_subprocess.py", line 78, in subprocess_started
+    target(sockets=sockets)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 62, in run
+    return asyncio.run(self.serve(sockets=sockets))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 79, in serve
+    await self.startup(sockets=sockets)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 129, in startup
+    server = await loop.create_server(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 1597, in create_server
+    server._start_serving()
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 317, in _start_serving
+    sock.listen(self._backlog)
+OSError: [Errno 98] Address already in use
+rn[standard]'", or install 'websockets' or 'wsproto' manually.
 INFO:     132.145.134.96:45612 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
 WARNING:  Unsupported upgrade request.
 WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
@@ -307,3 +406,472 @@ INFO:     132.145.134.96:44122 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aG
 WARNING:  Unsupported upgrade request.
 WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
 INFO:     132.145.134.96:44126 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:53750 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:53764 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:53772 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:40422 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:38766 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:38780 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:38874 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:38880 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:38890 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:45730 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:45746 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:54216 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:58244 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:58258 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:39420 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:60106 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:46094 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+INFO:     64.62.197.137:37614 - "GET / HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:46110 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+INFO:     64.62.197.150:8467 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     64.62.197.137:62225 - "GET http%3A//api.ipify.org/?format=json HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:52632 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+INFO:     64.62.197.139:48249 - "CONNECT www.shadowserver.org%3A443 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:52638 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:34116 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:59562 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:59574 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:41906 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:53600 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:53612 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:49558 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:47490 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:47506 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:47518 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:59622 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:59634 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:59420 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:47306 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:47318 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:38802 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:34416 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:34418 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:34432 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:35862 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:35876 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:35886 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:56774 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:56782 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:56796 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:55780 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55796 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55798 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55814 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55820 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55824 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+INFO:     65.108.32.143:33144 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
+INFO:     65.108.32.143:33160 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40984 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40990 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:32912 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:32916 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:32922 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:43710 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:44890 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:44904 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:42178 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:58946 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:35904 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:35910 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:53684 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  StatReload detected changes in 'app/api/dojo.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [84615]
+INFO:     Started server process [87258]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     65.108.32.143:59236 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:59238 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:59250 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:59264 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:59278 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:59294 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:59306 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:59302 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:59312 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:59318 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53688 - "POST /api/dojo/extraction-test/clear-all-cache HTTP/1.1" 200 OK
+INFO:     65.108.32.143:53696 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:50326 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50338 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45432 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45434 - "POST /api/dojo/extraction-test/run-visual-analysis HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45444 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:52214 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:52218 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:52228 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:52244 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:52254 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50084 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50092 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50104 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50118 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50120 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40326 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40330 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40344 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40356 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40362 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38574 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38578 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:49970 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:38590 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:49980 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:38596 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:35420 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:38610 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:48678 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:48694 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:48702 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:48712 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:48728 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:39774 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:39778 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:39782 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:39794 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:39800 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34540 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34548 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34558 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34562 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:34574 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:39908 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:39920 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:39934 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:39940 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50706 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50716 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50718 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50734 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50746 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42504 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:42506 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:42982 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:42522 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:42998 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:42534 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:43000 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:39036 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
+INFO:     65.108.32.143:39050 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:60514 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:60530 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:60534 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:60550 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:57992 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:57998 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:58008 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:34558 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:34566 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:58942 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58966 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58954 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58946 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58980 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:56184 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:56198 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:56228 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:56212 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:56210 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:47886 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:47896 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:38674 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:42120 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:57428 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:57412 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:57448 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:57438 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:57460 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:57462 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:57474 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:57480 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:57482 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:57488 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:42132 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:42144 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:46244 - "POST /api/dojo/extraction-test/clear-all-cache HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46254 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46268 - "POST /api/dojo/extraction-test/run-visual-analysis HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46272 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:59736 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:59742 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:59746 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:59762 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:59766 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54634 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54638 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54644 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54652 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54666 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45624 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45626 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45636 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45652 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45654 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36862 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36874 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36876 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36886 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36890 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46902 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46916 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46920 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46926 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:46934 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60950 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60964 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60976 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60984 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:60986 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58110 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58116 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58124 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58134 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58146 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38738 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38742 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38756 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:38770 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50502 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50504 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49384 - "POST /api/dojo/extraction-test/run-offering-extraction HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49400 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49412 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:43468 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:50946 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:50952 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:46172 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:54846 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:54848 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:52290 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:52304 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:52314 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:39498 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:39514 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:32942 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:50492 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:50504 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  StatReload detected changes in 'app/api/dojo.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [87258]
+INFO:     Started server process [88165]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:50510 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  StatReload detected changes in 'app/api/dojo.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [88165]
+INFO:     Started server process [88210]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     65.108.32.143:36254 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36272 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36278 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36260 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36264 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:38656 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:38664 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:37550 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:47910 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:47922 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
