@@ -923,7 +923,7 @@ class HealthcareTemplateAnalyzer:
             ]
         }
     
-    def analyze_pdf(self, pdf_path: str, company_id: str = None, progress_callback=None, deck_id=None, template_only=False) -> Dict[str, Any]:
+    def analyze_pdf(self, pdf_path: str, company_id: str = None, progress_callback=None, deck_id=None) -> Dict[str, Any]:
         """Main method to analyze a healthcare startup pitch deck"""
         start_time = time.time()
         logger.info(f"Starting healthcare template analysis of PDF: {pdf_path}")
@@ -939,10 +939,6 @@ class HealthcareTemplateAnalyzer:
         logger.info(f"   🎯 Scoring Model (question scoring): {self.scoring_model}")
         
         # Clear state from previous analysis sessions
-        # But preserve template_config if we're in template_only mode
-        preserve_template_config = template_only and self.template_config is not None
-        preserved_config = self.template_config if preserve_template_config else None
-        
         self.visual_analysis_results = []
         self.company_offering = ""
         self.startup_name = None
@@ -953,24 +949,17 @@ class HealthcareTemplateAnalyzer:
         self.chapter_results = {}
         self.question_results = {}
         
-        # Restore template config if we're in template_only mode
-        if preserve_template_config:
-            self.template_config = preserved_config
-            logger.info("Cleared previous analysis state (preserved template config for template_only mode)")
-        else:
-            logger.info("Cleared previous analysis state")
+        logger.info("Cleared previous analysis state")
         
         try:
-            if not template_only:
-                # Step 1: Convert PDF to images and analyze each page (skip if already have results)
-                if not self.visual_analysis_results:
-                    self._analyze_visual_content(pdf_path, company_id)
-                else:
-                    logger.info(f"Using cached visual analysis results ({len(self.visual_analysis_results)} pages)")
+            # Step 1: Convert PDF to images and analyze each page (skip if already have results)
+            if not self.visual_analysis_results:
+                self._analyze_visual_content(pdf_path, company_id)
             else:
-                logger.info("Skipping visual analysis in template_only mode")
+                logger.info(f"Using cached visual analysis results ({len(self.visual_analysis_results)} pages)")
             
-            if not template_only:
+            # Step 2: Generate company offering summary
+            if not self.company_offering:
                 # Step 2: Generate company offering summary
                 self._generate_company_offering()
                 
@@ -992,18 +981,12 @@ class HealthcareTemplateAnalyzer:
                 self.template_config = self._load_template_config(
                     self.classification_result.get("recommended_template")
                 )
-            else:
-                # For template_only mode, template_config should already be set
-                if not self.template_config:
-                    logger.error("No template configuration provided for template_only mode")
-                    raise ValueError("Template configuration must be set before calling analyze_pdf with template_only=True")
             
             # Step 5: Execute template-based analysis
             self._execute_template_analysis()
             
-            if not template_only:
-                # Step 6: Generate specialized analysis
-                self._generate_specialized_analysis()
+            # Step 6: Generate specialized analysis
+            self._generate_specialized_analysis()
             
             processing_time = time.time() - start_time
             logger.info(f"Healthcare template analysis completed in {processing_time:.2f} seconds")

@@ -2319,10 +2319,10 @@ async def run_template_processing_batch(
         # Use GPU pipeline for template processing
         from ..services.gpu_http_client import gpu_http_client
         
-        # Call GPU pipeline for template processing with thumbnail generation
-        gpu_result = await gpu_http_client.run_template_processing_batch(
+        # Call NEW template-only GPU endpoint (no re-analysis, uses cached data)
+        gpu_result = await gpu_http_client.run_template_processing_only(
             deck_ids=deck_ids,
-            template_info=template_info,
+            template_id=request.template_id if request.template_id else (template_info["id"] if template_info else None),
             generate_thumbnails=request.generate_thumbnails
         )
         
@@ -2333,7 +2333,8 @@ async def run_template_processing_batch(
         
         if gpu_result.get("success"):
             logger.info("GPU template processing completed successfully")
-            processing_results = gpu_result.get("processing_results", [])
+            # New endpoint returns results differently
+            processing_results = gpu_result.get("results", [])
             
             for result in processing_results:
                 deck_id = result.get("deck_id")

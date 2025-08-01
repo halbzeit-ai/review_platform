@@ -11,6 +11,7 @@ import ollama
 import os
 import json
 import asyncio
+import requests
 from flask import Flask, request, jsonify
 from datetime import datetime
 from typing import Dict, Any, List
@@ -295,6 +296,152 @@ class GPUHTTPServer:
                 return jsonify({
                     "success": False,
                     "error": f"Error processing PDF: {str(e)}",
+                    "timestamp": datetime.now().isoformat()
+                }), 500
+        
+        @self.app.route('/api/run-template-processing-only', methods=['POST'])
+        def run_template_processing_only():
+            """Run template processing using cached visual analysis and extraction results"""
+            try:
+                data = request.get_json()
+                if not data:
+                    return jsonify({
+                        "success": False,
+                        "error": "No JSON data provided",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                deck_ids = data.get('deck_ids', [])
+                template_id = data.get('template_id')
+                generate_thumbnails = data.get('generate_thumbnails', True)
+                
+                if not deck_ids:
+                    return jsonify({
+                        "success": False,
+                        "error": "deck_ids is required",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                if not template_id:
+                    return jsonify({
+                        "success": False,
+                        "error": "template_id is required",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                logger.info(f"Starting template-only processing for {len(deck_ids)} decks using template {template_id}")
+                
+                # Load template configuration
+                from utils.healthcare_template_analyzer import HealthcareTemplateAnalyzer
+                
+                # Process each deck
+                batch_results = []
+                
+                for deck_id in deck_ids:
+                    try:
+                        # Get cached visual analysis from backend
+                        visual_data_response = requests.post(
+                            f"{self.backend_url}/api/dojo/internal/get-cached-visual-analysis",
+                            json={"deck_ids": [deck_id]},
+                            headers={'Content-Type': 'application/json'}
+                        )
+                        
+                        if visual_data_response.status_code != 200:
+                            logger.error(f"Failed to get cached visual analysis for deck {deck_id}")
+                            continue
+                        
+                        visual_data = visual_data_response.json()
+                        deck_visual_data = visual_data.get('results', {}).get(str(deck_id), {})
+                        
+                        if not deck_visual_data or 'visual_analysis_results' not in deck_visual_data:
+                            logger.error(f"No cached visual analysis found for deck {deck_id}")
+                            continue
+                        
+                        # Get extraction results (offering, name, classification, etc.) from database
+                        extraction_data = self._get_extraction_results_for_deck(deck_id)
+                        
+                        if not extraction_data:
+                            logger.error(f"No extraction results found for deck {deck_id}")
+                            continue
+                        
+                        # Create analyzer and set pre-computed data
+                        analyzer = HealthcareTemplateAnalyzer()
+                        
+                        # Set visual analysis results
+                        analyzer.visual_analysis_results = deck_visual_data['visual_analysis_results']
+                        logger.info(f"Loaded {len(analyzer.visual_analysis_results)} visual analysis results for deck {deck_id}")
+                        
+                        # Set extraction results
+                        analyzer.company_offering = extraction_data.get('company_offering', '')
+                        analyzer.startup_name = extraction_data.get('startup_name', '')
+                        analyzer.funding_amount = extraction_data.get('funding_amount', '')
+                        analyzer.deck_date = extraction_data.get('deck_date', '')
+                        analyzer.classification_result = extraction_data.get('classification', {})
+                        
+                        # Load template configuration
+                        template_config = self._load_template_from_db(template_id)
+                        if template_config:
+                            analyzer.template_config = template_config
+                            logger.info(f"Loaded template '{template_config.get('name', 'Unknown')}' for deck {deck_id}")
+                        else:
+                            logger.error(f"Failed to load template {template_id}")
+                            continue
+                        
+                        # Set progress callback
+                        def progress_callback(chapter_name: str, deck_id: int):
+                            # Call backend to update progress
+                            requests.post(
+                                f"{self.backend_url}/api/dojo/template-progress-callback",
+                                json={
+                                    "chapter_name": chapter_name,
+                                    "deck_id": deck_id
+                                }
+                            )
+                        
+                        # Store progress callback and deck_id for chapter processing
+                        analyzer._progress_callback = progress_callback
+                        analyzer._current_deck_id = deck_id
+                        
+                        # Execute ONLY template analysis (no visual analysis, no extractions)
+                        analyzer._execute_template_analysis()
+                        
+                        # Format results
+                        template_analysis = self._format_template_analysis({
+                            "template_results": analyzer.chapter_results
+                        })
+                        
+                        batch_results.append({
+                            "deck_id": deck_id,
+                            "success": True,
+                            "template_analysis": template_analysis
+                        })
+                        
+                        logger.info(f"Completed template processing for deck {deck_id}")
+                        
+                    except Exception as e:
+                        logger.error(f"Error processing deck {deck_id}: {e}")
+                        import traceback
+                        logger.error(traceback.format_exc())
+                        batch_results.append({
+                            "deck_id": deck_id,
+                            "success": False,
+                            "error": str(e)
+                        })
+                
+                return jsonify({
+                    "success": True,
+                    "message": f"Template processing completed for {len(batch_results)} decks",
+                    "results": batch_results,
+                    "timestamp": datetime.now().isoformat()
+                })
+                
+            except Exception as e:
+                logger.error(f"Error in template processing: {e}")
+                import traceback
+                logger.error(traceback.format_exc())
+                return jsonify({
+                    "success": False,
+                    "error": str(e),
                     "timestamp": datetime.now().isoformat()
                 }), 500
         
@@ -769,16 +916,11 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                                     raise
                                 
                                 # Run the analysis with progress callback 
-                                # Use template_only=False when visual analysis results are available from cache
-                                has_visual_analysis = hasattr(analyzer, 'visual_analysis_results') and len(analyzer.visual_analysis_results) > 0
-                                logger.info(f"Running template analysis with visual_analysis_available={has_visual_analysis}")
-                                
                                 analysis_results = analyzer.analyze_pdf(
                                     full_pdf_path, 
                                     company_id="dojo",
                                     progress_callback=progress_callback,
-                                    deck_id=deck_id,
-                                    template_only=not has_visual_analysis  # Only skip visual analysis if we don't have cached results
+                                    deck_id=deck_id
                                 )
                                 
                                 # Extract the formatted template analysis
@@ -942,6 +1084,44 @@ Please provide a comprehensive analysis focusing on the requested areas."""
         except Exception as e:
             logger.error(f"Error getting cached visual analysis from backend: {e}")
             return {}
+    
+    def _get_extraction_results_for_deck(self, deck_id: int) -> Dict[str, Any]:
+        """Get extraction results from extraction experiments for a deck"""
+        try:
+            # Query the database for extraction results
+            results = self.db.execute(text("""
+                SELECT 
+                    ee.id,
+                    ee.experiment_name,
+                    eed.company_offering,
+                    eed.classification,
+                    eed.startup_name,
+                    eed.funding_amount,
+                    eed.deck_date
+                FROM extraction_experiment_decks eed
+                JOIN extraction_experiments ee ON eed.experiment_id = ee.id
+                WHERE eed.pitch_deck_id = :deck_id
+                ORDER BY ee.created_at DESC
+                LIMIT 1
+            """), {"deck_id": deck_id}).fetchone()
+            
+            if results:
+                return {
+                    "experiment_id": results[0],
+                    "experiment_name": results[1],
+                    "company_offering": results[2] or "",
+                    "classification": json.loads(results[3]) if results[3] else {},
+                    "startup_name": results[4] or "",
+                    "funding_amount": results[5] or "",
+                    "deck_date": results[6] or ""
+                }
+            
+            logger.warning(f"No extraction results found for deck {deck_id}")
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error getting extraction results for deck {deck_id}: {e}")
+            return None
     
     def _cache_visual_analysis_result(self, deck_id: int, visual_results: Dict, vision_model: str, analysis_prompt: str):
         """Cache visual analysis result immediately to backend"""

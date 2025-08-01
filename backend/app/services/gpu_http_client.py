@@ -675,6 +675,62 @@ class GPUHTTPClient:
                 "error": str(e)
             }
     
+    async def run_template_processing_only(self, deck_ids: List[int], template_id: int, generate_thumbnails: bool = True) -> Dict[str, Any]:
+        """
+        Run template processing using cached visual analysis and extraction results
+        
+        Args:
+            deck_ids: List of pitch deck IDs to process
+            template_id: Template ID to use for processing
+            generate_thumbnails: Whether to generate thumbnails
+            
+        Returns:
+            Template processing results
+        """
+        try:
+            if not self.gpu_host:
+                logger.error("GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)")
+                return {
+                    "success": False,
+                    "error": "GPU host not configured"
+                }
+            
+            logger.info(f"Requesting template-only processing for {len(deck_ids)} decks using template {template_id}")
+            
+            payload = {
+                "deck_ids": deck_ids,
+                "template_id": template_id,
+                "generate_thumbnails": generate_thumbnails
+            }
+            
+            async with httpx.AsyncClient(timeout=1800.0) as client:  # 30 minutes timeout
+                response = await client.post(
+                    f"{self.base_url}/run-template-processing-only",
+                    json=payload,
+                    headers={'Content-Type': 'application/json'}
+                )
+            
+            if response.status_code == 200:
+                data = response.json()
+                logger.info(f"Template processing completed: {data.get('message')}")
+                return data
+            else:
+                error_msg = f"GPU template processing failed with status {response.status_code}: {response.text}"
+                logger.error(error_msg)
+                return {
+                    "success": False,
+                    "error": error_msg,
+                    "results": []
+                }
+                
+        except Exception as e:
+            logger.error(f"Error in template processing: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "results": []
+            }
+    
     async def run_visual_analysis_single_deck(self, deck_id: int, vision_model: str, analysis_prompt: str, file_path: str) -> Dict[str, Any]:
         """
         Run visual analysis for a single deck with real-time progress
