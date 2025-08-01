@@ -259,3 +259,25 @@ INFO:     34.124.115.63:59418 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNY
 WARNING:  Unsupported upgrade request.
 WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
 INFO:     34.124.115.63:59426 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:43692 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43696 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43698 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43724 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43704 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43718 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43730 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43732 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43742 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43750 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:43766 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:43770 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:37146 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
+INFO:     135.181.71.17:51382 - "POST /api/dojo/internal/get-cached-visual-analysis HTTP/1.1" 200 OK
+INFO:     65.108.32.143:37150 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
+INFO:     65.108.32.143:37164 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+INFO:     135.181.71.17:56248 - "POST /api/dojo/internal/get-cached-visual-analysis HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35090 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35102 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+INFO:     135.181.71.17:56252 - "POST /api/dojo/internal/get-cached-visual-analysis HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35112 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35126 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK

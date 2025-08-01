@@ -365,8 +365,8 @@ class GPUHTTPServer:
                         extraction_data = self._get_extraction_results_for_deck(deck_id)
                         
                         if not extraction_data:
-                            logger.error(f"No extraction results found for deck {deck_id}")
-                            continue
+                            logger.warning(f"No extraction results found for deck {deck_id} - proceeding with visual analysis only")
+                            extraction_data = {}  # Empty dict to avoid errors
                         
                         # Create analyzer and set pre-computed data
                         analyzer = HealthcareTemplateAnalyzer()
