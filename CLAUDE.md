@@ -206,6 +206,76 @@ analysis_templates (Template metadata)
 3. **Frontend**: `updateTemplateComplete()` in `services/api.js`
 4. **Atomic Operations**: Delete all existing chapters/questions, then insert new ones
 
+## Dojo Extraction Testing Data Structure
+
+### How Step 2 and Step 3 Cache Results
+
+#### Step 2: Visual Analysis Cache
+Visual analysis results are stored in the `visual_analysis_cache` table:
+```sql
+CREATE TABLE visual_analysis_cache (
+    id SERIAL PRIMARY KEY,
+    pitch_deck_id INTEGER NOT NULL REFERENCES pitch_decks(id),
+    analysis_result_json TEXT NOT NULL,  -- Contains visual_analysis_results array
+    vision_model_used VARCHAR(255) NOT NULL,
+    prompt_used TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(pitch_deck_id, vision_model_used, prompt_used)
+);
+```
+
+#### Step 3: Extraction Results Storage
+Step 3 stores ALL extraction results in a single `extraction_experiments` table with multiple JSON columns:
+```sql
+CREATE TABLE extraction_experiments (
+    id SERIAL PRIMARY KEY,
+    experiment_name VARCHAR(255) NOT NULL,
+    pitch_deck_ids INTEGER[] NOT NULL,  -- Array of deck IDs in the experiment
+    
+    -- Step 3.1: Company Offering
+    results_json TEXT NOT NULL,  -- Contains offering extraction results
+    
+    -- Step 3.2: Classification
+    classification_results_json TEXT,
+    
+    -- Step 3.3: Company Name
+    company_name_results_json TEXT,
+    
+    -- Step 3.4: Funding Amount
+    funding_amount_results_json TEXT,
+    
+    -- Step 3.5: Deck Date
+    deck_date_results_json TEXT,
+    
+    -- Step 4: Template Processing
+    template_processing_results_json TEXT,
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Important**: There is NO `extraction_experiment_decks` table. All results are stored as JSON in the `extraction_experiments` table.
+
+### Accessing Cached Data in Step 4
+
+To retrieve extraction results for a specific deck:
+```sql
+SELECT * FROM extraction_experiments 
+WHERE :deck_id = ANY(pitch_deck_ids)
+ORDER BY created_at DESC
+LIMIT 1;
+```
+
+Then parse each JSON column to extract data for the specific deck_id.
+
+### Data Flow Between Steps
+
+1. **Step 2** → Saves to `visual_analysis_cache`
+2. **Step 3** → Saves all 5 extractions to `extraction_experiments` JSON columns
+3. **Step 4** → Reads from both tables to get complete deck data
+
+**Critical**: If you skip Step 3, Step 4 will have no company offering, name, classification, funding amount, or deck date - leading to poor template analysis quality.
+
 ## Debugging Best Practices
 
 ### Database Schema Investigation

@@ -1089,32 +1089,80 @@ Please provide a comprehensive analysis focusing on the requested areas."""
         """Get extraction results from extraction experiments for a deck"""
         try:
             # Query the database for extraction results
+            # Step 3 stores results in JSON columns in extraction_experiments table
             results = self.db.execute(text("""
                 SELECT 
                     ee.id,
                     ee.experiment_name,
-                    eed.company_offering,
-                    eed.classification,
-                    eed.startup_name,
-                    eed.funding_amount,
-                    eed.deck_date
-                FROM extraction_experiment_decks eed
-                JOIN extraction_experiments ee ON eed.experiment_id = ee.id
-                WHERE eed.pitch_deck_id = :deck_id
+                    ee.results_json,
+                    ee.classification_results_json,
+                    ee.company_name_results_json,
+                    ee.funding_amount_results_json,
+                    ee.deck_date_results_json
+                FROM extraction_experiments ee
+                WHERE :deck_id = ANY(ee.pitch_deck_ids)
                 ORDER BY ee.created_at DESC
                 LIMIT 1
             """), {"deck_id": deck_id}).fetchone()
             
             if results:
-                return {
+                # Parse the JSON results from Step 3's various extraction steps
+                extraction_data = {
                     "experiment_id": results[0],
                     "experiment_name": results[1],
-                    "company_offering": results[2] or "",
-                    "classification": json.loads(results[3]) if results[3] else {},
-                    "startup_name": results[4] or "",
-                    "funding_amount": results[5] or "",
-                    "deck_date": results[6] or ""
+                    "company_offering": "",
+                    "classification": {},
+                    "startup_name": "",
+                    "funding_amount": "",
+                    "deck_date": ""
                 }
+                
+                # Extract company offering from results_json (Step 3.1)
+                if results[2]:
+                    offering_results = json.loads(results[2])
+                    if 'results' in offering_results:
+                        for deck_result in offering_results['results']:
+                            if deck_result.get('deck_id') == deck_id:
+                                extraction_data["company_offering"] = deck_result.get('company_offering', '')
+                                break
+                
+                # Extract classification from classification_results_json (Step 3.2)
+                if results[3]:
+                    classification_results = json.loads(results[3])
+                    if isinstance(classification_results, list):
+                        for deck_result in classification_results:
+                            if deck_result.get('deck_id') == deck_id:
+                                extraction_data["classification"] = deck_result.get('classification', {})
+                                break
+                
+                # Extract startup name from company_name_results_json (Step 3.3)
+                if results[4]:
+                    name_results = json.loads(results[4])
+                    if isinstance(name_results, list):
+                        for deck_result in name_results:
+                            if deck_result.get('deck_id') == deck_id:
+                                extraction_data["startup_name"] = deck_result.get('startup_name', '')
+                                break
+                
+                # Extract funding amount from funding_amount_results_json (Step 3.4)
+                if results[5]:
+                    funding_results = json.loads(results[5])
+                    if isinstance(funding_results, list):
+                        for deck_result in funding_results:
+                            if deck_result.get('deck_id') == deck_id:
+                                extraction_data["funding_amount"] = deck_result.get('funding_amount', '')
+                                break
+                
+                # Extract deck date from deck_date_results_json (Step 3.5)
+                if results[6]:
+                    date_results = json.loads(results[6])
+                    if isinstance(date_results, list):
+                        for deck_result in date_results:
+                            if deck_result.get('deck_id') == deck_id:
+                                extraction_data["deck_date"] = deck_result.get('deck_date', '')
+                                break
+                
+                return extraction_data
             
             logger.warning(f"No extraction results found for deck {deck_id}")
             return None
