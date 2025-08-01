@@ -45,9 +45,9 @@ progress_tracker = {
 }
 
 # Dojo configuration
-# Use environment-aware path
-import os as _os
-DOJO_PATH = _os.getenv("DOJO_PATH", "/mnt/dev-shared/dojo")  # Development: /mnt/dev-shared/dojo, Production: /mnt/CPU-GPU/dojo
+# Use environment-aware path from settings
+from ..core.config import settings
+DOJO_PATH = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "dojo")
 MAX_ZIP_SIZE = 1024 * 1024 * 1024  # 1GB
 ALLOWED_EXTENSIONS = {'.pdf'}
 
@@ -341,7 +341,7 @@ async def delete_dojo_file(
         
         # Delete physical file
         if dojo_file.file_path:
-            full_path = os.path.join("/mnt/dev-shared", dojo_file.file_path)
+            full_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, dojo_file.file_path)
             if os.path.exists(full_path):
                 os.remove(full_path)
         
@@ -418,7 +418,7 @@ async def delete_all_dojo_files(
         # FIRST: Delete ALL actual files in dojo directory (regardless of DB paths)
         try:
             import glob
-            dojo_filesystem_files = glob.glob("/mnt/dev-shared/dojo/*.pdf")
+            dojo_filesystem_files = glob.glob(os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "dojo", "*.pdf"))
             filesystem_deleted = 0
             for file_path in dojo_filesystem_files:
                 try:
@@ -439,7 +439,7 @@ async def delete_all_dojo_files(
                 
                 # 1. Delete original PDF file
                 if dojo_file.file_path:
-                    full_path = os.path.join("/mnt/dev-shared", dojo_file.file_path)
+                    full_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, dojo_file.file_path)
                     if os.path.exists(full_path):
                         os.remove(full_path)
                         logger.info(f"Deleted PDF: {full_path}")
@@ -447,7 +447,7 @@ async def delete_all_dojo_files(
                         logger.warning(f"PDF not found: {full_path}")
                 
                 # 2. Delete slide images from analysis directories
-                analysis_base = "/mnt/dev-shared/projects"
+                analysis_base = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects")
                 possible_image_dirs = [
                     os.path.join(analysis_base, "dojo", "analysis", deck_name),
                     os.path.join(analysis_base, "dojo", "analysis", deck_name.replace(' ', '_')),
@@ -474,7 +474,7 @@ async def delete_all_dojo_files(
                             logger.warning(f"Failed to delete image directory {image_dir}: {e}")
                 
                 # 3. Delete analysis results files
-                results_dir = "/mnt/dev-shared/results"
+                results_dir = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "results")
                 if os.path.exists(results_dir):
                     try:
                         # Look for job_<deck_id>_* files
