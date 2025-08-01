@@ -36,3 +36,281 @@ INFO:     34.124.115.63:49916 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNY
 WARNING:  Unsupported upgrade request.
 WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
 INFO:     34.124.115.63:49928 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:50146 - "POST /api/dojo/extraction-test/clear-all-cache HTTP/1.1" 200 OK
+INFO:     65.108.32.143:50160 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35888 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35898 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35902 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35924 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35918 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35938 - "GET /api/dojo/files HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35944 - "GET /api/dojo/stats HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35954 - "GET /api/config/models HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35956 - "GET /api/healthcare-templates/templates HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35964 - "GET /api/dojo/extraction-test/cached-count HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35972 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:35984 - "POST /api/dojo/extraction-test/sample HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36000 - "POST /api/dojo/extraction-test/run-visual-analysis HTTP/1.1" 200 OK
+INFO:     65.108.32.143:44248 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:44254 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:44260 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:44270 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:44278 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35558 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35566 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35576 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35578 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35590 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55530 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55542 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55546 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55562 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55578 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49162 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49174 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49184 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:49188 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36824 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36836 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36840 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36850 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36852 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45678 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45680 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45694 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45696 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:45710 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35672 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35686 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35690 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35700 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:35710 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:48360 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:48370 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:48382 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:48386 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:48400 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55690 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55700 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55706 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55720 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:58234 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:55730 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:58242 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:54492 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:58252 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:54504 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54510 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:54514 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55560 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55564 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55566 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55576 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:55586 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58418 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58420 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58422 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58428 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:58442 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40232 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40242 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+Error running template processing: 'TemplateProcessingRequest' object has no attribute 'experiment_id'
+INFO:     65.108.32.143:40248 - "POST /api/dojo/extraction-test/run-template-processing HTTP/1.1" 500 Internal Server Error
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:36494 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:36510 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:37542 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+INFO:     65.108.32.143:40646 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40636 - "POST /api/dojo/extraction-test/run-offering-extraction HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40650 - "POST /api/dojo/extraction-test/run-classification HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40664 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40652 - "POST /api/dojo/extraction-test/run-company-name-extraction HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40680 - "POST /api/dojo/extraction-test/run-funding-amount-extraction HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40700 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40692 - "POST /api/dojo/extraction-test/run-deck-date-extraction HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40710 - "GET /api/dojo/extraction-test/progress HTTP/1.1" 200 OK
+INFO:     65.108.32.143:40724 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36730 - "GET /api/dojo/extraction-test/experiments HTTP/1.1" 200 OK
+INFO:     65.108.32.143:36742 - "GET /api/dojo/extraction-test/experiments/15 HTTP/1.1" 200 OK
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:53342 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:53348 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:53354 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:48308 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  StatReload detected changes in 'app/api/dojo.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [89445]
+INFO:     Started server process [89850]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:35466 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:35482 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:49804 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  StatReload detected changes in 'app/api/dojo.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [89850]
+INFO:     Started server process [89895]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                WARNING:  StatReload detected changes in 'app/api/dojo.py'. Reloading...
+INFO:     Started server process [89848]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+ERROR:    Traceback (most recent call last):
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 79, in serve
+    await self.startup(sockets=sockets)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 129, in startup
+    server = await loop.create_server(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 1597, in create_server
+    server._start_serving()
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 317, in _start_serving
+    sock.listen(self._backlog)
+OSError: [Errno 98] Address already in use
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/starlette/routing.py", line 747, in lifespan
+    await receive()
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/lifespan/on.py", line 137, in receive
+    return await self.receive_queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/queues.py", line 158, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+Process SpawnProcess-5:
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/_subprocess.py", line 78, in subprocess_started
+    target(sockets=sockets)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 62, in run
+    return asyncio.run(self.serve(sockets=sockets))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 79, in serve
+    await self.startup(sockets=sockets)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 129, in startup
+    server = await loop.create_server(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 1597, in create_server
+    server._start_serving()
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 317, in _start_serving
+    sock.listen(self._backlog)
+OSError: [Errno 98] Address already in use
+WARNING:  StatReload detected changes in 'app/api/dojo.py'. Reloading...
+INFO:     Started server process [89894]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+ERROR:    Traceback (most recent call last):
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 79, in serve
+    await self.startup(sockets=sockets)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 129, in startup
+    server = await loop.create_server(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 1597, in create_server
+    server._start_serving()
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 317, in _start_serving
+    sock.listen(self._backlog)
+OSError: [Errno 98] Address already in use
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/starlette/routing.py", line 747, in lifespan
+    await receive()
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/lifespan/on.py", line 137, in receive
+    return await self.receive_queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/queues.py", line 158, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+Process SpawnProcess-6:
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/_subprocess.py", line 78, in subprocess_started
+    target(sockets=sockets)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 62, in run
+    return asyncio.run(self.serve(sockets=sockets))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 79, in serve
+    await self.startup(sockets=sockets)
+  File "/opt/review-platform-dev/venv/lib/python3.12/site-packages/uvicorn/server.py", line 129, in startup
+    server = await loop.create_server(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 1597, in create_server
+    server._start_serving()
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 317, in _start_serving
+    sock.listen(self._backlog)
+OSError: [Errno 98] Address already in use

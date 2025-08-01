@@ -2404,29 +2404,15 @@ async def run_template_processing_batch(
             "processed_at": datetime.utcnow().isoformat()
         }
         
-        # Update experiment with template processing results
-        db.execute(text("""
-            UPDATE extraction_experiments 
-            SET template_processing_results_json = :template_processing_results,
-                template_processing_completed_at = CURRENT_TIMESTAMP
-            WHERE id = :experiment_id
-        """), {
-            "experiment_id": request.experiment_id,
-            "template_processing_results": json.dumps(template_processing_data)
-        })
+        logger.info(f"Template processing completed for current sample: {successful_processing}/{len(template_processing_results)} successful template analyses, {thumbnail_generation_success}/{len(template_processing_results)} successful thumbnail generations")
         
-        db.commit()
-        
-        logger.info(f"Template processing completed for experiment {request.experiment_id}: {successful_processing}/{len(template_processing_results)} successful template analyses, {thumbnail_generation_success}/{len(template_processing_results)} successful thumbnail generations")
-        
-        # Mark decks as having dojo experiment results for "Show Results" functionality
-        # We'll extend the results endpoint to handle dojo database results instead of files
+        # Mark decks as having template processing results for "Show Results" functionality
         for result in template_processing_results:
             deck_id = result["deck_id"]
             
-            # Update the pitch_deck to indicate it has dojo experiment results
-            # Use a special marker in results_file_path to indicate database-stored results
-            dojo_results_marker = f"dojo_experiment:{request.experiment_id}"
+            # Update the pitch_deck to indicate it has template processing results
+            # Use a special marker in results_file_path to indicate template-processed results
+            template_results_marker = f"template_processed"
             
             try:
                 # First check if this is a project_document or pitch_deck
@@ -2482,9 +2468,9 @@ async def run_template_processing_batch(
         
         return {
             "message": "Template processing completed successfully",
-            "experiment_id": request.experiment_id,
             "template_processing_results": template_processing_results,
-            "statistics": statistics
+            "statistics": statistics,
+            "processed_decks": len(deck_ids)
         }
         
     except HTTPException:
