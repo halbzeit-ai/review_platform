@@ -1,8 +1,10 @@
 
 import axios from 'axios';
+import { API_CONFIG } from '../config/environment';
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || '/api',
+  baseURL: API_CONFIG.BASE_URL,
+  timeout: API_CONFIG.TIMEOUT,
 });
 
 // Add auth token to requests
@@ -13,6 +15,25 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Add response interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (API_CONFIG.IS_DEVELOPMENT) {
+      console.error('API Error:', error.response?.status, error.response?.data || error.message);
+    }
+    
+    // Handle common production errors
+    if (error.response?.status === 401) {
+      // Token expired or invalid
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 export const login = (email, password) => 
   api.post('/auth/login', { email, password });
