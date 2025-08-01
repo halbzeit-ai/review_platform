@@ -74,18 +74,30 @@ if [ "$ENVIRONMENT" = "production" ]; then
     
     echo -e "${GREEN}✅ New build successful!${NC}"
     
-    # Atomic deployment (fast switch)
-    echo -e "${YELLOW}🔄 Performing atomic deployment...${NC}"
+    # Nginx-compatible atomic deployment
+    echo -e "${YELLOW}🔄 Performing nginx-compatible atomic deployment...${NC}"
+    
+    # For nginx, we use symlinks for true atomic switching
+    ACTIVE_LINK="build"
     
     # Backup current version (if exists)
-    if [ -d "$CURRENT_BUILD" ]; then
-        echo -e "${YELLOW}💾 Backing up current version...${NC}"
+    if [ -d "$CURRENT_BUILD" ] && [ ! -L "$CURRENT_BUILD" ]; then
+        echo -e "${YELLOW}💾 Converting to symlink-based deployment...${NC}"
         rm -rf $BACKUP_BUILD 2>/dev/null || true
         mv $CURRENT_BUILD $BACKUP_BUILD
+        ln -sfn $BACKUP_BUILD $ACTIVE_LINK
+    elif [ -L "$CURRENT_BUILD" ]; then
+        echo -e "${YELLOW}💾 Backing up current symlink target...${NC}"
+        CURRENT_TARGET=$(readlink $CURRENT_BUILD)
+        if [ -d "$CURRENT_TARGET" ]; then
+            rm -rf $BACKUP_BUILD 2>/dev/null || true
+            mv $CURRENT_TARGET $BACKUP_BUILD
+        fi
     fi
     
-    # Atomic switch: rename new build to current (milliseconds downtime)
-    mv $BUILD_DIR $CURRENT_BUILD
+    # True atomic switch: update symlink (no downtime for nginx)
+    echo -e "${GREEN}⚡ Atomic symlink switch...${NC}"
+    ln -sfn $BUILD_DIR $ACTIVE_LINK
     
     echo -e "${GREEN}⚡ Atomic switch complete! New version is live.${NC}"
     echo -e "${GREEN}📁 Active build: ${WORK_DIR}/${CURRENT_BUILD}/${NC}"
@@ -102,9 +114,9 @@ if [ "$ENVIRONMENT" = "production" ]; then
         echo -e "${RED}⚠️  Health check warning - index.html not found${NC}"
     fi
     
-    # Show rollback instructions
+    # Show rollback instructions (updated for symlinks)
     echo -e "${YELLOW}🔄 To rollback if needed:${NC}"
-    echo -e "${YELLOW}   mv ${CURRENT_BUILD} build_failed && mv ${BACKUP_BUILD} ${CURRENT_BUILD}${NC}"
+    echo -e "${YELLOW}   ln -sfn ${BACKUP_BUILD} ${ACTIVE_LINK}${NC}"
     
     # Show deployment summary
     echo -e "${GREEN}📊 Deployment Summary:${NC}"
