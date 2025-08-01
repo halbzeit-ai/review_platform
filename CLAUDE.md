@@ -147,12 +147,59 @@ Key principles:
 4. Review data linked in SQLite database
 5. Email notifications sent to relevant parties (planned)
 
-## development setup
-- we have a local development machine running nixos
-- in the cloud at datacrunch.io, we have a production server CPU and a GPU instance for running LLMs
-- the GPU and the CPU communicate via http
-- git: claude should always add and commit, human should always push 
-- the GPU and the CPU have access to the git repo, i.e. usually no copying between these two is necessary.
+## Development Setup
+- Local development machine running NixOS
+- Cloud infrastructure at Datacrunch.io:
+  - **Production CPU server**: 65.108.32.168 (nginx, systemd services)
+  - **GPU instance**: 135.181.63.133 (AI processing)
+- GPU and CPU communicate via HTTP
+- Git workflow: Claude commits, human pushes
+- Both servers have git repo access (no file copying needed)
+
+## Production Infrastructure
+
+### Web Server: Nginx + Systemd Services
+Production uses **nginx** to serve frontend static files and **systemd** for service management:
+
+**Key Production Services:**
+```bash
+# Backend API service
+sudo systemctl status review-platform.service
+sudo systemctl restart review-platform.service
+sudo journalctl -f -u review-platform.service
+
+# GPU processing service  
+sudo systemctl status gpu-http-server.service
+sudo systemctl restart gpu-http-server.service
+sudo journalctl -f -u gpu-http-server.service
+```
+
+**Critical: Systemd Environment Configuration**
+Systemd services require explicit `EnvironmentFile=` directive to load `.env` files:
+```ini
+[Service]
+EnvironmentFile=/opt/review-platform/backend/.env
+```
+Without this, services use default/cached environment variables!
+
+### Frontend Deployment: Zero-Downtime with Nginx
+Production frontend uses nginx-compatible atomic deployment via symlinks:
+
+```bash
+# Zero-downtime deployment script
+/opt/review-platform/scripts/build-frontend.sh production
+
+# Process:
+# 1. Build new version in timestamped directory (current stays online)
+# 2. Atomic symlink switch: ln -sfn build_new build (no 500 errors)
+# 3. Nginx serves from symlink target with zero downtime
+# 4. Automatic backup and rollback capability
+```
+
+**Rollback if needed:**
+```bash
+ln -sfn build_backup build
+```
 
 ## Environment Configuration
 
@@ -325,6 +372,68 @@ The GPU server uses three distinct patterns for accessing backend data:
 HTTP 403 Forbidden on /api/some-endpoint
 ```
 **Solution**: Check if endpoint requires `current_user` parameter, use direct DB or internal endpoint instead.
+
+## Production Deployment Lessons (CRITICAL for Claude)
+
+### Database Schema Management
+**Problem**: Code vs Database Drift - SQLAlchemy models had only 13 tables but database had 29 tables.
+
+**Root Cause**: Many tables were created by manual SQL scripts without corresponding SQLAlchemy models.
+
+**Solution**: All tables now have proper SQLAlchemy models in `backend/app/db/models.py`
+
+**Prevention**:
+```bash
+# Always verify schema before deployment
+python scripts/test_complete_schema.py
+
+# Expected output: "✅ ALL EXPECTED TABLES WOULD BE CREATED"
+# If fails, run: python scripts/generate_missing_models.py
+```
+
+**Production Schema Creation**:
+```bash
+# Complete database recreation (preserves users)
+python scripts/create_production_schema_final.py
+sudo -u postgres psql -d review-platform -f scripts/pipeline_prompts_production.sql
+```
+
+### Environment-Aware Frontend Configuration
+**Problem**: Manual proxy configuration changes needed for each deployment.
+
+**Solution**: Automatic environment detection in `frontend/src/config/environment.js`
+- **Development**: Uses external IPs (65.108.32.143:8000/api)
+- **Production**: Uses relative URLs (/api)
+- **No more manual package.json proxy changes needed**
+
+### Common Production Deployment Issues
+
+1. **Systemd services ignore .env files** - Always add `EnvironmentFile=` directive
+2. **Nginx needs symlink deployment** - Direct directory replacement causes 500 errors  
+3. **Frontend environment detection** - Check browser console for environment confirmation
+4. **Database connection pooling** - Restart services after environment changes
+5. **Filesystem paths** - Verify `SHARED_FILESYSTEM_MOUNT_PATH` in systemd logs
+
+### Production Deployment Checklist
+```bash
+# 1. Pull latest code
+git pull origin main
+
+# 2. Update database schema (if needed)
+python scripts/create_production_schema_final.py
+
+# 3. Deploy frontend with zero downtime
+scripts/build-frontend.sh production
+
+# 4. Restart services with new environment
+sudo systemctl daemon-reload
+sudo systemctl restart review-platform.service
+sudo systemctl restart gpu-http-server.service
+
+# 5. Verify deployment
+curl http://localhost:8000/api/health
+# Check browser console for correct environment detection
+```
 
 ## Debugging Best Practices
 
