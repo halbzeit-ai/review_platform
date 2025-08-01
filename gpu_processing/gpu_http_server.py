@@ -382,13 +382,17 @@ class GPUHTTPServer:
                         analyzer.deck_date = extraction_data.get('deck_date', '')
                         analyzer.classification_result = extraction_data.get('classification', {})
                         
-                        # Load template configuration
-                        template_config = self._load_template_from_db(template_id)
-                        if template_config:
-                            analyzer.template_config = template_config
-                            logger.info(f"Loaded template '{template_config.get('name', 'Unknown')}' for deck {deck_id}")
-                        else:
-                            logger.error(f"Failed to load template {template_id}")
+                        # Load template configuration using analyzer's database connection (like the old method)
+                        try:
+                            analyzer.template_config = analyzer._load_template_config(template_id)
+                            if analyzer.template_config:
+                                template_name = analyzer.template_config.get('template', {}).get('name', 'Unknown')
+                                logger.info(f"Loaded template '{template_name}' for deck {deck_id}")
+                            else:
+                                logger.error(f"Failed to load template {template_id}")
+                                continue
+                        except Exception as e:
+                            logger.error(f"Error loading template {template_id}: {e}")
                             continue
                         
                         # Set progress callback
@@ -1111,7 +1115,7 @@ Please provide a comprehensive analysis focusing on the requested areas."""
             
             # Call backend to get template configuration
             response = requests.get(
-                f"{self.backend_url}/api/healthcare-templates/templates/{template_id}/complete",
+                f"{self.backend_url}/api/healthcare-templates/templates/{template_id}",
                 timeout=30
             )
             
