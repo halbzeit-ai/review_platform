@@ -20,12 +20,27 @@ from pathlib import Path
 from main import PDFProcessor
 from config.processing_config import config
 
-# Configure logging
+# Configure logging to write to shared filesystem
+import os
+shared_filesystem_path = os.getenv('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/CPU-GPU')
+log_file_path = os.path.join(shared_filesystem_path, 'logs', 'gpu_processing.log')
+
+# Ensure logs directory exists
+os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
+
+# Configure logging with both file and console output
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file_path),
+        logging.StreamHandler()  # Keep console output too
+    ]
 )
 logger = logging.getLogger(__name__)
+
+# Log the file location for debugging
+logger.info(f"GPU processing logs will be written to: {log_file_path}")
 
 app = Flask(__name__)
 
