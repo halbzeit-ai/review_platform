@@ -3683,3 +3683,218 @@ src/pages/VerifyEmail.js
   Line 60:19:  'response' is assigned a value but never used                                                                                  no-unused-vars
 
 webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+[eslint] 
+src/components/LanguageSwitcher.js
+  Line 57:11:  'currentLanguage' is assigned a value but never used  no-unused-vars
+
+src/components/ProjectResults.js
+  Line 45:6:  React Hook useEffect has a missing dependency: 'fetchResults'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/components/ProjectUploads.js
+  Line 9:3:    'Chip' is defined but never used                                                                                no-unused-vars
+  Line 10:3:   'Divider' is defined but never used                                                                             no-unused-vars
+  Line 20:3:   'ListItemSecondaryAction' is defined but never used                                                             no-unused-vars
+  Line 26:17:  'VisibilityIcon' is defined but never used                                                                      no-unused-vars
+  Line 34:11:  't' is assigned a value but never used                                                                          no-unused-vars
+  Line 52:6:   React Hook useEffect has a missing dependency: 'loadUploads'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/ConfigPage.js
+  Line 38:3:   'Memory' is defined but never used                    no-unused-vars
+  Line 64:10:  'availableModels' is assigned a value but never used  no-unused-vars
+
+src/pages/DeckViewer.js
+  Line 59:6:  React Hook useEffect has a missing dependency: 'loadDeckAnalysis'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/DojoManagement.js
+  Line 29:3:     'ListItemIcon' is defined but never used                                                                                  no-unused-vars
+  Line 33:3:     'TextField' is defined but never used                                                                                     no-unused-vars
+  Line 50:3:     'Storage' is defined but never used                                                                                       no-unused-vars
+  Line 108:9:    'getProcessingStats' is assigned a value but never used                                                                   no-unused-vars
+  Line 121:10:   'stats' is assigned a value but never used                                                                                no-unused-vars
+  Line 153:10:   'step3StartTime' is assigned a value but never used                                                                       no-unused-vars
+  Line 171:10:   'templateProcessingStatus' is assigned a value but never used                                                             no-unused-vars
+  Line 185:10:   'classificationLoading' is assigned a value but never used                                                                no-unused-vars
+  Line 185:33:   'setClassificationLoading' is assigned a value but never used                                                             no-unused-vars
+  Line 186:10:   'classificationResults' is assigned a value but never used                                                                no-unused-vars
+  Line 186:33:   'setClassificationResults' is assigned a value but never used                                                             no-unused-vars
+  Line 216:6:    React Hook useEffect has a missing dependency: 'loadDojoData'. Either include it or remove the dependency array           react-hooks/exhaustive-deps
+  Line 241:6:    React Hook useEffect has a missing dependency: 'runTemplateProcessing'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 246:6:    React Hook useEffect has a missing dependency: 'loadCachedDecksCount'. Either include it or remove the dependency array   react-hooks/exhaustive-deps
+  Line 316:9:    'cancelUpload' is assigned a value but never used                                                                         no-unused-vars
+  Line 387:19:   'result' is assigned a value but never used                                                                               no-unused-vars
+  Line 874:17:   'step3Total' is assigned a value but never used                                                                           no-unused-vars
+  Line 996:9:    'stopVisualAnalysis' is assigned a value but never used                                                                   no-unused-vars
+  Line 1010:9:   'clearVisualAnalysisCache' is assigned a value but never used                                                             no-unused-vars
+  Line 1056:9:   'runExtractionTest' is assigned a value but never used                                                                    no-unused-vars
+  Line 1521:9:   'handleExperimentSelection' is assigned a value but never used                                                            no-unused-vars
+  Line 1532:9:   'getExperimentById' is assigned a value but never used                                                                    no-unused-vars
+  Line 3322:27:  'isSuccess' is assigned a value but never used                                                                            no-unused-vars
+
+src/pages/GPDashboard.js
+  Line 3:52:   'Legend' is defined but never used                                                                                no-unused-vars
+  Line 14:10:  'performanceMetrics' is assigned a value but never used                                                           no-unused-vars
+  Line 28:10:  'selectedProject' is assigned a value but never used                                                              no-unused-vars
+  Line 146:6:  React Hook useEffect has a missing dependency: 'fetchProjects'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/Profile.js
+  Line 63:6:  React Hook useEffect has a missing dependency: 'loadProfile'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/ProjectDashboard.js
+  Line 28:13:  'UploadIcon' is defined but never used                                                                                                      no-unused-vars
+  Line 31:3:   'CheckCircle' is defined but never used                                                                                                     no-unused-vars
+  Line 32:3:   'RadioButtonUnchecked' is defined but never used                                                                                            no-unused-vars
+  Line 33:3:   'Schedule' is defined but never used                                                                                                        no-unused-vars
+  Line 34:11:  'InfoIcon' is defined but never used                                                                                                        no-unused-vars
+  Line 66:10:  'projects' is assigned a value but never used                                                                                               no-unused-vars
+  Line 80:6:   React Hook useEffect has missing dependencies: 'loadFundingData' and 'loadProjectData'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 221:9:  'getActiveStep' is assigned a value but never used                                                                                          no-unused-vars
+
+src/pages/ProjectResultsPage.js
+  Line 5:3:  'Paper' is defined but never used  no-unused-vars
+
+src/pages/Register.js
+  Line 13:16:  'setRole' is assigned a value but never used  no-unused-vars
+
+src/pages/ResultsPage.js
+  Line 99:6:  React Hook useEffect has a missing dependency: 'checkProcessingStatus'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/StartupJourney.js
+  Line 18:3:   'List' is defined but never used                                                                                    no-unused-vars
+  Line 19:3:   'ListItem' is defined but never used                                                                                no-unused-vars
+  Line 20:3:   'ListItemIcon' is defined but never used                                                                            no-unused-vars
+  Line 21:3:   'ListItemText' is defined but never used                                                                            no-unused-vars
+  Line 22:3:   'Divider' is defined but never used                                                                                 no-unused-vars
+  Line 27:3:   'PlayCircle' is defined but never used                                                                              no-unused-vars
+  Line 44:11:  't' is assigned a value but never used                                                                              no-unused-vars
+  Line 138:6:  React Hook useEffect has a missing dependency: 'fetchMyProjects'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/TemplateManagement.js
+  Line 43:16:  'PlayArrowIcon' is defined but never used                                                                                                                                                                                                                                        no-unused-vars
+  Line 55:3:   'updateTemplate' is defined but never used                                                                                                                                                                                                                                       no-unused-vars
+  Line 57:3:   'addChapterToTemplate' is defined but never used                                                                                                                                                                                                                                 no-unused-vars
+  Line 93:10:  'pipelinePrompts' is assigned a value but never used                                                                                                                                                                                                                             no-unused-vars
+  Line 98:10:  'saving' is assigned a value but never used                                                                                                                                                                                                                                      no-unused-vars
+  Line 98:18:  'setSaving' is assigned a value but never used                                                                                                                                                                                                                                   no-unused-vars
+  Line 371:9:  'handlePromptStageChange' is assigned a value but never used                                                                                                                                                                                                                     no-unused-vars
+  Line 387:9:  'handleSavePrompt' is assigned a value but never used                                                                                                                                                                                                                            no-unused-vars
+  Line 405:9:  'handleResetPrompt' is assigned a value but never used                                                                                                                                                                                                                           no-unused-vars
+  Line 449:8:  React Hook useEffect has unnecessary dependencies: 'templateDetails' and 'templateDialogOpen'. Either exclude them or remove the dependency array. Outer scope values like 'templateDialogOpen' aren't valid dependencies because mutating them doesn't re-render the component  react-hooks/exhaustive-deps
+
+src/pages/UserManagement.js
+  Line 99:6:  React Hook useEffect has a missing dependency: 't'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/VerifyEmail.js
+  Line 36:8:   React Hook useEffect has missing dependencies: 't' and 'verifyEmailToken'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 60:19:  'response' is assigned a value but never used                                                                                  no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in [eslint] 
+src/components/LanguageSwitcher.js
+  Line 57:11:  'currentLanguage' is assigned a value but never used  no-unused-vars
+
+src/components/ProjectResults.js
+  Line 45:6:  React Hook useEffect has a missing dependency: 'fetchResults'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/components/ProjectUploads.js
+  Line 9:3:    'Chip' is defined but never used                                                                                no-unused-vars
+  Line 10:3:   'Divider' is defined but never used                                                                             no-unused-vars
+  Line 20:3:   'ListItemSecondaryAction' is defined but never used                                                             no-unused-vars
+  Line 26:17:  'VisibilityIcon' is defined but never used                                                                      no-unused-vars
+  Line 34:11:  't' is assigned a value but never used                                                                          no-unused-vars
+  Line 52:6:   React Hook useEffect has a missing dependency: 'loadUploads'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/ConfigPage.js
+  Line 38:3:   'Memory' is defined but never used                    no-unused-vars
+  Line 64:10:  'availableModels' is assigned a value but never used  no-unused-vars
+
+src/pages/DeckViewer.js
+  Line 59:6:  React Hook useEffect has a missing dependency: 'loadDeckAnalysis'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/DojoManagement.js
+  Line 29:3:     'ListItemIcon' is defined but never used                                                                                  no-unused-vars
+  Line 33:3:     'TextField' is defined but never used                                                                                     no-unused-vars
+  Line 50:3:     'Storage' is defined but never used                                                                                       no-unused-vars
+  Line 108:9:    'getProcessingStats' is assigned a value but never used                                                                   no-unused-vars
+  Line 121:10:   'stats' is assigned a value but never used                                                                                no-unused-vars
+  Line 153:10:   'step3StartTime' is assigned a value but never used                                                                       no-unused-vars
+  Line 171:10:   'templateProcessingStatus' is assigned a value but never used                                                             no-unused-vars
+  Line 185:10:   'classificationLoading' is assigned a value but never used                                                                no-unused-vars
+  Line 185:33:   'setClassificationLoading' is assigned a value but never used                                                             no-unused-vars
+  Line 186:10:   'classificationResults' is assigned a value but never used                                                                no-unused-vars
+  Line 186:33:   'setClassificationResults' is assigned a value but never used                                                             no-unused-vars
+  Line 216:6:    React Hook useEffect has a missing dependency: 'loadDojoData'. Either include it or remove the dependency array           react-hooks/exhaustive-deps
+  Line 241:6:    React Hook useEffect has a missing dependency: 'runTemplateProcessing'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 246:6:    React Hook useEffect has a missing dependency: 'loadCachedDecksCount'. Either include it or remove the dependency array   react-hooks/exhaustive-deps
+  Line 316:9:    'cancelUpload' is assigned a value but never used                                                                         no-unused-vars
+  Line 387:19:   'result' is assigned a value but never used                                                                               no-unused-vars
+  Line 874:17:   'step3Total' is assigned a value but never used                                                                           no-unused-vars
+  Line 996:9:    'stopVisualAnalysis' is assigned a value but never used                                                                   no-unused-vars
+  Line 1010:9:   'clearVisualAnalysisCache' is assigned a value but never used                                                             no-unused-vars
+  Line 1056:9:   'runExtractionTest' is assigned a value but never used                                                                    no-unused-vars
+  Line 1521:9:   'handleExperimentSelection' is assigned a value but never used                                                            no-unused-vars
+  Line 1532:9:   'getExperimentById' is assigned a value but never used                                                                    no-unused-vars
+  Line 3322:27:  'isSuccess' is assigned a value but never used                                                                            no-unused-vars
+
+src/pages/GPDashboard.js
+  Line 3:52:   'Legend' is defined but never used                                                                                no-unused-vars
+  Line 14:10:  'performanceMetrics' is assigned a value but never used                                                           no-unused-vars
+  Line 28:10:  'selectedProject' is assigned a value but never used                                                              no-unused-vars
+  Line 146:6:  React Hook useEffect has a missing dependency: 'fetchProjects'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/Profile.js
+  Line 63:6:  React Hook useEffect has a missing dependency: 'loadProfile'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/ProjectDashboard.js
+  Line 28:13:  'UploadIcon' is defined but never used                                                                                                      no-unused-vars
+  Line 31:3:   'CheckCircle' is defined but never used                                                                                                     no-unused-vars
+  Line 32:3:   'RadioButtonUnchecked' is defined but never used                                                                                            no-unused-vars
+  Line 33:3:   'Schedule' is defined but never used                                                                                                        no-unused-vars
+  Line 34:11:  'InfoIcon' is defined but never used                                                                                                        no-unused-vars
+  Line 66:10:  'projects' is assigned a value but never used                                                                                               no-unused-vars
+  Line 80:6:   React Hook useEffect has missing dependencies: 'loadFundingData' and 'loadProjectData'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 221:9:  'getActiveStep' is assigned a value but never used                                                                                          no-unused-vars
+
+src/pages/ProjectResultsPage.js
+  Line 5:3:  'Paper' is defined but never used  no-unused-vars
+
+src/pages/Register.js
+  Line 13:16:  'setRole' is assigned a value but never used  no-unused-vars
+
+src/pages/ResultsPage.js
+  Line 99:6:  React Hook useEffect has a missing dependency: 'checkProcessingStatus'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/StartupJourney.js
+  Line 18:3:   'List' is defined but never used                                                                                    no-unused-vars
+  Line 19:3:   'ListItem' is defined but never used                                                                                no-unused-vars
+  Line 20:3:   'ListItemIcon' is defined but never used                                                                            no-unused-vars
+  Line 21:3:   'ListItemText' is defined but never used                                                                            no-unused-vars
+  Line 22:3:   'Divider' is defined but never used                                                                                 no-unused-vars
+  Line 27:3:   'PlayCircle' is defined but never used                                                                              no-unused-vars
+  Line 44:11:  't' is assigned a value but never used                                                                              no-unused-vars
+  Line 138:6:  React Hook useEffect has a missing dependency: 'fetchMyProjects'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/TemplateManagement.js
+  Line 43:16:  'PlayArrowIcon' is defined but never used                                                                                                                                                                                                                                        no-unused-vars
+  Line 55:3:   'updateTemplate' is defined but never used                                                                                                                                                                                                                                       no-unused-vars
+  Line 57:3:   'addChapterToTemplate' is defined but never used                                                                                                                                                                                                                                 no-unused-vars
+  Line 93:10:  'pipelinePrompts' is assigned a value but never used                                                                                                                                                                                                                             no-unused-vars
+  Line 98:10:  'saving' is assigned a value but never used                                                                                                                                                                                                                                      no-unused-vars
+  Line 98:18:  'setSaving' is assigned a value but never used                                                                                                                                                                                                                                   no-unused-vars
+  Line 371:9:  'handlePromptStageChange' is assigned a value but never used                                                                                                                                                                                                                     no-unused-vars
+  Line 387:9:  'handleSavePrompt' is assigned a value but never used                                                                                                                                                                                                                            no-unused-vars
+  Line 405:9:  'handleResetPrompt' is assigned a value but never used                                                                                                                                                                                                                           no-unused-vars
+  Line 449:8:  React Hook useEffect has unnecessary dependencies: 'templateDetails' and 'templateDialogOpen'. Either exclude them or remove the dependency array. Outer scope values like 'templateDialogOpen' aren't valid dependencies because mutating them doesn't re-render the component  react-hooks/exhaustive-deps
+
+src/pages/UserManagement.js
+  Line 99:6:  React Hook useEffect has a missing dependency: 't'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src/pages/VerifyEmail.js
+  Line 36:8:   React Hook useEffect has missing dependencies: 't' and 'verifyEmailToken'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 60:19:  'response' is assigned a value but never used                                                                                  no-unused-vars
+
+webpack compiled with 1 warning

@@ -603,6 +603,26 @@ const DojoManagement = () => {
         const data = await response.json();
         setExtractionSample(data.sample);
         console.log('Created extraction sample:', data);
+        
+        // Reset all step progress states when creating new sample
+        setAnalysisProgress({ completed: 0, total: 0 });
+        setStep3Progress({ completed: 0, total: 0, status: 'idle' });
+        setStep4Progress({ completed: 0, total: 0, status: 'idle' });
+        setVisualAnalysisStatus('idle');
+        setTemplateProcessingStatus('idle');
+        
+        // Clear completion data
+        setStep2CompletionData(null);
+        setStep3CompletionData(null);
+        setStep4CompletionData(null);
+        
+        // Clear current deck/chapter displays
+        setCurrentStep2Deck('');
+        setCurrentStep3Deck('');
+        setCurrentStep3Extraction('');
+        setCurrentStep4Deck('');
+        setCurrentStep4Chapter('');
+        
       } else {
         const errorData = await response.json();
         setError(errorData.detail || 'Failed to create extraction sample');
