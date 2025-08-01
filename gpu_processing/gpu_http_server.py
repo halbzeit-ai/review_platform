@@ -603,6 +603,7 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                 deck_ids = data.get('deck_ids', [])
                 template_info = data.get('template_info')
                 generate_thumbnails = data.get('generate_thumbnails', True)
+                progress_callback_url = data.get('progress_callback_url')
                 
                 # Validation
                 if not deck_ids:
@@ -657,28 +658,96 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                         
                         filename = deck_visual_data.get('filename', f'deck_{deck_id}')
                         
-                        # Combine template prompt with visual context
-                        full_prompt = f"""Based on the following visual analysis of a healthcare startup pitch deck, {template_prompt}
+                        # Check if we should use the healthcare template analyzer for chapter-by-chapter analysis
+                        use_chapter_analysis = template_info and template_info.get('id') is not None
+                        
+                        if use_chapter_analysis:
+                            # Use healthcare template analyzer for chapter-by-chapter analysis
+                            logger.info(f"Using healthcare template analyzer for chapter-by-chapter analysis of deck {deck_id}")
+                            
+                            # Create progress callback function
+                            def progress_callback(deck_id, chapter_name):
+                                if progress_callback_url:
+                                    try:
+                                        import requests
+                                        requests.post(progress_callback_url, json={
+                                            "deck_id": deck_id,
+                                            "chapter_name": chapter_name,
+                                            "status": "processing"
+                                        }, timeout=5)
+                                    except Exception as e:
+                                        logger.warning(f"Failed to send progress callback: {e}")
+                            
+                            # We need to get the PDF path for the deck
+                            # First, try to get from database
+                            import psycopg2
+                            database_url = os.getenv("DATABASE_URL")
+                            if not database_url:
+                                database_url = "postgresql://dev_user:!dev_Halbzeit1024@65.108.32.143:5432/review_dev"
+                            
+                            conn = psycopg2.connect(database_url)
+                            cursor = conn.cursor()
+                            
+                            cursor.execute("""
+                                SELECT file_path FROM pitch_decks WHERE id = %s
+                                UNION
+                                SELECT file_path FROM project_documents WHERE id = %s AND document_type = 'pitch_deck'
+                            """, (deck_id, deck_id))
+                            
+                            result = cursor.fetchone()
+                            cursor.close()
+                            conn.close()
+                            
+                            if result and result[0]:
+                                pdf_path = result[0]
+                                full_pdf_path = str(Path(config.mount_path) / pdf_path)
+                                
+                                # Create analyzer and run full analysis
+                                from utils.healthcare_template_analyzer import HealthcareTemplateAnalyzer
+                                analyzer = HealthcareTemplateAnalyzer()
+                                
+                                # The analyzer will load the template from database using template_id
+                                # We need to temporarily override the classification to use the selected template
+                                analyzer.template_config = analyzer._load_template_from_database(template_info['id'])
+                                
+                                # Run the analysis with progress callback - template_only for Step 4
+                                analysis_results = analyzer.analyze_pdf(
+                                    full_pdf_path, 
+                                    company_id="dojo",
+                                    progress_callback=progress_callback,
+                                    deck_id=deck_id,
+                                    template_only=True
+                                )
+                                
+                                # Extract the formatted template analysis
+                                template_analysis = self._format_template_analysis(analysis_results)
+                                
+                            else:
+                                logger.error(f"Could not find PDF path for deck {deck_id}")
+                                template_analysis = "Error: Could not find PDF file for analysis"
+                        else:
+                            # Fall back to simple prompt-based analysis
+                            full_prompt = f"""Based on the following visual analysis of a healthcare startup pitch deck, {template_prompt}
 
 Visual Analysis:
 {visual_analysis_text}
 
 Please provide a comprehensive analysis focusing on the requested areas."""
-                        
-                        # Use ollama to generate template analysis
-                        model_name = "phi4:latest"  # Use the same model as other extractions
-                        
-                        response = ollama.generate(
-                            model=model_name,
-                            prompt=full_prompt,
-                            options={
-                                "temperature": 0.3,
-                                "num_ctx": 32768,
-                                "num_predict": 4096
-                            }
-                        )
-                        
-                        template_analysis = response.get('response', '').strip()
+                            
+                            # Use ollama to generate template analysis
+                            model_name = "phi4:latest"  # Use the same model as other extractions
+                            
+                            response = ollama.generate(
+                                model=model_name,
+                                prompt=full_prompt,
+                                options={
+                                    "temperature": 0.3,
+                                    "num_ctx": 32768,
+                                    "num_predict": 4096
+                                }
+                            )
+                            
+                            template_analysis = response.get('response', '').strip()
                         
                         # Generate thumbnail paths (simulated for now)
                         thumbnails = []
@@ -735,6 +804,38 @@ Please provide a comprehensive analysis focusing on the requested areas."""
                     "error": f"Error in template processing batch: {str(e)}",
                     "timestamp": datetime.now().isoformat()
                 }), 500
+    
+    def _format_template_analysis(self, analysis_results: Dict[str, Any]) -> str:
+        """Format ONLY the chapter analysis results for Step 4 template processing"""
+        try:
+            sections = []
+            
+            # Only include Chapter Analysis for Step 4
+            if analysis_results.get('chapter_analysis'):
+                sections.append("**Template Analysis Results**")
+                
+                for chapter_id, chapter_data in analysis_results['chapter_analysis'].items():
+                    sections.append(f"\n### {chapter_data['name']} (Score: {chapter_data.get('average_score', 0):.1f}/7)")
+                    
+                    # Add question analyses
+                    if chapter_data.get('questions'):
+                        for question in chapter_data['questions']:
+                            sections.append(f"\n**{question['question_text']}**")
+                            sections.append(f"Score: {question['score']}/7")
+                            sections.append(question.get('response', 'No response available'))
+                    sections.append("")
+                
+                # Overall Score (calculated from chapter scores only)
+                if analysis_results.get('overall_score') is not None:
+                    sections.append(f"\n**Overall Template Score: {analysis_results['overall_score']:.1f}/7**")
+            else:
+                sections.append("No chapter analysis available.")
+            
+            return "\n".join(sections)
+            
+        except Exception as e:
+            logger.error(f"Error formatting template analysis: {e}")
+            return f"Error formatting analysis results: {str(e)}"
     
     def _get_cached_visual_analysis(self, deck_ids: List[int]) -> Dict[int, Dict]:
         """Get cached visual analysis directly from database"""

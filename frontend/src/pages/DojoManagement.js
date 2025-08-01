@@ -151,6 +151,8 @@ const DojoManagement = () => {
   const [step2CompletionData, setStep2CompletionData] = useState(null);
   const [step3CompletionData, setStep3CompletionData] = useState(null);
   const [step3StartTime, setStep3StartTime] = useState(null);
+  const [step4CompletionData, setStep4CompletionData] = useState(null);
+  const [step4StartTime, setStep4StartTime] = useState(null);
   const [experiments, setExperiments] = useState([]);
   const [availableModels, setAvailableModels] = useState({});
   const [modelsLoading, setModelsLoading] = useState(false);
@@ -844,6 +846,7 @@ const DojoManagement = () => {
         setCurrentStep2Deck(progressData.step2?.current_deck || '');
         setCurrentStep3Deck(progressData.step3?.current_deck || '');
         setCurrentStep4Deck(progressData.step4?.current_deck || '');
+        setCurrentStep4Chapter(progressData.step4?.current_chapter || '');
         
         // Update Step 3 extraction type based on progress
         if (progressData.step3?.status === 'processing') {
@@ -1526,6 +1529,11 @@ const DojoManagement = () => {
       
       setTemplateProcessingStatus('processing');
       setError(null);
+      
+      // Track start time and clear previous completion data
+      const startTime = Date.now();
+      setStep4StartTime(startTime);
+      setStep4CompletionData(null);
 
       const user = JSON.parse(localStorage.getItem('user'));
       const token = user?.token;
@@ -1597,6 +1605,18 @@ const DojoManagement = () => {
       const deckCount = extractionSample.length;
       setStep4Progress(prev => ({ ...prev, status: 'completed', completed: deckCount }));
       setCurrentStep4Deck('Template processing completed');
+      
+      // Calculate completion data
+      const endTime = Date.now();
+      const totalTime = (endTime - step4StartTime) / 1000; // Convert to seconds
+      
+      setStep4CompletionData({
+        totalDecks: deckCount,
+        successfulDecks: result.statistics?.successful_template_processing || deckCount,
+        totalTime: totalTime,
+        averageTime: totalTime / deckCount,
+        templateUsed: availableTemplates.find(t => t.id === selectedTemplate)?.name || 'Unknown Template'
+      });
       
       setTemplateProcessingStatus('completed');
       
@@ -2448,6 +2468,44 @@ const DojoManagement = () => {
                       >
                         Stop
                       </Button>
+                    )}
+
+                    {/* Real-time Progress for Step 4 Template Processing */}
+                    {step4Progress.status === 'processing' && (
+                      <Box sx={{ mt: 3 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            {currentStep4Deck || 'Processing template analysis...'}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {step4Progress.completed} / {step4Progress.total}
+                          </Typography>
+                        </Box>
+                        <LinearProgress 
+                          variant="determinate"
+                          value={step4Progress.total > 0 ? (step4Progress.completed / step4Progress.total) * 100 : 0}
+                          sx={{ height: 8, borderRadius: 4 }}
+                        />
+                        {currentStep4Chapter && (
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                            Chapter: {currentStep4Chapter}
+                          </Typography>
+                        )}
+                      </Box>
+                    )}
+
+                    {/* Completion Summary for Step 4 Template Processing */}
+                    {step4Progress.status === 'completed' && step4CompletionData && (
+                      <Box sx={{ mt: 3, p: 2, bgcolor: 'success.light', borderRadius: 2 }}>
+                        <Typography variant="body2" color="success.dark" sx={{ fontWeight: 'medium' }}>
+                          ✅ Template Processing Complete
+                        </Typography>
+                        <Typography variant="caption" color="success.dark" sx={{ display: 'block', mt: 0.5 }}>
+                          {step4CompletionData.totalDecks} decks processed with {step4CompletionData.templateUsed} • 
+                          Average: {Math.round(step4CompletionData.averageTime)}s per deck • 
+                          Total: {formatProcessingTime(step4CompletionData.totalTime * 1000)}
+                        </Typography>
+                      </Box>
                     )}
 
                     {/* Run after step 3 checkbox for Step 4 */}

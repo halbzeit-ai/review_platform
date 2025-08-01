@@ -39,13 +39,23 @@ This is a startup review platform with a Python FastAPI backend and React fronte
 
 ### Quick Service Management (Recommended for Claude)
 ```bash
-# Start/stop services
-./dev-services.sh start      # Start both frontend and backend
-./dev-services.sh stop       # Stop both services
-./dev-services.sh restart    # Restart both services
-./dev-services.sh status     # Check service health
-./dev-services.sh logs       # Show logs for both services
-./dev-services.sh logs backend  # Show only backend logs
+# Use the improved version with smart features
+./dev-services-improved.sh start      # Smart start - only starts what's needed
+./dev-services-improved.sh stop       # Stop services by port (precise)
+./dev-services-improved.sh restart    # Restart all services
+./dev-services-improved.sh restart backend   # Restart only backend
+./dev-services-improved.sh restart frontend  # Restart only frontend
+./dev-services-improved.sh status     # Check service health and auto-reload
+./dev-services-improved.sh logs       # Show logs for both services
+./dev-services-improved.sh logs backend  # Show only backend logs
+./dev-services-improved.sh reload-check  # Verify auto-reload is enabled
+
+# Key advantages of improved version:
+# - Uses correct port 8000 for backend (not 5001)
+# - Kills processes by port, not by name (precise)
+# - Checks if backend has --reload flag
+# - Won't restart services unnecessarily
+# - Shows external IP (65.108.32.143) for remote access
 ```
 
 ### Database Operations (For Claude)
@@ -80,7 +90,8 @@ sudo -u postgres psql review-platform
 ```bash
 cd backend
 pip install -r requirements.txt
-uvicorn app.main:app --host 0.0.0.0 --port 5001 --reload
+# IMPORTANT: Use port 8000, not 5001!
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 #### Frontend
@@ -170,3 +181,98 @@ The project uses a consistent naming scheme for environment variables to separat
 
 ## Development Memories
 - please do remember that you are on a development machine, the UUIDs, filepaths and SQL databases I paste are from the production machine
+
+## Template Management System
+
+### Overview
+The platform includes a comprehensive template management system for healthcare sector analysis templates. Templates consist of chapters containing questions with scoring criteria.
+
+### Database Structure
+```
+analysis_templates (Template metadata)
+├── template_chapters (Chapters within templates)
+│   └── chapter_questions (Questions within chapters)
+└── gp_template_customizations (GP-specific template versions)
+```
+
+### Key Database Fields
+- **template_chapters**: Use `template_id` (NOT `analysis_template_id`) for the required foreign key
+- **chapter_questions**: Requires both `chapter_id` AND `question_id` (NOT NULL)
+- Always verify actual column names before writing SQL queries
+
+### Template Edit Workflow
+1. **Edit Mode**: Updates complete template structure (name, chapters, questions)
+2. **API Endpoint**: `/api/healthcare-templates/templates/{id}/complete`
+3. **Frontend**: `updateTemplateComplete()` in `services/api.js`
+4. **Atomic Operations**: Delete all existing chapters/questions, then insert new ones
+
+## Debugging Best Practices
+
+### Database Schema Investigation
+```python
+# Essential query to check table structure
+result = db.execute(text('SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = \'table_name\' ORDER BY ordinal_position')).fetchall()
+```
+
+### Backend Service Management
+```bash
+# Start backend with auto-reload (recommended)
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+# Check what's using a port
+lsof -i :8000
+
+# Kill specific process (preferred over pkill)
+kill -9 PID
+
+# Check backend logs
+tail -f backend.log
+```
+
+### Frontend Development
+```bash
+# Start frontend only (when backend already running)
+./start-frontend-only.sh start
+
+# Check frontend compilation
+curl -s "http://65.108.32.143:3000" | grep -o "<title>.*</title>"
+```
+
+### Common Issues & Solutions
+
+#### Port Conflicts
+- Development backend: Port 8000
+- Frontend dev server: Port 3000
+- Check for duplicate processes before starting services
+
+#### Environment Configuration
+- Frontend proxy: Both `package.json` "proxy" and `.env.development` matter
+- Use external IP (65.108.32.143) not localhost for remote access
+- Backend auto-reload watches for file changes
+
+#### Database Constraint Violations
+- Always check NOT NULL constraints
+- Verify foreign key relationships
+- Use actual column names from schema, not assumed names
+
+### API Development Workflow
+1. **Backend**: Create endpoint with Pydantic models
+2. **Frontend**: Add API function in `services/api.js`
+3. **Component**: Import and use new API function
+4. **Testing**: Use browser dev tools to inspect requests
+5. **Verification**: Check `/openapi.json` for endpoint registration
+
+### Error Investigation Process
+1. **Check HTTP status**: 404 (not found) vs 500 (server error) vs 401 (auth)
+2. **Backend logs**: Look for SQL errors and stack traces
+3. **Frontend console**: Check for JavaScript errors
+4. **Network tab**: Inspect actual request/response payloads
+5. **Database state**: Verify data actually exists where expected
+
+### Best Practices
+- **Always verify before assuming**: Check database schema, API responses, file paths
+- **Use auto-reload**: Backend automatically picks up changes
+- **Test incrementally**: Verify each layer works before moving to the next
+- **Keep services consistent**: Use standard ports and external IPs
+- **Log everything**: Add console.log/logger.info for debugging
+- **Handle errors gracefully**: Both frontend and backend should handle edge cases

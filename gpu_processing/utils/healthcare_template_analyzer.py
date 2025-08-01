@@ -923,10 +923,14 @@ class HealthcareTemplateAnalyzer:
             ]
         }
     
-    def analyze_pdf(self, pdf_path: str, company_id: str = None) -> Dict[str, Any]:
+    def analyze_pdf(self, pdf_path: str, company_id: str = None, progress_callback=None, deck_id=None, template_only=False) -> Dict[str, Any]:
         """Main method to analyze a healthcare startup pitch deck"""
         start_time = time.time()
         logger.info(f"Starting healthcare template analysis of PDF: {pdf_path}")
+        
+        # Store progress callback and deck_id for chapter processing
+        self.progress_callback = progress_callback
+        self.current_deck_id = deck_id
         
         # Log model configuration at start of analysis
         logger.info(f"🤖 AI Model Configuration:")
@@ -950,33 +954,40 @@ class HealthcareTemplateAnalyzer:
             # Step 1: Convert PDF to images and analyze each page
             self._analyze_visual_content(pdf_path, company_id)
             
-            # Step 2: Generate company offering summary
-            self._generate_company_offering()
-            
-            # Step 2.5: Extract startup name
-            self._extract_startup_name()
-            
-            # Step 2.6: Extract funding amount
-            self._extract_funding_amount()
-            
-            # Step 2.7: Extract deck date
-            self._extract_deck_date()
-            
-            # Step 3: Classify startup based on company offering
-            self.classification_result = self._classify_startup(self.company_offering)
-            logger.info(f"Startup classified as: {self.classification_result.get('primary_sector')} "
-                       f"({self.classification_result.get('confidence_score', 0):.2f} confidence)")
-            
-            # Step 4: Load appropriate template configuration
-            self.template_config = self._load_template_config(
-                self.classification_result.get("recommended_template")
-            )
+            if not template_only:
+                # Step 2: Generate company offering summary
+                self._generate_company_offering()
+                
+                # Step 2.5: Extract startup name
+                self._extract_startup_name()
+                
+                # Step 2.6: Extract funding amount
+                self._extract_funding_amount()
+                
+                # Step 2.7: Extract deck date
+                self._extract_deck_date()
+                
+                # Step 3: Classify startup based on company offering
+                self.classification_result = self._classify_startup(self.company_offering)
+                logger.info(f"Startup classified as: {self.classification_result.get('primary_sector')} "
+                           f"({self.classification_result.get('confidence_score', 0):.2f} confidence)")
+                
+                # Step 4: Load appropriate template configuration
+                self.template_config = self._load_template_config(
+                    self.classification_result.get("recommended_template")
+                )
+            else:
+                # For template_only mode, template_config should already be set
+                if not self.template_config:
+                    logger.error("No template configuration provided for template_only mode")
+                    raise ValueError("Template configuration must be set before calling analyze_pdf with template_only=True")
             
             # Step 5: Execute template-based analysis
             self._execute_template_analysis()
             
-            # Step 6: Generate specialized analysis
-            self._generate_specialized_analysis()
+            if not template_only:
+                # Step 6: Generate specialized analysis
+                self._generate_specialized_analysis()
             
             processing_time = time.time() - start_time
             logger.info(f"Healthcare template analysis completed in {processing_time:.2f} seconds")
@@ -1222,6 +1233,13 @@ class HealthcareTemplateAnalyzer:
             chapter_name = chapter["name"]
             
             logger.info(f"📚 Analyzing chapter: {chapter_name}")
+            
+            # Send progress update if callback is provided
+            if self.progress_callback and self.current_deck_id:
+                try:
+                    self.progress_callback(self.current_deck_id, chapter_name)
+                except Exception as e:
+                    logger.warning(f"Failed to send progress callback: {e}")
             
             # Process each question in the chapter
             chapter_questions = chapter.get("questions", [])

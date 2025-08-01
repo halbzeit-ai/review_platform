@@ -948,3 +948,152 @@ async def get_performance_metrics(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve performance metrics"
         )
+
+class TemplateQuestionData(BaseModel):
+    question_text: str
+    scoring_criteria: str = ""
+    weight: float = 1.0
+    order_index: int = 0
+
+class TemplateChapterData(BaseModel):
+    name: str
+    description: str = ""
+    weight: float = 1.0
+    is_required: bool = True
+    enabled: bool = True
+    order_index: int = 0
+    questions: List[TemplateQuestionData] = []
+
+class CompleteTemplateData(BaseModel):
+    name: str
+    description: str = ""
+    chapters: List[TemplateChapterData] = []
+
+@router.put("/templates/{template_id}/complete")
+async def update_template_complete(
+    template_id: int,
+    template_data: CompleteTemplateData,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update a template with all its chapters and questions in one atomic operation"""
+    try:
+        # Check if user is GP
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only GPs can update templates"
+            )
+        
+        # Check if template exists and is active
+        template_check_query = text("""
+        SELECT id, name, is_default 
+        FROM analysis_templates 
+        WHERE id = :template_id AND is_active = TRUE
+        """)
+        
+        template_result = db.execute(template_check_query, {"template_id": template_id}).fetchone()
+        
+        if not template_result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Template {template_id} not found"
+            )
+        
+        # Update template basic info
+        update_template_query = text("""
+        UPDATE analysis_templates 
+        SET name = :name, description = :description
+        WHERE id = :template_id
+        """)
+        
+        db.execute(update_template_query, {
+            "template_id": template_id,
+            "name": template_data.name,
+            "description": template_data.description
+        })
+        
+        # Delete existing chapters and questions (cascade will handle questions)
+        delete_chapters_query = text("""
+        DELETE FROM chapter_questions 
+        WHERE chapter_id IN (
+            SELECT id FROM template_chapters 
+            WHERE template_id = :template_id
+        )
+        """)
+        db.execute(delete_chapters_query, {"template_id": template_id})
+        
+        delete_template_chapters_query = text("""
+        DELETE FROM template_chapters 
+        WHERE template_id = :template_id
+        """)
+        db.execute(delete_template_chapters_query, {"template_id": template_id})
+        
+        # Insert new chapters and questions
+        for chapter_idx, chapter in enumerate(template_data.chapters):
+            # Insert chapter
+            insert_chapter_query = text("""
+            INSERT INTO template_chapters (
+                template_id, chapter_id, name, description, 
+                weight, is_required, enabled, order_index
+            ) VALUES (
+                :template_id, :chapter_id, :name, :description,
+                :weight, :is_required, :enabled, :order_index
+            ) RETURNING id
+            """)
+            
+            chapter_result = db.execute(insert_chapter_query, {
+                "template_id": template_id,
+                "chapter_id": f"chapter_{chapter_idx + 1}",
+                "name": chapter.name,
+                "description": chapter.description,
+                "weight": chapter.weight,
+                "is_required": chapter.is_required,
+                "enabled": chapter.enabled,
+                "order_index": chapter.order_index or chapter_idx
+            }).fetchone()
+            
+            chapter_db_id = chapter_result[0]
+            
+            # Insert questions for this chapter
+            for question_idx, question in enumerate(chapter.questions):
+                insert_question_query = text("""
+                INSERT INTO chapter_questions (
+                    chapter_id, question_id, question_text, scoring_criteria, 
+                    weight, order_index, enabled
+                ) VALUES (
+                    :chapter_id, :question_id, :question_text, :scoring_criteria,
+                    :weight, :order_index, :enabled
+                )
+                """)
+                
+                db.execute(insert_question_query, {
+                    "chapter_id": chapter_db_id,
+                    "question_id": f"question_{question_idx + 1}",
+                    "question_text": question.question_text,
+                    "scoring_criteria": question.scoring_criteria,
+                    "weight": question.weight,
+                    "order_index": question.order_index or question_idx,
+                    "enabled": True
+                })
+        
+        db.commit()
+        
+        logger.info(f"Template {template_id} completely updated by GP {current_user.email} with {len(template_data.chapters)} chapters")
+        
+        return {
+            "message": f"Template '{template_data.name}' updated successfully",
+            "template_id": template_id,
+            "chapters_count": len(template_data.chapters),
+            "questions_count": sum(len(ch.questions) for ch in template_data.chapters)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating complete template {template_id}: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update template with chapters and questions"
+        )

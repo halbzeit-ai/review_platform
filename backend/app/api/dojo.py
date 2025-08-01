@@ -41,7 +41,7 @@ progress_tracker = {
         "current_deck_start_time": None
     },
     "step3": {"current_deck": "", "status": "idle", "progress": 0, "total": 0}, 
-    "step4": {"current_deck": "", "status": "idle", "progress": 0, "total": 0}
+    "step4": {"current_deck": "", "current_chapter": "", "status": "idle", "progress": 0, "total": 0}
 }
 
 # Dojo configuration
@@ -2713,3 +2713,22 @@ async def process_visual_analysis_batch(deck_ids: List[int], vision_model: str):
         progress_tracker["step2"]["current_deck"] = "Processing error occurred"
         if progress_tracker["step2"]["start_time"]:
             progress_tracker["step2"]["completion_time"] = time.time()
+@router.post("/template-progress-callback")
+async def template_progress_callback(
+    request: Dict[str, Any]
+):
+    """Receive progress updates from GPU for template processing"""
+    try:
+        deck_id = request.get("deck_id")
+        chapter_name = request.get("chapter_name")
+        status = request.get("status", "processing")
+        
+        if deck_id and chapter_name:
+            # Update progress tracker with current chapter
+            progress_tracker["step4"]["current_chapter"] = chapter_name
+            logger.info(f"Template progress update - Deck {deck_id}: Processing chapter '{chapter_name}'")
+        
+        return {"success": True}
+    except Exception as e:
+        logger.error(f"Error in template progress callback: {e}")
+        return {"success": False, "error": str(e)}

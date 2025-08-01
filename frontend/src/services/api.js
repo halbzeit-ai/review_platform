@@ -85,6 +85,8 @@ export const getPerformanceMetrics = () =>
 
 export const updateTemplate = (templateId, templateData) =>
   api.put(`/healthcare-templates/templates/${templateId}`, templateData);
+export const updateTemplateComplete = (templateId, completeTemplateData) =>
+  api.put(`/healthcare-templates/templates/${templateId}/complete`, completeTemplateData);
 
 export const addChapterToTemplate = (templateId, chapterData) =>
   api.post(`/healthcare-templates/templates/${templateId}/chapters`, chapterData);

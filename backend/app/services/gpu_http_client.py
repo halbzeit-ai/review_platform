@@ -608,10 +608,15 @@ class GPUHTTPClient:
             
             logger.info(f"Requesting template processing for {len(deck_ids)} decks with thumbnails={generate_thumbnails}")
             
+            # Get backend URL for progress callbacks
+            backend_url = self.backend_service_url or "http://localhost:8000"
+            progress_callback_url = f"{backend_url}/api/dojo/template-progress-callback"
+            
             payload = {
                 "deck_ids": deck_ids,
                 "template_info": template_info,
-                "generate_thumbnails": generate_thumbnails
+                "generate_thumbnails": generate_thumbnails,
+                "progress_callback_url": progress_callback_url
             }
             
             async with httpx.AsyncClient(timeout=3600.0) as client:  # 1 hour timeout

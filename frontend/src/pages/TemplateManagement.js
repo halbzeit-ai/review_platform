@@ -53,6 +53,7 @@ import {
   getTemplateDetails,
   customizeTemplate,
   updateTemplate,
+  updateTemplateComplete,
   addChapterToTemplate,
   getMyCustomizations,
   getPipelinePrompts,
@@ -94,6 +95,7 @@ const TemplateManagement = () => {
   // Delete confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [selectedPromptStage, setSelectedPromptStage] = useState('image_analysis');
   const [promptTexts, setPromptTexts] = useState({
     image_analysis: '',
@@ -202,6 +204,7 @@ const TemplateManagement = () => {
   useEffect(() => {
     loadInitialData();
   }, [loadInitialData]);
+
 
   const handleEditTemplate = async (template) => {
     try {
@@ -445,38 +448,25 @@ const TemplateManagement = () => {
       }
     }, [templateDialogOpen, templateDetails]);
 
-    const addChapter = async () => {
-      if (!editedTemplate || !selectedTemplate) return;
+    const addChapterToEditedTemplate = () => {
+      if (!editedTemplate) return;
       
-      try {
-        setSaving(true);
-        
-        // Call API to add chapter to template
-        const chapterData = {
-          name: 'New Chapter',
-          description: '',
-          weight: 1.0,
-          is_required: true,
-          enabled: true
-        };
-        
-        console.log('Adding chapter to template:', selectedTemplate.id);
-        const response = await addChapterToTemplate(selectedTemplate.id, chapterData);
-        console.log('Chapter added successfully:', response.data);
-        
-        // Refresh the template details to show the new chapter
-        const detailsResponse = await getTemplateDetails(selectedTemplate.id);
-        const details = detailsResponse.data || detailsResponse;
-        setSelectedTemplate({...selectedTemplate, chapters: details.chapters || []});
-        setTemplateDetails(details);
-        
-      } catch (error) {
-        console.error('Error adding chapter:', error);
-        setError('Failed to add chapter: ' + (error.response?.data?.detail || error.message));
-      } finally {
-        setSaving(false);
-      }
+      const newChapter = {
+        id: Date.now(),
+        name: 'New Chapter',
+        description: '',
+        weight: 1.0,
+        is_required: true,
+        enabled: true,
+        questions: []
+      };
+      
+      setEditedTemplate({
+        ...editedTemplate,
+        chapters: [...editedTemplate.chapters, newChapter]
+      });
     };
+
 
     const updateChapter = (chapterIndex, field, value) => {
       const updatedChapters = [...editedTemplate.chapters];
@@ -528,20 +518,35 @@ const TemplateManagement = () => {
         }
         
         if (isEditMode) {
-          // Edit mode: Update existing template
+          // Edit mode: Update existing template with complete data
           const templateId = selectedTemplate?.id;
           if (!templateId) {
             throw new Error('Template ID is required for editing');
           }
           
-          const updateData = {
+          // Format chapters and questions for the new API
+          const completeTemplateData = {
             name: editedTemplate.name,
-            description: editedTemplate.template?.description || ''
+            description: editedTemplate.template?.description || '',
+            chapters: editedTemplate.chapters.map((chapter, chapterIndex) => ({
+              name: chapter.name || 'New Chapter',
+              description: chapter.description || '',
+              weight: chapter.weight || 1.0,
+              is_required: chapter.is_required !== undefined ? chapter.is_required : true,
+              enabled: chapter.enabled !== undefined ? chapter.enabled : true,
+              order_index: chapterIndex,
+              questions: (chapter.questions || []).map((question, questionIndex) => ({
+                question_text: question.question_text || '',
+                scoring_criteria: question.scoring_criteria || '',
+                weight: question.weight || 1.0,
+                order_index: questionIndex
+              }))
+            }))
           };
           
-          console.log('Updating template:', templateId, updateData);
-          const response = await updateTemplate(templateId, updateData);
-          console.log('Template updated successfully:', response.data);
+          console.log('Updating complete template:', templateId, completeTemplateData);
+          const response = await updateTemplateComplete(templateId, completeTemplateData);
+          console.log('Complete template updated successfully:', response.data);
           
         } else {
           // Duplicate mode: Create new template customization
@@ -671,7 +676,7 @@ const TemplateManagement = () => {
                 </Typography>
                 <Button 
                   startIcon={<AddIcon />} 
-                  onClick={addChapter}
+                  onClick={addChapterToEditedTemplate}
                   size="small"
                   variant="outlined"
                 >
@@ -1256,6 +1261,7 @@ const TemplateManagement = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
     </Box>
   );
 };
