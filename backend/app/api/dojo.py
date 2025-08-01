@@ -2748,7 +2748,8 @@ async def process_visual_analysis_batch(deck_ids: List[int], vision_model: str):
             progress_tracker["step2"]["completion_time"] = time.time()
 @router.post("/template-progress-callback")
 async def template_progress_callback(
-    request: Dict[str, Any]
+    request: Dict[str, Any],
+    db: Session = Depends(get_db)
 ):
     """Receive progress updates from GPU for template processing"""
     try:
@@ -2757,9 +2758,23 @@ async def template_progress_callback(
         status = request.get("status", "processing")
         
         if deck_id and chapter_name:
-            # Update progress tracker with current chapter
-            progress_tracker["step4"]["current_chapter"] = chapter_name
-            logger.info(f"Template progress update - Deck {deck_id}: Processing chapter '{chapter_name}'")
+            # Get deck filename for display
+            try:
+                deck_info = db.execute(text(
+                    "SELECT file_name FROM pitch_decks WHERE id = :deck_id"
+                ), {"deck_id": deck_id}).fetchone()
+                
+                deck_filename = deck_info[0] if deck_info else f"Deck {deck_id}"
+                
+                # Update progress tracker with current deck and chapter
+                progress_tracker["step4"]["current_deck"] = deck_filename
+                progress_tracker["step4"]["current_chapter"] = chapter_name
+                logger.info(f"Template progress update - Deck {deck_filename}: Processing chapter '{chapter_name}'")
+                
+            except Exception as e:
+                logger.warning(f"Could not get deck filename for {deck_id}: {e}")
+                progress_tracker["step4"]["current_deck"] = f"Processing deck {deck_id}"
+                progress_tracker["step4"]["current_chapter"] = chapter_name
         
         return {"success": True}
     except Exception as e:
