@@ -124,7 +124,9 @@ class ProjectStage(Base):
     __tablename__ = "project_stages"
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("projects.id"))
+    stage_template_id = Column(Integer, nullable=True)  # Reference to stage template
     stage_name = Column(String)  # User-defined funding process stages
+    stage_code = Column(String(50), nullable=True)  # Stage code for identification
     stage_order = Column(Integer)  # Order in the funding process
     status = Column(String, default="pending")  # pending, active, completed, skipped
     stage_metadata = Column(Text, nullable=True)  # JSON for stage-specific data
