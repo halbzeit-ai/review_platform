@@ -347,6 +347,16 @@ async def cleanup_dojo_projects(
             )
         """)
         
+        # Delete project stages (foreign key constraint to projects)
+        delete_project_stages_query = text("""
+            DELETE FROM project_stages 
+            WHERE project_id IN (
+                SELECT id FROM projects 
+                WHERE is_test = TRUE 
+                AND project_metadata::json->>'created_from_experiment' = 'true'
+            )
+        """)
+        
         # Delete dojo projects (created from experiments)
         delete_dojo_projects_query = text("""
             DELETE FROM projects 
@@ -355,15 +365,17 @@ async def cleanup_dojo_projects(
         """)
         
         docs_deleted = db.execute(delete_project_docs_query).rowcount
+        stages_deleted = db.execute(delete_project_stages_query).rowcount
         projects_deleted = db.execute(delete_dojo_projects_query).rowcount
         
         db.commit()
         
-        logger.info(f"Cleaned up {projects_deleted} dojo projects and {docs_deleted} associated documents by {current_user.email}")
+        logger.info(f"Cleaned up {projects_deleted} dojo projects, {stages_deleted} project stages, and {docs_deleted} associated documents by {current_user.email}")
         
         return {
-            "message": f"Cleaned up {projects_deleted} dojo projects and {docs_deleted} associated documents",
+            "message": f"Cleaned up {projects_deleted} dojo projects, {stages_deleted} project stages, and {docs_deleted} associated documents",
             "projects_deleted": projects_deleted,
+            "stages_deleted": stages_deleted,
             "documents_deleted": docs_deleted,
             "experimental_data_preserved": True,
             "note": "All experimental data (experiments, PDFs, results files) have been preserved"
