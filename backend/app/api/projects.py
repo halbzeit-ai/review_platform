@@ -440,9 +440,10 @@ async def get_project_results(
                 detail="You don't have access to this project"
             )
         
-        # Get deck information
+        # Get deck information - check both pitch_decks and project_documents
+        # First try pitch_decks table (regular uploads)
         deck_query = text("""
-        SELECT pd.id, pd.file_path, pd.results_file_path, u.email, u.company_name
+        SELECT pd.id, pd.file_path, pd.results_file_path, u.email, u.company_name, 'pitch_decks' as source
         FROM pitch_decks pd
         JOIN users u ON pd.user_id = u.id
         WHERE pd.id = :deck_id
@@ -450,13 +451,31 @@ async def get_project_results(
         
         deck_result = db.execute(deck_query, {"deck_id": deck_id}).fetchone()
         
+        # If not found in pitch_decks, try project_documents (dojo projects)
+        if not deck_result:
+            project_doc_query = text("""
+            SELECT pd.id, pd.file_path, 
+                   (SELECT file_path FROM project_documents pd2 
+                    WHERE pd2.project_id = pd.project_id 
+                    AND pd2.document_type = 'analysis_results' 
+                    AND pd2.is_active = TRUE 
+                    LIMIT 1) as results_file_path,
+                   u.email, p.company_id, 'project_documents' as source
+            FROM project_documents pd
+            JOIN projects p ON pd.project_id = p.id
+            LEFT JOIN users u ON pd.uploaded_by = u.id
+            WHERE pd.id = :deck_id AND pd.document_type = 'pitch_deck' AND pd.is_active = TRUE
+            """)
+            
+            deck_result = db.execute(project_doc_query, {"deck_id": deck_id}).fetchone()
+        
         if not deck_result:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Deck {deck_id} not found"
             )
         
-        deck_id_db, file_path, results_file_path, user_email, company_name = deck_result
+        deck_id_db, file_path, results_file_path, user_email, company_name, source = deck_result
         
         # Verify this deck belongs to the requested company (skip for GP admin access)
         if current_user.role != "gp":
@@ -473,12 +492,22 @@ async def get_project_results(
         
         # Load analysis results
         if not results_file_path:
-            # Check if template processing results exist
-            template_check = db.execute(text("""
-                SELECT template_processing_results_json 
-                FROM pitch_decks 
-                WHERE id = :deck_id AND template_processing_results_json IS NOT NULL
-            """), {"deck_id": deck_id}).fetchone()
+            # Check if template processing results exist based on source
+            if source == 'pitch_decks':
+                template_check = db.execute(text("""
+                    SELECT template_processing_results_json 
+                    FROM pitch_decks 
+                    WHERE id = :deck_id AND template_processing_results_json IS NOT NULL
+                """), {"deck_id": deck_id}).fetchone()
+            else:
+                # For project_documents, check if experiment has template processing
+                template_check = db.execute(text("""
+                    SELECT ee.template_processing_results_json
+                    FROM extraction_experiments ee
+                    JOIN projects p ON p.project_metadata::json->>'experiment_id' = ee.id::text
+                    JOIN project_documents pd ON pd.project_id = p.id
+                    WHERE pd.id = :deck_id AND ee.template_processing_results_json IS NOT NULL
+                """), {"deck_id": deck_id}).fetchone()
             
             if not template_check:
                 raise HTTPException(
@@ -493,12 +522,21 @@ async def get_project_results(
         if results_file_path.startswith("template_processed_"):
             logger.info(f"Loading template processing results for deck {deck_id}")
             
-            # Get template processing results from database
-            template_query = text("""
-                SELECT template_processing_results_json 
-                FROM pitch_decks 
-                WHERE id = :deck_id
-            """)
+            # Get template processing results from database based on source
+            if source == 'pitch_decks':
+                template_query = text("""
+                    SELECT template_processing_results_json 
+                    FROM pitch_decks 
+                    WHERE id = :deck_id
+                """)
+            else:
+                template_query = text("""
+                    SELECT ee.template_processing_results_json
+                    FROM extraction_experiments ee
+                    JOIN projects p ON p.project_metadata::json->>'experiment_id' = ee.id::text
+                    JOIN project_documents pd ON pd.project_id = p.id
+                    WHERE pd.id = :deck_id
+                """)
             
             template_result = db.execute(template_query, {"deck_id": deck_id}).fetchone()
             
