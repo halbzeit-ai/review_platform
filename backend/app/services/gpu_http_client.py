@@ -675,13 +675,14 @@ class GPUHTTPClient:
                 "error": str(e)
             }
     
-    async def run_template_processing_only(self, deck_ids: List[int], template_id: int, generate_thumbnails: bool = True) -> Dict[str, Any]:
+    async def run_template_processing_only(self, deck_ids: List[int], template_id: int, text_model: str = None, generate_thumbnails: bool = True) -> Dict[str, Any]:
         """
         Run template processing using cached visual analysis and extraction results
         
         Args:
             deck_ids: List of pitch deck IDs to process
             template_id: Template ID to use for processing
+            text_model: Text model to use for processing (optional)
             generate_thumbnails: Whether to generate thumbnails
             
         Returns:
@@ -702,6 +703,13 @@ class GPUHTTPClient:
                 "template_id": template_id,
                 "generate_thumbnails": generate_thumbnails
             }
+            
+            # Add text_model if specified
+            if text_model:
+                payload["text_model"] = text_model
+                logger.info(f"Using specified text model: {text_model}")
+            else:
+                logger.info("No text model specified, GPU will use default")
             
             async with httpx.AsyncClient(timeout=1800.0) as client:  # 30 minutes timeout
                 response = await client.post(

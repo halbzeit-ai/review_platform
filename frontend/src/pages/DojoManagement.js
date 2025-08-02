@@ -185,6 +185,7 @@ const DojoManagement = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [selectedStep4Model, setSelectedStep4Model] = useState('');
   const [templateProcessingStatus, setTemplateProcessingStatus] = useState('');
   const [availableTemplates, setAvailableTemplates] = useState([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
@@ -251,11 +252,11 @@ const DojoManagement = () => {
 
   // Auto-run Step 4 (template processing) after Step 3 completes if checkbox is enabled
   useEffect(() => {
-    if (step3Progress.status === 'completed' && runStep4AfterStep3 && selectedTemplate && step4Progress.status !== 'processing') {
+    if (step3Progress.status === 'completed' && runStep4AfterStep3 && selectedTemplate && selectedStep4Model && step4Progress.status !== 'processing') {
       console.log('Auto-triggering Step 4 (template processing) after Step 3 completion');
       runTemplateProcessing();
     }
-  }, [step3Progress.status, runStep4AfterStep3, selectedTemplate, step4Progress.status]);
+  }, [step3Progress.status, runStep4AfterStep3, selectedTemplate, selectedStep4Model, step4Progress.status]);
 
   // Load cached decks count on component mount and when checkbox is checked
   useEffect(() => {
@@ -1503,6 +1504,9 @@ const DojoManagement = () => {
       // Set this as the current extraction sample
       setExtractionSample(experimentSample);
       
+      // Auto-check "Select from cached" since we're using experiment data that already has visual analysis
+      setSelectFromCached(true);
+      
       // Switch to the Extraction Testing Lab tab if not already there
       setCurrentTab(0);
       
@@ -1556,8 +1560,17 @@ const DojoManagement = () => {
 
   // Run template-based processing for experiment results
   const runTemplateProcessing = async () => {
-    if (!isVisualAnalysisCompleted() || !selectedTemplate || extractionSample.length === 0) {
-      setError('Please select a template, ensure visual analysis is completed, and have an active sample');
+    console.log('runTemplateProcessing called', {
+      visualAnalysisCompleted: isVisualAnalysisCompleted(),
+      visualAnalysisStatus,
+      selectFromCached,
+      selectedTemplate,
+      selectedStep4Model,
+      extractionSampleLength: extractionSample.length
+    });
+    
+    if (!isVisualAnalysisCompleted() || !selectedTemplate || !selectedStep4Model || extractionSample.length === 0) {
+      setError('Please select a template and model, ensure visual analysis is completed, and have an active sample');
       return;
     }
 
@@ -1599,6 +1612,7 @@ const DojoManagement = () => {
         body: JSON.stringify({
           deck_ids: deckIds,
           template_id: selectedTemplate ? parseInt(selectedTemplate, 10) : null,
+          text_model: selectedStep4Model,
           generate_thumbnails: true
         }),
         signal: controller.signal
@@ -1906,11 +1920,8 @@ const DojoManagement = () => {
       const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
       
       console.log('Calling DELETE /api/dojo/files/all...');
-      // Use direct backend URL to bypass proxy issues
-      const backendUrl = window.location.hostname === 'localhost' 
-        ? 'http://localhost:5001' 
-        : `http://${window.location.hostname}:5001`;
-      const response = await fetch(`${backendUrl}/api/dojo/files/all`, {
+      // Use relative URL (works in both dev and production via proxy/nginx)
+      const response = await fetch('/api/dojo/files/all', {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
         signal: controller.signal
@@ -2482,13 +2493,38 @@ const DojoManagement = () => {
                       )}
                     </Select>
                   </FormControl>
+                  
+                  <FormControl fullWidth sx={{ mb: 2 }}>
+                    <InputLabel>Text Model</InputLabel>
+                    <Select
+                      value={selectedStep4Model || ''}
+                      onChange={(e) => setSelectedStep4Model(e.target.value)}
+                      label="Text Model"
+                      disabled={modelsLoading || step4Progress.status === 'processing'}
+                    >
+                      {modelsLoading ? (
+                        <MenuItem disabled>
+                          <CircularProgress size={16} sx={{ mr: 1 }} />
+                          Loading models...
+                        </MenuItem>
+                      ) : availableModels.text && availableModels.text.length > 0 ? (
+                        availableModels.text.map((model) => (
+                          <MenuItem key={model.model_name} value={model.model_name}>
+                            {model.model_name}
+                          </MenuItem>
+                        ))
+                      ) : (
+                        <MenuItem disabled>No models available</MenuItem>
+                      )}
+                    </Select>
+                  </FormControl>
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <Button
                       variant="contained"
                       onClick={runTemplateProcessing}
-                      disabled={!selectedTemplate || step4Progress.status === 'processing'} // Use backend progress status
+                      disabled={!selectedTemplate || !selectedStep4Model || step4Progress.status === 'processing'} // Use backend progress status
                       startIcon={step4Progress.status === 'processing' ? <CircularProgress size={16} /> : <Assessment />}
                       fullWidth
                       sx={{ height: 56 }}
@@ -2553,7 +2589,7 @@ const DojoManagement = () => {
                         <Checkbox
                           checked={runStep4AfterStep3}
                           onChange={(e) => setRunStep4AfterStep3(e.target.checked)}
-                          disabled={!selectedTemplate} // Enabled when template is selected
+                          disabled={!selectedTemplate || !selectedStep4Model} // Enabled when template and model are selected
                         />
                       }
                       label="Run after Step 3 is completed"
@@ -2699,7 +2735,7 @@ const DojoManagement = () => {
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2">
-                              {new Date(experiment.created_at).toLocaleDateString()}
+                              {new Date(experiment.created_at).toLocaleString()}
                             </Typography>
                           </TableCell>
                           <TableCell>

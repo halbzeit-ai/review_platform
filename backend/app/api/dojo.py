@@ -1263,7 +1263,7 @@ async def test_offering_extraction(
         
         # Save experiment to database and get the ID
         result = db.execute(text(
-            "INSERT INTO extraction_experiments (experiment_name, pitch_deck_ids, extraction_type, text_model_used, extraction_prompt, results_json) VALUES (:name, :deck_ids, :type, :model, :prompt, :results) RETURNING id"
+            "INSERT INTO extraction_experiments (experiment_name, pitch_deck_ids, extraction_type, text_model_used, extraction_prompt, results_json, created_at) VALUES (:name, :deck_ids, :type, :model, :prompt, :results, CURRENT_TIMESTAMP) RETURNING id"
         ), {
             "name": request.experiment_name,
             "deck_ids": request.deck_ids,
@@ -1815,6 +1815,7 @@ class DeckDateExtractionRequest(BaseModel):
 class TemplateProcessingRequest(BaseModel):
     deck_ids: List[int]  # Direct deck IDs from current sample
     template_id: Optional[int] = None  # Optional: use default if not specified
+    text_model: Optional[str] = None  # Text model to use for template processing
     generate_thumbnails: bool = True
 
 @router.post("/extraction-test/run-company-name-extraction")
@@ -2437,6 +2438,7 @@ async def run_template_processing_batch(
         gpu_result = await gpu_http_client.run_template_processing_only(
             deck_ids=deck_ids,
             template_id=request.template_id if request.template_id else (template_info["id"] if template_info else None),
+            text_model=request.text_model,
             generate_thumbnails=request.generate_thumbnails
         )
         
