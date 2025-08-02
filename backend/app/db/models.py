@@ -106,6 +106,20 @@ class Project(Base):
     interactions = relationship("ProjectInteraction", back_populates="project")
     current_stage = relationship("ProjectStage", foreign_keys=[current_stage_id], post_update=True)
 
+class ProjectProgress(Base):
+    __tablename__ = "project_progress"
+    project_id = Column(Integer, primary_key=True)  # Use project_id as primary key for SQLAlchemy
+    company_id = Column(String)
+    project_name = Column(String)
+    funding_round = Column(String)
+    total_stages = Column(Integer)
+    completed_stages = Column(Integer)
+    active_stages = Column(Integer)
+    pending_stages = Column(Integer)
+    completion_percentage = Column(Numeric)
+    current_stage_name = Column(String)
+    current_stage_order = Column(Integer)
+
 class ProjectStage(Base):
     __tablename__ = "project_stages"
     id = Column(Integer, primary_key=True, index=True)
@@ -186,12 +200,33 @@ class ExtractionExperiment(Base):
     __tablename__ = "extraction_experiments"
     id = Column(Integer, primary_key=True, index=True)
     experiment_name = Column(String(255), nullable=False, index=True)
-    pitch_deck_ids = Column(Text, nullable=False)  # JSON array of deck IDs in sample (SQLite doesn't support arrays)
+    pitch_deck_ids = Column(Text, nullable=False)  # PostgreSQL array of deck IDs in sample
     extraction_type = Column(String(50), nullable=False, default='company_offering')
     text_model_used = Column(String(255), nullable=False)  # Model used for extraction
     extraction_prompt = Column(Text, nullable=False)  # Custom prompt for extraction
     results_json = Column(Text, nullable=False)  # Store all extraction results
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    
+    # Step 3.2: Classification
+    classification_enabled = Column(Boolean, default=False)
+    classification_results_json = Column(Text)
+    classification_model_used = Column(String(255))
+    classification_completed_at = Column(DateTime)
+    
+    # Step 3.3: Company Name
+    company_name_results_json = Column(Text)
+    company_name_completed_at = Column(DateTime)
+    
+    # Step 3.4: Funding Amount
+    funding_amount_results_json = Column(Text)
+    funding_amount_completed_at = Column(DateTime)
+    
+    # Step 3.5: Deck Date
+    deck_date_results_json = Column(Text)
+    deck_date_completed_at = Column(DateTime)
+    
+    # Step 4: Template Processing
+    template_processing_results_json = Column(Text)
 
 
 # Generated SQLAlchemy models for previously missing tables

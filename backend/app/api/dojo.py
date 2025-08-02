@@ -1343,7 +1343,7 @@ async def get_extraction_experiments(
                 "experiment_name": exp[1],
                 "extraction_type": exp[2], 
                 "text_model_used": exp[3],
-                "created_at": exp[4].isoformat(),
+                "created_at": exp[4].isoformat() if exp[4] else None,
                 "total_decks": results_data.get("total_decks", 0),
                 "successful_extractions": results_data.get("successful_extractions", 0),
                 "classification_enabled": bool(exp[6]) if exp[6] is not None else False,
@@ -1403,7 +1403,14 @@ async def get_experiment_details(
         results_data = json.loads(experiment[6]) if experiment[6] else {}
         
         # Get deck information for the experiment
-        deck_ids = experiment[7]  # pitch_deck_ids array
+        deck_ids_raw = experiment[7]  # pitch_deck_ids array from PostgreSQL
+        # Parse PostgreSQL array format {65,68,61,58,51,71,60,50,62,64} to Python list
+        if isinstance(deck_ids_raw, str) and deck_ids_raw.startswith('{') and deck_ids_raw.endswith('}'):
+            deck_ids = [int(x.strip()) for x in deck_ids_raw[1:-1].split(',') if x.strip()]
+        elif isinstance(deck_ids_raw, list):
+            deck_ids = deck_ids_raw  # Already a list
+        else:
+            deck_ids = []
         decks = db.query(PitchDeck).filter(PitchDeck.id.in_(deck_ids)).all()
         deck_info = {}
         for deck in decks:
@@ -1498,7 +1505,7 @@ async def get_experiment_details(
             "extraction_type": experiment[2],
             "text_model_used": experiment[3],
             "extraction_prompt": experiment[4],
-            "created_at": experiment[5].isoformat(),
+            "created_at": experiment[5].isoformat() if experiment[5] else None,
             "total_decks": results_data.get("total_decks", 0),
             "successful_extractions": results_data.get("successful_extractions", 0),
             "results": enhanced_results,
@@ -1872,7 +1879,14 @@ async def enrich_experiment_with_company_names(
         from ..services.gpu_http_client import gpu_http_client
         
         # Collect deck IDs for GPU processing
-        deck_ids = experiment[7]  # pitch_deck_ids
+        deck_ids_raw = experiment[7]  # pitch_deck_ids array from PostgreSQL
+        # Parse PostgreSQL array format {65,68,61,58,51,71,60,50,62,64} to Python list
+        if isinstance(deck_ids_raw, str) and deck_ids_raw.startswith('{') and deck_ids_raw.endswith('}'):
+            deck_ids = [int(x.strip()) for x in deck_ids_raw[1:-1].split(',') if x.strip()]
+        elif isinstance(deck_ids_raw, list):
+            deck_ids = deck_ids_raw  # Already a list
+        else:
+            deck_ids = []
         
         # Call GPU pipeline for company name extraction using the same visual analysis
         gpu_result = await gpu_http_client.run_offering_extraction(
@@ -2044,7 +2058,14 @@ async def enrich_experiment_with_funding_amounts(
         from ..services.gpu_http_client import gpu_http_client
         
         # Collect deck IDs for GPU processing
-        deck_ids = experiment[7]  # pitch_deck_ids
+        deck_ids_raw = experiment[7]  # pitch_deck_ids array from PostgreSQL
+        # Parse PostgreSQL array format {65,68,61,58,51,71,60,50,62,64} to Python list
+        if isinstance(deck_ids_raw, str) and deck_ids_raw.startswith('{') and deck_ids_raw.endswith('}'):
+            deck_ids = [int(x.strip()) for x in deck_ids_raw[1:-1].split(',') if x.strip()]
+        elif isinstance(deck_ids_raw, list):
+            deck_ids = deck_ids_raw  # Already a list
+        else:
+            deck_ids = []
         
         # Call GPU pipeline for funding amount extraction using the same visual analysis
         gpu_result = await gpu_http_client.run_offering_extraction(
@@ -2208,7 +2229,14 @@ async def enrich_experiment_with_deck_dates(
         from ..services.gpu_http_client import gpu_http_client
         
         # Collect deck IDs for GPU processing
-        deck_ids = experiment[7]  # pitch_deck_ids
+        deck_ids_raw = experiment[7]  # pitch_deck_ids array from PostgreSQL
+        # Parse PostgreSQL array format {65,68,61,58,51,71,60,50,62,64} to Python list
+        if isinstance(deck_ids_raw, str) and deck_ids_raw.startswith('{') and deck_ids_raw.endswith('}'):
+            deck_ids = [int(x.strip()) for x in deck_ids_raw[1:-1].split(',') if x.strip()]
+        elif isinstance(deck_ids_raw, list):
+            deck_ids = deck_ids_raw  # Already a list
+        else:
+            deck_ids = []
         
         # Call GPU pipeline for deck date extraction using the same visual analysis
         gpu_result = await gpu_http_client.run_offering_extraction(
