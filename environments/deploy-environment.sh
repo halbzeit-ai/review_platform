@@ -103,7 +103,7 @@ deploy_component() {
             ;;
         "gpu")
             target_dir="$PROJECT_ROOT/$GPU_PATH"
-            target_file="$target_dir/.env.$environment"
+            target_file="$target_dir/.env"
             ;;
         *)
             echo -e "${RED}❌ Unknown component: $component${NC}"

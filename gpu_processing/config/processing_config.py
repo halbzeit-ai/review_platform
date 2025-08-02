@@ -9,7 +9,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # Load GPU-specific environment variables
-load_dotenv(Path(__file__).parent.parent / ".env.gpu")
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 @dataclass
 class ProcessingConfig:

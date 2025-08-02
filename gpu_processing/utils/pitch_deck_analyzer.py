@@ -41,8 +41,8 @@ class PitchDeckAnalyzer:
     """Simplified pitch deck analyzer for single-file processing"""
     
     def __init__(self):
-        # Load environment variables from .env.gpu
-        load_dotenv('/opt/gpu_processing/.env.gpu')
+        # Load environment variables from .env
+        load_dotenv('/opt/gpu_processing/.env')
         
         # Model configuration - get each model type separately
         self.llm_model = self.get_model_by_type("vision") or "gemma3:12b"  # Vision model for image analysis

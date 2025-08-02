@@ -25,7 +25,7 @@ sudo mkdir -p $GPU_PROCESSING_DIR/config
 echo "📋 Copying files..."
 sudo cp $REPO_DIR/gpu_processing/gpu_http_server.py $GPU_PROCESSING_DIR/
 sudo cp $REPO_DIR/gpu_processing/main.py $GPU_PROCESSING_DIR/
-sudo cp $REPO_DIR/gpu_processing/.env.gpu $GPU_PROCESSING_DIR/
+sudo cp $REPO_DIR/gpu_processing/.env $GPU_PROCESSING_DIR/
 sudo cp $REPO_DIR/gpu_processing/requirements.txt $GPU_PROCESSING_DIR/
 sudo cp -r $REPO_DIR/gpu_processing/utils $GPU_PROCESSING_DIR/
 sudo cp -r $REPO_DIR/gpu_processing/config $GPU_PROCESSING_DIR/
@@ -78,4 +78,4 @@ sudo systemctl status $SERVICE_NAME --no-pager
 
 echo "🎉 GPU HTTP Server deployed successfully!"
 echo "📊 Monitor logs with: sudo journalctl -u $SERVICE_NAME -f"
-echo "🔧 Configuration file: $GPU_PROCESSING_DIR/.env.gpu"
+echo "🔧 Configuration file: $GPU_PROCESSING_DIR/.env"
