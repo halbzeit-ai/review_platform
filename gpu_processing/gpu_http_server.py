@@ -321,6 +321,7 @@ class GPUHTTPServer:
                 
                 deck_ids = data.get('deck_ids', [])
                 template_id = data.get('template_id')
+                text_model = data.get('text_model')
                 generate_thumbnails = data.get('generate_thumbnails', True)
                 
                 if not deck_ids:
@@ -338,6 +339,10 @@ class GPUHTTPServer:
                     }), 400
                 
                 logger.info(f"Starting template-only processing for {len(deck_ids)} decks using template {template_id}")
+                if text_model:
+                    logger.info(f"Using specified text model: {text_model}")
+                else:
+                    logger.info("No text model specified, using default")
                 
                 # Get cached visual analysis for all decks at once
                 cached_analysis = self._get_cached_visual_analysis(deck_ids)
@@ -375,6 +380,13 @@ class GPUHTTPServer:
                         
                         # Create analyzer and set pre-computed data
                         analyzer = HealthcareTemplateAnalyzer()
+                        
+                        # Override text model if specified in request
+                        if text_model:
+                            analyzer.text_model = text_model
+                            # Recalculate model options based on the new text model
+                            analyzer.model_options = analyzer._get_model_options()
+                            logger.info(f"🔧 Overriding text model for deck {deck_id}: {text_model}")
                         
                         # Set visual analysis results
                         analyzer.visual_analysis_results = deck_visual_data['visual_analysis_results']
