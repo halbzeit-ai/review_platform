@@ -2,6 +2,25 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## CRITICAL: Claude Development Environment Context
+
+**IMPORTANT**: Claude Code always runs on the development machine:
+- **Development CPU**: 65.108.32.143 (where Claude executes commands)
+- **Production CPU**: 65.108.32.168 (remote server, no direct access)
+- **GPU Server**: 135.181.63.133 (remote server, no direct access)
+
+**Claude Code Limitations**:
+- ❌ **NEVER run commands on production servers** - Claude only has access to development
+- ❌ **NEVER edit files directly on production** - changes must be made in development repo
+- ✅ **All changes made in development** - then deployed to production via git pull
+- ✅ **User provides production logs/output** - Claude analyzes but cannot execute there
+
+**Deployment Workflow**:
+1. Claude makes changes in development environment (`/opt/review-platform-dev/`)
+2. User pulls changes to production (`git pull origin main` on 65.108.32.168)
+3. User runs deployment commands on production servers
+4. User provides logs/errors back to Claude for analysis
+
 ## Project Overview
 
 This is a startup review platform with a Python FastAPI backend and React frontend. The platform allows:
