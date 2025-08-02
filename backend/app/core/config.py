@@ -84,28 +84,27 @@ def get_environment() -> str:
     return os.getenv("ENVIRONMENT", "development")
 
 def load_environment_config() -> Settings:
-    """Load configuration based on current environment"""
+    """Load configuration based on current environment using centralized environment files"""
     environment = get_environment()
     
-    # Load environment-specific settings based on detected environment
-    if environment == "development" and os.path.exists("../environments/development.env"):
-        class DevelopmentSettings(Settings):
-            class Config:
-                env_file = "../environments/development.env"
-        return DevelopmentSettings()
-    elif environment == "staging" and os.path.exists("../environments/staging.env"):
-        class StagingSettings(Settings):
-            class Config:
-                env_file = "../environments/staging.env"
-        return StagingSettings()
-    elif environment == "production" and os.path.exists("../environments/production.env"):
-        class ProductionSettings(Settings):
-            class Config:
-                env_file = "../environments/production.env"
-        return ProductionSettings()
-    else:
-        # Fall back to default settings with .env
+    # Use the centralized environment system deployed by deploy-environment.sh
+    # Primary: Use the deployed .env file in backend directory
+    env_file_path = ".env"
+    
+    if os.path.exists(env_file_path):
+        # Use the deployed environment file (managed by centralized system)
         return Settings()
+    else:
+        # Fallback: Look for centralized environment files (backup compatibility)
+        centralized_path = f"../environments/.env.backend.{environment}"
+        if os.path.exists(centralized_path):
+            class CentralizedSettings(Settings):
+                class Config:
+                    env_file = centralized_path
+            return CentralizedSettings()
+        else:
+            # Final fallback to default settings
+            return Settings()
 
 # Create settings instance with environment detection
 settings = load_environment_config()
