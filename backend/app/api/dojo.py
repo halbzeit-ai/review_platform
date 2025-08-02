@@ -2889,6 +2889,7 @@ async def template_progress_callback(
         deck_id = request.get("deck_id")
         chapter_name = request.get("chapter_name")
         status = request.get("status", "processing")
+        chapter_results = request.get("chapter_results")
         
         if deck_id and chapter_name:
             # Get deck filename for display
@@ -2907,6 +2908,55 @@ async def template_progress_callback(
                 if status == "completed":
                     progress_tracker["step4"]["progress"] += 1
                     logger.info(f"Template progress update - Deck {deck_filename}: Completed chapter '{chapter_name}' ({progress_tracker['step4']['progress']}/{progress_tracker['step4']['total']})")
+                    
+                    # Progressive delivery: Store chapter results if provided
+                    if chapter_results:
+                        try:
+                            # Store chapter results in extraction_experiments table
+                            from ..services.gpu_http_client import gpu_http_client
+                            
+                            # Get the current active experiment
+                            latest_experiment = db.execute(text(
+                                "SELECT id, template_processing_results_json FROM extraction_experiments ORDER BY created_at DESC LIMIT 1"
+                            )).fetchone()
+                            
+                            if latest_experiment:
+                                experiment_id = latest_experiment[0]
+                                existing_results = json.loads(latest_experiment[1]) if latest_experiment[1] else {}
+                                
+                                # Add chapter results to deck
+                                if "results" not in existing_results:
+                                    existing_results["results"] = []
+                                
+                                # Find or create deck entry
+                                deck_entry = None
+                                for result in existing_results["results"]:
+                                    if result.get("deck_id") == deck_id:
+                                        deck_entry = result
+                                        break
+                                
+                                if not deck_entry:
+                                    deck_entry = {"deck_id": deck_id, "chapters": {}}
+                                    existing_results["results"].append(deck_entry)
+                                
+                                if "chapters" not in deck_entry:
+                                    deck_entry["chapters"] = {}
+                                
+                                # Store chapter results
+                                deck_entry["chapters"][chapter_name] = chapter_results
+                                
+                                # Update database
+                                db.execute(text(
+                                    "UPDATE extraction_experiments SET template_processing_results_json = :results WHERE id = :experiment_id"
+                                ), {"results": json.dumps(existing_results), "experiment_id": experiment_id})
+                                db.commit()
+                                
+                                logger.info(f"Progressive storage - Deck {deck_id}: Stored chapter '{chapter_name}' results")
+                            else:
+                                logger.warning("No active experiment found for progressive delivery")
+                                
+                        except Exception as e:
+                            logger.warning(f"Failed to store progressive chapter results: {e}")
                 else:
                     logger.info(f"Template progress update - Deck {deck_filename}: Processing chapter '{chapter_name}'")
                 

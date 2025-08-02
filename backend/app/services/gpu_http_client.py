@@ -701,7 +701,8 @@ class GPUHTTPClient:
             payload = {
                 "deck_ids": deck_ids,
                 "template_id": template_id,
-                "generate_thumbnails": generate_thumbnails
+                "generate_thumbnails": generate_thumbnails,
+                "enable_progressive_delivery": True
             }
             
             # Add text_model if specified

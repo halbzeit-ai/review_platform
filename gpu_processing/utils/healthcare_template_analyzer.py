@@ -45,7 +45,7 @@ def get_information_for_image(image_bytes, prompt, model):
 class HealthcareTemplateAnalyzer:
     """Template-based pitch deck analyzer for healthcare startups"""
     
-    def __init__(self, backend_base_url: str = "http://localhost:8000"):
+    def __init__(self, backend_base_url: str = "http://localhost:8000", text_model_override: str = None, scoring_model_override: str = None):
         self.backend_base_url = backend_base_url
         # Use PostgreSQL database connection
         # Build database URL from environment variables or use DATABASE_URL directly
@@ -63,13 +63,13 @@ class HealthcareTemplateAnalyzer:
         # Check if we should skip database lookups (for development)
         if os.getenv('SKIP_DB_MODEL_CONFIG', 'false').lower() == 'true':
             self.vision_model = os.getenv('DEFAULT_VISION_MODEL', 'gemma3:12b')
-            self.text_model = os.getenv('DEFAULT_TEXT_MODEL', 'gemma3:12b')
-            self.scoring_model = os.getenv('DEFAULT_SCORING_MODEL', 'phi4:latest')
+            self.text_model = text_model_override or os.getenv('DEFAULT_TEXT_MODEL', 'gemma3:12b')
+            self.scoring_model = scoring_model_override or os.getenv('DEFAULT_SCORING_MODEL', 'phi4:latest')
             logger.info("📋 Skipping database model config, using environment defaults")
         else:
             self.vision_model = self.get_model_by_type("vision") or os.getenv('DEFAULT_VISION_MODEL', 'gemma3:12b')
-            self.text_model = self.get_model_by_type("text") or os.getenv('DEFAULT_TEXT_MODEL', 'gemma3:12b')
-            self.scoring_model = self.get_model_by_type("scoring") or os.getenv('DEFAULT_SCORING_MODEL', 'phi4:latest')
+            self.text_model = text_model_override or self.get_model_by_type("text") or os.getenv('DEFAULT_TEXT_MODEL', 'gemma3:12b')
+            self.scoring_model = scoring_model_override or self.get_model_by_type("scoring") or os.getenv('DEFAULT_SCORING_MODEL', 'phi4:latest')
         
         # Set model-appropriate parameters
         self.model_options = self._get_model_options()
@@ -1331,12 +1331,16 @@ class HealthcareTemplateAnalyzer:
                 # Send progress completion callback after chapter is finished
                 if self.progress_callback and self.current_deck_id:
                     try:
-                        # Call with status parameter if the callback accepts it
+                        # Try to call with chapter results for progressive delivery
                         try:
-                            self.progress_callback(self.current_deck_id, chapter_name, "completed")
+                            self.progress_callback(self.current_deck_id, chapter_name, "completed", chapter_results_data)
                         except TypeError:
-                            # Fallback for old callback signature without status
-                            self.progress_callback(self.current_deck_id, chapter_name)
+                            # Fallback for old callback signature without chapter_results
+                            try:
+                                self.progress_callback(self.current_deck_id, chapter_name, "completed")
+                            except TypeError:
+                                # Fallback for oldest callback signature
+                                self.progress_callback(self.current_deck_id, chapter_name)
                     except Exception as e:
                         logger.warning(f"Failed to send chapter completion callback: {e}")
     

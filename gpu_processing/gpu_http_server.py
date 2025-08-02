@@ -323,6 +323,7 @@ class GPUHTTPServer:
                 template_id = data.get('template_id')
                 text_model = data.get('text_model')
                 generate_thumbnails = data.get('generate_thumbnails', True)
+                enable_progressive_delivery = data.get('enable_progressive_delivery', False)
                 
                 if not deck_ids:
                     return jsonify({
@@ -378,17 +379,12 @@ class GPUHTTPServer:
                             logger.warning(f"No extraction results found for deck {deck_id} - proceeding with visual analysis only")
                             extraction_data = {}  # Empty dict to avoid errors
                         
-                        # Create analyzer and set pre-computed data
-                        analyzer = HealthcareTemplateAnalyzer()
-                        
-                        # Override text model if specified in request
+                        # Create analyzer with model overrides if specified
                         if text_model:
-                            analyzer.text_model = text_model
-                            # Also use the same model for scoring to ensure compatibility
-                            analyzer.scoring_model = text_model
-                            # Recalculate model options based on the new text model
-                            analyzer.model_options = analyzer._get_model_options()
-                            logger.info(f"🔧 Overriding text and scoring models for deck {deck_id}: {text_model}")
+                            analyzer = HealthcareTemplateAnalyzer(text_model_override=text_model, scoring_model_override=text_model)
+                            logger.info(f"🔧 Creating analyzer with text and scoring models for deck {deck_id}: {text_model}")
+                        else:
+                            analyzer = HealthcareTemplateAnalyzer()
                         
                         # Set visual analysis results
                         analyzer.visual_analysis_results = deck_visual_data['visual_analysis_results']
@@ -414,17 +410,25 @@ class GPUHTTPServer:
                             logger.error(f"Error loading template {template_id}: {e}")
                             continue
                         
-                        # Set progress callback
-                        def progress_callback(deck_id: int, chapter_name: str, status: str = "processing"):
+                        # Set progress callback with progressive delivery support
+                        def progress_callback(deck_id: int, chapter_name: str, status: str = "processing", chapter_results: dict = None):
+                            # Basic progress update
+                            callback_data = {
+                                "chapter_name": chapter_name,
+                                "deck_id": deck_id,
+                                "status": status,
+                                "deck_name": deck_name  # Pass deck name for better progress display
+                            }
+                            
+                            # Add chapter results for progressive delivery if enabled and results provided
+                            if enable_progressive_delivery and chapter_results and status == "completed":
+                                callback_data["chapter_results"] = chapter_results
+                                logger.info(f"Progressive delivery - Sending chapter '{chapter_name}' results for deck {deck_id}")
+                            
                             # Call backend to update progress
                             requests.post(
                                 f"{self.backend_url}/api/dojo/template-progress-callback",
-                                json={
-                                    "chapter_name": chapter_name,
-                                    "deck_id": deck_id,
-                                    "status": status,
-                                    "deck_name": deck_name  # Pass deck name for better progress display
-                                }
+                                json=callback_data
                             )
                         
                         # Store progress callback and deck_id for chapter processing
