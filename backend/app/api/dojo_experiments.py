@@ -550,11 +550,11 @@ async def add_dojo_companies_from_experiment(
             project_insert = text("""
                 INSERT INTO projects (
                     company_id, project_name, funding_round, funding_sought, 
-                    company_offering, tags, is_test, project_metadata, 
+                    company_offering, tags, is_test, is_active, project_metadata, 
                     created_at, updated_at
                 )
                 VALUES (:company_id, :project_name, :funding_round, :funding_sought,
-                        :company_offering, :tags, TRUE, :metadata, 
+                        :company_offering, :tags, TRUE, TRUE, :metadata, 
                         :created_at, :updated_at)
                 RETURNING id
             """)
