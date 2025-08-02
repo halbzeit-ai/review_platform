@@ -275,8 +275,9 @@ class HealthcareTemplateAnalyzer:
             
         except Exception as e:
             logger.error(f"Error creating project directories: {e}")
-            # Fallback to old structure
-            return os.path.join("/mnt/shared/temp", "analysis")
+            # Fallback to environment-aware temp structure
+            shared_mount = os.getenv('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/CPU-GPU')
+            return os.path.join(shared_mount, "temp", "analysis")
     
     def _get_pipeline_prompt(self, stage_name: str) -> str:
         """Get pipeline prompt from PostgreSQL database"""

@@ -4,9 +4,26 @@ Extract all 34 questions from the Seven-Chapter Review results.json
 """
 
 import json
+import os
+import sys
+
+# Get input file from command line or use default
+if len(sys.argv) > 1:
+    results_file = sys.argv[1]
+else:
+    # Use environment-aware default path
+    shared_mount = os.getenv('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/CPU-GPU')
+    results_file = os.path.join(shared_mount, 'results', 'job_249_1753945263_results.json')
+
+print(f"Loading results from: {results_file}")
+
+if not os.path.exists(results_file):
+    print(f"❌ Results file not found: {results_file}")
+    print("Usage: python extract_34_questions.py [path_to_results.json]")
+    sys.exit(1)
 
 # Load the results file
-with open('/mnt/production-shared/results/job_249_1753945263_results.json', 'r') as f:
+with open(results_file, 'r') as f:
     data = json.load(f)
 
 # Extract all questions from chapter_analysis

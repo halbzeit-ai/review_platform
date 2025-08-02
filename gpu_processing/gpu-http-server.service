@@ -13,8 +13,8 @@ StandardOutput=journal
 StandardError=journal
 
 # Environment variables
-Environment=PYTHONPATH=/opt/gpu_processing
-EnvironmentFile=/opt/gpu_processing/.env
+Environment=PYTHONPATH=/opt/review-platform/gpu_processing
+EnvironmentFile=/opt/review-platform/gpu_processing/.env
 
 [Install]
 WantedBy=multi-user.target

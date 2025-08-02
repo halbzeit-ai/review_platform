@@ -42,7 +42,7 @@ class PitchDeckAnalyzer:
     
     def __init__(self):
         # Load environment variables from .env
-        load_dotenv('/opt/gpu_processing/.env')
+        load_dotenv()
         
         # Model configuration - get each model type separately
         self.llm_model = self.get_model_by_type("vision") or "gemma3:12b"  # Vision model for image analysis
@@ -177,8 +177,9 @@ class PitchDeckAnalyzer:
             
         except Exception as e:
             logger.error(f"Error creating project directories: {e}")
-            # Fallback to old structure
-            return os.path.join("/mnt/shared/temp", "analysis")
+            # Fallback to environment-aware temp structure
+            shared_mount = os.getenv('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/CPU-GPU')
+            return os.path.join(shared_mount, "temp", "analysis")
     
     def _setup_prompts(self):
         """Initialize all analysis prompts"""

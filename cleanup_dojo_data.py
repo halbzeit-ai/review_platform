@@ -85,7 +85,8 @@ def main():
         # 4. Check filesystem data
         print("\n2. Checking filesystem data...")
         
-        dojo_projects_path = os.path.join('/mnt/CPU-GPU/projects/dojo')
+        from app.core.config import settings
+        dojo_projects_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, 'projects', 'dojo')
         if os.path.exists(dojo_projects_path):
             print(f"Dojo projects directory exists: {dojo_projects_path}")
             if os.path.exists(os.path.join(dojo_projects_path, 'analysis')):

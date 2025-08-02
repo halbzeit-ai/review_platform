@@ -141,7 +141,9 @@ ON CONFLICT (stage_name) DO UPDATE SET
 """
         
         # Write to shared filesystem for production import
-        shared_export_path = "/mnt/production-shared/temp/missing_extraction_prompts.sql"
+        import os
+        shared_mount = os.getenv('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/CPU-GPU')
+        shared_export_path = os.path.join(shared_mount, 'temp', 'missing_extraction_prompts.sql')
         
         with open(shared_export_path, 'w') as f:
             f.write(export_sql)
@@ -194,7 +196,7 @@ def main():
     if export_success:
         print("\n📋 For production:")
         print("   1. SSH to production server")
-        print("   2. Run: psql postgresql://review_user:review_password@localhost:5432/review-platform -f /mnt/CPU-GPU/temp/missing_extraction_prompts.sql")
+        print(f"   2. Run: psql postgresql://review_user:review_password@localhost:5432/review-platform -f {shared_export_path}")
         print("   3. Run: ./scripts/export_prompts_production.sh")
         print("   4. Verify prompts appear in export")
 
