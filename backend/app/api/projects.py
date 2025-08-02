@@ -500,14 +500,12 @@ async def get_project_results(
                     WHERE id = :deck_id AND template_processing_results_json IS NOT NULL
                 """), {"deck_id": deck_id}).fetchone()
             else:
-                # For project_documents, check if experiment has template processing
+                # For project_documents, check if original pitch_deck has template processing
                 template_check = db.execute(text("""
-                    SELECT ee.template_processing_results_json
-                    FROM extraction_experiments ee
-                    JOIN projects p ON p.project_metadata::json->>'experiment_id' = ee.id::text
-                    JOIN project_documents pd ON pd.project_id = p.id
+                    SELECT pd_orig.template_processing_results_json
+                    FROM project_documents pd
                     JOIN pitch_decks pd_orig ON pd.file_path = pd_orig.file_path
-                    WHERE pd.id = :deck_id AND ee.template_processing_results_json IS NOT NULL
+                    WHERE pd.id = :deck_id AND pd_orig.template_processing_results_json IS NOT NULL
                 """), {"deck_id": deck_id}).fetchone()
             
             if not template_check:
@@ -531,13 +529,11 @@ async def get_project_results(
                     WHERE id = :deck_id
                 """)
             else:
-                # For dojo projects, get results from extraction_experiments
+                # For dojo projects, get results from original pitch_decks table
                 # Need to map project_document ID back to original pitch_deck ID
                 template_query = text("""
-                    SELECT ee.template_processing_results_json, pd_orig.id as original_deck_id
-                    FROM extraction_experiments ee
-                    JOIN projects p ON p.project_metadata::json->>'experiment_id' = ee.id::text
-                    JOIN project_documents pd ON pd.project_id = p.id
+                    SELECT pd_orig.template_processing_results_json, pd_orig.id as original_deck_id
+                    FROM project_documents pd
                     JOIN pitch_decks pd_orig ON pd.file_path = pd_orig.file_path
                     WHERE pd.id = :deck_id
                 """)
@@ -553,33 +549,21 @@ async def get_project_results(
             # Parse template processing data
             template_data = json.loads(template_result[0])
             
-            # For dojo projects, extract the specific deck's results from the template_processing_results array
-            if source == 'project_documents' and 'template_processing_results' in template_data:
-                # Use the original pitch_deck ID for lookup
-                original_deck_id = template_result[1] if len(template_result) > 1 else deck_id
-                deck_results = None
-                for result in template_data['template_processing_results']:
-                    if result.get('deck_id') == original_deck_id:
-                        deck_results = result
-                        break
-                
-                if deck_results:
-                    return {
-                        "template_analysis": deck_results.get("template_analysis", ""),
-                        "template_used": deck_results.get("template_used", "Unknown"),
-                        "processed_at": template_data.get("processed_at"),
-                        "thumbnail_path": deck_results.get("thumbnail_path"),
-                        "slide_images": deck_results.get("slide_images", []),
-                        "analysis_metadata": {
-                            "source": "dojo_template_processing",
-                            "deck_id": deck_id
-                        }
+            # For dojo projects, the template data is stored directly in pitch_decks
+            if source == 'project_documents':
+                # Template data is stored directly for this deck
+                return {
+                    "template_analysis": template_data.get("template_analysis", ""),
+                    "template_used": template_data.get("template_used", "Unknown"),
+                    "processed_at": template_data.get("processed_at"),
+                    "thumbnail_path": template_data.get("thumbnail_path"),
+                    "slide_images": template_data.get("slide_images", []),
+                    "analysis_metadata": {
+                        "source": "dojo_template_processing",
+                        "deck_id": deck_id,
+                        "original_deck_id": template_result[1] if len(template_result) > 1 else deck_id
                     }
-                else:
-                    raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND,
-                        detail="Template processing results not found for this specific deck"
-                    )
+                }
             
             # Format results for frontend consumption - return the raw template analysis
             return {
