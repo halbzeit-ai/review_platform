@@ -6178,3 +6178,105 @@ INFO:     Finished server process [109069]
 INFO:     Started server process [120572]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:42206 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:42208 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:42218 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:48332 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:48348 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:46310 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:34528 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:34532 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:34534 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:45642 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:45656 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:53284 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:37580 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:37722 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:37738 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:58702 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:51234 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:51236 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:51244 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:42538 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:42546 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     34.124.115.63:45616 - "GET /websocket/5E4JBpbx3p3BchvJF2RQ3CLqAF5ECZNYuPbCg8u9T8Y5jtgi HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:45320 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:54686 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     132.145.134.96:54688 - "GET /websocket/5HmkM6X1D3W3CuCSPuHhrbYyZNBy2aGAiZy9NczoJmtY25H7 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:41470 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:41480 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     23.20.61.199:41484 - "GET /websocket/5E1nK3myeWNWrmffVaH76f2mCFCbe9VcHGwgkfdcD7k3E8D1 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:59492 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:59504 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     168.100.174.143:59512 - "GET /websocket/5FZEwhNZqZUPDfpMueTEekSdUCndeBQv1CaWoo9fEiuFReQG HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:60514 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:60528 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
+WARNING:  Unsupported upgrade request.
+WARNING:  No supported WebSocket library detected. Please use "pip install 'uvicorn[standard]'", or install 'websockets' or 'wsproto' manually.
+INFO:     88.204.136.220:35352 - "GET /websocket/5D7aRtpmVBKsQRzMA2ioUPL25onJPzBjiFVVt5uPZ3TDsn51 HTTP/1.1" 404 Not Found
