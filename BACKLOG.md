@@ -35,6 +35,19 @@ This document tracks features, improvements, and technical debt that need to be 
     - Configure automatic HTTP to HTTPS redirect
     - Set up automatic certificate renewal
 
+- **NFS Filesystem Stability Monitoring**
+  - Status: Monitor for recurrence
+  - Description: Investigate and prevent stale file handle errors on shared filesystem
+  - Current Issue: Encountered stale file handles in `/mnt/CPU-GPU/projects/dojo/uploads/` during development
+  - Root Cause: Network filesystem inconsistency, likely during heavy file operations
+  - Impact: Service interruption, manual intervention required (directory recreation)
+  - Proposed Solutions (if recurring):
+    - Implement NFS mount option hardening (hard,intr,timeo=30,retrans=3)
+    - Add filesystem health monitoring and alerting
+    - Implement graceful error handling with retry logic
+    - Consider local storage for critical operations, NFS for archival
+    - Add automated recovery scripts for stale handle detection
+
 ### Email Deliverability
 - **Fix Email Spam Classification**
   - Status: Active issue - Gmail marking verification emails as spam
