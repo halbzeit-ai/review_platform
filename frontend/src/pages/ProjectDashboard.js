@@ -167,8 +167,8 @@ const ProjectDashboard = () => {
       let matchingProject = null;
       
       if (isAdminView && projectId) {
-        // GP Admin view: get all projects and find by projectId
-        const projectsResponse = await getAllProjects();
+        // GP Admin view: get all projects and find by projectId (include test data for dojo projects)
+        const projectsResponse = await getAllProjects(true);  // Include test data
         projectsData = projectsResponse.data || [];
         console.log('All projects response:', projectsData);
         
