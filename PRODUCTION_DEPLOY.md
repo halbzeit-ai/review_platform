@@ -20,7 +20,92 @@
 
 ---
 
-## 🚀 NEXT - Production CPU Server Tasks
+## 🔧 URGENT - GPU Database Connection Issue (2025-08-02 10:50)
+
+### Problem Status
+**GPU server still getting authentication failures after restart:**
+```
+connection to server at "65.108.32.168", port 5432 failed: FATAL: password authentication failed for user "review_user"
+```
+
+### Completed CPU-Side Fixes ✅
+- ✅ **Database Password**: Reset `review_user` password to `simpleprod2024`
+- ✅ **pg_hba.conf**: Added entries for both GPU (135.181.63.133/32) and CPU (65.108.32.168/32) 
+- ✅ **Environment**: Deployed production environment with correct DATABASE_URL
+- ✅ **Backend Service**: Restarted with fixed configuration
+- ✅ **Connectivity**: Verified connection works from production CPU using exact GPU connection string
+
+### Completed GPU-Side Actions ✅  
+- ✅ **Code Update**: `git pull origin main` on GPU server
+- ✅ **Environment**: `./environments/deploy-environment.sh production` on GPU
+- ✅ **Service Restart**: `sudo systemctl restart gpu-http-server.service`
+
+### Remaining Issue ❌
+GPU service still cannot connect to database despite all configurations being correct.
+
+## 🎯 GPU SERVER DEBUGGING TASKS
+
+**Move to GPU server (135.181.63.133) to debug directly:**
+
+### 1. Environment File Verification
+```bash
+# Check which environment file GPU service is actually loading
+cat /opt/review-platform/gpu_processing/.env.production
+cat /opt/review-platform/gpu_processing/.env.development  # Check if this exists
+
+# Verify systemd service environment loading
+sudo systemctl cat gpu-http-server.service | grep -i env
+```
+
+### 2. Database Connection Testing
+```bash
+# Test direct connection from GPU server
+export PGPASSWORD=simpleprod2024
+psql -h 65.108.32.168 -p 5432 -U review_user -d review-platform -c "SELECT version();"
+
+# Test Python connection (same as service uses)
+python3 -c "
+import psycopg2
+conn = psycopg2.connect(
+    host='65.108.32.168',
+    port=5432,
+    database='review-platform', 
+    user='review_user',
+    password='simpleprod2024'
+)
+print('✅ Connection successful!')
+conn.close()
+"
+```
+
+### 3. Service Environment Investigation  
+```bash
+# Check if service is reading environment correctly
+sudo journalctl -u gpu-http-server.service --since "5 minutes ago" | grep -i database
+
+# Check service process environment
+sudo cat /proc/$(pgrep -f gpu_http_server)/environ | tr '\0' '\n' | grep -i database
+```
+
+### 4. Alternative Solutions
+```bash
+# If environment file issues persist, try direct environment variables in systemd:
+sudo systemctl edit gpu-http-server.service
+# Add:
+# [Service]
+# Environment="DATABASE_URL=postgresql://review_user:simpleprod2024@65.108.32.168:5432/review-platform"
+```
+
+### Expected Resolution
+After fixing environment loading, GPU service should:
+- ✅ Connect to production database successfully
+- ✅ Load proper prompts from `pipeline_prompts` table
+- ✅ Stop using fallback default prompts
+- ✅ Complete visual analysis workflow
+
+---
+
+## 🚀 COMPLETED - Production CPU Server Tasks
 
 ### Critical Tasks for Production CPU (65.108.32.168)
 
