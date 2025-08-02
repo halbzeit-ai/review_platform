@@ -530,6 +530,45 @@ Before ANY deployment or configuration change:
 
 **Violations of these rules caused hours of debugging during production deployment. These are NOT guidelines - they are MANDATORY architecture decisions.**
 
+### 3. Standard .env File Reading Only
+**ABSOLUTE RULE**: All services MUST read from their standard `.env` file in their component directory. Never use custom environment file names.
+
+**Standard Pattern:**
+```
+backend/.env          ← Backend service reads this
+frontend/.env         ← Frontend (if needed) reads this  
+gpu_processing/.env   ← GPU processing reads this
+```
+
+**Environment File Generation:**
+```bash
+# deploy-environment.sh creates these files:
+backend/.env          (from environments/.env.backend.{environment})
+frontend/.env.{env}   (from environments/.env.frontend.{environment})
+gpu_processing/.env   (from environments/.env.gpu.{environment})
+```
+
+**Forbidden Patterns:**
+- ❌ Custom file names: `.env.gpu`, `.env.production`, `.env.development`
+- ❌ Hardcoded paths: `/opt/gpu_processing/.env.gpu`
+- ❌ Environment-specific files in component directories
+- ❌ Multiple `.env.*` files in same directory
+
+**Why Critical**: During production deployment, GPU service failed because:
+1. Code was hardcoded to read `.env.gpu` 
+2. Deployment script created `.env.production`
+3. Service kept using old cached environment with wrong DATABASE_HOST
+4. Led to authentication failures and service downtime
+
+**Prevention Checklist:**
+- [ ] All Python code uses `load_dotenv('.env')` or `load_dotenv()`
+- [ ] Systemd services use `EnvironmentFile=.env` (relative paths)
+- [ ] No `.env.*` files exist outside `/environments/` (except `.env.example`)
+- [ ] `find . -name ".env.*" -not -path "./environments/*"` returns only examples
+
+**Root Cause of GPU Auth Failures (2025-08-02)**:
+GPU processing was hardcoded to read `.env.gpu` while centralized deployment created `.env.production`. Service ran with stale environment containing `DATABASE_HOST=localhost` instead of production CPU IP `65.108.32.168`, causing PostgreSQL authentication failures.
+
 ## Debugging Best Practices
 
 ### Database Schema Investigation

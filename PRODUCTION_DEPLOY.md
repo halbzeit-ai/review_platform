@@ -47,17 +47,47 @@ GPU service still cannot connect to database despite all configurations being co
 
 **Move to GPU server (135.181.63.133) to debug directly:**
 
-### 1. Environment File Verification
+### 1. Pull Latest Code and Deploy Environment
 ```bash
-# Check which environment file GPU service is actually loading
-cat /opt/review-platform/gpu_processing/.env.production
-cat /opt/review-platform/gpu_processing/.env.development  # Check if this exists
+# Get latest environment configuration fixes
+cd /opt/review-platform
+git pull origin main
 
-# Verify systemd service environment loading
-sudo systemctl cat gpu-http-server.service | grep -i env
+# Deploy production environment (creates gpu_processing/.env)
+./environments/deploy-environment.sh production
 ```
 
-### 2. Database Connection Testing
+### 2. Environment File Verification  
+```bash
+# CRITICAL: Verify standard .env file exists (not .env.gpu or .env.production)
+ls -la /opt/review-platform/gpu_processing/.env
+
+# Check DATABASE_HOST is correct production CPU IP
+grep "DATABASE_HOST" /opt/review-platform/gpu_processing/.env
+# Expected: DATABASE_HOST=65.108.32.168 (NOT localhost)
+
+# Verify no legacy environment files exist
+find /opt/review-platform -name ".env.*" -not -path "./environments/*" -type f
+# Should only show: ./backend/.env.example
+
+# Check systemd service references correct .env file
+sudo systemctl cat gpu-http-server.service | grep EnvironmentFile
+# Expected: EnvironmentFile=/opt/gpu_processing/.env (NOT .env.gpu)
+```
+
+### 3. Code Verification (Critical Architecture Compliance)
+```bash
+# Verify GPU code reads standard .env files only
+grep -r "\.env\." /opt/review-platform/gpu_processing/ --include="*.py"
+# Should show NO references to .env.gpu, .env.production, etc.
+
+# Check specific files are fixed:
+grep "load_dotenv" /opt/review-platform/gpu_processing/utils/pitch_deck_analyzer.py
+grep "load_dotenv" /opt/review-platform/gpu_processing/config/processing_config.py
+# Both should reference .env, not .env.gpu
+```
+
+### 4. Database Connection Testing
 ```bash
 # Test direct connection from GPU server
 export PGPASSWORD=simpleprod2024
@@ -78,7 +108,21 @@ conn.close()
 "
 ```
 
-### 3. Service Environment Investigation  
+### 5. Service Restart and Verification
+```bash
+# Restart GPU service with new environment configuration
+sudo systemctl restart gpu-http-server.service
+
+# Check service status
+sudo systemctl status gpu-http-server.service
+
+# Monitor logs for database connection success
+sudo journalctl -u gpu-http-server.service --since "1 minute ago" -f
+# Look for: "Database connection successful" or similar
+# Should NOT see: "password authentication failed"
+```
+
+### 6. Service Environment Investigation  
 ```bash
 # Check if service is reading environment correctly
 sudo journalctl -u gpu-http-server.service --since "5 minutes ago" | grep -i database
@@ -87,7 +131,7 @@ sudo journalctl -u gpu-http-server.service --since "5 minutes ago" | grep -i dat
 sudo cat /proc/$(pgrep -f gpu_http_server)/environ | tr '\0' '\n' | grep -i database
 ```
 
-### 4. Alternative Solutions
+### 7. Alternative Solutions (If Still Failing)
 ```bash
 # If environment file issues persist, try direct environment variables in systemd:
 sudo systemctl edit gpu-http-server.service
@@ -96,12 +140,28 @@ sudo systemctl edit gpu-http-server.service
 # Environment="DATABASE_URL=postgresql://review_user:simpleprod2024@65.108.32.168:5432/review-platform"
 ```
 
-### Expected Resolution
-After fixing environment loading, GPU service should:
-- ✅ Connect to production database successfully
+### 8. Expected Resolution
+After following these steps, GPU service should:
+- ✅ Read from correct `/opt/gpu_processing/.env` file
+- ✅ Connect to production database successfully (DATABASE_HOST=65.108.32.168)
 - ✅ Load proper prompts from `pipeline_prompts` table
 - ✅ Stop using fallback default prompts
-- ✅ Complete visual analysis workflow
+- ✅ Complete visual analysis workflow without authentication errors
+
+### 9. Verification Commands Summary
+```bash
+# Quick verification checklist:
+grep "DATABASE_HOST" /opt/review-platform/gpu_processing/.env
+sudo systemctl cat gpu-http-server.service | grep EnvironmentFile
+find /opt/review-platform -name ".env.*" -not -path "./environments/*" -type f
+grep -c ".env.gpu\|.env.production" /opt/review-platform/gpu_processing/*.py /opt/review-platform/gpu_processing/**/*.py
+```
+
+**Success Indicators:**
+- `DATABASE_HOST=65.108.32.168` ✅
+- `EnvironmentFile=/opt/gpu_processing/.env` ✅  
+- Only `./backend/.env.example` in legacy files ✅
+- Zero references to `.env.gpu` or `.env.production` in Python code ✅
 
 ---
 
