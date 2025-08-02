@@ -323,6 +323,8 @@ class GPUHTTPServer:
                 template_id = data.get('template_id')
                 text_model = data.get('text_model')
                 generate_thumbnails = data.get('generate_thumbnails', True)
+                progress_callback_url = data.get('progress_callback_url')
+                enable_progressive_delivery = data.get('enable_progressive_delivery', False)
                 
                 if not deck_ids:
                     return jsonify({
@@ -414,18 +416,32 @@ class GPUHTTPServer:
                             logger.error(f"Error loading template {template_id}: {e}")
                             continue
                         
-                        # Set progress callback
-                        def progress_callback(deck_id: int, chapter_name: str, status: str = "processing"):
-                            # Call backend to update progress
-                            requests.post(
-                                f"{self.backend_url}/api/dojo/template-progress-callback",
-                                json={
+                        # Set progress callback with progressive delivery support
+                        def progress_callback(deck_id: int, chapter_name: str, status: str = "processing", chapter_results: dict = None):
+                            try:
+                                # Prepare callback data
+                                callback_data = {
                                     "chapter_name": chapter_name,
                                     "deck_id": deck_id,
                                     "status": status,
                                     "deck_name": deck_name  # Pass deck name for better progress display
                                 }
-                            )
+                                
+                                # Add chapter results for progressive delivery
+                                if enable_progressive_delivery and status == "completed" and chapter_results:
+                                    callback_data["chapter_results"] = chapter_results
+                                    logger.info(f"Progressive delivery - Sending chapter '{chapter_name}' results for deck {deck_id}")
+                                
+                                # Send to backend
+                                callback_url = progress_callback_url or f"{self.backend_url}/api/dojo/template-progress-callback"
+                                import requests
+                                response = requests.post(callback_url, json=callback_data, timeout=30)
+                                
+                                if response.status_code != 200:
+                                    logger.warning(f"Progress callback failed: {response.status_code} - {response.text}")
+                                    
+                            except Exception as e:
+                                logger.warning(f"Failed to send progress callback: {e}")
                         
                         # Store progress callback and deck_id for chapter processing
                         analyzer.progress_callback = progress_callback
@@ -456,6 +472,28 @@ class GPUHTTPServer:
                             "success": False,
                             "error": str(e)
                         })
+                
+                # Send final completion callback for progressive delivery
+                if enable_progressive_delivery and progress_callback_url:
+                    try:
+                        final_results = []
+                        for result in batch_results:
+                            if result.get("success") and result.get("template_analysis"):
+                                final_results.append({
+                                    "deck_id": result["deck_id"],
+                                    "results": {"template_analysis": result["template_analysis"], "status": "completed"}
+                                })
+                        
+                        import requests
+                        requests.post(progress_callback_url, json={
+                            "final_completion": True,
+                            "all_results": final_results
+                        }, timeout=30)
+                        
+                        logger.info(f"Progressive delivery - Sent final completion callback for {len(final_results)} decks")
+                        
+                    except Exception as e:
+                        logger.warning(f"Failed to send final completion callback: {e}")
                 
                 return jsonify({
                     "success": True,

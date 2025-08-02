@@ -677,7 +677,7 @@ class GPUHTTPClient:
     
     async def run_template_processing_only(self, deck_ids: List[int], template_id: int, text_model: str = None, generate_thumbnails: bool = True) -> Dict[str, Any]:
         """
-        Run template processing using cached visual analysis and extraction results
+        Run template processing using cached visual analysis and extraction results with progressive delivery
         
         Args:
             deck_ids: List of pitch deck IDs to process
@@ -698,10 +698,16 @@ class GPUHTTPClient:
             
             logger.info(f"Requesting template-only processing for {len(deck_ids)} decks using template {template_id}")
             
+            # Set up progress callback URL for progressive delivery
+            backend_url = self.backend_service_url or "http://localhost:8000"
+            progress_callback_url = f"{backend_url}/api/dojo/template-progress-callback"
+            
             payload = {
                 "deck_ids": deck_ids,
                 "template_id": template_id,
-                "generate_thumbnails": generate_thumbnails
+                "generate_thumbnails": generate_thumbnails,
+                "progress_callback_url": progress_callback_url,
+                "enable_progressive_delivery": True
             }
             
             # Add text_model if specified
@@ -711,7 +717,10 @@ class GPUHTTPClient:
             else:
                 logger.info("No text model specified, GPU will use default")
             
-            async with httpx.AsyncClient(timeout=1800.0) as client:  # 30 minutes timeout
+            logger.info(f"Using progress callback URL: {progress_callback_url}")
+            
+            # Shorter timeout since results are delivered progressively
+            async with httpx.AsyncClient(timeout=600.0) as client:  # 10 minutes timeout (reduced from 30)
                 response = await client.post(
                     f"{self.base_url}/run-template-processing-only",
                     json=payload,

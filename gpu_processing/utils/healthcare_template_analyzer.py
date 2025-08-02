@@ -1328,15 +1328,19 @@ class HealthcareTemplateAnalyzer:
                     "code_version": "v2.0-with-questions-array"  # Debug marker
                 }
                 
-                # Send progress completion callback after chapter is finished
+                # Send progress completion callback after chapter is finished with results
                 if self.progress_callback and self.current_deck_id:
                     try:
-                        # Call with status parameter if the callback accepts it
+                        # Call with status parameter and chapter results for progressive delivery
                         try:
-                            self.progress_callback(self.current_deck_id, chapter_name, "completed")
+                            self.progress_callback(self.current_deck_id, chapter_name, "completed", chapter_analysis)
                         except TypeError:
-                            # Fallback for old callback signature without status
-                            self.progress_callback(self.current_deck_id, chapter_name)
+                            # Fallback for old callback signature without chapter results
+                            try:
+                                self.progress_callback(self.current_deck_id, chapter_name, "completed")
+                            except TypeError:
+                                # Fallback for oldest callback signature
+                                self.progress_callback(self.current_deck_id, chapter_name)
                     except Exception as e:
                         logger.warning(f"Failed to send chapter completion callback: {e}")
     
