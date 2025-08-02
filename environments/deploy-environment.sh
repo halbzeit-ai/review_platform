@@ -14,6 +14,8 @@ NC='\033[0m' # No Color
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+HISTORY_DIR="$SCRIPT_DIR/history"
+MAX_BACKUPS=10
 
 # Component paths (relative to project root)
 BACKEND_PATH="backend"
@@ -62,6 +64,21 @@ validate_environment() {
     done
     
     return 0
+}
+
+# Function to cleanup old backups
+cleanup_old_backups() {
+    local component=$1
+    local backup_pattern="$HISTORY_DIR/$component.env.backup.*"
+    
+    # Count existing backups
+    local backup_count=$(ls -1 $backup_pattern 2>/dev/null | wc -l)
+    
+    if [[ $backup_count -gt $MAX_BACKUPS ]]; then
+        # Remove oldest backups, keep only MAX_BACKUPS
+        ls -1t $backup_pattern 2>/dev/null | tail -n +$((MAX_BACKUPS + 1)) | xargs rm -f
+        echo -e "${YELLOW}  🧹 Cleaned up old backups (kept last $MAX_BACKUPS)${NC}"
+    fi
 }
 
 # Function to deploy component configuration
@@ -117,9 +134,16 @@ deploy_component() {
     
     # Backup existing file if it exists
     if [[ -f "$target_file" ]]; then
-        local backup_file="$target_file.backup.$(date +%Y%m%d_%H%M%S)"
+        # Create history directory if it doesn't exist
+        mkdir -p "$HISTORY_DIR"
+        
+        # Create backup in centralized history location
+        local backup_file="$HISTORY_DIR/$component.env.backup.$(date +%Y%m%d_%H%M%S)"
         cp "$target_file" "$backup_file"
-        echo -e "${YELLOW}  Backup: $backup_file${NC}"
+        echo -e "${YELLOW}  📁 Backup: $backup_file${NC}"
+        
+        # Cleanup old backups
+        cleanup_old_backups "$component"
     fi
     
     # Copy new configuration
