@@ -594,6 +594,37 @@ async def add_dojo_companies_from_experiment(
             projects_created += 1
             companies_created.append(company_name)
             
+            # Create default project stages (mimicking startup journey)
+            default_stages = [
+                {"name": "Initial Review", "order": 1, "status": "active"},      # Currently active since deck is uploaded
+                {"name": "Due Diligence", "order": 2, "status": "pending"},     # Next stage
+                {"name": "Investment Decision", "order": 3, "status": "pending"},
+                {"name": "Term Sheet", "order": 4, "status": "pending"},
+                {"name": "Legal Review", "order": 5, "status": "pending"},
+                {"name": "Funding Complete", "order": 6, "status": "pending"}
+            ]
+            
+            for stage in default_stages:
+                stage_insert = text("""
+                    INSERT INTO project_stages (
+                        project_id, stage_name, stage_order, status, 
+                        started_at, created_at
+                    )
+                    VALUES (:project_id, :stage_name, :stage_order, :status,
+                            :started_at, :created_at)
+                """)
+                
+                started_at = datetime.utcnow() if stage["status"] == "active" else None
+                
+                db.execute(stage_insert, {
+                    "project_id": project_id,
+                    "stage_name": stage["name"],
+                    "stage_order": stage["order"],
+                    "status": stage["status"],
+                    "started_at": started_at,
+                    "created_at": datetime.utcnow()
+                })
+            
             # Add pitch deck as project document
             pitch_deck_query = text("""
                 SELECT id, file_name, file_path, results_file_path

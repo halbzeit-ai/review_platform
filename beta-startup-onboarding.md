@@ -1,0 +1,12 @@
+- right now, people can register on the website as new users and will get a confirmation email for verification
+- however, the platform is in closed beta right now, so if we attach a name to the IP address, we are kind of public.
+- thus, we will switch to a by-invitation-only model.
+- a GP gets to know a startup and should be able to add their project via "new project" in the gallery view 
+- the GP may then invite one or two persons to this project via entering their email
+- they can then upload their document, or the GP can upload a document that they sent him via email before.
+- the project should feel and behave exactly like a project that a startup added when registering like the procedure is now
+- the GP may also transfer the owner ship to one of the invited people
+- note that GPs have access and edit rights to every project, it's just that the ownership can be transferred.
+- the intent of this feature / procedure is to be able to onboard beta testing startups  and discuss with them features and shortcomings of the platform as well as their deck and project
+- goes without saying that the startups have the rights as all startups, i.e. they only see and work on their own project, no GP dashboards, dojo etc, no other startups' projects.
+
