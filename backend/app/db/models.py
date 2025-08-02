@@ -227,6 +227,7 @@ class ExtractionExperiment(Base):
     
     # Step 4: Template Processing
     template_processing_results_json = Column(Text)
+    template_processing_completed_at = Column(DateTime)
 
 
 # Generated SQLAlchemy models for previously missing tables
