@@ -384,9 +384,11 @@ class GPUHTTPServer:
                         # Override text model if specified in request
                         if text_model:
                             analyzer.text_model = text_model
+                            # Also use the same model for scoring to ensure compatibility
+                            analyzer.scoring_model = text_model
                             # Recalculate model options based on the new text model
                             analyzer.model_options = analyzer._get_model_options()
-                            logger.info(f"🔧 Overriding text model for deck {deck_id}: {text_model}")
+                            logger.info(f"🔧 Overriding text and scoring models for deck {deck_id}: {text_model}")
                         
                         # Set visual analysis results
                         analyzer.visual_analysis_results = deck_visual_data['visual_analysis_results']
