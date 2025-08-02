@@ -506,6 +506,7 @@ async def get_project_results(
                     FROM extraction_experiments ee
                     JOIN projects p ON p.project_metadata::json->>'experiment_id' = ee.id::text
                     JOIN project_documents pd ON pd.project_id = p.id
+                    JOIN pitch_decks pd_orig ON pd.file_path = pd_orig.file_path
                     WHERE pd.id = :deck_id AND ee.template_processing_results_json IS NOT NULL
                 """), {"deck_id": deck_id}).fetchone()
             
@@ -531,11 +532,13 @@ async def get_project_results(
                 """)
             else:
                 # For dojo projects, get results from extraction_experiments
+                # Need to map project_document ID back to original pitch_deck ID
                 template_query = text("""
-                    SELECT ee.template_processing_results_json
+                    SELECT ee.template_processing_results_json, pd_orig.id as original_deck_id
                     FROM extraction_experiments ee
                     JOIN projects p ON p.project_metadata::json->>'experiment_id' = ee.id::text
                     JOIN project_documents pd ON pd.project_id = p.id
+                    JOIN pitch_decks pd_orig ON pd.file_path = pd_orig.file_path
                     WHERE pd.id = :deck_id
                 """)
             
@@ -552,9 +555,11 @@ async def get_project_results(
             
             # For dojo projects, extract the specific deck's results from the template_processing_results array
             if source == 'project_documents' and 'template_processing_results' in template_data:
+                # Use the original pitch_deck ID for lookup
+                original_deck_id = template_result[1] if len(template_result) > 1 else deck_id
                 deck_results = None
                 for result in template_data['template_processing_results']:
-                    if result.get('deck_id') == deck_id:
+                    if result.get('deck_id') == original_deck_id:
                         deck_results = result
                         break
                 
