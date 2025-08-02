@@ -2258,3 +2258,1435 @@ PITCH...
 2025-08-02 14:57:49,233 - INFO - Completed extraction for deck }
 2025-08-02 14:57:49,233 - INFO - Completed offering extraction for 31 decks
 2025-08-02 14:57:49,233 - INFO - 65.108.32.168 - - [02/Aug/2025 14:57:49] "POST /api/run-offering-extraction HTTP/1.1" 200 -
+2025-08-02 15:08:55,098 - INFO - Listing models via HTTP API
+2025-08-02 15:08:55,101 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
+2025-08-02 15:08:55,102 - INFO - Successfully listed 4 models
+2025-08-02 15:08:55,102 - INFO - 65.108.32.168 - - [02/Aug/2025 15:08:55] "GET /api/models HTTP/1.1" 200 -
+2025-08-02 15:09:07,805 - INFO - Starting offering extraction for 10 decks using phi4:latest
+2025-08-02 15:09:07,806 - INFO - Retrieving cached visual analysis for 10 decks via HTTP from backend
+2025-08-02 15:09:07,806 - INFO - Using backend server: http://65.108.32.143:8000
+2025-08-02 15:09:07,819 - INFO - DEBUG: Raw cached_analysis keys: []
+2025-08-02 15:09:07,819 - INFO - DEBUG: Converted keys: []
+2025-08-02 15:09:07,819 - INFO - Retrieved cached visual analysis for 0/10 decks via HTTP from backend
+2025-08-02 15:09:07,819 - INFO - Extracting offering for deck 62
+2025-08-02 15:09:07,819 - WARNING - No visual analysis available for deck 62
+2025-08-02 15:09:07,819 - INFO - DEBUG: Full extraction prompt for deck 62:
+2025-08-02 15:09:07,819 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:07,819 - INFO - Visual used flag: False
+2025-08-02 15:09:07,819 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:09:10,980 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:10,981 - INFO - Completed extraction for deck 62
+2025-08-02 15:09:10,981 - INFO - Extracting offering for deck 65
+2025-08-02 15:09:10,981 - WARNING - No visual analysis available for deck 65
+2025-08-02 15:09:10,981 - INFO - DEBUG: Full extraction prompt for deck 65:
+2025-08-02 15:09:10,981 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:10,981 - INFO - Visual used flag: False
+2025-08-02 15:09:10,981 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:09:11,148 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:11,149 - INFO - Completed extraction for deck 65
+2025-08-02 15:09:11,149 - INFO - Extracting offering for deck 58
+2025-08-02 15:09:11,149 - WARNING - No visual analysis available for deck 58
+2025-08-02 15:09:11,149 - INFO - DEBUG: Full extraction prompt for deck 58:
+2025-08-02 15:09:11,149 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:11,149 - INFO - Visual used flag: False
+2025-08-02 15:09:11,149 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:09:11,307 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:11,308 - INFO - Completed extraction for deck 58
+2025-08-02 15:09:11,308 - INFO - Extracting offering for deck 61
+2025-08-02 15:09:11,308 - WARNING - No visual analysis available for deck 61
+2025-08-02 15:09:11,308 - INFO - DEBUG: Full extraction prompt for deck 61:
+2025-08-02 15:09:11,308 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:11,308 - INFO - Visual used flag: False
+2025-08-02 15:09:11,308 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:09:11,470 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:11,470 - INFO - Completed extraction for deck 61
+2025-08-02 15:09:11,470 - INFO - Extracting offering for deck 68
+2025-08-02 15:09:11,471 - WARNING - No visual analysis available for deck 68
+2025-08-02 15:09:11,471 - INFO - DEBUG: Full extraction prompt for deck 68:
+2025-08-02 15:09:11,471 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:11,471 - INFO - Visual used flag: False
+2025-08-02 15:09:11,471 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:09:11,639 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:11,639 - INFO - Completed extraction for deck 68
+2025-08-02 15:09:11,639 - INFO - Extracting offering for deck 64
+2025-08-02 15:09:11,639 - WARNING - No visual analysis available for deck 64
+2025-08-02 15:09:11,639 - INFO - DEBUG: Full extraction prompt for deck 64:
+2025-08-02 15:09:11,639 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:11,639 - INFO - Visual used flag: False
+2025-08-02 15:09:11,639 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:09:11,812 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:11,813 - INFO - Completed extraction for deck 64
+2025-08-02 15:09:11,813 - INFO - Extracting offering for deck 60
+2025-08-02 15:09:11,813 - WARNING - No visual analysis available for deck 60
+2025-08-02 15:09:11,813 - INFO - DEBUG: Full extraction prompt for deck 60:
+2025-08-02 15:09:11,813 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:11,813 - INFO - Visual used flag: False
+2025-08-02 15:09:11,813 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:09:11,975 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:11,975 - INFO - Completed extraction for deck 60
+2025-08-02 15:09:11,975 - INFO - Extracting offering for deck 71
+2025-08-02 15:09:11,975 - WARNING - No visual analysis available for deck 71
+2025-08-02 15:09:11,975 - INFO - DEBUG: Full extraction prompt for deck 71:
+2025-08-02 15:09:11,975 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:11,975 - INFO - Visual used flag: False
+2025-08-02 15:09:11,975 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:09:12,125 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:12,125 - INFO - Completed extraction for deck 71
+2025-08-02 15:09:12,125 - INFO - Extracting offering for deck 51
+2025-08-02 15:09:12,126 - WARNING - No visual analysis available for deck 51
+2025-08-02 15:09:12,126 - INFO - DEBUG: Full extraction prompt for deck 51:
+2025-08-02 15:09:12,126 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:12,126 - INFO - Visual used flag: False
+2025-08-02 15:09:12,126 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:09:12,290 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:12,290 - INFO - Completed extraction for deck 51
+2025-08-02 15:09:12,290 - INFO - Extracting offering for deck 50
+2025-08-02 15:09:12,290 - WARNING - No visual analysis available for deck 50
+2025-08-02 15:09:12,290 - INFO - DEBUG: Full extraction prompt for deck 50:
+2025-08-02 15:09:12,290 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:12,290 - INFO - Visual used flag: False
+2025-08-02 15:09:12,291 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:09:12,440 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:12,441 - INFO - Completed extraction for deck 50
+2025-08-02 15:09:12,441 - INFO - Completed offering extraction for 10 decks
+2025-08-02 15:09:12,441 - INFO - 65.108.32.168 - - [02/Aug/2025 15:09:12] "POST /api/run-offering-extraction HTTP/1.1" 200 -
+2025-08-02 15:09:12,754 - INFO - Starting offering extraction for 10 decks using phi4:latest
+2025-08-02 15:09:12,754 - INFO - Retrieving cached visual analysis for 10 decks via HTTP from backend
+2025-08-02 15:09:12,754 - INFO - Using backend server: http://65.108.32.143:8000
+2025-08-02 15:09:12,767 - INFO - DEBUG: Raw cached_analysis keys: []
+2025-08-02 15:09:12,767 - INFO - DEBUG: Converted keys: []
+2025-08-02 15:09:12,768 - INFO - Retrieved cached visual analysis for 0/10 decks via HTTP from backend
+2025-08-02 15:09:12,768 - INFO - Extracting offering for deck 62
+2025-08-02 15:09:12,768 - WARNING - No visual analysis available for deck 62
+2025-08-02 15:09:12,768 - INFO - DEBUG: Full extraction prompt for deck 62:
+2025-08-02 15:09:12,768 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:12,768 - INFO - Visual used flag: False
+2025-08-02 15:09:12,768 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:09:12,947 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:12,947 - INFO - Completed extraction for deck 62
+2025-08-02 15:09:12,947 - INFO - Extracting offering for deck 65
+2025-08-02 15:09:12,947 - WARNING - No visual analysis available for deck 65
+2025-08-02 15:09:12,947 - INFO - DEBUG: Full extraction prompt for deck 65:
+2025-08-02 15:09:12,947 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:12,947 - INFO - Visual used flag: False
+2025-08-02 15:09:12,947 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:09:13,100 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:13,101 - INFO - Completed extraction for deck 65
+2025-08-02 15:09:13,101 - INFO - Extracting offering for deck 58
+2025-08-02 15:09:13,101 - WARNING - No visual analysis available for deck 58
+2025-08-02 15:09:13,101 - INFO - DEBUG: Full extraction prompt for deck 58:
+2025-08-02 15:09:13,101 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:13,101 - INFO - Visual used flag: False
+2025-08-02 15:09:13,101 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:09:13,276 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:13,276 - INFO - Completed extraction for deck 58
+2025-08-02 15:09:13,276 - INFO - Extracting offering for deck 61
+2025-08-02 15:09:13,276 - WARNING - No visual analysis available for deck 61
+2025-08-02 15:09:13,276 - INFO - DEBUG: Full extraction prompt for deck 61:
+2025-08-02 15:09:13,276 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:13,276 - INFO - Visual used flag: False
+2025-08-02 15:09:13,276 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:09:13,455 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:13,455 - INFO - Completed extraction for deck 61
+2025-08-02 15:09:13,455 - INFO - Extracting offering for deck 68
+2025-08-02 15:09:13,455 - WARNING - No visual analysis available for deck 68
+2025-08-02 15:09:13,455 - INFO - DEBUG: Full extraction prompt for deck 68:
+2025-08-02 15:09:13,455 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:13,455 - INFO - Visual used flag: False
+2025-08-02 15:09:13,455 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:09:13,611 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:13,611 - INFO - Completed extraction for deck 68
+2025-08-02 15:09:13,611 - INFO - Extracting offering for deck 64
+2025-08-02 15:09:13,611 - WARNING - No visual analysis available for deck 64
+2025-08-02 15:09:13,611 - INFO - DEBUG: Full extraction prompt for deck 64:
+2025-08-02 15:09:13,612 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:13,612 - INFO - Visual used flag: False
+2025-08-02 15:09:13,612 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:09:13,779 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:13,779 - INFO - Completed extraction for deck 64
+2025-08-02 15:09:13,780 - INFO - Extracting offering for deck 60
+2025-08-02 15:09:13,780 - WARNING - No visual analysis available for deck 60
+2025-08-02 15:09:13,780 - INFO - DEBUG: Full extraction prompt for deck 60:
+2025-08-02 15:09:13,780 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:13,780 - INFO - Visual used flag: False
+2025-08-02 15:09:13,780 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:09:13,944 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:13,945 - INFO - Completed extraction for deck 60
+2025-08-02 15:09:13,945 - INFO - Extracting offering for deck 71
+2025-08-02 15:09:13,945 - WARNING - No visual analysis available for deck 71
+2025-08-02 15:09:13,945 - INFO - DEBUG: Full extraction prompt for deck 71:
+2025-08-02 15:09:13,945 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:13,945 - INFO - Visual used flag: False
+2025-08-02 15:09:13,945 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:09:14,113 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:14,113 - INFO - Completed extraction for deck 71
+2025-08-02 15:09:14,113 - INFO - Extracting offering for deck 51
+2025-08-02 15:09:14,113 - WARNING - No visual analysis available for deck 51
+2025-08-02 15:09:14,114 - INFO - DEBUG: Full extraction prompt for deck 51:
+2025-08-02 15:09:14,114 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:14,114 - INFO - Visual used flag: False
+2025-08-02 15:09:14,114 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:09:14,284 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:14,284 - INFO - Completed extraction for deck 51
+2025-08-02 15:09:14,284 - INFO - Extracting offering for deck 50
+2025-08-02 15:09:14,284 - WARNING - No visual analysis available for deck 50
+2025-08-02 15:09:14,284 - INFO - DEBUG: Full extraction prompt for deck 50:
+2025-08-02 15:09:14,284 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:14,284 - INFO - Visual used flag: False
+2025-08-02 15:09:14,284 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:09:14,457 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:14,457 - INFO - Completed extraction for deck 50
+2025-08-02 15:09:14,457 - INFO - Completed offering extraction for 10 decks
+2025-08-02 15:09:14,457 - INFO - 65.108.32.168 - - [02/Aug/2025 15:09:14] "POST /api/run-offering-extraction HTTP/1.1" 200 -
+2025-08-02 15:09:14,611 - INFO - Starting offering extraction for 10 decks using phi4:latest
+2025-08-02 15:09:14,611 - INFO - Retrieving cached visual analysis for 10 decks via HTTP from backend
+2025-08-02 15:09:14,611 - INFO - Using backend server: http://65.108.32.143:8000
+2025-08-02 15:09:14,624 - INFO - DEBUG: Raw cached_analysis keys: []
+2025-08-02 15:09:14,625 - INFO - DEBUG: Converted keys: []
+2025-08-02 15:09:14,625 - INFO - Retrieved cached visual analysis for 0/10 decks via HTTP from backend
+2025-08-02 15:09:14,625 - INFO - Extracting offering for deck 62
+2025-08-02 15:09:14,625 - WARNING - No visual analysis available for deck 62
+2025-08-02 15:09:14,625 - INFO - DEBUG: Full extraction prompt for deck 62:
+2025-08-02 15:09:14,625 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:14,625 - INFO - Visual used flag: False
+2025-08-02 15:09:14,625 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:09:14,815 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:14,815 - INFO - Completed extraction for deck 62
+2025-08-02 15:09:14,815 - INFO - Extracting offering for deck 65
+2025-08-02 15:09:14,816 - WARNING - No visual analysis available for deck 65
+2025-08-02 15:09:14,816 - INFO - DEBUG: Full extraction prompt for deck 65:
+2025-08-02 15:09:14,816 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:14,816 - INFO - Visual used flag: False
+2025-08-02 15:09:14,816 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:09:14,974 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:14,974 - INFO - Completed extraction for deck 65
+2025-08-02 15:09:14,974 - INFO - Extracting offering for deck 58
+2025-08-02 15:09:14,974 - WARNING - No visual analysis available for deck 58
+2025-08-02 15:09:14,974 - INFO - DEBUG: Full extraction prompt for deck 58:
+2025-08-02 15:09:14,974 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:14,974 - INFO - Visual used flag: False
+2025-08-02 15:09:14,974 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:09:15,138 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:15,138 - INFO - Completed extraction for deck 58
+2025-08-02 15:09:15,138 - INFO - Extracting offering for deck 61
+2025-08-02 15:09:15,138 - WARNING - No visual analysis available for deck 61
+2025-08-02 15:09:15,138 - INFO - DEBUG: Full extraction prompt for deck 61:
+2025-08-02 15:09:15,138 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:15,138 - INFO - Visual used flag: False
+2025-08-02 15:09:15,138 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:09:15,312 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:15,312 - INFO - Completed extraction for deck 61
+2025-08-02 15:09:15,312 - INFO - Extracting offering for deck 68
+2025-08-02 15:09:15,312 - WARNING - No visual analysis available for deck 68
+2025-08-02 15:09:15,312 - INFO - DEBUG: Full extraction prompt for deck 68:
+2025-08-02 15:09:15,312 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:15,312 - INFO - Visual used flag: False
+2025-08-02 15:09:15,312 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:09:15,475 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:15,476 - INFO - Completed extraction for deck 68
+2025-08-02 15:09:15,476 - INFO - Extracting offering for deck 64
+2025-08-02 15:09:15,476 - WARNING - No visual analysis available for deck 64
+2025-08-02 15:09:15,476 - INFO - DEBUG: Full extraction prompt for deck 64:
+2025-08-02 15:09:15,476 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:15,476 - INFO - Visual used flag: False
+2025-08-02 15:09:15,476 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:09:15,651 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:15,651 - INFO - Completed extraction for deck 64
+2025-08-02 15:09:15,651 - INFO - Extracting offering for deck 60
+2025-08-02 15:09:15,651 - WARNING - No visual analysis available for deck 60
+2025-08-02 15:09:15,651 - INFO - DEBUG: Full extraction prompt for deck 60:
+2025-08-02 15:09:15,651 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:15,651 - INFO - Visual used flag: False
+2025-08-02 15:09:15,651 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:09:15,816 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:15,817 - INFO - Completed extraction for deck 60
+2025-08-02 15:09:15,817 - INFO - Extracting offering for deck 71
+2025-08-02 15:09:15,817 - WARNING - No visual analysis available for deck 71
+2025-08-02 15:09:15,817 - INFO - DEBUG: Full extraction prompt for deck 71:
+2025-08-02 15:09:15,817 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:15,817 - INFO - Visual used flag: False
+2025-08-02 15:09:15,817 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:09:15,975 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:15,976 - INFO - Completed extraction for deck 71
+2025-08-02 15:09:15,976 - INFO - Extracting offering for deck 51
+2025-08-02 15:09:15,976 - WARNING - No visual analysis available for deck 51
+2025-08-02 15:09:15,976 - INFO - DEBUG: Full extraction prompt for deck 51:
+2025-08-02 15:09:15,976 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:15,976 - INFO - Visual used flag: False
+2025-08-02 15:09:15,976 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:09:16,150 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:16,151 - INFO - Completed extraction for deck 51
+2025-08-02 15:09:16,151 - INFO - Extracting offering for deck 50
+2025-08-02 15:09:16,151 - WARNING - No visual analysis available for deck 50
+2025-08-02 15:09:16,151 - INFO - DEBUG: Full extraction prompt for deck 50:
+2025-08-02 15:09:16,151 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:16,151 - INFO - Visual used flag: False
+2025-08-02 15:09:16,151 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:09:16,316 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:16,317 - INFO - Completed extraction for deck 50
+2025-08-02 15:09:16,317 - INFO - Completed offering extraction for 10 decks
+2025-08-02 15:09:16,317 - INFO - 65.108.32.168 - - [02/Aug/2025 15:09:16] "POST /api/run-offering-extraction HTTP/1.1" 200 -
+2025-08-02 15:09:16,485 - INFO - Starting offering extraction for 10 decks using phi4:latest
+2025-08-02 15:09:16,485 - INFO - Retrieving cached visual analysis for 10 decks via HTTP from backend
+2025-08-02 15:09:16,485 - INFO - Using backend server: http://65.108.32.143:8000
+2025-08-02 15:09:16,498 - INFO - DEBUG: Raw cached_analysis keys: []
+2025-08-02 15:09:16,498 - INFO - DEBUG: Converted keys: []
+2025-08-02 15:09:16,498 - INFO - Retrieved cached visual analysis for 0/10 decks via HTTP from backend
+2025-08-02 15:09:16,499 - INFO - Extracting offering for deck 62
+2025-08-02 15:09:16,499 - WARNING - No visual analysis available for deck 62
+2025-08-02 15:09:16,499 - INFO - DEBUG: Full extraction prompt for deck 62:
+2025-08-02 15:09:16,499 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:16,499 - INFO - Visual used flag: False
+2025-08-02 15:09:16,499 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:09:16,702 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:16,703 - INFO - Completed extraction for deck 62
+2025-08-02 15:09:16,703 - INFO - Extracting offering for deck 65
+2025-08-02 15:09:16,703 - WARNING - No visual analysis available for deck 65
+2025-08-02 15:09:16,703 - INFO - DEBUG: Full extraction prompt for deck 65:
+2025-08-02 15:09:16,703 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:16,703 - INFO - Visual used flag: False
+2025-08-02 15:09:16,703 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:09:16,876 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:16,876 - INFO - Completed extraction for deck 65
+2025-08-02 15:09:16,877 - INFO - Extracting offering for deck 58
+2025-08-02 15:09:16,877 - WARNING - No visual analysis available for deck 58
+2025-08-02 15:09:16,877 - INFO - DEBUG: Full extraction prompt for deck 58:
+2025-08-02 15:09:16,877 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:16,877 - INFO - Visual used flag: False
+2025-08-02 15:09:16,877 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:09:17,044 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:17,045 - INFO - Completed extraction for deck 58
+2025-08-02 15:09:17,045 - INFO - Extracting offering for deck 61
+2025-08-02 15:09:17,045 - WARNING - No visual analysis available for deck 61
+2025-08-02 15:09:17,045 - INFO - DEBUG: Full extraction prompt for deck 61:
+2025-08-02 15:09:17,045 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:17,045 - INFO - Visual used flag: False
+2025-08-02 15:09:17,045 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:09:17,213 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:17,213 - INFO - Completed extraction for deck 61
+2025-08-02 15:09:17,213 - INFO - Extracting offering for deck 68
+2025-08-02 15:09:17,213 - WARNING - No visual analysis available for deck 68
+2025-08-02 15:09:17,213 - INFO - DEBUG: Full extraction prompt for deck 68:
+2025-08-02 15:09:17,213 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:17,213 - INFO - Visual used flag: False
+2025-08-02 15:09:17,213 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:09:17,380 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:17,380 - INFO - Completed extraction for deck 68
+2025-08-02 15:09:17,380 - INFO - Extracting offering for deck 64
+2025-08-02 15:09:17,380 - WARNING - No visual analysis available for deck 64
+2025-08-02 15:09:17,380 - INFO - DEBUG: Full extraction prompt for deck 64:
+2025-08-02 15:09:17,380 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:17,380 - INFO - Visual used flag: False
+2025-08-02 15:09:17,380 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:09:17,550 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:17,551 - INFO - Completed extraction for deck 64
+2025-08-02 15:09:17,551 - INFO - Extracting offering for deck 60
+2025-08-02 15:09:17,551 - WARNING - No visual analysis available for deck 60
+2025-08-02 15:09:17,551 - INFO - DEBUG: Full extraction prompt for deck 60:
+2025-08-02 15:09:17,551 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:17,551 - INFO - Visual used flag: False
+2025-08-02 15:09:17,551 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:09:17,716 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:17,716 - INFO - Completed extraction for deck 60
+2025-08-02 15:09:17,716 - INFO - Extracting offering for deck 71
+2025-08-02 15:09:17,716 - WARNING - No visual analysis available for deck 71
+2025-08-02 15:09:17,717 - INFO - DEBUG: Full extraction prompt for deck 71:
+2025-08-02 15:09:17,717 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:17,717 - INFO - Visual used flag: False
+2025-08-02 15:09:17,717 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:09:17,892 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:17,892 - INFO - Completed extraction for deck 71
+2025-08-02 15:09:17,892 - INFO - Extracting offering for deck 51
+2025-08-02 15:09:17,892 - WARNING - No visual analysis available for deck 51
+2025-08-02 15:09:17,892 - INFO - DEBUG: Full extraction prompt for deck 51:
+2025-08-02 15:09:17,892 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:17,892 - INFO - Visual used flag: False
+2025-08-02 15:09:17,892 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:09:18,063 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:18,064 - INFO - Completed extraction for deck 51
+2025-08-02 15:09:18,064 - INFO - Extracting offering for deck 50
+2025-08-02 15:09:18,064 - WARNING - No visual analysis available for deck 50
+2025-08-02 15:09:18,064 - INFO - DEBUG: Full extraction prompt for deck 50:
+2025-08-02 15:09:18,064 - INFO - Visual context length: 50 characters
+2025-08-02 15:09:18,064 - INFO - Visual used flag: False
+2025-08-02 15:09:18,064 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:09:18,223 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:09:18,223 - INFO - Completed extraction for deck 50
+2025-08-02 15:09:18,223 - INFO - Completed offering extraction for 10 decks
+2025-08-02 15:09:18,224 - INFO - 65.108.32.168 - - [02/Aug/2025 15:09:18] "POST /api/run-offering-extraction HTTP/1.1" 200 -
+2025-08-02 15:11:20,278 - INFO - Listing models via HTTP API
+2025-08-02 15:11:20,281 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
+2025-08-02 15:11:20,282 - INFO - Successfully listed 4 models
+2025-08-02 15:11:20,282 - INFO - 65.108.32.168 - - [02/Aug/2025 15:11:20] "GET /api/models HTTP/1.1" 200 -
+2025-08-02 15:18:31,696 - INFO - Starting offering extraction for 10 decks using phi4:latest
+2025-08-02 15:18:31,697 - INFO - Retrieving cached visual analysis for 10 decks via HTTP from backend
+2025-08-02 15:18:31,697 - INFO - Using backend server: http://65.108.32.143:8000
+2025-08-02 15:18:31,710 - INFO - DEBUG: Raw cached_analysis keys: []
+2025-08-02 15:18:31,710 - INFO - DEBUG: Converted keys: []
+2025-08-02 15:18:31,710 - INFO - Retrieved cached visual analysis for 0/10 decks via HTTP from backend
+2025-08-02 15:18:31,710 - INFO - Extracting offering for deck 68
+2025-08-02 15:18:31,710 - WARNING - No visual analysis available for deck 68
+2025-08-02 15:18:31,710 - INFO - DEBUG: Full extraction prompt for deck 68:
+2025-08-02 15:18:31,710 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:31,710 - INFO - Visual used flag: False
+2025-08-02 15:18:31,710 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:18:34,852 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:34,852 - INFO - Completed extraction for deck 68
+2025-08-02 15:18:34,852 - INFO - Extracting offering for deck 61
+2025-08-02 15:18:34,852 - WARNING - No visual analysis available for deck 61
+2025-08-02 15:18:34,852 - INFO - DEBUG: Full extraction prompt for deck 61:
+2025-08-02 15:18:34,852 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:34,852 - INFO - Visual used flag: False
+2025-08-02 15:18:34,852 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:18:34,999 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:34,999 - INFO - Completed extraction for deck 61
+2025-08-02 15:18:34,999 - INFO - Extracting offering for deck 62
+2025-08-02 15:18:34,999 - WARNING - No visual analysis available for deck 62
+2025-08-02 15:18:34,999 - INFO - DEBUG: Full extraction prompt for deck 62:
+2025-08-02 15:18:34,999 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:35,000 - INFO - Visual used flag: False
+2025-08-02 15:18:35,000 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:18:35,153 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:35,154 - INFO - Completed extraction for deck 62
+2025-08-02 15:18:35,154 - INFO - Extracting offering for deck 71
+2025-08-02 15:18:35,154 - WARNING - No visual analysis available for deck 71
+2025-08-02 15:18:35,154 - INFO - DEBUG: Full extraction prompt for deck 71:
+2025-08-02 15:18:35,154 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:35,154 - INFO - Visual used flag: False
+2025-08-02 15:18:35,154 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:18:35,311 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:35,311 - INFO - Completed extraction for deck 71
+2025-08-02 15:18:35,311 - INFO - Extracting offering for deck 64
+2025-08-02 15:18:35,311 - WARNING - No visual analysis available for deck 64
+2025-08-02 15:18:35,311 - INFO - DEBUG: Full extraction prompt for deck 64:
+2025-08-02 15:18:35,311 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:35,311 - INFO - Visual used flag: False
+2025-08-02 15:18:35,311 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:18:35,458 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:35,458 - INFO - Completed extraction for deck 64
+2025-08-02 15:18:35,459 - INFO - Extracting offering for deck 60
+2025-08-02 15:18:35,459 - WARNING - No visual analysis available for deck 60
+2025-08-02 15:18:35,459 - INFO - DEBUG: Full extraction prompt for deck 60:
+2025-08-02 15:18:35,459 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:35,459 - INFO - Visual used flag: False
+2025-08-02 15:18:35,459 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:18:35,626 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:35,626 - INFO - Completed extraction for deck 60
+2025-08-02 15:18:35,626 - INFO - Extracting offering for deck 50
+2025-08-02 15:18:35,626 - WARNING - No visual analysis available for deck 50
+2025-08-02 15:18:35,626 - INFO - DEBUG: Full extraction prompt for deck 50:
+2025-08-02 15:18:35,627 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:35,627 - INFO - Visual used flag: False
+2025-08-02 15:18:35,627 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:18:35,771 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:35,771 - INFO - Completed extraction for deck 50
+2025-08-02 15:18:35,771 - INFO - Extracting offering for deck 51
+2025-08-02 15:18:35,771 - WARNING - No visual analysis available for deck 51
+2025-08-02 15:18:35,771 - INFO - DEBUG: Full extraction prompt for deck 51:
+2025-08-02 15:18:35,771 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:35,771 - INFO - Visual used flag: False
+2025-08-02 15:18:35,772 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:18:35,942 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:35,942 - INFO - Completed extraction for deck 51
+2025-08-02 15:18:35,942 - INFO - Extracting offering for deck 58
+2025-08-02 15:18:35,942 - WARNING - No visual analysis available for deck 58
+2025-08-02 15:18:35,942 - INFO - DEBUG: Full extraction prompt for deck 58:
+2025-08-02 15:18:35,943 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:35,943 - INFO - Visual used flag: False
+2025-08-02 15:18:35,943 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:18:36,122 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:36,122 - INFO - Completed extraction for deck 58
+2025-08-02 15:18:36,122 - INFO - Extracting offering for deck 65
+2025-08-02 15:18:36,122 - WARNING - No visual analysis available for deck 65
+2025-08-02 15:18:36,122 - INFO - DEBUG: Full extraction prompt for deck 65:
+2025-08-02 15:18:36,122 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:36,122 - INFO - Visual used flag: False
+2025-08-02 15:18:36,122 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:18:36,296 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:36,296 - INFO - Completed extraction for deck 65
+2025-08-02 15:18:36,296 - INFO - Completed offering extraction for 10 decks
+2025-08-02 15:18:36,297 - INFO - 65.108.32.168 - - [02/Aug/2025 15:18:36] "POST /api/run-offering-extraction HTTP/1.1" 200 -
+2025-08-02 15:18:36,492 - INFO - Starting offering extraction for 10 decks using phi4:latest
+2025-08-02 15:18:36,492 - INFO - Retrieving cached visual analysis for 10 decks via HTTP from backend
+2025-08-02 15:18:36,492 - INFO - Using backend server: http://65.108.32.143:8000
+2025-08-02 15:18:36,505 - INFO - DEBUG: Raw cached_analysis keys: []
+2025-08-02 15:18:36,506 - INFO - DEBUG: Converted keys: []
+2025-08-02 15:18:36,506 - INFO - Retrieved cached visual analysis for 0/10 decks via HTTP from backend
+2025-08-02 15:18:36,506 - INFO - Extracting offering for deck 68
+2025-08-02 15:18:36,506 - WARNING - No visual analysis available for deck 68
+2025-08-02 15:18:36,506 - INFO - DEBUG: Full extraction prompt for deck 68:
+2025-08-02 15:18:36,506 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:36,506 - INFO - Visual used flag: False
+2025-08-02 15:18:36,506 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:18:36,692 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:36,692 - INFO - Completed extraction for deck 68
+2025-08-02 15:18:36,692 - INFO - Extracting offering for deck 61
+2025-08-02 15:18:36,692 - WARNING - No visual analysis available for deck 61
+2025-08-02 15:18:36,692 - INFO - DEBUG: Full extraction prompt for deck 61:
+2025-08-02 15:18:36,692 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:36,692 - INFO - Visual used flag: False
+2025-08-02 15:18:36,692 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:18:36,859 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:36,860 - INFO - Completed extraction for deck 61
+2025-08-02 15:18:36,860 - INFO - Extracting offering for deck 62
+2025-08-02 15:18:36,860 - WARNING - No visual analysis available for deck 62
+2025-08-02 15:18:36,860 - INFO - DEBUG: Full extraction prompt for deck 62:
+2025-08-02 15:18:36,860 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:36,860 - INFO - Visual used flag: False
+2025-08-02 15:18:36,860 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:18:37,039 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:37,039 - INFO - Completed extraction for deck 62
+2025-08-02 15:18:37,039 - INFO - Extracting offering for deck 71
+2025-08-02 15:18:37,039 - WARNING - No visual analysis available for deck 71
+2025-08-02 15:18:37,039 - INFO - DEBUG: Full extraction prompt for deck 71:
+2025-08-02 15:18:37,039 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:37,039 - INFO - Visual used flag: False
+2025-08-02 15:18:37,039 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:18:37,212 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:37,212 - INFO - Completed extraction for deck 71
+2025-08-02 15:18:37,212 - INFO - Extracting offering for deck 64
+2025-08-02 15:18:37,212 - WARNING - No visual analysis available for deck 64
+2025-08-02 15:18:37,212 - INFO - DEBUG: Full extraction prompt for deck 64:
+2025-08-02 15:18:37,212 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:37,212 - INFO - Visual used flag: False
+2025-08-02 15:18:37,212 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:18:37,365 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:37,365 - INFO - Completed extraction for deck 64
+2025-08-02 15:18:37,365 - INFO - Extracting offering for deck 60
+2025-08-02 15:18:37,365 - WARNING - No visual analysis available for deck 60
+2025-08-02 15:18:37,365 - INFO - DEBUG: Full extraction prompt for deck 60:
+2025-08-02 15:18:37,365 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:37,365 - INFO - Visual used flag: False
+2025-08-02 15:18:37,365 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:18:37,507 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:37,507 - INFO - Completed extraction for deck 60
+2025-08-02 15:18:37,507 - INFO - Extracting offering for deck 50
+2025-08-02 15:18:37,507 - WARNING - No visual analysis available for deck 50
+2025-08-02 15:18:37,507 - INFO - DEBUG: Full extraction prompt for deck 50:
+2025-08-02 15:18:37,507 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:37,507 - INFO - Visual used flag: False
+2025-08-02 15:18:37,507 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:18:37,683 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:37,683 - INFO - Completed extraction for deck 50
+2025-08-02 15:18:37,683 - INFO - Extracting offering for deck 51
+2025-08-02 15:18:37,683 - WARNING - No visual analysis available for deck 51
+2025-08-02 15:18:37,684 - INFO - DEBUG: Full extraction prompt for deck 51:
+2025-08-02 15:18:37,684 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:37,684 - INFO - Visual used flag: False
+2025-08-02 15:18:37,684 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:18:37,872 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:37,873 - INFO - Completed extraction for deck 51
+2025-08-02 15:18:37,873 - INFO - Extracting offering for deck 58
+2025-08-02 15:18:37,873 - WARNING - No visual analysis available for deck 58
+2025-08-02 15:18:37,873 - INFO - DEBUG: Full extraction prompt for deck 58:
+2025-08-02 15:18:37,873 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:37,873 - INFO - Visual used flag: False
+2025-08-02 15:18:37,873 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:18:38,047 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:38,048 - INFO - Completed extraction for deck 58
+2025-08-02 15:18:38,048 - INFO - Extracting offering for deck 65
+2025-08-02 15:18:38,048 - WARNING - No visual analysis available for deck 65
+2025-08-02 15:18:38,048 - INFO - DEBUG: Full extraction prompt for deck 65:
+2025-08-02 15:18:38,048 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:38,048 - INFO - Visual used flag: False
+2025-08-02 15:18:38,048 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:18:38,230 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:38,230 - INFO - Completed extraction for deck 65
+2025-08-02 15:18:38,230 - INFO - Completed offering extraction for 10 decks
+2025-08-02 15:18:38,231 - INFO - 65.108.32.168 - - [02/Aug/2025 15:18:38] "POST /api/run-offering-extraction HTTP/1.1" 200 -
+2025-08-02 15:18:38,365 - INFO - Starting offering extraction for 10 decks using phi4:latest
+2025-08-02 15:18:38,365 - INFO - Retrieving cached visual analysis for 10 decks via HTTP from backend
+2025-08-02 15:18:38,365 - INFO - Using backend server: http://65.108.32.143:8000
+2025-08-02 15:18:38,378 - INFO - DEBUG: Raw cached_analysis keys: []
+2025-08-02 15:18:38,378 - INFO - DEBUG: Converted keys: []
+2025-08-02 15:18:38,378 - INFO - Retrieved cached visual analysis for 0/10 decks via HTTP from backend
+2025-08-02 15:18:38,378 - INFO - Extracting offering for deck 68
+2025-08-02 15:18:38,378 - WARNING - No visual analysis available for deck 68
+2025-08-02 15:18:38,378 - INFO - DEBUG: Full extraction prompt for deck 68:
+2025-08-02 15:18:38,378 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:38,379 - INFO - Visual used flag: False
+2025-08-02 15:18:38,379 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:18:38,576 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:38,576 - INFO - Completed extraction for deck 68
+2025-08-02 15:18:38,576 - INFO - Extracting offering for deck 61
+2025-08-02 15:18:38,576 - WARNING - No visual analysis available for deck 61
+2025-08-02 15:18:38,576 - INFO - DEBUG: Full extraction prompt for deck 61:
+2025-08-02 15:18:38,576 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:38,576 - INFO - Visual used flag: False
+2025-08-02 15:18:38,576 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:18:38,759 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:38,760 - INFO - Completed extraction for deck 61
+2025-08-02 15:18:38,760 - INFO - Extracting offering for deck 62
+2025-08-02 15:18:38,760 - WARNING - No visual analysis available for deck 62
+2025-08-02 15:18:38,760 - INFO - DEBUG: Full extraction prompt for deck 62:
+2025-08-02 15:18:38,760 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:38,760 - INFO - Visual used flag: False
+2025-08-02 15:18:38,760 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:18:38,925 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:38,925 - INFO - Completed extraction for deck 62
+2025-08-02 15:18:38,925 - INFO - Extracting offering for deck 71
+2025-08-02 15:18:38,925 - WARNING - No visual analysis available for deck 71
+2025-08-02 15:18:38,925 - INFO - DEBUG: Full extraction prompt for deck 71:
+2025-08-02 15:18:38,925 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:38,925 - INFO - Visual used flag: False
+2025-08-02 15:18:38,925 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:18:39,094 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:39,094 - INFO - Completed extraction for deck 71
+2025-08-02 15:18:39,094 - INFO - Extracting offering for deck 64
+2025-08-02 15:18:39,094 - WARNING - No visual analysis available for deck 64
+2025-08-02 15:18:39,094 - INFO - DEBUG: Full extraction prompt for deck 64:
+2025-08-02 15:18:39,095 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:39,095 - INFO - Visual used flag: False
+2025-08-02 15:18:39,095 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:18:39,254 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:39,255 - INFO - Completed extraction for deck 64
+2025-08-02 15:18:39,256 - INFO - Extracting offering for deck 60
+2025-08-02 15:18:39,256 - WARNING - No visual analysis available for deck 60
+2025-08-02 15:18:39,256 - INFO - DEBUG: Full extraction prompt for deck 60:
+2025-08-02 15:18:39,256 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:39,256 - INFO - Visual used flag: False
+2025-08-02 15:18:39,256 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:18:39,432 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:39,432 - INFO - Completed extraction for deck 60
+2025-08-02 15:18:39,432 - INFO - Extracting offering for deck 50
+2025-08-02 15:18:39,432 - WARNING - No visual analysis available for deck 50
+2025-08-02 15:18:39,432 - INFO - DEBUG: Full extraction prompt for deck 50:
+2025-08-02 15:18:39,432 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:39,432 - INFO - Visual used flag: False
+2025-08-02 15:18:39,432 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:18:39,609 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:39,610 - INFO - Completed extraction for deck 50
+2025-08-02 15:18:39,610 - INFO - Extracting offering for deck 51
+2025-08-02 15:18:39,610 - WARNING - No visual analysis available for deck 51
+2025-08-02 15:18:39,610 - INFO - DEBUG: Full extraction prompt for deck 51:
+2025-08-02 15:18:39,610 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:39,610 - INFO - Visual used flag: False
+2025-08-02 15:18:39,610 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:18:39,781 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:39,781 - INFO - Completed extraction for deck 51
+2025-08-02 15:18:39,781 - INFO - Extracting offering for deck 58
+2025-08-02 15:18:39,781 - WARNING - No visual analysis available for deck 58
+2025-08-02 15:18:39,781 - INFO - DEBUG: Full extraction prompt for deck 58:
+2025-08-02 15:18:39,781 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:39,781 - INFO - Visual used flag: False
+2025-08-02 15:18:39,782 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:18:39,946 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:39,947 - INFO - Completed extraction for deck 58
+2025-08-02 15:18:39,947 - INFO - Extracting offering for deck 65
+2025-08-02 15:18:39,947 - WARNING - No visual analysis available for deck 65
+2025-08-02 15:18:39,947 - INFO - DEBUG: Full extraction prompt for deck 65:
+2025-08-02 15:18:39,947 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:39,947 - INFO - Visual used flag: False
+2025-08-02 15:18:39,947 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:18:40,106 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:40,107 - INFO - Completed extraction for deck 65
+2025-08-02 15:18:40,107 - INFO - Completed offering extraction for 10 decks
+2025-08-02 15:18:40,107 - INFO - 65.108.32.168 - - [02/Aug/2025 15:18:40] "POST /api/run-offering-extraction HTTP/1.1" 200 -
+2025-08-02 15:18:40,234 - INFO - Starting offering extraction for 10 decks using phi4:latest
+2025-08-02 15:18:40,234 - INFO - Retrieving cached visual analysis for 10 decks via HTTP from backend
+2025-08-02 15:18:40,234 - INFO - Using backend server: http://65.108.32.143:8000
+2025-08-02 15:18:40,247 - INFO - DEBUG: Raw cached_analysis keys: []
+2025-08-02 15:18:40,247 - INFO - DEBUG: Converted keys: []
+2025-08-02 15:18:40,247 - INFO - Retrieved cached visual analysis for 0/10 decks via HTTP from backend
+2025-08-02 15:18:40,248 - INFO - Extracting offering for deck 68
+2025-08-02 15:18:40,248 - WARNING - No visual analysis available for deck 68
+2025-08-02 15:18:40,248 - INFO - DEBUG: Full extraction prompt for deck 68:
+2025-08-02 15:18:40,248 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:40,248 - INFO - Visual used flag: False
+2025-08-02 15:18:40,248 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:18:40,434 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:40,434 - INFO - Completed extraction for deck 68
+2025-08-02 15:18:40,434 - INFO - Extracting offering for deck 61
+2025-08-02 15:18:40,434 - WARNING - No visual analysis available for deck 61
+2025-08-02 15:18:40,434 - INFO - DEBUG: Full extraction prompt for deck 61:
+2025-08-02 15:18:40,434 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:40,434 - INFO - Visual used flag: False
+2025-08-02 15:18:40,434 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:18:40,608 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:40,609 - INFO - Completed extraction for deck 61
+2025-08-02 15:18:40,609 - INFO - Extracting offering for deck 62
+2025-08-02 15:18:40,609 - WARNING - No visual analysis available for deck 62
+2025-08-02 15:18:40,609 - INFO - DEBUG: Full extraction prompt for deck 62:
+2025-08-02 15:18:40,609 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:40,609 - INFO - Visual used flag: False
+2025-08-02 15:18:40,609 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:18:40,780 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:40,780 - INFO - Completed extraction for deck 62
+2025-08-02 15:18:40,780 - INFO - Extracting offering for deck 71
+2025-08-02 15:18:40,780 - WARNING - No visual analysis available for deck 71
+2025-08-02 15:18:40,781 - INFO - DEBUG: Full extraction prompt for deck 71:
+2025-08-02 15:18:40,781 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:40,781 - INFO - Visual used flag: False
+2025-08-02 15:18:40,781 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:18:40,958 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:40,958 - INFO - Completed extraction for deck 71
+2025-08-02 15:18:40,958 - INFO - Extracting offering for deck 64
+2025-08-02 15:18:40,958 - WARNING - No visual analysis available for deck 64
+2025-08-02 15:18:40,958 - INFO - DEBUG: Full extraction prompt for deck 64:
+2025-08-02 15:18:40,958 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:40,959 - INFO - Visual used flag: False
+2025-08-02 15:18:40,959 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:18:41,129 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:41,129 - INFO - Completed extraction for deck 64
+2025-08-02 15:18:41,129 - INFO - Extracting offering for deck 60
+2025-08-02 15:18:41,129 - WARNING - No visual analysis available for deck 60
+2025-08-02 15:18:41,129 - INFO - DEBUG: Full extraction prompt for deck 60:
+2025-08-02 15:18:41,129 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:41,129 - INFO - Visual used flag: False
+2025-08-02 15:18:41,130 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:18:41,300 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:41,301 - INFO - Completed extraction for deck 60
+2025-08-02 15:18:41,301 - INFO - Extracting offering for deck 50
+2025-08-02 15:18:41,301 - WARNING - No visual analysis available for deck 50
+2025-08-02 15:18:41,301 - INFO - DEBUG: Full extraction prompt for deck 50:
+2025-08-02 15:18:41,301 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:41,301 - INFO - Visual used flag: False
+2025-08-02 15:18:41,301 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:18:41,460 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:41,461 - INFO - Completed extraction for deck 50
+2025-08-02 15:18:41,461 - INFO - Extracting offering for deck 51
+2025-08-02 15:18:41,461 - WARNING - No visual analysis available for deck 51
+2025-08-02 15:18:41,461 - INFO - DEBUG: Full extraction prompt for deck 51:
+2025-08-02 15:18:41,461 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:41,461 - INFO - Visual used flag: False
+2025-08-02 15:18:41,461 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:18:41,592 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:41,593 - INFO - Completed extraction for deck 51
+2025-08-02 15:18:41,593 - INFO - Extracting offering for deck 58
+2025-08-02 15:18:41,593 - WARNING - No visual analysis available for deck 58
+2025-08-02 15:18:41,593 - INFO - DEBUG: Full extraction prompt for deck 58:
+2025-08-02 15:18:41,593 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:41,593 - INFO - Visual used flag: False
+2025-08-02 15:18:41,593 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:18:41,753 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:41,754 - INFO - Completed extraction for deck 58
+2025-08-02 15:18:41,754 - INFO - Extracting offering for deck 65
+2025-08-02 15:18:41,754 - WARNING - No visual analysis available for deck 65
+2025-08-02 15:18:41,754 - INFO - DEBUG: Full extraction prompt for deck 65:
+2025-08-02 15:18:41,754 - INFO - Visual context length: 50 characters
+2025-08-02 15:18:41,754 - INFO - Visual used flag: False
+2025-08-02 15:18:41,754 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:18:41,887 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:18:41,888 - INFO - Completed extraction for deck 65
+2025-08-02 15:18:41,888 - INFO - Completed offering extraction for 10 decks
+2025-08-02 15:18:41,888 - INFO - 65.108.32.168 - - [02/Aug/2025 15:18:41] "POST /api/run-offering-extraction HTTP/1.1" 200 -
+2025-08-02 15:20:49,364 - INFO - Listing models via HTTP API
+2025-08-02 15:20:49,368 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
+2025-08-02 15:20:49,368 - INFO - Successfully listed 4 models
+2025-08-02 15:20:49,369 - INFO - 65.108.32.168 - - [02/Aug/2025 15:20:49] "GET /api/models HTTP/1.1" 200 -
+2025-08-02 15:20:58,459 - INFO - Starting offering extraction for 10 decks using phi4:latest
+2025-08-02 15:20:58,459 - INFO - Retrieving cached visual analysis for 10 decks via HTTP from backend
+2025-08-02 15:20:58,459 - INFO - Using backend server: http://65.108.32.143:8000
+2025-08-02 15:20:58,472 - INFO - DEBUG: Raw cached_analysis keys: []
+2025-08-02 15:20:58,472 - INFO - DEBUG: Converted keys: []
+2025-08-02 15:20:58,473 - INFO - Retrieved cached visual analysis for 0/10 decks via HTTP from backend
+2025-08-02 15:20:58,473 - INFO - Extracting offering for deck 58
+2025-08-02 15:20:58,473 - WARNING - No visual analysis available for deck 58
+2025-08-02 15:20:58,473 - INFO - DEBUG: Full extraction prompt for deck 58:
+2025-08-02 15:20:58,473 - INFO - Visual context length: 50 characters
+2025-08-02 15:20:58,473 - INFO - Visual used flag: False
+2025-08-02 15:20:58,473 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:20:58,670 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:20:58,671 - INFO - Completed extraction for deck 58
+2025-08-02 15:20:58,671 - INFO - Extracting offering for deck 61
+2025-08-02 15:20:58,671 - WARNING - No visual analysis available for deck 61
+2025-08-02 15:20:58,671 - INFO - DEBUG: Full extraction prompt for deck 61:
+2025-08-02 15:20:58,671 - INFO - Visual context length: 50 characters
+2025-08-02 15:20:58,671 - INFO - Visual used flag: False
+2025-08-02 15:20:58,671 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:20:58,839 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:20:58,839 - INFO - Completed extraction for deck 61
+2025-08-02 15:20:58,839 - INFO - Extracting offering for deck 71
+2025-08-02 15:20:58,839 - WARNING - No visual analysis available for deck 71
+2025-08-02 15:20:58,839 - INFO - DEBUG: Full extraction prompt for deck 71:
+2025-08-02 15:20:58,839 - INFO - Visual context length: 50 characters
+2025-08-02 15:20:58,839 - INFO - Visual used flag: False
+2025-08-02 15:20:58,840 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:20:58,996 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:20:58,996 - INFO - Completed extraction for deck 71
+2025-08-02 15:20:58,996 - INFO - Extracting offering for deck 50
+2025-08-02 15:20:58,996 - WARNING - No visual analysis available for deck 50
+2025-08-02 15:20:58,996 - INFO - DEBUG: Full extraction prompt for deck 50:
+2025-08-02 15:20:58,996 - INFO - Visual context length: 50 characters
+2025-08-02 15:20:58,996 - INFO - Visual used flag: False
+2025-08-02 15:20:58,997 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:20:59,170 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:20:59,170 - INFO - Completed extraction for deck 50
+2025-08-02 15:20:59,170 - INFO - Extracting offering for deck 68
+2025-08-02 15:20:59,170 - WARNING - No visual analysis available for deck 68
+2025-08-02 15:20:59,170 - INFO - DEBUG: Full extraction prompt for deck 68:
+2025-08-02 15:20:59,170 - INFO - Visual context length: 50 characters
+2025-08-02 15:20:59,170 - INFO - Visual used flag: False
+2025-08-02 15:20:59,170 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:20:59,315 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:20:59,316 - INFO - Completed extraction for deck 68
+2025-08-02 15:20:59,316 - INFO - Extracting offering for deck 62
+2025-08-02 15:20:59,316 - WARNING - No visual analysis available for deck 62
+2025-08-02 15:20:59,316 - INFO - DEBUG: Full extraction prompt for deck 62:
+2025-08-02 15:20:59,316 - INFO - Visual context length: 50 characters
+2025-08-02 15:20:59,316 - INFO - Visual used flag: False
+2025-08-02 15:20:59,316 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:20:59,472 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:20:59,473 - INFO - Completed extraction for deck 62
+2025-08-02 15:20:59,473 - INFO - Extracting offering for deck 51
+2025-08-02 15:20:59,473 - WARNING - No visual analysis available for deck 51
+2025-08-02 15:20:59,473 - INFO - DEBUG: Full extraction prompt for deck 51:
+2025-08-02 15:20:59,473 - INFO - Visual context length: 50 characters
+2025-08-02 15:20:59,473 - INFO - Visual used flag: False
+2025-08-02 15:20:59,473 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:20:59,615 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:20:59,615 - INFO - Completed extraction for deck 51
+2025-08-02 15:20:59,615 - INFO - Extracting offering for deck 65
+2025-08-02 15:20:59,615 - WARNING - No visual analysis available for deck 65
+2025-08-02 15:20:59,615 - INFO - DEBUG: Full extraction prompt for deck 65:
+2025-08-02 15:20:59,615 - INFO - Visual context length: 50 characters
+2025-08-02 15:20:59,615 - INFO - Visual used flag: False
+2025-08-02 15:20:59,615 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:20:59,764 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:20:59,764 - INFO - Completed extraction for deck 65
+2025-08-02 15:20:59,764 - INFO - Extracting offering for deck 60
+2025-08-02 15:20:59,764 - WARNING - No visual analysis available for deck 60
+2025-08-02 15:20:59,764 - INFO - DEBUG: Full extraction prompt for deck 60:
+2025-08-02 15:20:59,764 - INFO - Visual context length: 50 characters
+2025-08-02 15:20:59,764 - INFO - Visual used flag: False
+2025-08-02 15:20:59,764 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:20:59,930 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:20:59,931 - INFO - Completed extraction for deck 60
+2025-08-02 15:20:59,931 - INFO - Extracting offering for deck 64
+2025-08-02 15:20:59,931 - WARNING - No visual analysis available for deck 64
+2025-08-02 15:20:59,931 - INFO - DEBUG: Full extraction prompt for deck 64:
+2025-08-02 15:20:59,931 - INFO - Visual context length: 50 characters
+2025-08-02 15:20:59,931 - INFO - Visual used flag: False
+2025-08-02 15:20:59,931 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Your task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company. Please do not write any introductory sentences and do not repeat the instruction, just provide what you are asked for.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual anal...
+2025-08-02 15:21:00,089 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:00,089 - INFO - Completed extraction for deck 64
+2025-08-02 15:21:00,089 - INFO - Completed offering extraction for 10 decks
+2025-08-02 15:21:00,089 - INFO - 65.108.32.168 - - [02/Aug/2025 15:21:00] "POST /api/run-offering-extraction HTTP/1.1" 200 -
+2025-08-02 15:21:00,333 - INFO - Starting offering extraction for 10 decks using phi4:latest
+2025-08-02 15:21:00,334 - INFO - Retrieving cached visual analysis for 10 decks via HTTP from backend
+2025-08-02 15:21:00,334 - INFO - Using backend server: http://65.108.32.143:8000
+2025-08-02 15:21:00,349 - INFO - DEBUG: Raw cached_analysis keys: []
+2025-08-02 15:21:00,350 - INFO - DEBUG: Converted keys: []
+2025-08-02 15:21:00,350 - INFO - Retrieved cached visual analysis for 0/10 decks via HTTP from backend
+2025-08-02 15:21:00,350 - INFO - Extracting offering for deck 58
+2025-08-02 15:21:00,350 - WARNING - No visual analysis available for deck 58
+2025-08-02 15:21:00,350 - INFO - DEBUG: Full extraction prompt for deck 58:
+2025-08-02 15:21:00,350 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:00,350 - INFO - Visual used flag: False
+2025-08-02 15:21:00,350 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:21:00,519 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:00,519 - INFO - Completed extraction for deck 58
+2025-08-02 15:21:00,519 - INFO - Extracting offering for deck 61
+2025-08-02 15:21:00,519 - WARNING - No visual analysis available for deck 61
+2025-08-02 15:21:00,519 - INFO - DEBUG: Full extraction prompt for deck 61:
+2025-08-02 15:21:00,519 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:00,519 - INFO - Visual used flag: False
+2025-08-02 15:21:00,519 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:21:00,691 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:00,692 - INFO - Completed extraction for deck 61
+2025-08-02 15:21:00,692 - INFO - Extracting offering for deck 71
+2025-08-02 15:21:00,692 - WARNING - No visual analysis available for deck 71
+2025-08-02 15:21:00,692 - INFO - DEBUG: Full extraction prompt for deck 71:
+2025-08-02 15:21:00,692 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:00,692 - INFO - Visual used flag: False
+2025-08-02 15:21:00,692 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:21:00,857 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:00,858 - INFO - Completed extraction for deck 71
+2025-08-02 15:21:00,858 - INFO - Extracting offering for deck 50
+2025-08-02 15:21:00,858 - WARNING - No visual analysis available for deck 50
+2025-08-02 15:21:00,858 - INFO - DEBUG: Full extraction prompt for deck 50:
+2025-08-02 15:21:00,858 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:00,858 - INFO - Visual used flag: False
+2025-08-02 15:21:00,858 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:21:01,035 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:01,036 - INFO - Completed extraction for deck 50
+2025-08-02 15:21:01,036 - INFO - Extracting offering for deck 68
+2025-08-02 15:21:01,036 - WARNING - No visual analysis available for deck 68
+2025-08-02 15:21:01,036 - INFO - DEBUG: Full extraction prompt for deck 68:
+2025-08-02 15:21:01,036 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:01,036 - INFO - Visual used flag: False
+2025-08-02 15:21:01,036 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:21:01,172 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:01,172 - INFO - Completed extraction for deck 68
+2025-08-02 15:21:01,172 - INFO - Extracting offering for deck 62
+2025-08-02 15:21:01,172 - WARNING - No visual analysis available for deck 62
+2025-08-02 15:21:01,172 - INFO - DEBUG: Full extraction prompt for deck 62:
+2025-08-02 15:21:01,172 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:01,172 - INFO - Visual used flag: False
+2025-08-02 15:21:01,172 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:21:01,323 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:01,323 - INFO - Completed extraction for deck 62
+2025-08-02 15:21:01,323 - INFO - Extracting offering for deck 51
+2025-08-02 15:21:01,323 - WARNING - No visual analysis available for deck 51
+2025-08-02 15:21:01,323 - INFO - DEBUG: Full extraction prompt for deck 51:
+2025-08-02 15:21:01,323 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:01,323 - INFO - Visual used flag: False
+2025-08-02 15:21:01,323 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:21:01,470 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:01,470 - INFO - Completed extraction for deck 51
+2025-08-02 15:21:01,470 - INFO - Extracting offering for deck 65
+2025-08-02 15:21:01,470 - WARNING - No visual analysis available for deck 65
+2025-08-02 15:21:01,470 - INFO - DEBUG: Full extraction prompt for deck 65:
+2025-08-02 15:21:01,470 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:01,470 - INFO - Visual used flag: False
+2025-08-02 15:21:01,470 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:21:01,607 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:01,608 - INFO - Completed extraction for deck 65
+2025-08-02 15:21:01,608 - INFO - Extracting offering for deck 60
+2025-08-02 15:21:01,608 - WARNING - No visual analysis available for deck 60
+2025-08-02 15:21:01,608 - INFO - DEBUG: Full extraction prompt for deck 60:
+2025-08-02 15:21:01,608 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:01,608 - INFO - Visual used flag: False
+2025-08-02 15:21:01,608 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:21:01,760 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:01,761 - INFO - Completed extraction for deck 60
+2025-08-02 15:21:01,761 - INFO - Extracting offering for deck 64
+2025-08-02 15:21:01,761 - WARNING - No visual analysis available for deck 64
+2025-08-02 15:21:01,761 - INFO - DEBUG: Full extraction prompt for deck 64:
+2025-08-02 15:21:01,761 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:01,761 - INFO - Visual used flag: False
+2025-08-02 15:21:01,761 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please find the name of the startup in the pitchdeck. Deliver only the name, no conversational text around it.
+
+PITCH DECK VISUAL ANALYSIS:
+[No visual analysis available for this pitch deck]
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"....
+2025-08-02 15:21:01,910 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:01,911 - INFO - Completed extraction for deck 64
+2025-08-02 15:21:01,911 - INFO - Completed offering extraction for 10 decks
+2025-08-02 15:21:01,911 - INFO - 65.108.32.168 - - [02/Aug/2025 15:21:01] "POST /api/run-offering-extraction HTTP/1.1" 200 -
+2025-08-02 15:21:02,048 - INFO - Starting offering extraction for 10 decks using phi4:latest
+2025-08-02 15:21:02,049 - INFO - Retrieving cached visual analysis for 10 decks via HTTP from backend
+2025-08-02 15:21:02,049 - INFO - Using backend server: http://65.108.32.143:8000
+2025-08-02 15:21:02,062 - INFO - DEBUG: Raw cached_analysis keys: []
+2025-08-02 15:21:02,062 - INFO - DEBUG: Converted keys: []
+2025-08-02 15:21:02,062 - INFO - Retrieved cached visual analysis for 0/10 decks via HTTP from backend
+2025-08-02 15:21:02,062 - INFO - Extracting offering for deck 58
+2025-08-02 15:21:02,062 - WARNING - No visual analysis available for deck 58
+2025-08-02 15:21:02,063 - INFO - DEBUG: Full extraction prompt for deck 58:
+2025-08-02 15:21:02,063 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:02,063 - INFO - Visual used flag: False
+2025-08-02 15:21:02,063 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:21:02,266 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:02,266 - INFO - Completed extraction for deck 58
+2025-08-02 15:21:02,266 - INFO - Extracting offering for deck 61
+2025-08-02 15:21:02,266 - WARNING - No visual analysis available for deck 61
+2025-08-02 15:21:02,266 - INFO - DEBUG: Full extraction prompt for deck 61:
+2025-08-02 15:21:02,266 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:02,266 - INFO - Visual used flag: False
+2025-08-02 15:21:02,266 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:21:02,428 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:02,428 - INFO - Completed extraction for deck 61
+2025-08-02 15:21:02,428 - INFO - Extracting offering for deck 71
+2025-08-02 15:21:02,428 - WARNING - No visual analysis available for deck 71
+2025-08-02 15:21:02,428 - INFO - DEBUG: Full extraction prompt for deck 71:
+2025-08-02 15:21:02,428 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:02,428 - INFO - Visual used flag: False
+2025-08-02 15:21:02,428 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:21:02,574 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:02,575 - INFO - Completed extraction for deck 71
+2025-08-02 15:21:02,575 - INFO - Extracting offering for deck 50
+2025-08-02 15:21:02,575 - WARNING - No visual analysis available for deck 50
+2025-08-02 15:21:02,575 - INFO - DEBUG: Full extraction prompt for deck 50:
+2025-08-02 15:21:02,575 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:02,575 - INFO - Visual used flag: False
+2025-08-02 15:21:02,575 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:21:02,746 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:02,747 - INFO - Completed extraction for deck 50
+2025-08-02 15:21:02,747 - INFO - Extracting offering for deck 68
+2025-08-02 15:21:02,747 - WARNING - No visual analysis available for deck 68
+2025-08-02 15:21:02,747 - INFO - DEBUG: Full extraction prompt for deck 68:
+2025-08-02 15:21:02,747 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:02,747 - INFO - Visual used flag: False
+2025-08-02 15:21:02,747 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:21:02,904 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:02,905 - INFO - Completed extraction for deck 68
+2025-08-02 15:21:02,905 - INFO - Extracting offering for deck 62
+2025-08-02 15:21:02,905 - WARNING - No visual analysis available for deck 62
+2025-08-02 15:21:02,905 - INFO - DEBUG: Full extraction prompt for deck 62:
+2025-08-02 15:21:02,905 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:02,905 - INFO - Visual used flag: False
+2025-08-02 15:21:02,905 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:21:03,082 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:03,083 - INFO - Completed extraction for deck 62
+2025-08-02 15:21:03,083 - INFO - Extracting offering for deck 51
+2025-08-02 15:21:03,083 - WARNING - No visual analysis available for deck 51
+2025-08-02 15:21:03,083 - INFO - DEBUG: Full extraction prompt for deck 51:
+2025-08-02 15:21:03,083 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:03,083 - INFO - Visual used flag: False
+2025-08-02 15:21:03,083 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:21:03,231 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:03,231 - INFO - Completed extraction for deck 51
+2025-08-02 15:21:03,231 - INFO - Extracting offering for deck 65
+2025-08-02 15:21:03,231 - WARNING - No visual analysis available for deck 65
+2025-08-02 15:21:03,231 - INFO - DEBUG: Full extraction prompt for deck 65:
+2025-08-02 15:21:03,231 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:03,231 - INFO - Visual used flag: False
+2025-08-02 15:21:03,231 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:21:03,394 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:03,395 - INFO - Completed extraction for deck 65
+2025-08-02 15:21:03,395 - INFO - Extracting offering for deck 60
+2025-08-02 15:21:03,395 - WARNING - No visual analysis available for deck 60
+2025-08-02 15:21:03,395 - INFO - DEBUG: Full extraction prompt for deck 60:
+2025-08-02 15:21:03,395 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:03,395 - INFO - Visual used flag: False
+2025-08-02 15:21:03,395 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:21:03,568 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:03,568 - INFO - Completed extraction for deck 60
+2025-08-02 15:21:03,568 - INFO - Extracting offering for deck 64
+2025-08-02 15:21:03,568 - WARNING - No visual analysis available for deck 64
+2025-08-02 15:21:03,568 - INFO - DEBUG: Full extraction prompt for deck 64:
+2025-08-02 15:21:03,568 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:03,568 - INFO - Visual used flag: False
+2025-08-02 15:21:03,568 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please extract the specific funding amount the startup is seeking from the pitch deck. Look for phrases like 'seeking €X', 'raising $X', 'funding requirement of X', or similar. If you find multiple amounts (seed, Series A, total, etc.), focus on the primary funding amount being sought in this round. Provide only the amount (e.g., '€2.5M', '$500K', '£1M') without additional explanation. If no specific amount is mentioned, respond with 'Not s...
+2025-08-02 15:21:03,727 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:03,728 - INFO - Completed extraction for deck 64
+2025-08-02 15:21:03,728 - INFO - Completed offering extraction for 10 decks
+2025-08-02 15:21:03,728 - INFO - 65.108.32.168 - - [02/Aug/2025 15:21:03] "POST /api/run-offering-extraction HTTP/1.1" 200 -
+2025-08-02 15:21:03,861 - INFO - Starting offering extraction for 10 decks using phi4:latest
+2025-08-02 15:21:03,861 - INFO - Retrieving cached visual analysis for 10 decks via HTTP from backend
+2025-08-02 15:21:03,861 - INFO - Using backend server: http://65.108.32.143:8000
+2025-08-02 15:21:03,874 - INFO - DEBUG: Raw cached_analysis keys: []
+2025-08-02 15:21:03,874 - INFO - DEBUG: Converted keys: []
+2025-08-02 15:21:03,874 - INFO - Retrieved cached visual analysis for 0/10 decks via HTTP from backend
+2025-08-02 15:21:03,875 - INFO - Extracting offering for deck 58
+2025-08-02 15:21:03,875 - WARNING - No visual analysis available for deck 58
+2025-08-02 15:21:03,875 - INFO - DEBUG: Full extraction prompt for deck 58:
+2025-08-02 15:21:03,875 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:03,875 - INFO - Visual used flag: False
+2025-08-02 15:21:03,875 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:21:04,068 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:04,068 - INFO - Completed extraction for deck 58
+2025-08-02 15:21:04,068 - INFO - Extracting offering for deck 61
+2025-08-02 15:21:04,068 - WARNING - No visual analysis available for deck 61
+2025-08-02 15:21:04,068 - INFO - DEBUG: Full extraction prompt for deck 61:
+2025-08-02 15:21:04,068 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:04,068 - INFO - Visual used flag: False
+2025-08-02 15:21:04,068 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:21:04,237 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:04,237 - INFO - Completed extraction for deck 61
+2025-08-02 15:21:04,237 - INFO - Extracting offering for deck 71
+2025-08-02 15:21:04,237 - WARNING - No visual analysis available for deck 71
+2025-08-02 15:21:04,237 - INFO - DEBUG: Full extraction prompt for deck 71:
+2025-08-02 15:21:04,237 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:04,237 - INFO - Visual used flag: False
+2025-08-02 15:21:04,237 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:21:04,379 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:04,379 - INFO - Completed extraction for deck 71
+2025-08-02 15:21:04,379 - INFO - Extracting offering for deck 50
+2025-08-02 15:21:04,379 - WARNING - No visual analysis available for deck 50
+2025-08-02 15:21:04,379 - INFO - DEBUG: Full extraction prompt for deck 50:
+2025-08-02 15:21:04,379 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:04,379 - INFO - Visual used flag: False
+2025-08-02 15:21:04,379 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:21:04,528 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:04,528 - INFO - Completed extraction for deck 50
+2025-08-02 15:21:04,528 - INFO - Extracting offering for deck 68
+2025-08-02 15:21:04,528 - WARNING - No visual analysis available for deck 68
+2025-08-02 15:21:04,528 - INFO - DEBUG: Full extraction prompt for deck 68:
+2025-08-02 15:21:04,528 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:04,528 - INFO - Visual used flag: False
+2025-08-02 15:21:04,528 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:21:04,683 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:04,684 - INFO - Completed extraction for deck 68
+2025-08-02 15:21:04,684 - INFO - Extracting offering for deck 62
+2025-08-02 15:21:04,684 - WARNING - No visual analysis available for deck 62
+2025-08-02 15:21:04,684 - INFO - DEBUG: Full extraction prompt for deck 62:
+2025-08-02 15:21:04,684 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:04,684 - INFO - Visual used flag: False
+2025-08-02 15:21:04,684 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:21:04,858 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:04,858 - INFO - Completed extraction for deck 62
+2025-08-02 15:21:04,858 - INFO - Extracting offering for deck 51
+2025-08-02 15:21:04,858 - WARNING - No visual analysis available for deck 51
+2025-08-02 15:21:04,858 - INFO - DEBUG: Full extraction prompt for deck 51:
+2025-08-02 15:21:04,858 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:04,858 - INFO - Visual used flag: False
+2025-08-02 15:21:04,858 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:21:05,023 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:05,024 - INFO - Completed extraction for deck 51
+2025-08-02 15:21:05,024 - INFO - Extracting offering for deck 65
+2025-08-02 15:21:05,024 - WARNING - No visual analysis available for deck 65
+2025-08-02 15:21:05,024 - INFO - DEBUG: Full extraction prompt for deck 65:
+2025-08-02 15:21:05,024 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:05,024 - INFO - Visual used flag: False
+2025-08-02 15:21:05,024 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:21:05,192 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:05,192 - INFO - Completed extraction for deck 65
+2025-08-02 15:21:05,192 - INFO - Extracting offering for deck 60
+2025-08-02 15:21:05,192 - WARNING - No visual analysis available for deck 60
+2025-08-02 15:21:05,192 - INFO - DEBUG: Full extraction prompt for deck 60:
+2025-08-02 15:21:05,192 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:05,192 - INFO - Visual used flag: False
+2025-08-02 15:21:05,192 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:21:05,342 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:05,342 - INFO - Completed extraction for deck 60
+2025-08-02 15:21:05,342 - INFO - Extracting offering for deck 64
+2025-08-02 15:21:05,342 - WARNING - No visual analysis available for deck 64
+2025-08-02 15:21:05,342 - INFO - DEBUG: Full extraction prompt for deck 64:
+2025-08-02 15:21:05,342 - INFO - Visual context length: 50 characters
+2025-08-02 15:21:05,342 - INFO - Visual used flag: False
+2025-08-02 15:21:05,342 - INFO - First 500 chars of prompt: Based on the pitch deck visual analysis provided below, Please identify when this pitch deck was created or last updated. Look for dates in headers, footers, slide timestamps, version information, or any date references that indicate when the deck was prepared. Focus on the most recent date that reflects when the current version was created. Provide the date in a clear format (e.g., 'March 2024', '2024-03-15', 'Q1 2024'). If no date information is available, respond with 'Date not found'.
+
+PITCH...
+2025-08-02 15:21:05,489 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2025-08-02 15:21:05,490 - INFO - Completed extraction for deck 64
+2025-08-02 15:21:05,490 - INFO - Completed offering extraction for 10 decks
+2025-08-02 15:21:05,491 - INFO - 65.108.32.168 - - [02/Aug/2025 15:21:05] "POST /api/run-offering-extraction HTTP/1.1" 200 -
+2025-08-02 15:23:46,678 - INFO - Listing models via HTTP API
+2025-08-02 15:23:46,681 - INFO - HTTP Request: GET http://127.0.0.1:11434/api/tags "HTTP/1.1 200 OK"
+2025-08-02 15:23:46,682 - INFO - Successfully listed 4 models
+2025-08-02 15:23:46,683 - INFO - 65.108.32.168 - - [02/Aug/2025 15:23:46] "GET /api/models HTTP/1.1" 200 -
