@@ -45,16 +45,39 @@ progress_tracker = {
 }
 
 # Dojo configuration
-# Use environment-aware path from settings
+# Use environment-aware path from settings with unified structure
 from ..core.config import settings
-DOJO_PATH = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "dojo")
+import hashlib
+
+DOJO_BASE_PATH = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo")
+DOJO_UPLOADS_PATH = os.path.join(DOJO_BASE_PATH, "uploads")
+DOJO_ANALYSIS_PATH = os.path.join(DOJO_BASE_PATH, "analysis")
+DOJO_EXPORTS_PATH = os.path.join(DOJO_BASE_PATH, "exports")
 MAX_ZIP_SIZE = 1024 * 1024 * 1024  # 1GB
 ALLOWED_EXTENSIONS = {'.pdf'}
 
-def ensure_dojo_directory():
-    """Ensure dojo directory exists"""
-    os.makedirs(DOJO_PATH, exist_ok=True)
-    logger.info(f"Dojo directory ensured at: {DOJO_PATH}")
+def ensure_dojo_directories():
+    """Ensure unified dojo directory structure exists"""
+    os.makedirs(DOJO_UPLOADS_PATH, exist_ok=True)
+    os.makedirs(DOJO_ANALYSIS_PATH, exist_ok=True)
+    os.makedirs(DOJO_EXPORTS_PATH, exist_ok=True)
+    logger.info(f"Dojo directories ensured at: {DOJO_BASE_PATH}")
+
+def calculate_file_hash(file_path: str) -> str:
+    """Calculate SHA-256 hash of a file"""
+    sha256_hash = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
+    return sha256_hash.hexdigest()
+
+def check_duplicate_file(db: Session, file_name: str, file_hash: str) -> Optional[int]:
+    """Check if file already exists by name or hash. Returns pitch_deck_id if found."""
+    existing = db.query(PitchDeck).filter(
+        PitchDeck.data_source == "dojo",
+        (PitchDeck.file_name == file_name) | (PitchDeck.file_hash == file_hash)
+    ).first()
+    return existing.id if existing else None
 
 async def extract_dojo_zip_only(zip_file_path: str, uploaded_by: int, db: Session, original_filename: str = None):
     """Extract dojo zip file and create database entries (no AI processing)"""
@@ -65,7 +88,7 @@ async def extract_dojo_zip_only(zip_file_path: str, uploaded_by: int, db: Sessio
         zip_filename = original_filename if original_filename else os.path.basename(zip_file_path)
         
         # Extract zip file
-        extract_dir = os.path.join(DOJO_PATH, f"extract_{uuid.uuid4().hex}")
+        extract_dir = os.path.join(DOJO_BASE_PATH, f"extract_{uuid.uuid4().hex}")
         os.makedirs(extract_dir, exist_ok=True)
         
         with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
@@ -88,8 +111,8 @@ async def extract_dojo_zip_only(zip_file_path: str, uploaded_by: int, db: Sessio
                 original_name = os.path.basename(pdf_path)
                 unique_name = f"{uuid.uuid4().hex}_{original_name}"
                 
-                # Move to dojo directory
-                final_path = os.path.join(DOJO_PATH, unique_name)
+                # Move to dojo uploads directory
+                final_path = os.path.join(DOJO_UPLOADS_PATH, unique_name)
                 shutil.move(pdf_path, final_path)
                 
                 # Create database record (ready for manual processing)
@@ -97,7 +120,7 @@ async def extract_dojo_zip_only(zip_file_path: str, uploaded_by: int, db: Sessio
                     user_id=uploaded_by,
                     company_id="dojo",
                     file_name=original_name,
-                    file_path=f"dojo/{unique_name}",
+                    file_path=f"projects/dojo/uploads/{unique_name}",
                     data_source="dojo",
                     zip_filename=zip_filename,
                     processing_status="pending"  # Ready for manual AI processing
@@ -135,7 +158,7 @@ async def process_dojo_zip(zip_file_path: str, uploaded_by: int, db: Session, or
         zip_filename = original_filename if original_filename else os.path.basename(zip_file_path)
         
         # Extract zip file
-        extract_dir = os.path.join(DOJO_PATH, f"extract_{uuid.uuid4().hex}")
+        extract_dir = os.path.join(DOJO_BASE_PATH, f"extract_{uuid.uuid4().hex}")
         os.makedirs(extract_dir, exist_ok=True)
         
         with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
@@ -158,8 +181,8 @@ async def process_dojo_zip(zip_file_path: str, uploaded_by: int, db: Session, or
                 original_name = os.path.basename(pdf_path)
                 unique_name = f"{uuid.uuid4().hex}_{original_name}"
                 
-                # Move to dojo directory
-                final_path = os.path.join(DOJO_PATH, unique_name)
+                # Move to dojo uploads directory
+                final_path = os.path.join(DOJO_UPLOADS_PATH, unique_name)
                 shutil.move(pdf_path, final_path)
                 
                 # Create database record
@@ -167,7 +190,7 @@ async def process_dojo_zip(zip_file_path: str, uploaded_by: int, db: Session, or
                     user_id=uploaded_by,
                     company_id="dojo",
                     file_name=original_name,
-                    file_path=f"dojo/{unique_name}",
+                    file_path=f"projects/dojo/uploads/{unique_name}",
                     data_source="dojo",
                     zip_filename=zip_filename,
                     processing_status="pending"
@@ -230,11 +253,11 @@ async def upload_dojo_zip(
                 detail=f"File size exceeds maximum limit of {MAX_ZIP_SIZE // (1024*1024)} MB"
             )
         
-        # Ensure dojo directory exists
-        ensure_dojo_directory()
+        # Ensure dojo directories exist
+        ensure_dojo_directories()
         
         # Save uploaded file temporarily
-        temp_file_path = os.path.join(DOJO_PATH, f"temp_{uuid.uuid4().hex}.zip")
+        temp_file_path = os.path.join(DOJO_BASE_PATH, f"temp_{uuid.uuid4().hex}.zip")
         with open(temp_file_path, 'wb') as temp_file:
             temp_file.write(content)
         
@@ -260,6 +283,69 @@ async def upload_dojo_zip(
         raise
     except Exception as e:
         logger.error(f"Error uploading dojo zip file: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to upload dojo training data"
+        )
+
+@router.post("/upload-enhanced")
+async def upload_dojo_zip_enhanced(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Upload dojo training data with enhanced duplicate detection"""
+    try:
+        # Only GPs can upload dojo data
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=403,
+                detail="Only GPs can upload dojo training data"
+            )
+        
+        # Validate file
+        if not file.filename.lower().endswith('.zip'):
+            raise HTTPException(
+                status_code=400,
+                detail="Only ZIP files are allowed"
+            )
+        
+        # Check file size
+        content = await file.read()
+        file_size = len(content)
+        
+        if file_size > MAX_ZIP_SIZE:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File too large. Maximum size is {MAX_ZIP_SIZE // (1024*1024)}MB"
+            )
+        
+        # Ensure dojo directories exist
+        ensure_dojo_directories()
+        
+        # Save uploaded file temporarily
+        temp_path = os.path.join(DOJO_BASE_PATH, f"temp_{uuid.uuid4().hex}_{file.filename}")
+        with open(temp_path, "wb") as f:
+            f.write(content)
+        
+        # Import enhanced extraction function
+        from .dojo_enhanced import extract_dojo_zip_enhanced
+        
+        # Process ZIP file with enhanced duplicate detection
+        result = await extract_dojo_zip_enhanced(
+            zip_file_path=temp_path,
+            uploaded_by=current_user.id,
+            db=db,
+            dojo_uploads_path=DOJO_UPLOADS_PATH,
+            original_filename=file.filename
+        )
+        
+        return result.to_dict()
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in enhanced dojo upload: {e}")
         raise HTTPException(
             status_code=500,
             detail="Failed to upload dojo training data"
@@ -300,7 +386,7 @@ async def list_dojo_files(
         return {
             "files": files_data,
             "total_count": len(files_data),
-            "directory": DOJO_PATH
+            "directory": DOJO_BASE_PATH
         }
         
     except HTTPException:
@@ -619,7 +705,7 @@ async def get_dojo_stats(
             "processed_files": processed_files,
             "pending_files": pending_files,
             "failed_files": failed_files,
-            "directory": DOJO_PATH
+            "directory": DOJO_BASE_PATH
         }
         
     except HTTPException:
