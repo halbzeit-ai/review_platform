@@ -594,33 +594,41 @@ async def add_dojo_companies_from_experiment(
             projects_created += 1
             companies_created.append(company_name)
             
-            # Create default project stages (mimicking startup journey)
-            default_stages = [
-                {"name": "Initial Review", "order": 1, "status": "active"},      # Currently active since deck is uploaded
-                {"name": "Due Diligence", "order": 2, "status": "pending"},     # Next stage
-                {"name": "Investment Decision", "order": 3, "status": "pending"},
-                {"name": "Term Sheet", "order": 4, "status": "pending"},
-                {"name": "Legal Review", "order": 5, "status": "pending"},
-                {"name": "Funding Complete", "order": 6, "status": "pending"}
-            ]
+            # Create project stages from stage templates (mimicking startup journey)
+            # Get stage templates from database
+            stage_templates_query = text("""
+                SELECT id, stage_name, stage_code, stage_order, stage_metadata
+                FROM stage_templates 
+                WHERE is_active = TRUE 
+                ORDER BY stage_order
+            """)
             
-            for stage in default_stages:
+            stage_templates = db.execute(stage_templates_query).fetchall()
+            
+            for template in stage_templates:
+                template_id, stage_name, stage_code, stage_order, stage_metadata = template
+                
+                # Set first stage (Deck Submission) as active since deck is uploaded
+                status = "active" if stage_order == 1 else "pending"
+                started_at = datetime.utcnow() if status == "active" else None
+                
                 stage_insert = text("""
                     INSERT INTO project_stages (
-                        project_id, stage_name, stage_order, status, 
-                        started_at, created_at
+                        project_id, stage_template_id, stage_name, stage_code, 
+                        stage_order, status, stage_metadata, started_at, created_at
                     )
-                    VALUES (:project_id, :stage_name, :stage_order, :status,
-                            :started_at, :created_at)
+                    VALUES (:project_id, :stage_template_id, :stage_name, :stage_code,
+                            :stage_order, :status, :stage_metadata, :started_at, :created_at)
                 """)
-                
-                started_at = datetime.utcnow() if stage["status"] == "active" else None
                 
                 db.execute(stage_insert, {
                     "project_id": project_id,
-                    "stage_name": stage["name"],
-                    "stage_order": stage["order"],
-                    "status": stage["status"],
+                    "stage_template_id": template_id,
+                    "stage_name": stage_name,
+                    "stage_code": stage_code,
+                    "stage_order": stage_order,
+                    "status": status,
+                    "stage_metadata": stage_metadata,
                     "started_at": started_at,
                     "created_at": datetime.utcnow()
                 })
