@@ -743,7 +743,11 @@ async def get_project_decks(
                 p.company_id,
                 pd.file_name,
                 pd.file_path,
-                NULL as results_file_path,
+                (SELECT file_path FROM project_documents pd2 
+                 WHERE pd2.project_id = pd.project_id 
+                 AND pd2.document_type = 'analysis_results' 
+                 AND pd2.is_active = TRUE 
+                 LIMIT 1) as results_file_path,
                 pd.processing_status,
                 NULL as ai_analysis_results,
                 NULL as ai_extracted_startup_name,
