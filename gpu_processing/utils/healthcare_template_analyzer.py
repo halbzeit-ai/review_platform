@@ -1333,7 +1333,7 @@ class HealthcareTemplateAnalyzer:
                     try:
                         # Try to call with chapter results for progressive delivery
                         try:
-                            self.progress_callback(self.current_deck_id, chapter_name, "completed", chapter_results_data)
+                            self.progress_callback(self.current_deck_id, chapter_name, "completed", self.chapter_results[chapter_id])
                         except TypeError:
                             # Fallback for old callback signature without chapter_results
                             try:
