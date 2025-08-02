@@ -2884,12 +2884,12 @@ async def template_progress_callback(
     request: Dict[str, Any],
     db: Session = Depends(get_db)
 ):
-    """Receive progress updates from GPU for template processing with progressive results storage"""
+    """Receive progress updates from GPU for template processing"""
     try:
         deck_id = request.get("deck_id")
         chapter_name = request.get("chapter_name")
         status = request.get("status", "processing")
-        chapter_results = request.get("chapter_results")  # New: chapter analysis data
+        chapter_results = request.get("chapter_results")
         
         if deck_id and chapter_name:
             # Get deck filename for display
@@ -2904,81 +2904,70 @@ async def template_progress_callback(
                 progress_tracker["step4"]["current_deck"] = deck_filename
                 progress_tracker["step4"]["current_chapter"] = chapter_name
                 
-                # Store chapter results progressively when completed
-                if status == "completed" and chapter_results:
-                    # Get existing template processing results
-                    existing_results = db.execute(text(
-                        "SELECT template_processing_results_json FROM pitch_decks WHERE id = :deck_id"
-                    ), {"deck_id": deck_id}).fetchone()
-                    
-                    if existing_results and existing_results[0]:
-                        # Parse existing results
-                        import json
-                        try:
-                            current_results = json.loads(existing_results[0])
-                        except (json.JSONDecodeError, TypeError):
-                            current_results = {"chapters": {}, "status": "in_progress"}
-                    else:
-                        # Initialize new results structure
-                        current_results = {"chapters": {}, "status": "in_progress"}
-                    
-                    # Add this chapter's results
-                    current_results["chapters"][chapter_name] = chapter_results
-                    current_results["last_updated"] = time.time()
-                    
-                    # Update database with progressive results
-                    db.execute(text(
-                        "UPDATE pitch_decks SET template_processing_results_json = :results WHERE id = :deck_id"
-                    ), {
-                        "deck_id": deck_id,
-                        "results": json.dumps(current_results)
-                    })
-                    db.commit()
-                    
-                    logger.info(f"Progressive storage - Deck {deck_filename}: Stored chapter '{chapter_name}' results")
-                
                 # Increment progress on chapter completion
                 if status == "completed":
                     progress_tracker["step4"]["progress"] += 1
                     logger.info(f"Template progress update - Deck {deck_filename}: Completed chapter '{chapter_name}' ({progress_tracker['step4']['progress']}/{progress_tracker['step4']['total']})")
+                    
+                    # Progressive delivery: Store chapter results if provided
+                    if chapter_results:
+                        try:
+                            # Store chapter results in extraction_experiments table
+                            from ..services.gpu_http_client import gpu_http_client
+                            
+                            # Get the current active experiment
+                            latest_experiment = db.execute(text(
+                                "SELECT id, template_processing_results_json FROM extraction_experiments ORDER BY created_at DESC LIMIT 1"
+                            )).fetchone()
+                            
+                            if latest_experiment:
+                                experiment_id = latest_experiment[0]
+                                existing_results = json.loads(latest_experiment[1]) if latest_experiment[1] else {}
+                                
+                                # Add chapter results to deck
+                                if "results" not in existing_results:
+                                    existing_results["results"] = []
+                                
+                                # Find or create deck entry
+                                deck_entry = None
+                                for result in existing_results["results"]:
+                                    if result.get("deck_id") == deck_id:
+                                        deck_entry = result
+                                        break
+                                
+                                if not deck_entry:
+                                    deck_entry = {"deck_id": deck_id, "chapters": {}}
+                                    existing_results["results"].append(deck_entry)
+                                
+                                if "chapters" not in deck_entry:
+                                    deck_entry["chapters"] = {}
+                                
+                                # Store chapter results
+                                deck_entry["chapters"][chapter_name] = chapter_results
+                                
+                                # Update database
+                                db.execute(text(
+                                    "UPDATE extraction_experiments SET template_processing_results_json = :results WHERE id = :experiment_id"
+                                ), {"results": json.dumps(existing_results), "experiment_id": experiment_id})
+                                db.commit()
+                                
+                                logger.info(f"Progressive storage - Deck {deck_id}: Stored chapter '{chapter_name}' results")
+                            else:
+                                logger.warning("No active experiment found for progressive delivery")
+                                
+                        except Exception as e:
+                            logger.warning(f"Failed to store progressive chapter results: {e}")
                 else:
                     logger.info(f"Template progress update - Deck {deck_filename}: Processing chapter '{chapter_name}'")
                 
             except Exception as e:
-                logger.warning(f"Could not process deck {deck_id}: {e}")
+                logger.warning(f"Could not get deck filename for {deck_id}: {e}")
                 progress_tracker["step4"]["current_deck"] = f"Processing deck {deck_id}"
                 progress_tracker["step4"]["current_chapter"] = chapter_name
                 
                 # Increment progress on chapter completion (fallback path)
                 if status == "completed":
                     progress_tracker["step4"]["progress"] += 1
-        
-        # Handle final completion callback (when all decks/chapters done)
-        if request.get("final_completion") and request.get("all_results"):
-            try:
-                all_results = request.get("all_results")
-                # Store final consolidated results for any decks that need it
-                for deck_result in all_results:
-                    deck_id = deck_result.get("deck_id")
-                    final_results = deck_result.get("results")
-                    
-                    if deck_id and final_results:
-                        # Mark as completed and store final results
-                        final_results["status"] = "completed"
-                        final_results["completed_at"] = time.time()
-                        
-                        db.execute(text(
-                            "UPDATE pitch_decks SET template_processing_results_json = :results, template_processing_completed_at = CURRENT_TIMESTAMP WHERE id = :deck_id"
-                        ), {
-                            "deck_id": deck_id,
-                            "results": json.dumps(final_results)
-                        })
-                
-                db.commit()
-                logger.info("Final completion - All deck results consolidated and marked complete")
-                
-            except Exception as e:
-                logger.error(f"Error in final completion processing: {e}")
         
         return {"success": True}
     except Exception as e:
