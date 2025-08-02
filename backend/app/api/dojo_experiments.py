@@ -621,8 +621,8 @@ async def add_dojo_companies_from_experiment(
                 template_id, stage_name, stage_code, stage_order, stage_metadata = template
                 
                 # Set first stage (Deck Submission) as active since deck is uploaded
-                status = "active" if stage_order == 1 else "pending"
-                started_at = datetime.utcnow() if status == "active" else None
+                stage_status = "active" if stage_order == 1 else "pending"
+                started_at = datetime.utcnow() if stage_status == "active" else None
                 
                 stage_insert = text("""
                     INSERT INTO project_stages (
@@ -639,8 +639,8 @@ async def add_dojo_companies_from_experiment(
                     "stage_name": stage_name,
                     "stage_code": stage_code,
                     "stage_order": stage_order,
-                    "status": status,
-                    "stage_metadata": stage_metadata,
+                    "status": stage_status,
+                    "stage_metadata": json.dumps(stage_metadata) if stage_metadata else None,
                     "started_at": started_at,
                     "created_at": datetime.utcnow()
                 })

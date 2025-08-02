@@ -152,7 +152,8 @@ const ProjectResults = ({ companyId, deckId }) => {
 
   // Check if this is a dojo template processing result
   const isDojoTemplateResult = results.analysis_metadata?.source === 'dojo_experiment' || 
-                               results.analysis_metadata?.source === 'template_processing';
+                               results.analysis_metadata?.source === 'template_processing' ||
+                               results.analysis_metadata?.source === 'dojo_template_processing';
 
   return (
     <Box>

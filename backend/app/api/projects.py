@@ -549,6 +549,72 @@ async def get_project_results(
             # Parse template processing data
             template_data = json.loads(template_result[0])
             
+            # Check if we need to fetch from extraction_experiments (progressive delivery results)
+            original_deck_id = template_result[1] if len(template_result) > 1 else deck_id
+            if template_data.get("template_analysis") == "No chapter analysis available.":
+                # Try to get progressive delivery results from extraction_experiments
+                experiment_query = text("""
+                    SELECT template_processing_results_json 
+                    FROM extraction_experiments 
+                    WHERE :deck_id = ANY(string_to_array(trim(both '{}' from pitch_deck_ids), ',')::int[])
+                    AND template_processing_results_json IS NOT NULL
+                    ORDER BY created_at DESC 
+                    LIMIT 1
+                """)
+                
+                experiment_result = db.execute(experiment_query, {"deck_id": original_deck_id}).fetchone()
+                
+                if experiment_result and experiment_result[0]:
+                    try:
+                        experiment_data = json.loads(experiment_result[0])
+                        # Extract results for this specific deck from the experiment data
+                        deck_results = experiment_data.get("results", [])
+                        
+                        for deck_entry in deck_results:
+                            if deck_entry.get("deck_id") == original_deck_id:
+                                # Found progressive delivery results for this deck
+                                chapters_data = deck_entry.get("chapters", {})
+                                if chapters_data:
+                                    # Format chapters into template_analysis
+                                    analysis_parts = []
+                                    for chapter_name, chapter_content in chapters_data.items():
+                                        # Format chapter with its questions and scores
+                                        chapter_text = f"## {chapter_name}\n\n"
+                                        if isinstance(chapter_content, dict):
+                                            # Add chapter description if available
+                                            if chapter_content.get("description"):
+                                                chapter_text += f"**{chapter_content['description']}**\n\n"
+                                            
+                                            # Add questions and responses
+                                            questions = chapter_content.get("questions", [])
+                                            if questions:
+                                                for q in questions:
+                                                    chapter_text += f"**{q.get('question_text', 'Question')}**\n"
+                                                    if q.get('response'):
+                                                        chapter_text += f"{q['response']}\n"
+                                                    else:
+                                                        chapter_text += "No response provided.\n"
+                                                    chapter_text += f"*Score: {q.get('score', 'N/A')}/7*\n\n"
+                                            
+                                            # Add overall chapter score
+                                            if chapter_content.get("weighted_score"):
+                                                chapter_text += f"**Chapter Score: {chapter_content['weighted_score']:.1f}/7**\n"
+                                        else:
+                                            chapter_text += str(chapter_content)
+                                        
+                                        analysis_parts.append(chapter_text)
+                                    
+                                    template_data = {
+                                        "template_analysis": "\n\n".join(analysis_parts),
+                                        "template_used": deck_entry.get("template_used", "Healthcare Template"),
+                                        "processed_at": deck_entry.get("processed_at"),
+                                        "thumbnail_path": deck_entry.get("thumbnail_path"),
+                                        "slide_images": deck_entry.get("slide_images", [])
+                                    }
+                                break
+                    except (json.JSONDecodeError, KeyError) as e:
+                        logger.warning(f"Failed to parse experiment results for deck {original_deck_id}: {e}")
+            
             # For dojo projects, the template data is stored directly in pitch_decks
             if source == 'project_documents':
                 # Template data is stored directly for this deck
