@@ -136,3 +136,7 @@ gpu_processing/temp/
 # Test files and artifacts
 *.test.db
 test_*.py.log
+# Frontend build artifacts (zero-downtime deployment)
+frontend/build*
+frontend/build_*
+!frontend/build/.gitkeep
