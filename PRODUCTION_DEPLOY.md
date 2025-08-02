@@ -1,5 +1,94 @@
 # Production Deployment Plan
 
+## ✅ COMPLETED - GPU Server Fixes (2025-08-02)
+
+### Database Authentication Issues Resolved
+- ✅ **Fixed malformed DATABASE_URL**: Added missing host:port to centralized environment configuration
+- ✅ **Updated**: `/opt/review-platform/environments/.env.backend.production`
+- ✅ **From**: `postgresql://review_user:simpleprod2024@/review-platform`
+- ✅ **To**: `postgresql://review_user:simpleprod2024@localhost:5432/review-platform`
+- ✅ **Verified**: Database connection from GPU server (135.181.63.133) to production CPU (65.108.32.168)
+- ✅ **Deployed**: Production environment using centralized system `./environments/deploy-environment.sh production`
+- ✅ **Restarted**: GPU HTTP server service with corrected configuration
+- ✅ **Committed**: Changes in commit `5bb12f9`
+
+### Production GPU Server Status
+- ✅ **Service**: `gpu-http-server.service` active and healthy
+- ✅ **Database**: All 29 tables verified, PostgreSQL 16.9 operational
+- ✅ **API**: Health endpoint responding correctly
+- ✅ **Environment**: Production configuration active
+
+---
+
+## 🚀 NEXT - Production CPU Server Tasks
+
+### Critical Tasks for Production CPU (65.108.32.168)
+
+1. **Pull Latest Changes**
+   ```bash
+   cd /opt/review-platform
+   git pull origin main
+   ```
+
+2. **Deploy Fixed Environment**
+   ```bash
+   ./environments/deploy-environment.sh production
+   ```
+
+3. **Restart Backend Services**
+   ```bash
+   sudo systemctl restart review-platform.service
+   sudo systemctl status review-platform.service
+   ```
+
+4. **Verify Database Connection**
+   ```bash
+   # Test backend can connect to local PostgreSQL
+   python3 -c "from backend.app.core.config import settings; print('DB URL:', settings.DATABASE_URL)"
+   ```
+
+5. **Test API Health**
+   ```bash
+   curl -X GET "http://localhost:8000/api/health"
+   ```
+
+6. **Verify GPU Communication**
+   ```bash
+   # Test connection to GPU server
+   curl -X GET "http://135.181.63.133:8001/api/health"
+   ```
+
+7. **Frontend Deployment** (if needed)
+   ```bash
+   cd frontend
+   npm run build
+   # Update nginx configuration to serve build/ directory
+   ```
+
+### Additional Verification Tasks
+
+8. **Database Schema Check**
+   ```bash
+   # Verify all 29 tables exist on production CPU
+   python3 scripts/test_complete_schema.py
+   ```
+
+9. **User Authentication Test**
+   ```bash
+   # Test user login functionality
+   curl -X POST "http://localhost:8000/api/auth/login" \
+     -H "Content-Type: application/json" \
+     -d '{"email":"test@example.com","password":"test"}'
+   ```
+
+10. **End-to-End Processing Test**
+    ```bash
+    # Test complete dojo pipeline if possible
+    # This requires uploading a test file and monitoring processing
+    ```
+
+---
+
 ## Step 1: Environment Configuration
 
 ### 1.1 Backend Environment (.env)
@@ -234,3 +323,93 @@ If deployment fails:
 - [ ] GPU server logs show successful processing
 - [ ] Email notifications work (if configured)
 - [ ] All API endpoints return correct responses
+
+---
+
+## 🛠️ Troubleshooting Common Issues
+
+### Database Connection Problems
+```bash
+# If DATABASE_URL is malformed, check centralized environment
+cat /opt/review-platform/environments/.env.backend.production
+
+# Redeploy environment if needed
+./environments/deploy-environment.sh production
+
+# Test direct PostgreSQL connection
+psql "postgresql://review_user:simpleprod2024@localhost:5432/review-platform" -c "SELECT version();"
+```
+
+### Service Startup Issues
+```bash
+# Check systemd service logs
+sudo journalctl -f -u review-platform.service
+sudo journalctl -f -u gpu-http-server.service
+
+# Restart services in correct order
+sudo systemctl stop review-platform.service
+sudo systemctl start review-platform.service
+```
+
+### Environment Configuration Issues
+```bash
+# Verify environment is correctly deployed
+./environments/deploy-environment.sh status
+
+# Check backups if rollback needed
+ls -la /opt/review-platform/environments/history/
+
+# Restore from backup if necessary
+cp /opt/review-platform/environments/history/backend.env.backup.TIMESTAMP /opt/review-platform/environments/.env.backend.production
+```
+
+### GPU Communication Problems
+```bash
+# Test GPU server health from production CPU
+curl -X GET "http://135.181.63.133:8001/api/health"
+
+# Check if GPU server can reach production CPU
+# (Run this from GPU server)
+curl -X GET "http://65.108.32.168:8000/api/health"
+
+# Verify shared filesystem access
+ls -la /mnt/CPU-GPU/
+```
+
+### Performance Monitoring
+```bash
+# Monitor system resources
+htop
+df -h /mnt/CPU-GPU/
+
+# Check PostgreSQL performance
+sudo -u postgres psql -c "SELECT * FROM pg_stat_activity WHERE state = 'active';"
+
+# Monitor API response times
+curl -w "@-" -o /dev/null -s "http://localhost:8000/api/health" <<< 'time_total: %{time_total}\n'
+```
+
+---
+
+## 📝 Notes for Production CPU Tasks
+
+### Prerequisites
+- Ensure you're on the production CPU server (65.108.32.168)
+- Have sudo access for systemd service management
+- PostgreSQL is running and accessible
+- Shared filesystem `/mnt/CPU-GPU` is properly mounted
+
+### Critical Environment Variables to Verify
+- `ENVIRONMENT=production`
+- `DATABASE_URL=postgresql://review_user:simpleprod2024@localhost:5432/review-platform`
+- `GPU_PRODUCTION=135.181.63.133`
+- `BACKEND_PRODUCTION=http://65.108.32.168:8000`
+- `SHARED_FILESYSTEM_MOUNT_PATH=/mnt/CPU-GPU`
+
+### Success Indicators
+- ✅ Backend API responding on port 8000
+- ✅ Database connection successful
+- ✅ GPU server can reach backend
+- ✅ All 29 database tables present
+- ✅ Environment variables correctly set
+- ✅ Systemd services active and stable
