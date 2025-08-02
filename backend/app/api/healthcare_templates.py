@@ -36,11 +36,11 @@ class AnalysisTemplateResponse(BaseModel):
     healthcare_sector_id: int
     name: str
     description: str
-    template_version: str
+    template_version: Optional[str] = None
     specialized_analysis: List[str]
     is_active: bool
     is_default: bool
-    usage_count: int
+    usage_count: Optional[int] = 0
     sector_name: Optional[str] = None
 
 class TemplateChapterResponse(BaseModel):
@@ -84,13 +84,19 @@ class TemplateCustomizationRequest(BaseModel):
     customized_questions: Optional[Dict[str, Any]] = None
     customized_weights: Optional[Dict[str, Any]] = None
 
-# Healthcare sectors endpoints
+# Healthcare sectors endpoints  
 @router.get("/sectors", response_model=List[HealthcareSectorResponse])
 async def get_healthcare_sectors(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get all healthcare sectors"""
+    """Get all healthcare sectors (GP only)"""
+    # Check if user is GP
+    if current_user.role != "gp":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. GP role required."
+        )
     try:
         query = text("""
         SELECT id, name, display_name, description, keywords, subcategories, 
@@ -130,7 +136,13 @@ async def get_all_templates(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get all analysis templates"""
+    """Get all analysis templates (GP only)"""
+    # Check if user is GP
+    if current_user.role != "gp":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. GP role required."
+        )
     try:
         query = text("""
         SELECT at.id, at.healthcare_sector_id, at.name, at.description, at.template_version,
@@ -174,7 +186,13 @@ async def get_sector_templates(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get all analysis templates for a specific healthcare sector"""
+    """Get all analysis templates for a specific healthcare sector (GP only)"""
+    # Check if user is GP
+    if current_user.role != "gp":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. GP role required."
+        )
     try:
         query = text("""
         SELECT id, healthcare_sector_id, name, description, template_version,
@@ -215,7 +233,13 @@ async def get_template_details(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get detailed template information including chapters and questions"""
+    """Get detailed template information including chapters and questions (GP only)"""
+    # Check if user is GP
+    if current_user.role != "gp":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. GP role required."
+        )
     try:
         # Get template basic info
         template_query = text("""

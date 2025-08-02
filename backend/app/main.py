@@ -39,3 +39,7 @@ app.include_router(funding_stages.router, prefix=settings.API_V1_STR)
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Startup Review Platform API"}
+
+@app.get("/api/health")
+def health_check():
+    return {"status": "healthy", "environment": settings.ENVIRONMENT}
