@@ -18,3 +18,9 @@ To create a production build, use npm run build.
 
 webpack compiled successfully
 (node:101963) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+Compiling...
+Compiled successfully!
+webpack compiled successfully
+Compiling...
+Compiled successfully!
+webpack compiled successfully
