@@ -419,21 +419,97 @@ sudo -u postgres psql -d review-platform -f scripts/pipeline_prompts_production.
 # 1. Pull latest code
 git pull origin main
 
-# 2. Update database schema (if needed)
+# 2. Deploy environment configuration (REQUIRED)
+./environments/deploy-environment.sh production
+
+# 3. Update database schema (if needed)
 python scripts/create_production_schema_final.py
 
-# 3. Deploy frontend with zero downtime
+# 4. Deploy frontend with zero downtime
 scripts/build-frontend.sh production
 
-# 4. Restart services with new environment
+# 5. Restart services with new environment
 sudo systemctl daemon-reload
 sudo systemctl restart review-platform.service
 sudo systemctl restart gpu-http-server.service
 
-# 5. Verify deployment
+# 6. Verify deployment
 curl http://localhost:8000/api/health
 # Check browser console for correct environment detection
 ```
+
+## Critical Architecture Rules (NEVER VIOLATE)
+
+### 1. No Hardcoded Paths in Source Code
+**ABSOLUTE RULE**: Never hardcode filesystem paths like `/mnt/dev-shared/` or `/mnt/CPU-GPU/` in any source file.
+
+**Wrong:**
+```python
+DOJO_PATH = "/mnt/dev-shared/dojo"  # NEVER DO THIS
+full_path = os.path.join("/mnt/dev-shared", file_path)  # FORBIDDEN
+```
+
+**Correct:**
+```python
+DOJO_PATH = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "dojo")
+full_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, file_path)
+```
+
+**Why**: Hardcoded paths break environment portability. The same code must work in development (`/mnt/dev-shared/`) and production (`/mnt/CPU-GPU/`) without modification.
+
+### 2. Centralized Environment Management Only
+**ABSOLUTE RULE**: ALL environment configuration MUST be managed through `/environments/` directory using the deployment script.
+
+**Directory Structure:**
+```
+/environments/
+├── .env.backend.development
+├── .env.backend.production
+├── .env.frontend.development  
+├── .env.frontend.production
+├── .env.gpu.development
+├── .env.gpu.production
+└── deploy-environment.sh
+```
+
+**Deployment Commands:**
+```bash
+# ONLY way to switch environments
+./environments/deploy-environment.sh development
+./environments/deploy-environment.sh production
+```
+
+**Forbidden:**
+- Manual editing of `.env` files in component directories
+- Creating new `.env` files outside `/environments/`
+- Using different naming conventions
+- Hardcoding environment values in config files
+
+**Why**: Scattered environment files caused deployment failures. Centralized management ensures consistency and prevents configuration drift.
+
+### 3. Environment Variables Override Defaults
+**RULE**: Configuration classes must read from environment variables, never hardcode environment-specific values.
+
+**Wrong:**
+```python
+ENVIRONMENT: str = "development"  # NEVER hardcode environment
+```
+
+**Correct:**
+```python
+ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")  # Always use env vars
+```
+
+### Enforcement Checklist for Claude
+
+Before ANY deployment or configuration change:
+- [ ] Check for hardcoded paths: `grep -r "/mnt/" --include="*.py"`
+- [ ] Verify all env changes are in `/environments/`
+- [ ] Use deployment script: `./environments/deploy-environment.sh`
+- [ ] Never create `.env` files outside `/environments/`
+- [ ] Test both development and production environments
+
+**Violations of these rules caused hours of debugging during production deployment. These are NOT guidelines - they are MANDATORY architecture decisions.**
 
 ## Debugging Best Practices
 
