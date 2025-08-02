@@ -1327,6 +1327,18 @@ class HealthcareTemplateAnalyzer:
                     "total_questions": len(chapter_questions),
                     "code_version": "v2.0-with-questions-array"  # Debug marker
                 }
+                
+                # Send progress completion callback after chapter is finished
+                if self.progress_callback and self.current_deck_id:
+                    try:
+                        # Call with status parameter if the callback accepts it
+                        try:
+                            self.progress_callback(self.current_deck_id, chapter_name, "completed")
+                        except TypeError:
+                            # Fallback for old callback signature without status
+                            self.progress_callback(self.current_deck_id, chapter_name)
+                    except Exception as e:
+                        logger.warning(f"Failed to send chapter completion callback: {e}")
     
     def _score_question(self, question_text: str, scoring_criteria: str, response: str, pitch_deck_text: str) -> tuple[int, str]:
         """Score a specific question response and return both score and scoring response"""

@@ -2425,11 +2425,27 @@ async def run_template_processing_batch(
                     "prompt": default_template[2]  # Using description as prompt for now
                 }
         
+        # Calculate total progress steps (decks × chapters)
+        # Get template info to determine number of chapters
+        total_chapters = 7  # Default assumption for standard template
+        if template_info and template_info.get("id"):
+            try:
+                chapter_count_query = text("""
+                    SELECT COUNT(*) FROM template_chapters 
+                    WHERE template_id = :template_id
+                """)
+                chapter_result = db.execute(chapter_count_query, {"template_id": template_info["id"]}).fetchone()
+                if chapter_result:
+                    total_chapters = chapter_result[0]
+                    logger.info(f"Template {template_info['id']} has {total_chapters} chapters")
+            except Exception as e:
+                logger.warning(f"Could not get chapter count, using default: {e}")
+        
         # Update progress tracker - start step 4 processing
         progress_tracker["step4"]["status"] = "processing"
         progress_tracker["step4"]["current_deck"] = decks[0].file_name if decks else ""
         progress_tracker["step4"]["progress"] = 0
-        progress_tracker["step4"]["total"] = len(decks)
+        progress_tracker["step4"]["total"] = len(decks) * total_chapters
         
         # Use GPU pipeline for template processing
         from ..services.gpu_http_client import gpu_http_client
@@ -2886,12 +2902,22 @@ async def template_progress_callback(
                 # Update progress tracker with current deck and chapter
                 progress_tracker["step4"]["current_deck"] = deck_filename
                 progress_tracker["step4"]["current_chapter"] = chapter_name
-                logger.info(f"Template progress update - Deck {deck_filename}: Processing chapter '{chapter_name}'")
+                
+                # Increment progress on chapter completion
+                if status == "completed":
+                    progress_tracker["step4"]["progress"] += 1
+                    logger.info(f"Template progress update - Deck {deck_filename}: Completed chapter '{chapter_name}' ({progress_tracker['step4']['progress']}/{progress_tracker['step4']['total']})")
+                else:
+                    logger.info(f"Template progress update - Deck {deck_filename}: Processing chapter '{chapter_name}'")
                 
             except Exception as e:
                 logger.warning(f"Could not get deck filename for {deck_id}: {e}")
                 progress_tracker["step4"]["current_deck"] = f"Processing deck {deck_id}"
                 progress_tracker["step4"]["current_chapter"] = chapter_name
+                
+                # Increment progress on chapter completion (fallback path)
+                if status == "completed":
+                    progress_tracker["step4"]["progress"] += 1
         
         return {"success": True}
     except Exception as e:

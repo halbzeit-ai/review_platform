@@ -415,13 +415,14 @@ class GPUHTTPServer:
                             continue
                         
                         # Set progress callback
-                        def progress_callback(deck_id: int, chapter_name: str):
+                        def progress_callback(deck_id: int, chapter_name: str, status: str = "processing"):
                             # Call backend to update progress
                             requests.post(
                                 f"{self.backend_url}/api/dojo/template-progress-callback",
                                 json={
                                     "chapter_name": chapter_name,
                                     "deck_id": deck_id,
+                                    "status": status,
                                     "deck_name": deck_name  # Pass deck name for better progress display
                                 }
                             )
@@ -867,14 +868,14 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                             logger.info(f"Using healthcare template analyzer for chapter-by-chapter analysis of deck {deck_id}")
                             
                             # Create progress callback function
-                            def progress_callback(deck_id, chapter_name):
+                            def progress_callback(deck_id, chapter_name, status="processing"):
                                 if progress_callback_url:
                                     try:
                                         import requests
                                         requests.post(progress_callback_url, json={
                                             "deck_id": deck_id,
                                             "chapter_name": chapter_name,
-                                            "status": "processing"
+                                            "status": status
                                         }, timeout=5)
                                     except Exception as e:
                                         logger.warning(f"Failed to send progress callback: {e}")
