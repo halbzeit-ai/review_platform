@@ -15,13 +15,11 @@ import {
   MenuItem,
   Grid,
   IconButton,
-  Chip,
   Divider
 } from '@mui/material';
 import {
   Business,
   AccountBalance,
-  Euro,
   Email,
   Close,
   Add,
@@ -33,8 +31,6 @@ const CreateProjectDialog = ({ open, onClose, onProjectCreated }) => {
   const [formData, setFormData] = useState({
     project_name: '',
     company_name: '',
-    funding_round: '',
-    funding_sought: '',
     invite_emails: [''],
     invitation_language: 'en'
   });
@@ -43,16 +39,6 @@ const CreateProjectDialog = ({ open, onClose, onProjectCreated }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const fundingRounds = [
-    { value: 'pre_seed', label: 'Pre-Seed' },
-    { value: 'seed', label: 'Seed' },
-    { value: 'series_a', label: 'Series A' },
-    { value: 'series_b', label: 'Series B' },
-    { value: 'series_c', label: 'Series C' },
-    { value: 'bridge', label: 'Bridge Round' },
-    { value: 'ipo', label: 'IPO' },
-    { value: 'other', label: 'Other' }
-  ];
 
   const handleInputChange = (field) => (event) => {
     setFormData({
@@ -131,8 +117,6 @@ const CreateProjectDialog = ({ open, onClose, onProjectCreated }) => {
       const projectData = {
         project_name: formData.project_name.trim(),
         company_name: formData.company_name.trim(),
-        funding_round: formData.funding_round || null,
-        funding_sought: formData.funding_sought.trim() || null,
         invite_emails: validEmails,
         invitation_language: formData.invitation_language
       };
@@ -148,8 +132,6 @@ const CreateProjectDialog = ({ open, onClose, onProjectCreated }) => {
       setFormData({
         project_name: '',
         company_name: '',
-        funding_round: '',
-        funding_sought: '',
         invite_emails: [''],
         invitation_language: 'en'
       });
@@ -226,7 +208,6 @@ const CreateProjectDialog = ({ open, onClose, onProjectCreated }) => {
                 value={formData.project_name}
                 onChange={handleInputChange('project_name')}
                 required
-                placeholder="e.g., Series A Funding"
                 InputProps={{
                   startAdornment: <AccountBalance sx={{ color: 'action.active', mr: 1 }} />,
                 }}
@@ -240,45 +221,12 @@ const CreateProjectDialog = ({ open, onClose, onProjectCreated }) => {
                 value={formData.company_name}
                 onChange={handleInputChange('company_name')}
                 required
-                placeholder="e.g., Acme Healthcare"
                 InputProps={{
                   startAdornment: <Business sx={{ color: 'action.active', mr: 1 }} />,
                 }}
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Funding Round</InputLabel>
-                <Select
-                  value={formData.funding_round}
-                  onChange={handleInputChange('funding_round')}
-                  label="Funding Round"
-                >
-                  <MenuItem value="">
-                    <em>Select funding round</em>
-                  </MenuItem>
-                  {fundingRounds.map((round) => (
-                    <MenuItem key={round.value} value={round.value}>
-                      {round.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Funding Sought"
-                value={formData.funding_sought}
-                onChange={handleInputChange('funding_sought')}
-                placeholder="e.g., €2M, $5M"
-                InputProps={{
-                  startAdornment: <Euro sx={{ color: 'action.active', mr: 1 }} />,
-                }}
-              />
-            </Grid>
 
             {/* Invitation Section */}
             <Grid item xs={12}>

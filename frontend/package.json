@@ -18,7 +18,7 @@
     "react-scripts": "5.0.1",
     "recharts": "^3.1.0"
   },
-  "proxy": "http://65.108.32.143:8000",
+  "proxy": "http://65.108.32.168:8000",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",

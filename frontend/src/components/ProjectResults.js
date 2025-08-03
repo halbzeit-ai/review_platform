@@ -183,79 +183,8 @@ const ProjectResults = ({ companyId, deckId }) => {
     );
   }
 
-  // Legacy dojo template processing results (fallback for old format)
-  const isDojoTemplateResult = results.analysis_metadata?.source === 'dojo_experiment' || 
-                               results.analysis_metadata?.source === 'template_processing' ||
-                               results.analysis_metadata?.source === 'dojo_template_processing';
-
   return (
     <Box>
-      {/* Legacy Dojo Template Processing Results */}
-      {isDojoTemplateResult ? (
-        <>
-          {/* Template Processing Header */}
-          <Card variant="outlined" sx={{ mb: 3, bgcolor: 'info.50' }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom color="info.main">
-                Template Analysis Results
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Template: {results.template_used} {results.experiment_name && `| Experiment: ${results.experiment_name}`}
-              </Typography>
-              {results.analysis_metadata?.processed_at && (
-                <Typography variant="body2" color="text.secondary">
-                  Processed: {new Date(results.analysis_metadata.processed_at).toLocaleString()}
-                </Typography>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Template Analysis Content */}
-          <Card variant="outlined" sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Analysis
-              </Typography>
-              <Box sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-                {formatText(results.template_analysis || 'No template analysis available')}
-              </Box>
-            </CardContent>
-          </Card>
-
-          {/* Slide Images (if available) */}
-          {results.slide_images && results.slide_images.length > 0 && (
-            <Card variant="outlined" sx={{ mb: 3 }}>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Slide Images ({results.slide_images.length})
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Slide images generated during template processing
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {results.slide_images.slice(0, 6).map((imagePath, index) => (
-                    <Chip 
-                      key={index}
-                      label={`Slide ${index + 1}`}
-                      variant="outlined"
-                      size="small"
-                    />
-                  ))}
-                  {results.slide_images.length > 6 && (
-                    <Chip 
-                      label={`+${results.slide_images.length - 6} more`}
-                      variant="outlined"
-                      size="small"
-                      color="primary"
-                    />
-                  )}
-                </Box>
-              </CardContent>
-            </Card>
-          )}
-        </>
-      ) : (
-        <>
           {/* Regular Analysis Results */}
           {/* Company Summary - Always First */}
           <Card variant="outlined" sx={{ mb: 3, bgcolor: 'primary.50' }}>
@@ -649,8 +578,6 @@ const ProjectResults = ({ companyId, deckId }) => {
           </Box>
         )}
       </Paper>
-        </>
-      )}
     </Box>
   );
 };

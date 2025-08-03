@@ -152,8 +152,22 @@ const ProjectDashboard = () => {
   };
 
   const handleViewResults = (deck) => {
-    const targetCompanyId = isAdminView ? deck.company_id : companyId;
-    navigate(`/project/${targetCompanyId}/results/${deck.id}`);
+    console.log('handleViewResults called:', {
+      isAdminView,
+      pathname: window.location.pathname,
+      deckId: deck.id,
+      companyId
+    });
+    
+    if (isAdminView) {
+      // In admin view (GP impersonating startup), use startup results page
+      console.log('Navigating to startup results page:', `/results/${deck.id}`);
+      navigate(`/results/${deck.id}`);
+    } else {
+      // Regular startup view uses project results page
+      console.log('Navigating to project results page:', `/project/${companyId}/results/${deck.id}`);
+      navigate(`/project/${companyId}/results/${deck.id}`);
+    }
   };
 
   // Funding journey functions
