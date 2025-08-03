@@ -32,21 +32,39 @@ log_file_path = os.path.join(shared_filesystem_path, 'logs', 'gpu_http_server.lo
 # Ensure logs directory exists
 os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
 
-# Configure logging with both file and console output
+# Configure logging with both file and console output - Force immediate flushing
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(log_file_path),
         logging.StreamHandler()  # Keep console output too
-    ]
+    ],
+    force=True  # Force reconfiguration even if already configured
 )
+
+# Ensure immediate flushing for all handlers
+for handler in logging.getLogger().handlers:
+    if hasattr(handler, 'stream'):
+        handler.stream.flush()
+        
+# Custom flush function to force immediate writes
+def force_log_flush():
+    for handler in logging.getLogger().handlers:
+        if hasattr(handler, 'flush'):
+            handler.flush()
+        if hasattr(handler, 'stream'):
+            handler.stream.flush()
 logger = logging.getLogger(__name__)
 
 # Log the file location for debugging
 logger.info(f"GPU HTTP server logs will be written to: {log_file_path}")
+force_log_flush()  # Force immediate write of initialization logs
 
 app = Flask(__name__)
+# Disable Flask's default logging to avoid conflicts
+app.logger.disabled = True
+logging.getLogger('werkzeug').disabled = True
 
 class GPUHTTPServer:
     """HTTP server for GPU model management and PDF processing"""
@@ -70,9 +88,13 @@ class GPUHTTPServer:
         @self.app.route('/api/health', methods=['GET'])
         def health_check():
             """Health check endpoint"""
+            logger.info("Health check requested")
+            force_log_flush()
             try:
                 # Test if Ollama is accessible
                 ollama.list()
+                logger.info("Health check passed - Ollama accessible")
+                force_log_flush()
                 return jsonify({
                     "status": "healthy",
                     "timestamp": datetime.now().isoformat(),
@@ -80,6 +102,7 @@ class GPUHTTPServer:
                 })
             except Exception as e:
                 logger.error(f"Health check failed: {e}")
+                force_log_flush()
                 return jsonify({
                     "status": "unhealthy",
                     "timestamp": datetime.now().isoformat(),
