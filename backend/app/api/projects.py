@@ -615,21 +615,31 @@ async def get_project_results(
                     except (json.JSONDecodeError, KeyError) as e:
                         logger.warning(f"Failed to parse experiment results for deck {original_deck_id}: {e}")
             
-            # For dojo projects, the template data is stored directly in pitch_decks
+            # For dojo projects, return structured data for startup-compatible display
             if source == 'project_documents':
-                # Template data is stored directly for this deck
-                return {
-                    "template_analysis": template_data.get("template_analysis", ""),
-                    "template_used": template_data.get("template_used", "Unknown"),
-                    "processed_at": template_data.get("processed_at"),
-                    "thumbnail_path": template_data.get("thumbnail_path"),
-                    "slide_images": template_data.get("slide_images", []),
-                    "analysis_metadata": {
+                # Return the full template data as-is (startup-compatible JSON structure)
+                if isinstance(template_data, dict) and ("chapter_analysis" in template_data or "report_chapters" in template_data):
+                    # This is new startup-compatible format - return as-is
+                    template_data["analysis_metadata"] = {
                         "source": "dojo_template_processing",
                         "deck_id": deck_id,
                         "original_deck_id": template_result[1] if len(template_result) > 1 else deck_id
                     }
-                }
+                    return template_data
+                else:
+                    # Legacy format - convert to startup-compatible format
+                    return {
+                        "template_analysis": template_data.get("template_analysis", ""),
+                        "template_used": template_data.get("template_used", "Unknown"),
+                        "processed_at": template_data.get("processed_at"),
+                        "thumbnail_path": template_data.get("thumbnail_path"),
+                        "slide_images": template_data.get("slide_images", []),
+                        "analysis_metadata": {
+                            "source": "dojo_template_processing",
+                            "deck_id": deck_id,
+                            "original_deck_id": template_result[1] if len(template_result) > 1 else deck_id
+                        }
+                    }
             
             # Format results for frontend consumption - return the raw template analysis
             return {
@@ -680,19 +690,29 @@ async def get_project_results(
                     detail="Template processing results not found for this deck"
                 )
             
-            # Format results for frontend consumption
-            results_data = {
-                "experiment_name": experiment_result[1],
-                "template_used": deck_results.get("template_used"),
-                "template_analysis": deck_results.get("template_analysis"),
-                "thumbnail_path": deck_results.get("thumbnail_path"),
-                "slide_images": deck_results.get("slide_images", []),
-                "analysis_metadata": {
+            # Format results for frontend consumption - return structured data for startup-compatible display
+            if isinstance(deck_results, dict) and ("chapter_analysis" in deck_results or "report_chapters" in deck_results):
+                # This is new startup-compatible format - return as-is
+                deck_results["analysis_metadata"] = {
                     "source": "dojo_experiment",
                     "experiment_id": experiment_id,
                     "processed_at": template_processing_data.get("processed_at")
                 }
-            }
+                results_data = deck_results
+            else:
+                # Legacy format - return as template_analysis
+                results_data = {
+                    "experiment_name": experiment_result[1],
+                    "template_used": deck_results.get("template_used"),
+                    "template_analysis": deck_results.get("template_analysis"),
+                    "thumbnail_path": deck_results.get("thumbnail_path"),
+                    "slide_images": deck_results.get("slide_images", []),
+                    "analysis_metadata": {
+                        "source": "dojo_experiment",
+                        "experiment_id": experiment_id,
+                        "processed_at": template_processing_data.get("processed_at")
+                    }
+                }
             
             logger.info(f"Loaded dojo experiment results for deck {deck_id} from experiment {experiment_id}")
             return results_data

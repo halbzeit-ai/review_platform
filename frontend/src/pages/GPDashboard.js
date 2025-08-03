@@ -245,7 +245,7 @@ function GPDashboard() {
               onChange={(e) => setIncludeTestData(e.target.value === 'all')}
             >
               <MenuItem value="production">Production Only</MenuItem>
-              <MenuItem value="all">Include Test Data</MenuItem>
+              <MenuItem value="all">Include Dojo Companies</MenuItem>
             </Select>
           </FormControl>
         </Box>
@@ -343,7 +343,7 @@ function GPDashboard() {
             onChange={(e) => setIncludeTestData(e.target.value === 'all')}
           >
             <MenuItem value="production">Production Only</MenuItem>
-            <MenuItem value="all">Include Test Data</MenuItem>
+            <MenuItem value="all">Include Dojo Companies</MenuItem>
           </Select>
         </FormControl>
       </Box>
@@ -464,7 +464,7 @@ function GPDashboard() {
               onChange={(e) => setIncludeTestData(e.target.value === 'all')}
             >
               <MenuItem value="production">Production Only</MenuItem>
-              <MenuItem value="all">Include Test Data</MenuItem>
+              <MenuItem value="all">Include Dojo Companies</MenuItem>
             </Select>
           </FormControl>
         </Box>

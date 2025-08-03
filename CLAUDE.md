@@ -21,12 +21,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 3. User runs deployment commands on production servers
 4. User provides logs/errors back to Claude for analysis
 
+## IMPORTANT: Read Product Requirements First
+
+**Before starting any work, always read through the Product Requirements Documents (PRDs) to understand the overall product vision and context:**
+
+```bash
+# Essential reading for understanding the product:
+cat PRD/PRD.md                    # Overall product requirements and vision
+cat PRD/dojo-PRD.md               # Dojo testing environment specifications  
+cat PRD/startup-journey.md        # 14-stage funding process details
+cat PRD/beta-startup-onboarding.md # Beta testing and onboarding process
+```
+
+This will give you the complete context of:
+- User personas (GPs vs Startups)
+- Core product areas and features
+- Technical architecture decisions
+- Funding process workflow (14 stages)
+- Dojo testing environment capabilities
+
 ## Project Overview
 
 This is a startup review platform with a Python FastAPI backend and React frontend. The platform allows:
 - Startups to register, upload pitch decks (PDFs), and receive AI-generated reviews
 - GPs (General Partners) to review, modify, and approve reviews
 - A Q&A system between startups and GPs
+- Dojo testing environment for GPs to experiment with AI parameters
+- 14-stage funding process management
 - S3 integration for file storage and AI processing triggers
 
 ## Architecture

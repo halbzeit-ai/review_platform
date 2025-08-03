@@ -15,7 +15,10 @@ import {
   ListItemIcon,
   Accordion,
   AccordionSummary,
-  AccordionDetails
+  AccordionDetails,
+  Grid,
+  LinearProgress,
+  Button
 } from '@mui/material';
 import {
   CheckCircle,
@@ -150,14 +153,44 @@ const ProjectResults = ({ companyId, deckId }) => {
     );
   }
 
-  // Check if this is a dojo template processing result
+  // Check if this is structured data (startup-compatible format) - redirect to startup results page
+  const hasStructuredData = results.chapter_analysis || results.report_chapters || results.report_scores;
+  
+  if (hasStructuredData) {
+    // For structured data, redirect to the existing startup results page for true re-use
+    return (
+      <Card variant="outlined" sx={{ mb: 3, bgcolor: 'success.50' }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom color="success.main">
+            ✨ Startup Experience Ready
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            This deck has been processed with startup-compatible data. Click below to view the results exactly as a startup would see them.
+          </Typography>
+          <Button 
+            variant="contained" 
+            color="primary"
+            href={`/results/${deckId}`}
+            sx={{ mr: 2 }}
+          >
+            View as Startup Experience
+          </Button>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            You'll see the same interface, scoring, and analysis that startups experience.
+          </Typography>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Legacy dojo template processing results (fallback for old format)
   const isDojoTemplateResult = results.analysis_metadata?.source === 'dojo_experiment' || 
                                results.analysis_metadata?.source === 'template_processing' ||
                                results.analysis_metadata?.source === 'dojo_template_processing';
 
   return (
     <Box>
-      {/* Dojo Template Processing Results */}
+      {/* Legacy Dojo Template Processing Results */}
       {isDojoTemplateResult ? (
         <>
           {/* Template Processing Header */}

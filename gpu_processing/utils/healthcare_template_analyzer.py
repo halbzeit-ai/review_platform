@@ -1287,13 +1287,25 @@ class HealthcareTemplateAnalyzer:
                         "score": score,
                         "scoring_criteria": scoring_criteria,
                         "healthcare_focus": healthcare_focus,
-                        "scoring_response": scoring_response  # Add scoring response for debugging
+                        "scoring_response": scoring_response,  # Add scoring response for debugging
+                        "chapter_id": chapter_id  # Add chapter association for startup-compatible format
                     }
                     
                 except Exception as e:
                     logger.error(f"Error analyzing question {question_id}: {e}")
                     chapter_responses.append(f"Error analyzing question: {str(e)}")
                     chapter_scores.append(0)
+                    
+                    # Store error result to prevent missing question data in startup-compatible format
+                    self.question_results[question_id] = {
+                        "question_text": question_text,
+                        "response": f"Error analyzing question: {str(e)}",
+                        "score": 0,
+                        "scoring_criteria": scoring_criteria,
+                        "healthcare_focus": healthcare_focus,
+                        "scoring_response": "Error occurred during analysis",
+                        "chapter_id": chapter_id
+                    }
             
             # Calculate chapter-level results
             if chapter_scores:
@@ -1318,8 +1330,12 @@ class HealthcareTemplateAnalyzer:
                     }
                     chapter_question_details.append(question_detail)
                 
+                # Generate chapter key from name for startup-compatible format
+                chapter_key = chapter_name.lower().replace(" ", "_").replace("-", "_")
+                
                 self.chapter_results[chapter_id] = {
                     "name": chapter_name,
+                    "key": chapter_key,  # Add key for startup-compatible mapping
                     "description": chapter.get("description", ""),
                     "questions": chapter_question_details,  # New structured format
                     "weighted_score": average_score,  # Frontend expects this field name
@@ -1542,7 +1558,7 @@ class HealthcareTemplateAnalyzer:
             self.specialized_results["scientific_hypothesis"] = f"Error: {str(e)}"
     
     def _format_healthcare_results(self, processing_time: float) -> Dict[str, Any]:
-        """Format results in healthcare-focused structure"""
+        """Format results in startup-compatible JSON structure"""
         # Calculate overall score
         if self.chapter_results:
             chapter_scores = []
@@ -1568,18 +1584,86 @@ class HealthcareTemplateAnalyzer:
         logger.info(f"   🔬 Specialized analyses: {len(self.specialized_results)}")
         logger.info(f"   🎯 Overall score: {overall_score:.1f}/7")
         
+        # Format chapter_analysis with nested questions array (startup-compatible)
+        formatted_chapter_analysis = {}
+        for chapter_id, chapter_data in self.chapter_results.items():
+            # Get chapter key name from template config
+            chapter_key = chapter_data.get("key", f"chapter_{chapter_id}")
+            
+            # Build questions array for this chapter
+            questions_list = []
+            question_counter = 1
+            for question_id, question_data in self.question_results.items():
+                # Check if this question belongs to current chapter
+                if question_data.get("chapter_id") == chapter_id:
+                    questions_list.append({
+                        "id": question_counter,
+                        "question_id": question_id,
+                        "question_text": question_data.get("question_text", ""),
+                        "response": question_data.get("response", "No response provided"),
+                        "score": question_data.get("score", 0),
+                        "scoring_criteria": question_data.get("scoring_criteria", ""),
+                        "healthcare_focus": question_data.get("healthcare_focus", "general"),
+                        "scoring_response": question_data.get("scoring_response", "")
+                    })
+                    question_counter += 1
+            
+            formatted_chapter_analysis[chapter_key] = {
+                "name": chapter_data.get("name", ""),
+                "description": chapter_data.get("description", ""),
+                "questions": questions_list,
+                "weighted_score": chapter_data.get("weighted_score", 0),
+                "average_score": chapter_data.get("average_score", 0),
+                "total_questions": chapter_data.get("total_questions", len(questions_list)),
+                "code_version": "v2.0-with-questions-array"
+            }
+        
+        # Generate report_chapters (formatted markdown for each chapter)
+        report_chapters = {}
+        for chapter_key, chapter_data in formatted_chapter_analysis.items():
+            chapter_text = ""
+            for question in chapter_data["questions"]:
+                chapter_text += f"**{question['question_text']}**\n\n"
+                chapter_text += f"{question['response']}\n\n"
+                chapter_text += f"**Score: {question['score']}/7**\n\n"
+                chapter_text += "---\n\n"
+            report_chapters[chapter_key] = chapter_text.strip()
+        
+        # Generate report_scores
+        report_scores = {}
+        for chapter_key, chapter_data in formatted_chapter_analysis.items():
+            report_scores[chapter_key] = chapter_data["average_score"]
+        
+        # Generate scientific_hypotheses if available
+        scientific_hypotheses = []
+        if "scientific_hypothesis" in self.specialized_results:
+            # Parse the scientific hypothesis text to extract individual hypotheses
+            hypothesis_text = self.specialized_results["scientific_hypothesis"]
+            # Simple extraction - look for numbered hypotheses
+            import re
+            hypothesis_matches = re.findall(r'\d+\.\s*\*\*([^*]+)\*\*', hypothesis_text)
+            for i, hypothesis in enumerate(hypothesis_matches[:5], 1):  # Limit to 5
+                scientific_hypotheses.append({
+                    "hypothesis": hypothesis.strip(),
+                    "confidence": 0.7,  # Default confidence
+                    "evidence": "See detailed analysis in specialized results"
+                })
+        
+        # Return startup-compatible structure
         return {
             "company_offering": self.company_offering,
+            "classification": self.classification_result,
+            "template_used": self.template_config.get("template", {}) if self.template_config else None,
+            "chapter_analysis": formatted_chapter_analysis,
+            "specialized_analysis": self.specialized_results,
+            "overall_score": overall_score,
+            "report_chapters": report_chapters,
+            "report_scores": report_scores,
+            "scientific_hypotheses": scientific_hypotheses,
             "startup_name": self.startup_name,
             "funding_amount": self.funding_amount,
             "deck_date": self.deck_date,
-            "classification": self.classification_result,
-            "template_used": self.template_config.get("template", {}) if self.template_config else None,
-            "overall_score": overall_score,
-            "chapter_analysis": self.chapter_results,
-            "question_analysis": self.question_results,
-            "specialized_analysis": self.specialized_results,
-            "visual_analysis_results": self.visual_analysis_results,  # Include slide-by-slide analysis
+            "visual_analysis_results": self.visual_analysis_results,
             "processing_metadata": {
                 "processing_time": processing_time,
                 "model_versions": {
