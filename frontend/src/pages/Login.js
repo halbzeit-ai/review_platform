@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Container, Paper, TextField, Button, Typography, Box, Link, Alert, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Container, Paper, TextField, Button, Typography, Box, Link, Alert, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Divider } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { login, forgotPassword } from '../services/api';
@@ -78,78 +78,176 @@ function Login() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 8 }}>
-      <Paper elevation={3} sx={{ p: 4 }}>
-        <Box sx={{ textAlign: 'center', mb: 3 }}>
-          <Typography variant="h4" component="h1" gutterBottom>
-            {t('login.title')}
+    <Box sx={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+      {/* Header */}
+      <Box sx={{ backgroundColor: 'primary.main', color: 'white', py: 2 }}>
+        <Container maxWidth="lg">
+          <Typography variant="h5" component="h1" sx={{ fontWeight: 600 }}>
+            {t('homepage.platformName')}
           </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            {t('login.subtitle')}
-          </Typography>
-        </Box>
+        </Container>
+      </Box>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Grid container spacing={4}>
+          {/* Mission Content - Left Side */}
+          <Grid item xs={12} md={7}>
+            <Paper elevation={2} sx={{ p: 4, height: 'fit-content' }}>
+              <Typography variant="h3" component="h2" gutterBottom sx={{ color: 'primary.main', fontWeight: 700 }}>
+                {t('homepage.welcomeTitle')}
+              </Typography>
 
-        <form onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            margin="normal"
-            label={t('login.emailLabel')}
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            disabled={loading}
-          />
-          <TextField
-            fullWidth
-            margin="normal"
-            label={t('login.passwordLabel')}
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={loading}
-          />
-          <Button
-            fullWidth
-            variant="contained"
-            color="primary"
-            type="submit"
-            sx={{ mt: 3, mb: 2 }}
-            disabled={loading}
-          >
-            {loading ? t('common:buttons.loading') : t('login.loginButton')}
-          </Button>
-        </form>
+              <Typography variant="body1" paragraph sx={{ lineHeight: 1.8 }}>
+                {t('homepage.missionIntro')}
+              </Typography>
 
-        <Box sx={{ textAlign: 'center', mt: 2 }}>
-          <Typography variant="body2">
-            {t('login.noAccount')}{' '}
-            <Link
-              component="button"
-              variant="body2"
-              onClick={() => navigate('/register')}
-            >
-              {t('login.registerLink')}
-            </Link>
-          </Typography>
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            <Link
-              component="button"
-              variant="body2"
-              onClick={() => setForgotPasswordOpen(true)}
-            >
-              {t('login.forgotPassword')}
-            </Link>
-          </Typography>
-        </Box>
-      </Paper>
+              <Typography variant="body1" paragraph sx={{ lineHeight: 1.8 }}>
+                {t('homepage.missionProblem')}
+              </Typography>
+
+              <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 600, mt: 3 }}>
+                {t('homepage.missionTransition')}
+              </Typography>
+
+              <Typography variant="h5" component="h3" gutterBottom sx={{ mt: 4, mb: 2, color: 'primary.main', fontWeight: 600 }}>
+                {t('homepage.purposeTitle')}
+              </Typography>
+
+              <Typography variant="body1" paragraph sx={{ lineHeight: 1.8 }}>
+                {t('homepage.purposeText')}
+              </Typography>
+
+              <Typography variant="body1" paragraph sx={{ lineHeight: 1.8 }}>
+                {t('homepage.purposeText2')}
+              </Typography>
+
+              <Typography variant="h5" component="h3" gutterBottom sx={{ mt: 4, mb: 2, color: 'primary.main', fontWeight: 600 }}>
+                {t('homepage.approachTitle')}
+              </Typography>
+
+              <Typography variant="body1" paragraph sx={{ lineHeight: 1.8 }}>
+                {t('homepage.approachIntro')}
+              </Typography>
+
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="body1" paragraph sx={{ lineHeight: 1.8, mb: 2 }}>
+                  <strong>• {t('homepage.valueCollaboration')}</strong>
+                </Typography>
+                <Typography variant="body1" paragraph sx={{ lineHeight: 1.8, mb: 2 }}>
+                  <strong>• {t('homepage.valueIntegrity')}</strong>
+                </Typography>
+                <Typography variant="body1" paragraph sx={{ lineHeight: 1.8, mb: 2 }}>
+                  <strong>• {t('homepage.valueEmpowerment')}</strong>
+                </Typography>
+                <Typography variant="body1" paragraph sx={{ lineHeight: 1.8, mb: 2 }}>
+                  <strong>• {t('homepage.valueLongTerm')}</strong>
+                </Typography>
+              </Box>
+
+              <Typography variant="h5" component="h3" gutterBottom sx={{ mt: 4, mb: 2, color: 'primary.main', fontWeight: 600 }}>
+                {t('homepage.whyNowTitle')}
+              </Typography>
+
+              <Typography variant="body1" paragraph sx={{ lineHeight: 1.8 }}>
+                {t('homepage.whyNowText')}
+              </Typography>
+
+              <Typography variant="body1" paragraph sx={{ lineHeight: 1.8 }}>
+                {t('homepage.whyNowConclusion')}
+              </Typography>
+
+              <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 600, mt: 3, fontStyle: 'italic' }}>
+                {t('homepage.finalCall')}
+              </Typography>
+            </Paper>
+          </Grid>
+
+          {/* Login Form - Right Side */}
+          <Grid item xs={12} md={5}>
+            <Paper elevation={3} sx={{ p: 4, position: 'sticky', top: 20 }}>
+              <Box sx={{ textAlign: 'center', mb: 3 }}>
+                <Typography variant="h4" component="h2" gutterBottom>
+                  {t('login.title')}
+                </Typography>
+                <Divider sx={{ my: 2 }} />
+                <Alert severity="info" sx={{ mb: 3 }}>
+                  {t('homepage.invitationOnly')}
+                </Alert>
+              </Box>
+
+              {error && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {error}
+                </Alert>
+              )}
+
+              <form onSubmit={handleSubmit}>
+                <TextField
+                  fullWidth
+                  margin="normal"
+                  label={t('login.emailLabel')}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+                <TextField
+                  fullWidth
+                  margin="normal"
+                  label={t('login.passwordLabel')}
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+                <Button
+                  fullWidth
+                  variant="contained"
+                  color="primary"
+                  type="submit"
+                  sx={{ mt: 3, mb: 2 }}
+                  disabled={loading}
+                >
+                  {loading ? t('common:buttons.loading') : t('login.loginButton')}
+                </Button>
+              </form>
+
+              <Box sx={{ textAlign: 'center', mt: 2 }}>
+                <Typography variant="body2">
+                  {t('login.noAccount')}{' '}
+                  <Link
+                    component="button"
+                    variant="body2"
+                    onClick={() => navigate('/register')}
+                    sx={{ 
+                      color: 'text.disabled', 
+                      cursor: 'not-allowed',
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'none'
+                      }
+                    }}
+                    disabled
+                  >
+                    {t('login.registerLink')}
+                  </Link>
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  <Link
+                    component="button"
+                    variant="body2"
+                    onClick={() => setForgotPasswordOpen(true)}
+                  >
+                    {t('login.forgotPassword')}
+                  </Link>
+                </Typography>
+              </Box>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Container>
 
       {/* Forgot Password Dialog */}
       <Dialog open={forgotPasswordOpen} onClose={handleCloseForgotPassword} maxWidth="sm" fullWidth>
@@ -192,7 +290,7 @@ function Login() {
           )}
         </DialogActions>
       </Dialog>
-    </Container>
+    </Box>
   );
 }
 
