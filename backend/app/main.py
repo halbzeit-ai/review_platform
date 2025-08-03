@@ -1,9 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
+from .core.logging_config import setup_shared_logging
 from .api import auth, decks, reviews, questions, documents, config, healthcare_templates, pipeline, projects, internal, dojo, project_management, project_stages, dojo_experiments, funding_stages
 from .db.models import Base
 from .db.database import engine
+
+# Configure shared filesystem logging
+logger = setup_shared_logging("backend")
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -38,8 +42,10 @@ app.include_router(funding_stages.router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 def read_root():
+    logger.info("Root endpoint accessed")
     return {"message": "Welcome to Startup Review Platform API"}
 
 @app.get("/api/health")
 def health_check():
+    logger.info(f"Health check accessed - Environment: {settings.ENVIRONMENT}")
     return {"status": "healthy", "environment": settings.ENVIRONMENT}

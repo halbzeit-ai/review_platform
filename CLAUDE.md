@@ -2,24 +2,76 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## CRITICAL: Claude Development Environment Context
+## CRITICAL: Claude Server Environment Detection
 
-**IMPORTANT**: Claude Code always runs on the development machine:
-- **Development CPU**: 65.108.32.143 (where Claude executes commands)
-- **Production CPU**: 65.108.32.168 (remote server, no direct access)
-- **GPU Server**: 135.181.63.133 (remote server, no direct access)
+**IMPORTANT**: Claude Code runs on different servers depending on the session. Always run the environment detection script first:
 
-**Claude Code Limitations**:
-- ❌ **NEVER run commands on production servers** - Claude only has access to development
-- ❌ **NEVER edit files directly on production** - changes must be made in development repo
-- ✅ **All changes made in development** - then deployed to production via git pull
-- ✅ **User provides production logs/output** - Claude analyzes but cannot execute there
+```bash
+# ALWAYS run this first to determine which server Claude is on
+./scripts/detect-claude-environment.sh
+```
 
-**Deployment Workflow**:
-1. Claude makes changes in development environment (`/opt/review-platform-dev/`)
-2. User pulls changes to production (`git pull origin main` on 65.108.32.168)
+**Server Infrastructure**:
+- **dev_cpu** (65.108.32.143): Development CPU server
+- **dev_gpu** (135.181.71.17): Development GPU server  
+- **prod_cpu** (65.108.32.168): Production CPU server
+- **prod_gpu** (135.181.63.133): Production GPU server
+- **Local machines**: NixOS, MacBook Air, etc. (developer workstations)
+
+**Claude Code Capabilities by Server**:
+
+### If Claude is on dev_cpu (65.108.32.143):
+- ✅ **Full development access** - Can edit code, run services, test changes
+- ✅ **Database access** - Can run migrations, test schemas  
+- ✅ **Service management** - Can start/stop backend and frontend
+- ❌ **No production access** - Cannot directly modify production
+- ✅ **Git operations** - Can commit changes for user to deploy
+
+### If Claude is on prod_cpu (65.108.32.168):
+- ✅ **Production management** - Can deploy, restart services, check logs
+- ✅ **Database access** - Can run production queries and migrations
+- ✅ **Service debugging** - Can check systemd services, nginx configuration
+- ❌ **Limited code editing** - Should primarily deploy from development
+- ✅ **Emergency fixes** - Can make direct production edits if required
+
+### If Claude is on dev_gpu (135.181.71.17):
+- ✅ **AI development** - Can test GPU processing, develop AI features
+- ✅ **Processing debugging** - Can check AI pipeline logs and performance
+- ✅ **Database access** - Can connect to development database on dev_cpu (65.108.32.143)
+- ❌ **No service management** - Cannot start/stop CPU services
+- ✅ **Shared filesystem** - Can access development shared storage
+
+### If Claude is on prod_gpu (135.181.63.133):
+- ✅ **AI processing** - Can run production GPU tasks, debug AI issues
+- ✅ **Processing debugging** - Can check production AI pipeline logs
+- ✅ **Database access** - Can connect to production database on prod_cpu (65.108.32.168)
+- ❌ **No service management** - Cannot start/stop CPU services  
+- ✅ **Shared filesystem** - Can access production shared storage
+
+**Deployment Workflow (Server-Dependent)**:
+
+### From dev_cpu (65.108.32.143):
+1. Claude makes changes in development environment
+2. User pulls changes to prod_cpu (`git pull origin main` on 65.108.32.168)
 3. User runs deployment commands on production servers
-4. User provides logs/errors back to Claude for analysis
+4. User provides production logs/output back to Claude for analysis
+
+### From prod_cpu (65.108.32.168):
+1. Claude can deploy directly from git
+2. Claude can restart services and check deployment status
+3. Claude can verify deployment and provide real-time feedback
+
+### Detection Script Usage:
+```bash
+# The script will output one of:
+# "dev_cpu" (65.108.32.143)
+# "prod_cpu" (65.108.32.168)
+# "dev_gpu" (135.181.71.17) 
+# "prod_gpu" (135.181.63.133)
+# "local" (developer workstation)
+```
+
+**CRITICAL**: Always check server environment before starting any work to understand your capabilities and limitations.
 
 ## IMPORTANT: Read Product Requirements First
 
@@ -72,8 +124,10 @@ This is a startup review platform with a Python FastAPI backend and React fronte
   - `src/utils/`: Utility functions (theme, etc.)
 
 ### Database
-- **Development**: PostgreSQL database `review_dev`
-- **Production**: PostgreSQL database `review-platform` 
+- **Development**: PostgreSQL database `review_dev` running on dev_cpu (65.108.32.143)
+- **Production**: PostgreSQL database `review-platform` running on prod_cpu (65.108.32.168)
+- **Important**: These are completely separate PostgreSQL instances with distinct data
+- **GPU Access**: Both dev_gpu and prod_gpu connect to their respective CPU databases remotely
 - **Legacy**: SQLite for development (`backend/sql_app.db`) - deprecated
 
 ## Development Commands
@@ -246,10 +300,10 @@ ln -sfn build_backup build
 The project uses a consistent naming scheme for environment variables to separate service types from environments:
 
 ### Server Environment Variables
-- `BACKEND_DEVELOPMENT=http://65.108.32.143:8000` - Backend server in development environment
-- `BACKEND_PRODUCTION=http://65.108.32.168:8000` - Backend server in production environment  
-- `GPU_DEVELOPMENT=135.181.71.17` - GPU server in development environment
-- `GPU_PRODUCTION=135.181.63.133` - GPU server in production environment
+- `BACKEND_DEVELOPMENT=http://65.108.32.143:8000` - Backend server on dev_cpu (65.108.32.143)
+- `BACKEND_PRODUCTION=http://65.108.32.168:8000` - Backend server on prod_cpu (65.108.32.168)
+- `GPU_DEVELOPMENT=135.181.71.17` - GPU server on dev_gpu (135.181.71.17)
+- `GPU_PRODUCTION=135.181.63.133` - GPU server on prod_gpu (135.181.63.133)
 
 ### Naming Convention
 **Pattern**: `{SERVICE_TYPE}_{ENVIRONMENT}`
@@ -589,6 +643,92 @@ gpu_processing/.env   (from environments/.env.gpu.{environment})
 
 **Root Cause of GPU Auth Failures (2025-08-02)**:
 GPU processing was hardcoded to read `.env.gpu` while centralized deployment created `.env.production`. Service ran with stale environment containing `DATABASE_HOST=localhost` instead of production CPU IP `65.108.32.168`, causing PostgreSQL authentication failures.
+
+## Shared Filesystem Logging
+
+Both backend and GPU services write their logs to the shared filesystem, allowing Claude to access logs from any server regardless of where services are running.
+
+### Log File Locations
+**Development Environment** (`/mnt/dev-shared/logs/`):
+- `backend.log` - Backend service logs (FastAPI, database operations, API requests)
+- `gpu_http_server.log` - GPU HTTP server logs (model operations, PDF processing)
+
+**Production Environment** (`/mnt/CPU-GPU/logs/`):
+- `backend.log` - Backend service logs
+- `gpu_http_server.log` - GPU HTTP server logs
+
+### Accessing Logs from Any Server
+
+#### From CPU servers (dev_cpu/prod_cpu):
+```bash
+# Development environment
+tail -f /mnt/dev-shared/logs/backend.log
+tail -f /mnt/dev-shared/logs/gpu_http_server.log
+
+# Production environment  
+tail -f /mnt/CPU-GPU/logs/backend.log
+tail -f /mnt/CPU-GPU/logs/gpu_http_server.log
+
+# View both logs simultaneously
+tail -f /mnt/dev-shared/logs/*.log    # Development
+tail -f /mnt/CPU-GPU/logs/*.log       # Production
+```
+
+#### From GPU servers (dev_gpu/prod_gpu):
+```bash
+# Same commands work from GPU servers
+# Development
+tail -f /mnt/dev-shared/logs/backend.log
+tail -f /mnt/dev-shared/logs/gpu_http_server.log
+
+# Production
+tail -f /mnt/CPU-GPU/logs/backend.log
+tail -f /mnt/CPU-GPU/logs/gpu_http_server.log
+
+# Search for specific errors across all logs
+grep -i "error\|exception\|failed" /mnt/dev-shared/logs/*.log    # Development
+grep -i "error\|exception\|failed" /mnt/CPU-GPU/logs/*.log       # Production
+```
+
+### Environment-Specific Paths
+Use the correct shared filesystem path based on your environment:
+- **Development**: `/mnt/dev-shared/logs/`
+- **Production**: `/mnt/CPU-GPU/logs/`
+
+### Log Format
+All logs use consistent formatting:
+```
+2025-01-15 10:30:45,123 - service_name - INFO - Log message here
+```
+
+### Common Log Analysis Commands
+```bash
+# Show last 100 lines from all logs
+tail -n 100 /mnt/dev-shared/logs/*.log      # Development
+tail -n 100 /mnt/CPU-GPU/logs/*.log         # Production
+
+# Follow logs in real-time with timestamps
+tail -f /mnt/dev-shared/logs/*.log | ts '%Y-%m-%d %H:%M:%S'    # Development
+tail -f /mnt/CPU-GPU/logs/*.log | ts '%Y-%m-%d %H:%M:%S'       # Production
+
+# Find errors in the last hour
+find /mnt/dev-shared/logs/ -name "*.log" -mmin -60 -exec grep -H "ERROR\|CRITICAL" {} \;    # Development
+find /mnt/CPU-GPU/logs/ -name "*.log" -mmin -60 -exec grep -H "ERROR\|CRITICAL" {} \;       # Production
+
+# Monitor specific deck processing
+grep "deck.*123" /mnt/dev-shared/logs/gpu_http_server.log    # Development
+grep "deck.*123" /mnt/CPU-GPU/logs/gpu_http_server.log       # Production
+
+# Check service startup issues
+grep -A5 -B5 "Starting\|Failed to start" /mnt/dev-shared/logs/*.log    # Development
+grep -A5 -B5 "Starting\|Failed to start" /mnt/CPU-GPU/logs/*.log       # Production
+```
+
+### Benefits for Claude
+- **Cross-server access**: View backend logs from GPU servers and vice versa
+- **Centralized debugging**: All service logs in one location
+- **Persistent logging**: Logs survive service restarts and server reboots
+- **Real-time monitoring**: Use `tail -f` to watch logs during debugging
 
 ## Debugging Best Practices
 

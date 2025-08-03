@@ -27,7 +27,7 @@ shared_filesystem_path = os.getenv('SHARED_FILESYSTEM_MOUNT_PATH')
 if not shared_filesystem_path:
     raise ValueError("SHARED_FILESYSTEM_MOUNT_PATH environment variable is required but not set!")
 
-log_file_path = os.path.join(shared_filesystem_path, 'logs', 'gpu_processing.log')
+log_file_path = os.path.join(shared_filesystem_path, 'logs', 'gpu_http_server.log')
 
 # Ensure logs directory exists
 os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
@@ -44,7 +44,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Log the file location for debugging
-logger.info(f"GPU processing logs will be written to: {log_file_path}")
+logger.info(f"GPU HTTP server logs will be written to: {log_file_path}")
 
 app = Flask(__name__)
 
