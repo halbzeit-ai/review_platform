@@ -404,5 +404,155 @@ class EmailService:
         
         return self.send_email(email, subject, html_body, text_body)
 
+    def send_invitation_email(self, email: str, gp_name: str, project_name: str, invitation_url: str, language: str = "en") -> bool:
+        """Send project invitation email"""
+        
+        # Get translations using I18n service
+        subject = i18n_service.t("emails.invitation.subject", language)
+        title = i18n_service.t("emails.invitation.title", language)
+        greeting = i18n_service.t("emails.invitation.greeting", language)
+        invited_by_text = i18n_service.t("emails.invitation.invited_by", language).format(gp_name=gp_name)
+        description = i18n_service.t("emails.invitation.description", language)
+        button_text = i18n_service.t("emails.invitation.button_text", language)
+        important_text = i18n_service.t("emails.invitation.important", language)
+        expiry_text = i18n_service.t("emails.invitation.expiry", language)
+        fallback_text = i18n_service.t("emails.invitation.fallback", language)
+        footer_text = i18n_service.t("emails.invitation.footer", language).format(gp_name=gp_name)
+        support_text = i18n_service.t("emails.invitation.support", language)
+        
+        # HTML email template
+        html_body = f"""
+        <!DOCTYPE html>
+        <html lang="{language}">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Project Invitation - HALBZEIT AI</title>
+            <style>
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                }}
+                .header {{
+                    text-align: center;
+                    padding: 20px 0;
+                    border-bottom: 2px solid #1976d2;
+                }}
+                .logo {{
+                    font-size: 24px;
+                    font-weight: bold;
+                    color: #1976d2;
+                }}
+                .content {{
+                    padding: 30px 0;
+                }}
+                .invitation-title {{
+                    font-size: 20px;
+                    font-weight: bold;
+                    color: #1976d2;
+                    margin-bottom: 20px;
+                    text-align: center;
+                }}
+                .project-info {{
+                    background-color: #f5f5f5;
+                    padding: 15px;
+                    border-radius: 8px;
+                    margin: 20px 0;
+                }}
+                .cta-button {{
+                    display: inline-block;
+                    background-color: #1976d2;
+                    color: white;
+                    padding: 15px 30px;
+                    text-decoration: none;
+                    border-radius: 5px;
+                    margin: 20px 0;
+                    font-weight: bold;
+                    text-align: center;
+                }}
+                .important {{
+                    background-color: #fff3cd;
+                    border: 1px solid #ffeaa7;
+                    padding: 15px;
+                    border-radius: 5px;
+                    margin: 20px 0;
+                }}
+                .footer {{
+                    border-top: 1px solid #ddd;
+                    padding-top: 20px;
+                    margin-top: 30px;
+                    font-size: 12px;
+                    color: #666;
+                    text-align: center;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="logo">HALBZEIT AI</div>
+            </div>
+            
+            <div class="content">
+                <div class="invitation-title">{title}</div>
+                
+                <p>{greeting}</p>
+                
+                <p>{invited_by_text}</p>
+                
+                <div class="project-info">
+                    <strong>Project:</strong> {project_name}
+                </div>
+                
+                <p>{description}</p>
+                
+                <div style="text-align: center;">
+                    <a href="{invitation_url}" class="cta-button">{button_text}</a>
+                </div>
+                
+                <div class="important">
+                    <strong>{important_text}</strong><br>
+                    {expiry_text}
+                </div>
+                
+                <p>{fallback_text}</p>
+                <p><a href="{invitation_url}">{invitation_url}</a></p>
+            </div>
+            
+            <div class="footer">
+                <p>{footer_text}</p>
+                <p>{support_text}</p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Text version for email clients that don't support HTML
+        text_body = f"""
+        {title}
+        
+        {greeting}
+        
+        {invited_by_text}
+        
+        Project: {project_name}
+        
+        {description}
+        
+        {button_text}: {invitation_url}
+        
+        {important_text}
+        {expiry_text}
+        
+        {footer_text}
+        
+        HALBZEIT AI Team
+        """
+        
+        return self.send_email(email, subject, html_body, text_body)
+
 # Global email service instance
 email_service = EmailService()

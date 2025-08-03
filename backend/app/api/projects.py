@@ -16,7 +16,7 @@ import shutil
 from pathlib import Path
 
 from ..db.database import get_db
-from ..db.models import User
+from ..db.models import User, Project, ProjectMember
 from .auth import get_current_user
 from ..core.config import settings
 
@@ -1114,4 +1114,119 @@ async def delete_deck(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete deck"
+        )
+
+
+# Project Creation Models
+class CreateProjectRequest(BaseModel):
+    project_name: str = Field(..., min_length=1, max_length=255)
+    company_name: str = Field(..., min_length=1, max_length=255)
+    funding_round: Optional[str] = None
+    funding_sought: Optional[str] = None
+    invite_emails: Optional[List[str]] = []
+    invitation_language: Optional[str] = "en"
+
+class CreateProjectResponse(BaseModel):
+    project_id: int
+    company_id: str
+    project_name: str
+    owner_id: int
+    invitations_sent: int
+    project_url: str
+
+
+@router.post("/create", response_model=CreateProjectResponse)
+async def create_project(
+    request: CreateProjectRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new project and optionally invite users"""
+    try:
+        # Only GPs can create projects for other companies
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only GPs can create projects"
+            )
+        
+        # Generate company_id from company name
+        import re
+        company_id = re.sub(r'[^a-z0-9-]', '', request.company_name.lower().replace(' ', '-'))
+        
+        # Check if project already exists
+        existing_project = db.query(Project).filter(
+            Project.company_id == company_id,
+            Project.project_name == request.project_name
+        ).first()
+        
+        if existing_project:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="A project with this name already exists for this company"
+            )
+        
+        # Create the project
+        new_project = Project(
+            company_id=company_id,
+            project_name=request.project_name,
+            funding_round=request.funding_round,
+            funding_sought=request.funding_sought,
+            owner_id=current_user.id,
+            is_test=False,
+            is_active=True
+        )
+        
+        db.add(new_project)
+        db.commit()
+        db.refresh(new_project)
+        
+        # Add creator as project member with owner role
+        owner_member = ProjectMember(
+            project_id=new_project.id,
+            user_id=current_user.id,
+            role="owner",
+            added_by_id=current_user.id
+        )
+        db.add(owner_member)
+        db.commit()
+        
+        # Send invitations if provided
+        invitations_sent = 0
+        if request.invite_emails:
+            try:
+                from app.services.invitation_service import invite_users_to_project
+                invitations = invite_users_to_project(
+                    db=db,
+                    project_id=new_project.id,
+                    emails=request.invite_emails,
+                    invited_by=current_user
+                )
+                invitations_sent = len(invitations)
+            except Exception as e:
+                logger.warning(f"Failed to send invitations for project {new_project.id}: {e}")
+                # Don't fail project creation if invitations fail
+        
+        # Generate project URL
+        project_url = f"/admin/project/{new_project.id}/startup-view"
+        
+        logger.info(f"Created project {new_project.id} ({request.project_name}) for company {company_id}")
+        
+        return CreateProjectResponse(
+            project_id=new_project.id,
+            company_id=company_id,
+            project_name=request.project_name,
+            owner_id=current_user.id,
+            invitations_sent=invitations_sent,
+            project_url=project_url
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating project: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create project"
         )

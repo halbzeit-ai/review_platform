@@ -28,6 +28,25 @@
     "login_button": "Bei Ihrem Konto anmelden",
     "excited": "Wir freuen uns darauf, Ihnen wertvolles Feedback zu Ihrem Startup zu geben!"
   },
+  "invitation": {
+    "subject": "Sie wurden zu HALBZEIT AI Review Platform eingeladen",
+    "title": "🚀 Sie wurden zu HALBZEIT AI eingeladen",
+    "greeting": "Hallo,",
+    "invited_by": "{gp_name} hat Sie eingeladen, an Ihrem Startup-Projekt bei HALBZEIT AI mitzuarbeiten.",
+    "description": "HALBZEIT AI ist eine Plattform, die KI-gestützte Analysen und Feedback für Startup-Pitch-Decks bietet und Ihnen hilft, Ihre Präsentation zu verfeinern und Ihre Finanzierungsreise zu beschleunigen.",
+    "button_text": "Einladung annehmen & Passwort festlegen",
+    "important": "Wichtig:",
+    "expiry": "Diese Einladung läuft in 7 Tagen ab. Danach müssen Sie eine neue Einladung von Ihrem GP anfordern.",
+    "fallback": "Wenn die Schaltfläche oben nicht funktioniert, können Sie diesen Link kopieren und in Ihren Browser einfügen:",
+    "footer": "Diese Einladung wurde von HALBZEIT AI im Auftrag von {gp_name} gesendet",
+    "support": "Wenn Sie Fragen haben, wenden Sie sich bitte an Ihren GP oder antworten Sie auf diese E-Mail.",
+    "text_greeting": "Hallo,",
+    "text_invited_by": "{gp_name} hat Sie eingeladen, an Ihrem Startup-Projekt bei HALBZEIT AI mitzuarbeiten.",
+    "text_description": "HALBZEIT AI bietet KI-gestützte Analysen und Feedback für Startup-Pitch-Decks.",
+    "text_accept": "Um diese Einladung anzunehmen und Ihr Konto einzurichten, klicken Sie bitte auf den folgenden Link:",
+    "text_expiry": "Diese Einladung läuft in 7 Tagen ab.",
+    "text_regards": "Mit freundlichen Grüßen,\nDas HALBZEIT AI Team"
+  },
   "password_reset": {
     "subject": "Setzen Sie Ihr HALBZEIT AI Passwort zurück",
     "title": "🔒 Passwort zurücksetzen",

@@ -22,6 +22,7 @@ import Profile from './pages/Profile';
 import StartupDashboardRedirect from './components/StartupDashboardRedirect';
 import DashboardRedirect from './components/DashboardRedirect';
 import StartupJourney from './pages/StartupJourney';
+import InvitationAcceptance from './pages/InvitationAcceptance';
 
 function App() {
   return (
@@ -51,6 +52,7 @@ function App() {
           <Route path="/funding-journey" element={<StartupJourney />} />
           <Route path="/funding-journey/:projectId" element={<StartupJourney />} />
           <Route path="/admin/project/:projectId/startup-view" element={<ProjectDashboard />} />
+          <Route path="/invitation/:token" element={<InvitationAcceptance />} />
           <Route path="/profile" element={<Profile />} />
         </Routes>
       </BrowserRouter>

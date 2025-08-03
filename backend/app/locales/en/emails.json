@@ -28,6 +28,25 @@
     "login_button": "Login to Your Account",
     "excited": "We're excited to help you get valuable feedback on your startup!"
   },
+  "invitation": {
+    "subject": "You're invited to HALBZEIT AI Review Platform",
+    "title": "🚀 You're invited to HALBZEIT AI",
+    "greeting": "Hello,",
+    "invited_by": "{gp_name} has invited you to collaborate on your startup project at HALBZEIT AI.",
+    "description": "HALBZEIT AI is a platform that provides AI-powered analysis and feedback for startup pitch decks, helping you refine your presentation and accelerate your funding journey.",
+    "button_text": "Accept Invitation & Set Password",
+    "important": "Important:",
+    "expiry": "This invitation will expire in 7 days. After that, you'll need to request a new invitation from your GP.",
+    "fallback": "If the button above doesn't work, you can copy and paste this link into your browser:",
+    "footer": "This invitation was sent by HALBZEIT AI on behalf of {gp_name}",
+    "support": "If you have any questions, please contact your GP or reply to this email.",
+    "text_greeting": "Hello,",
+    "text_invited_by": "{gp_name} has invited you to collaborate on your startup project at HALBZEIT AI.",
+    "text_description": "HALBZEIT AI provides AI-powered analysis and feedback for startup pitch decks.",
+    "text_accept": "To accept this invitation and set up your account, please click the link below:",
+    "text_expiry": "This invitation will expire in 7 days.",
+    "text_regards": "Best regards,\nThe HALBZEIT AI Team"
+  },
   "password_reset": {
     "subject": "Reset your HALBZEIT AI password",
     "title": "🔒 Password Reset Request",

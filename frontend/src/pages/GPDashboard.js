@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, Box, Snackbar, Alert, Tabs, Tab, Divider, LinearProgress, Chip, Dialog, DialogContent, DialogTitle, Select, MenuItem, FormControl, InputLabel, TextField, Card, CardContent, CardMedia, List, ListItem, ListItemText } from '@mui/material';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { Settings, Assignment, Storage, People } from '@mui/icons-material';
+import { Settings, Assignment, Storage, People, Add } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { getPerformanceMetrics, getAllProjects, getProjectJourney, updateStageStatus } from '../services/api';
+import ProjectInvitationManager from '../components/ProjectInvitationManager';
+import CreateProjectDialog from '../components/CreateProjectDialog';
 
 function GPDashboard() {
   const { t } = useTranslation('dashboard');
@@ -30,6 +32,8 @@ function GPDashboard() {
   const [journeyDialogOpen, setJourneyDialogOpen] = useState(false);
   const [stageUpdateDialog, setStageUpdateDialog] = useState({ open: false, stage: null, projectId: null });
   const [thumbnailUrls, setThumbnailUrls] = useState({});
+  const [invitationDialog, setInvitationDialog] = useState({ open: false, project: null });
+  const [createProjectDialog, setCreateProjectDialog] = useState(false);
 
 
 
@@ -138,6 +142,33 @@ function GPDashboard() {
   const handleOpenProject = (projectId) => {
     // Navigate to startup view of the project for GP
     navigate(`/admin/project/${projectId}/startup-view`);
+  };
+
+  const handleOpenInvitations = (project) => {
+    setInvitationDialog({ open: true, project });
+  };
+
+  const handleCloseInvitations = () => {
+    setInvitationDialog({ open: false, project: null });
+  };
+
+  const handleOpenCreateProject = () => {
+    setCreateProjectDialog(true);
+  };
+
+  const handleCloseCreateProject = () => {
+    setCreateProjectDialog(false);
+  };
+
+  const handleProjectCreated = (projectData) => {
+    // Refresh the projects list
+    fetchProjects();
+    // Show success message
+    setSnackbar({
+      open: true,
+      message: `Project "${projectData.project_name}" created successfully!`,
+      severity: 'success'
+    });
   };
 
   useEffect(() => {
@@ -407,13 +438,23 @@ function GPDashboard() {
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() => handleViewProjectJourney(project.id)}
-                    >
-                      View Journey
-                    </Button>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => handleViewProjectJourney(project.id)}
+                      >
+                        View Journey
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        color="primary"
+                        onClick={() => handleOpenInvitations(project)}
+                      >
+                        Invite Person
+                      </Button>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))}
@@ -479,6 +520,53 @@ function GPDashboard() {
           </Typography>
         ) : (
           <Grid container spacing={3}>
+            {/* Create Project Card */}
+            <Grid item xs={12} sm={6} md={4} lg={3}>
+              <Card 
+                sx={{ 
+                  height: '100%', 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  cursor: 'pointer',
+                  border: '2px dashed',
+                  borderColor: 'primary.main',
+                  backgroundColor: 'primary.50',
+                  '&:hover': {
+                    backgroundColor: 'primary.100',
+                    transform: 'translateY(-2px)',
+                    boxShadow: 3
+                  },
+                  transition: 'all 0.3s ease'
+                }}
+                onClick={handleOpenCreateProject}
+              >
+                <Box
+                  sx={{
+                    height: 160,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'column',
+                    color: 'primary.main'
+                  }}
+                >
+                  <Add sx={{ fontSize: 48, mb: 1 }} />
+                  <Typography variant="h6" color="primary.main" sx={{ fontWeight: 600 }}>
+                    Create Project
+                  </Typography>
+                </Box>
+                
+                <CardContent sx={{ flexGrow: 1, p: 2, textAlign: 'center' }}>
+                  <Typography variant="body2" color="primary.main" sx={{ mb: 1 }}>
+                    Start a new project and invite startup teams
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Click to create a new project with funding information and invite people to join
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            
             {projects.map((project) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={project.id}>
                 <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -563,9 +651,18 @@ function GPDashboard() {
                         size="small"
                         fullWidth
                         onClick={() => handleOpenProject(project.id)}
-                        sx={{ textTransform: 'none' }}
+                        sx={{ textTransform: 'none', mb: 1 }}
                       >
                         Open Project
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                        onClick={() => handleOpenInvitations(project)}
+                        sx={{ textTransform: 'none' }}
+                      >
+                        Invite Person
                       </Button>
                     </Box>
                   </CardContent>
@@ -821,6 +918,16 @@ function GPDashboard() {
       {/* Dialog Components */}
       <ProjectJourneyDialog />
       <StageUpdateDialog />
+      <ProjectInvitationManager
+        open={invitationDialog.open}
+        onClose={handleCloseInvitations}
+        project={invitationDialog.project}
+      />
+      <CreateProjectDialog
+        open={createProjectDialog}
+        onClose={handleCloseCreateProject}
+        onProjectCreated={handleProjectCreated}
+      />
 
       {/* Success/Error Snackbar */}
       <Snackbar

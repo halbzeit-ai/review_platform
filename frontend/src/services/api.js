@@ -185,4 +185,24 @@ export const updateStageStatus = (projectId, stageId, statusData) =>
 export const reinitializeProjectStages = (projectId) =>
   api.post(`/funding-stages/projects/${projectId}/reinitialize-stages`);
 
+// Invitation API
+export const sendProjectInvitations = (projectId, invitationData) =>
+  api.post(`/projects/${projectId}/invite`, invitationData);
+
+export const getInvitationDetails = (token) =>
+  api.get(`/invitation/${token}`);
+
+export const acceptInvitation = (token, acceptData) =>
+  api.post(`/invitation/${token}/accept`, acceptData);
+
+export const getProjectInvitations = (projectId) =>
+  api.get(`/projects/${projectId}/invitations`);
+
+export const cancelInvitation = (invitationId) =>
+  api.delete(`/invitation/${invitationId}`);
+
+// Project Creation API
+export const createProject = (projectData) =>
+  api.post('/projects/create', projectData);
+
 export default api;

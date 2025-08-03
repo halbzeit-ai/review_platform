@@ -26,6 +26,9 @@ class User(Base):
     verification_token_expires = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login = Column(DateTime, nullable=True)
+    
+    # Relationships
+    owned_projects = relationship("Project", back_populates="owner", foreign_keys="Project.owner_id")
 
 class PitchDeck(Base):
     __tablename__ = "pitch_decks"
@@ -97,12 +100,14 @@ class Project(Base):
     tags = Column(Text, nullable=True)  # JSON for project tags
     is_test = Column(Boolean, default=False)  # Flag for test/dojo data
     is_active = Column(Boolean, default=True)
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Project owner
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
     documents = relationship("ProjectDocument", back_populates="project")
     stages = relationship("ProjectStage", back_populates="project", foreign_keys="ProjectStage.project_id")
+    owner = relationship("User", back_populates="owned_projects", foreign_keys=[owner_id])
     interactions = relationship("ProjectInteraction", back_populates="project")
     current_stage = relationship("ProjectStage", foreign_keys=[current_stage_id], post_update=True)
 
@@ -467,3 +472,37 @@ class TestProject(Base):
     updated_at = Column(DateTime)
     tags = Column(postgresql.JSONB)
     is_test = Column(Boolean)
+
+class ProjectInvitation(Base):
+    __tablename__ = "project_invitations"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    invitation_token = Column(String(255), unique=True, nullable=False, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    email = Column(String(255), nullable=False, index=True)
+    invited_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    status = Column(String(50), default="pending", index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    accepted_at = Column(DateTime)
+    expires_at = Column(DateTime, nullable=False)
+    accepted_by_id = Column(Integer, ForeignKey("users.id"))
+    
+    # Relationships
+    project = relationship("Project", backref="invitations")
+    invited_by = relationship("User", foreign_keys=[invited_by_id])
+    accepted_by = relationship("User", foreign_keys=[accepted_by_id])
+
+class ProjectMember(Base):
+    __tablename__ = "project_members"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    role = Column(String(50), default="member")
+    added_by_id = Column(Integer, ForeignKey("users.id"))
+    added_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    project = relationship("Project", backref="members")
+    user = relationship("User", foreign_keys=[user_id], backref="project_memberships")
+    added_by = relationship("User", foreign_keys=[added_by_id])
