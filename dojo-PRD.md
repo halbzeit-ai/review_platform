@@ -1,4 +1,13 @@
-Idea behind the dojo part of the system. 
+Idea behind the dojo part of the system:
+the goal of the dojo processing is that a GP can view a processing result as if they are a startup 
+and to see what the startup for this deck would experience. 
+when changing a prompt or a model, the GP would see that the texts are shorter, have a different quality or the scoring changes.
+
+the idea is that the GP is "impersonating" a startup and can use all of the ui and workflows that a startup has, 
+not only the results viewer but really the whole project. 
+in the future, we will have more document types than only pitchdecks, for example financial reports and research papers. 
+so we need to be able to view all of these like a startup does.
+
 - This part is intended for GPs to work on a large number of decks to improve prompts.
 - for this, the GP can upload zip files and will then have a lot of pdf files. this is done in the "training data & management" tab of dojo
 - step 1: next the GP can generate a random sub-sample of the PDF pool
@@ -17,3 +26,18 @@ Idea behind the dojo part of the system.
 - here, the GP can click on the deck viewer that will view the visual analysis from step 2 together with the images extracted from the deck.
 - the GP can also open the results viewer to see all results from step 4.
 - finally, the GP can remove the experimental dojo companies again in the "training data & management" tab of dojo
+
+here's another description from the discussion with claude code:
+- dojo is built in a way that selecting a sample generates a new experiment. 
+- when one or more processing steps are done, the user can to the experiments history tab, 
+- there, he can select an exeriment leading him to the experiment results. 
+- the experiment results are a modal that shows each company of the sample incl company name, class, funding sought and the offering. 
+- this is very handy to understand whether the obligatory extractions work. 
+- if the user likes the results of the experiment overview, he can click "add dojo companies" on the right lower side. 
+- this function will add the companies of this experiment as projects to the gallery view. 
+- thus, dojo is not automatically populating the gallery, the user is in control and will only do so when the table of experiment results is satisfactory. 
+- in the GP dashboard, you see the piechart that shows the distribution of the companies in the project database. 
+- there, the user can select whether to see dojo companies ("include test data", we should rename that to "include dojo companies"). 
+- if this is done, the gallery view will show legit startups as well as dojo companies. 
+- finally, when the user is done with this dojo sample and companies, he can remove all the dojo companies by going to the dojo ui, navigating to "training  data & management" and hitting "clean up dojo projects"
+- this will remove the dojo companies from the project database. 
