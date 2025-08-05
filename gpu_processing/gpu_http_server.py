@@ -561,9 +561,14 @@ class GPUHTTPServer:
                         # Create analyzer - it will use configured models and prompts from database
                         analyzer = HealthcareTemplateAnalyzer()
                         
-                        # Override the vision model and prompt for this specific analysis
-                        analyzer.vision_model = vision_model
-                        analyzer.image_analysis_prompt = analysis_prompt
+                        # Only override if explicitly provided (not None)
+                        if vision_model:
+                            analyzer.vision_model = vision_model
+                            logger.info(f"Overriding vision model to: {vision_model}")
+                        
+                        if analysis_prompt:
+                            analyzer.image_analysis_prompt = analysis_prompt
+                            logger.info(f"Overriding analysis prompt")
                         
                         # Full file path for processing
                         from pathlib import Path
