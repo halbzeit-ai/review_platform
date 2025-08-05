@@ -64,19 +64,41 @@ async def upload_document_robust(
         db.commit()
         db.refresh(pitch_deck)
         
+        # Get user's template configuration (for GPs)
+        template_config = {}
+        if current_user.role == "gp":
+            try:
+                template_config_query = text("""
+                    SELECT use_single_template, selected_template_id 
+                    FROM template_configurations 
+                    WHERE user_id = :user_id
+                """)
+                config_result = db.execute(template_config_query, {"user_id": current_user.id}).fetchone()
+                if config_result:
+                    template_config = {
+                        "use_single_template": config_result[0],
+                        "selected_template_id": config_result[1]
+                    }
+                    logger.info(f"Using template config for user {current_user.email}: {template_config}")
+            except Exception as e:
+                logger.warning(f"Could not load template config for user {current_user.id}: {e}")
+
         # Add to robust processing queue
+        processing_options = {
+            "generate_thumbnails": True,
+            "generate_feedback": True,
+            "user_id": current_user.id,
+            "upload_timestamp": pitch_deck.created_at.isoformat()
+        }
+        processing_options.update(template_config)  # Add template config if available
+        
         task_id = processing_queue_manager.add_task(
             pitch_deck_id=pitch_deck.id,
             file_path=file_path,
             company_id=company_id,
             task_type="pdf_analysis",
             priority=TaskPriority.NORMAL,
-            processing_options={
-                "generate_thumbnails": True,
-                "generate_feedback": True,
-                "user_id": current_user.id,
-                "upload_timestamp": pitch_deck.created_at.isoformat()
-            },
+            processing_options=processing_options,
             db=db
         )
         

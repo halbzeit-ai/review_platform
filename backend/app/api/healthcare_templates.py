@@ -1121,3 +1121,124 @@ async def update_template_complete(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update template with chapters and questions"
         )
+
+# Template Configuration Models
+class TemplateConfigRequest(BaseModel):
+    use_single_template: bool
+    selected_template_id: Optional[int] = None
+
+class TemplateConfigResponse(BaseModel):
+    use_single_template: bool
+    selected_template_id: Optional[int]
+    selected_template_name: Optional[str]
+
+@router.get("/template-config", response_model=TemplateConfigResponse)
+async def get_template_config(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get current user's template configuration"""
+    try:
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only GPs can access template configuration"
+            )
+        
+        # Get user's template configuration
+        query = text("""
+            SELECT tc.use_single_template, tc.selected_template_id, at.name as template_name
+            FROM template_configurations tc
+            LEFT JOIN analysis_templates at ON tc.selected_template_id = at.id
+            WHERE tc.user_id = :user_id
+        """)
+        
+        result = db.execute(query, {"user_id": current_user.id}).fetchone()
+        
+        if result:
+            return TemplateConfigResponse(
+                use_single_template=result[0],
+                selected_template_id=result[1],
+                selected_template_name=result[2]
+            )
+        else:
+            # Default configuration - use classification mode
+            return TemplateConfigResponse(
+                use_single_template=False,
+                selected_template_id=None,
+                selected_template_name=None
+            )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting template configuration: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve template configuration"
+        )
+
+@router.post("/template-config")
+async def save_template_config(
+    config: TemplateConfigRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Save user's template configuration"""
+    try:
+        if current_user.role != "gp":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only GPs can modify template configuration"
+            )
+        
+        # Validate template ID if provided
+        if config.use_single_template and config.selected_template_id:
+            template_check = db.execute(
+                text("SELECT id FROM analysis_templates WHERE id = :template_id"),
+                {"template_id": config.selected_template_id}
+            ).fetchone()
+            
+            if not template_check:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid template ID"
+                )
+        
+        # Upsert configuration
+        upsert_query = text("""
+            INSERT INTO template_configurations (user_id, use_single_template, selected_template_id)
+            VALUES (:user_id, :use_single_template, :selected_template_id)
+            ON CONFLICT (user_id) 
+            DO UPDATE SET 
+                use_single_template = EXCLUDED.use_single_template,
+                selected_template_id = EXCLUDED.selected_template_id,
+                updated_at = CURRENT_TIMESTAMP
+        """)
+        
+        db.execute(upsert_query, {
+            "user_id": current_user.id,
+            "use_single_template": config.use_single_template,
+            "selected_template_id": config.selected_template_id if config.use_single_template else None
+        })
+        
+        db.commit()
+        
+        mode = "Single Template" if config.use_single_template else "Classification"
+        logger.info(f"Template configuration updated for GP {current_user.email}: {mode}")
+        
+        return {
+            "message": "Template configuration saved successfully",
+            "use_single_template": config.use_single_template,
+            "selected_template_id": config.selected_template_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error saving template configuration: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to save template configuration"
+        )

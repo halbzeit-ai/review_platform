@@ -610,6 +610,40 @@ class HealthcareTemplateAnalyzer:
             logger.error(f"Error loading template from database: {e}")
             return self._get_fallback_template_config()
     
+    def _load_template_config_with_fallback(self, template_id: Optional[int] = None) -> Dict[str, Any]:
+        """Load template configuration with fallback to Standard Seven-Chapter Review if template is empty"""
+        if not template_id:
+            logger.warning("No template ID provided, using Standard Seven-Chapter Review as fallback")
+            return self._load_template_config(9)  # Standard Seven-Chapter Review template ID
+        
+        try:
+            # First, try to load the requested template
+            template_config = self._load_template_config(template_id)
+            
+            # Check if the template has any chapters
+            if not template_config.get("chapters") or len(template_config["chapters"]) == 0:
+                logger.warning(f"Template {template_id} has no chapters, falling back to Standard Seven-Chapter Review")
+                return self._load_template_config(9)  # Standard Seven-Chapter Review template ID
+            
+            # Check if any chapter has questions
+            has_questions = False
+            for chapter in template_config["chapters"]:
+                if chapter.get("questions") and len(chapter["questions"]) > 0:
+                    has_questions = True
+                    break
+            
+            if not has_questions:
+                logger.warning(f"Template {template_id} has no questions in any chapter, falling back to Standard Seven-Chapter Review")
+                return self._load_template_config(9)  # Standard Seven-Chapter Review template ID
+            
+            logger.info(f"Using template {template_id} with {len(template_config['chapters'])} chapters")
+            return template_config
+            
+        except Exception as e:
+            logger.error(f"Error loading template {template_id} with fallback: {e}")
+            logger.info("Falling back to Standard Seven-Chapter Review template")
+            return self._load_template_config(9)  # Standard Seven-Chapter Review template ID
+    
     def _get_fallback_template_config(self) -> Dict[str, Any]:
         """Comprehensive fallback template configuration based on standard pitch deck analysis"""
         return {
@@ -924,7 +958,7 @@ class HealthcareTemplateAnalyzer:
             ]
         }
     
-    def analyze_pdf(self, pdf_path: str, company_id: str = None, progress_callback=None, deck_id=None) -> Dict[str, Any]:
+    def analyze_pdf(self, pdf_path: str, company_id: str = None, progress_callback=None, deck_id=None, processing_options: Dict = None) -> Dict[str, Any]:
         """Main method to analyze a healthcare startup pitch deck"""
         start_time = time.time()
         logger.info(f"Starting healthcare template analysis of PDF: {pdf_path}")
@@ -976,15 +1010,24 @@ class HealthcareTemplateAnalyzer:
                 # Step 2.7: Extract deck date
                 self._extract_deck_date()
                 
-                # Step 3: Classify startup based on company offering
+                # Step 3: ALWAYS run classification (required for dojo experiments and analytics)
                 self.classification_result = self._classify_startup(self.company_offering)
                 logger.info(f"Startup classified as: {self.classification_result.get('primary_sector')} "
                            f"({self.classification_result.get('confidence_score', 0):.2f} confidence)")
                 
-                # Step 4: Load appropriate template configuration
-                self.template_config = self._load_template_config(
-                    self.classification_result.get("recommended_template")
-                )
+                # Step 4: Determine template selection method (classification vs GP override)
+                if processing_options and processing_options.get('use_single_template') and processing_options.get('selected_template_id'):
+                    # Use GP-specified template override (but keep classification results)
+                    template_id = processing_options.get('selected_template_id')
+                    logger.info(f"Template selection: GP override mode - using template_id={template_id}")
+                    logger.info(f"Classification result stored: {self.classification_result.get('primary_sector')} "
+                               f"(would have recommended template {self.classification_result.get('recommended_template')})")
+                    self.template_config = self._load_template_config_with_fallback(template_id)
+                else:
+                    # Use classification-recommended template
+                    template_id = self.classification_result.get("recommended_template")
+                    logger.info(f"Template selection: Classification mode - using recommended template_id={template_id}")
+                    self.template_config = self._load_template_config_with_fallback(template_id)
             
             # Step 5: Execute template-based analysis
             self._execute_template_analysis()

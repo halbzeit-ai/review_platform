@@ -62,7 +62,9 @@ import {
   updatePipelinePrompt,
   resetPipelinePrompt,
   deleteTemplate,
-  deleteCustomization
+  deleteCustomization,
+  getTemplateConfig,
+  saveTemplateConfig
 } from '../services/api';
 
 const TemplateManagement = () => {
@@ -80,9 +82,53 @@ const TemplateManagement = () => {
   // Classification settings state
   const [useClassification, setUseClassification] = useState(true);  // Default to single template mode
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [configSaving, setConfigSaving] = useState(false);
   
-  
-  
+  // Load template configuration
+  const loadTemplateConfig = async () => {
+    try {
+      const response = await getTemplateConfig();
+      const config = response.data;
+      setUseClassification(config.use_single_template);
+      setSelectedTemplateId(config.selected_template_id || '');
+    } catch (err) {
+      console.error('Error loading template configuration:', err);
+      // Use defaults if config doesn't exist yet
+      setUseClassification(false);  // Default to classification mode
+      setSelectedTemplateId('');
+    }
+  };
+
+  // Save template configuration
+  const saveTemplateConfigHandler = async () => {
+    try {
+      setConfigSaving(true);
+      const config = {
+        use_single_template: useClassification,
+        selected_template_id: useClassification ? parseInt(selectedTemplateId) : null
+      };
+      
+      await saveTemplateConfig(config);
+      console.log('Template configuration saved successfully');
+      
+    } catch (err) {
+      console.error('Error saving template configuration:', err);
+      setError('Failed to save template configuration: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setConfigSaving(false);
+    }
+  };
+
+  // Auto-save when settings change
+  useEffect(() => {
+    if (templates.length > 0) {  // Only save after templates are loaded
+      const timeoutId = setTimeout(() => {
+        saveTemplateConfigHandler();
+      }, 1000);  // Debounce saves by 1 second
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [useClassification, selectedTemplateId, templates.length]);
   
   // Dialog states
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
@@ -119,6 +165,9 @@ const TemplateManagement = () => {
         getPipelinePrompts(),
         getMyCustomizations()
       ]);
+      
+      // Load template configuration separately (don't fail if it doesn't exist)
+      await loadTemplateConfig();
       
       // Extract data from API responses
       const sectorsData = sectorsResponse.data || sectorsResponse;

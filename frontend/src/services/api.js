@@ -239,4 +239,11 @@ export const getDeckFeedbackSummary = (companyId, deckId) =>
 export const addManualFeedback = (companyId, deckId, slideNumber, feedbackData) =>
   api.post(`/feedback/projects/${companyId}/decks/${deckId}/slides/${slideNumber}/feedback`, feedbackData);
 
+// Template Configuration API
+export const getTemplateConfig = () =>
+  api.get('/healthcare-templates/template-config');
+
+export const saveTemplateConfig = (config) =>
+  api.post('/healthcare-templates/template-config', config);
+
 export default api;
