@@ -29,6 +29,9 @@ def image_to_byte_array(image: Image) -> bytes:
 
 def get_information_for_image(image_bytes, prompt, model):
     """Generate description for a single image using Ollama"""
+    logger.info(f"🖼️ Processing image with model: {model}")
+    logger.info(f"📝 Using prompt: {prompt[:100]}...")
+    
     full_response = ''
     try:
         for response in ollama.generate(model=model, 
@@ -38,6 +41,7 @@ def get_information_for_image(image_bytes, prompt, model):
             full_response += response['response']
     except Exception as e:
         logger.error(f"Error processing image with Ollama: {e}")
+        logger.error(f"Model requested: {model}")
         raise
     
     return full_response
@@ -70,6 +74,12 @@ class HealthcareTemplateAnalyzer:
             self.vision_model = self.get_model_by_type("vision") or os.getenv('DEFAULT_VISION_MODEL', 'gemma3:12b')
             self.text_model = text_model_override or self.get_model_by_type("text") or os.getenv('DEFAULT_TEXT_MODEL', 'gemma3:12b')
             self.scoring_model = scoring_model_override or self.get_model_by_type("scoring") or os.getenv('DEFAULT_SCORING_MODEL', 'phi4:latest')
+        
+        # Debug logging to track model selection
+        logger.info(f"🎯 Model Configuration Complete:")
+        logger.info(f"   Vision Model: {self.vision_model}")
+        logger.info(f"   Text Model: {self.text_model}")
+        logger.info(f"   Scoring Model: {self.scoring_model}")
         
         # Set model-appropriate parameters
         self.model_options = self._get_model_options()
