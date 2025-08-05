@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
 from .core.logging_config import setup_shared_logging
-from .api import auth, decks, reviews, questions, documents, config, healthcare_templates, pipeline, projects, internal, dojo, project_management, project_stages, dojo_experiments, funding_stages, invitations
+from .api import auth, decks, reviews, questions, documents, config, healthcare_templates, pipeline, projects, internal, dojo, project_management, project_stages, dojo_experiments, funding_stages, invitations, feedback
 from .db.models import Base
 from .db.database import engine
 
@@ -40,6 +40,7 @@ app.include_router(project_stages.router, prefix=settings.API_V1_STR)
 app.include_router(dojo_experiments.router, prefix=settings.API_V1_STR)
 app.include_router(funding_stages.router, prefix=settings.API_V1_STR)
 app.include_router(invitations.router, prefix=settings.API_V1_STR)
+app.include_router(feedback.router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 def read_root():

@@ -22,16 +22,94 @@ import {
   NavigateBefore as NavigateBeforeIcon,
   NavigateNext as NavigateNextIcon,
   ZoomIn as ZoomInIcon,
-  ZoomOut as ZoomOutIcon
+  ZoomOut as ZoomOutIcon,
+  SmartToy as SmartToyIcon,
+  CheckCircle as CheckCircleIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { 
-  getProjectDeckAnalysis
+  getProjectDeckAnalysis,
+  getSlideFeedback
 } from '../services/api';
 import api from '../services/api';
 import { formatMarkdownText } from '../utils/markdownFormatter';
+
+// Slide Feedback Display Component
+const SlideFeedbackDisplay = ({ slideNumber, feedback, loading = false }) => {
+  const { t } = useTranslation(['deckViewer', 'common']);
+  
+  if (loading) {
+    return (
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+          <SmartToyIcon sx={{ mr: 1, color: 'primary.main' }} />
+          AI Feedback
+        </Typography>
+        <Paper sx={{ p: 2, backgroundColor: 'grey.50' }}>
+          <Skeleton variant="text" width="80%" />
+          <Skeleton variant="text" width="60%" />
+        </Paper>
+      </Box>
+    );
+  }
+  
+  if (!feedback) {
+    return null;
+  }
+  
+  if (!feedback.has_issues) {
+    return (
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+          <SmartToyIcon sx={{ mr: 1, color: 'primary.main' }} />
+          AI Feedback
+        </Typography>
+        <Paper sx={{ 
+          p: 2, 
+          backgroundColor: 'success.light', 
+          borderLeft: '4px solid',
+          borderLeftColor: 'success.main'
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', color: 'success.contrastText' }}>
+            <CheckCircleIcon sx={{ mr: 1, fontSize: 20 }} />
+            <Typography variant="body2" fontWeight="medium">
+              No issues identified - this slide is clear and effective
+            </Typography>
+          </Box>
+        </Paper>
+      </Box>
+    );
+  }
+  
+  return (
+    <Box sx={{ mb: 3 }}>
+      <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+        <SmartToyIcon sx={{ mr: 1, color: 'primary.main' }} />
+        AI Feedback
+      </Typography>
+      <Paper sx={{ 
+        p: 2, 
+        backgroundColor: 'info.light',
+        borderLeft: '4px solid',
+        borderLeftColor: 'info.main'
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+          <SmartToyIcon sx={{ mr: 1, color: 'info.main', fontSize: 20, mt: 0.5 }} />
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="subtitle2" color="info.main" sx={{ mb: 1 }}>
+              Suggestions for improvement:
+            </Typography>
+            <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+              {feedback.feedback_text}
+            </Typography>
+          </Box>
+        </Box>
+      </Paper>
+    </Box>
+  );
+};
 
 const DeckViewer = () => {
   const { t } = useTranslation(['deckViewer', 'common']);
@@ -47,6 +125,10 @@ const DeckViewer = () => {
   const [deckAnalysis, setDeckAnalysis] = useState(null);
   const [slides, setSlides] = useState([]);
   const [imageUrls, setImageUrls] = useState({});
+  
+  // Slide feedback data
+  const [slideFeedback, setSlideFeedback] = useState({});
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
   
   const [breadcrumbs, setBreadcrumbs] = useState([
     { label: t('common:navigation.dashboard'), path: '/dashboard' },
@@ -95,6 +177,9 @@ const DeckViewer = () => {
       // Load slide images
       loadSlideImages(analysisData.slides || []);
       
+      // Load slide feedback
+      loadSlideFeedback();
+      
     } catch (err) {
       console.error('Error loading deck analysis:', err);
       setError(err.response?.data?.detail || err.message || 'Failed to load deck analysis');
@@ -130,6 +215,30 @@ const DeckViewer = () => {
     }
     
     setImageUrls(imageUrlsTemp);
+  };
+
+  const loadSlideFeedback = async () => {
+    try {
+      setFeedbackLoading(true);
+      const response = await getSlideFeedback(companyId, deckId);
+      const feedbackData = response.data || response;
+      
+      // Convert feedback array to object keyed by slide number for easy lookup
+      const feedbackBySlide = {};
+      if (feedbackData.feedback) {
+        feedbackData.feedback.forEach(feedback => {
+          feedbackBySlide[feedback.slide_number] = feedback;
+        });
+      }
+      
+      setSlideFeedback(feedbackBySlide);
+      
+    } catch (err) {
+      console.error('Error loading slide feedback:', err);
+      // Don't show error for feedback - it's optional
+    } finally {
+      setFeedbackLoading(false);
+    }
   };
 
   const handleSlideChange = (slideIndex) => {
@@ -456,6 +565,13 @@ const DeckViewer = () => {
                     </Box>
                   )}
                 </Box>
+
+                {/* Slide Feedback */}
+                <SlideFeedbackDisplay 
+                  slideNumber={currentSlideData.page_number}
+                  feedback={slideFeedback[currentSlideData.page_number]}
+                  loading={feedbackLoading}
+                />
 
                 <Divider sx={{ mb: 3 }} />
 

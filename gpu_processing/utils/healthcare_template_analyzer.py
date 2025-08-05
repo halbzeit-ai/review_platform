@@ -959,6 +959,9 @@ class HealthcareTemplateAnalyzer:
             else:
                 logger.info(f"Using cached visual analysis results ({len(self.visual_analysis_results)} pages)")
             
+            # Step 1.5: Generate slide feedback based on visual analysis
+            self._generate_slide_feedback()
+            
             # Step 2: Generate company offering summary
             if not self.company_offering:
                 # Step 2: Generate company offering summary
@@ -1054,6 +1057,94 @@ class HealthcareTemplateAnalyzer:
                 
         except Exception as e:
             logger.error(f"Error in visual content analysis: {e}")
+            raise
+    
+    def _generate_slide_feedback(self):
+        """Generate AI feedback for each slide based on visual analysis"""
+        if not self.visual_analysis_results:
+            logger.warning("No visual analysis results available for slide feedback generation")
+            return
+            
+        logger.info(f"🔍 Generating slide feedback for {len(self.visual_analysis_results)} slides")
+        
+        # Get slide feedback prompt
+        try:
+            slide_feedback_prompt = self._get_pipeline_prompt("slide_feedback")
+        except Exception as e:
+            logger.error(f"Failed to get slide feedback prompt: {e}")
+            return
+            
+        for slide_data in self.visual_analysis_results:
+            try:
+                slide_number = slide_data['page_number']
+                slide_description = slide_data['description']
+                deck_id = slide_data.get('deck_id')
+                
+                if not deck_id:
+                    logger.warning(f"No deck_id found for slide {slide_number}, skipping feedback generation")
+                    continue
+                
+                logger.info(f"📝 Generating feedback for slide {slide_number}")
+                
+                # Format the prompt with slide description
+                formatted_prompt = slide_feedback_prompt.replace("{slide_description}", slide_description)
+                
+                # Generate feedback using text model
+                feedback_response = self._safe_ollama_generate(
+                    model=self.text_model,
+                    prompt=formatted_prompt,
+                    options={"temperature": 0.7}
+                )
+                
+                feedback_text = feedback_response.get('response', '').strip()
+                
+                # Determine if slide has issues or is OK
+                has_issues = feedback_text.upper() != "SLIDE_OK"
+                
+                # Store feedback in database
+                self._store_slide_feedback(
+                    deck_id=deck_id,
+                    slide_number=slide_number,
+                    slide_filename=f"slide_{slide_number}.jpg",
+                    feedback_text=feedback_text if has_issues else None,
+                    has_issues=has_issues
+                )
+                
+                logger.info(f"✅ Slide {slide_number}: {'Issues identified' if has_issues else 'No issues found'}")
+                
+            except Exception as e:
+                logger.error(f"Error generating feedback for slide {slide_data.get('page_number', 'unknown')}: {e}")
+                continue
+                
+        logger.info("🎯 Slide feedback generation completed")
+    
+    def _store_slide_feedback(self, deck_id: int, slide_number: int, slide_filename: str, feedback_text: str = None, has_issues: bool = False):
+        """Store slide feedback in the database"""
+        try:
+            import psycopg2
+            from datetime import datetime
+            
+            conn = psycopg2.connect(self.database_url)
+            cursor = conn.cursor()
+            
+            # Insert or update slide feedback
+            cursor.execute("""
+                INSERT INTO slide_feedback (pitch_deck_id, slide_number, slide_filename, feedback_text, has_issues, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (pitch_deck_id, slide_number) 
+                DO UPDATE SET 
+                    feedback_text = EXCLUDED.feedback_text,
+                    has_issues = EXCLUDED.has_issues,
+                    updated_at = EXCLUDED.updated_at
+            """, (deck_id, slide_number, slide_filename, feedback_text, has_issues, datetime.now(), datetime.now()))
+            
+            conn.commit()
+            conn.close()
+            
+            logger.debug(f"📊 Stored slide feedback for deck {deck_id}, slide {slide_number}")
+            
+        except Exception as e:
+            logger.error(f"Failed to store slide feedback for deck {deck_id}, slide {slide_number}: {e}")
             raise
     
     def _generate_company_offering(self):

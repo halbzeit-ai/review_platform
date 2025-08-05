@@ -226,4 +226,14 @@ export const getProcessingProgress = (pitchDeckId) =>
 export const inviteGP = (inviteData) =>
   api.post('/auth/invite-gp', inviteData);
 
+// Slide Feedback API
+export const getSlideFeedback = (companyId, deckId) =>
+  api.get(`/feedback/projects/${companyId}/decks/${deckId}/slide-feedback`);
+
+export const getSlideSpecificFeedback = (companyId, deckId, slideNumber) =>
+  api.get(`/feedback/projects/${companyId}/decks/${deckId}/slides/${slideNumber}/feedback`);
+
+export const getDeckFeedbackSummary = (companyId, deckId) =>
+  api.get(`/feedback/projects/${companyId}/decks/${deckId}/feedback-summary`);
+
 export default api;

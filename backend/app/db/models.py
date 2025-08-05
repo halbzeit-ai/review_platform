@@ -1,5 +1,5 @@
 
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Text, Numeric
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Text, Numeric, UniqueConstraint
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import relationship, DeclarativeBase
 from datetime import datetime
@@ -507,3 +507,22 @@ class ProjectMember(Base):
     project = relationship("Project", backref="members")
     user = relationship("User", foreign_keys=[user_id], backref="project_memberships")
     added_by = relationship("User", foreign_keys=[added_by_id])
+
+class SlideFeedback(Base):
+    __tablename__ = "slide_feedback"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    pitch_deck_id = Column(Integer, ForeignKey("pitch_decks.id", ondelete="CASCADE"), nullable=False, index=True)
+    slide_number = Column(Integer, nullable=False)
+    slide_filename = Column(String(255), nullable=False)
+    feedback_text = Column(Text)
+    feedback_type = Column(String(50), default="ai_analysis")
+    has_issues = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    pitch_deck = relationship("PitchDeck", backref="slide_feedback")
+    
+    # Unique constraint
+    __table_args__ = (UniqueConstraint('pitch_deck_id', 'slide_number'),)
