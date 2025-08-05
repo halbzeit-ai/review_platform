@@ -279,21 +279,12 @@ class QueueProcessor:
     async def run_visual_analysis_phase(self, task: ProcessingTask, full_file_path: str, db: Session) -> bool:
         """Run visual analysis phase using existing Dojo infrastructure"""
         try:
-            # Get the active vision model from database
-            from sqlalchemy import text
-            model_result = db.execute(text(
-                "SELECT model_name FROM model_configs WHERE model_type = 'vision' AND is_active = true LIMIT 1"
-            )).fetchone()
-            
-            vision_model = model_result[0] if model_result else "gemma3:12b"  # Fallback to gemma3:12b
-            logger.info(f"Using vision model: {vision_model}")
-            
             # The visual analysis batch API expects deck_ids, file_paths, vision_model, and analysis_prompt
+            # Let the GPU service handle model and prompt selection from database
             request_data = {
                 "deck_ids": [task.pitch_deck_id],
-                "file_paths": [full_file_path],  # CRITICAL: This was missing!
-                "vision_model": vision_model,
-                "analysis_prompt": "Describe this slide from a pitchdeck from a perspective of an investor, but do not interpret the content, just describe what you see."
+                "file_paths": [full_file_path]  # CRITICAL: This was missing!
+                # vision_model and analysis_prompt will be loaded by GPU from database
             }
             
             logger.info(f"Visual analysis request: deck_id={task.pitch_deck_id}, file_path={full_file_path}")
@@ -340,17 +331,21 @@ class QueueProcessor:
                 template_id = processing_options['selected_template_id']
                 logger.info(f"Using GP override template {template_id} for deck {task.pitch_deck_id}")
             else:
-                template_id = 9  # Standard Seven-Chapter Review as fallback
-                logger.info(f"Using standard template {template_id} for deck {task.pitch_deck_id}")
+                # Let GPU determine default template from database
+                template_id = None
+                logger.info(f"Using default template (determined by GPU) for deck {task.pitch_deck_id}")
             
             request_data = {
                 "deck_ids": [task.pitch_deck_id],
-                "template_id": template_id,
                 "processing_options": {
                     "generate_thumbnails": True,
                     "callback_url": f"{self.backend_url}/api/internal/update-deck-results"
                 }
             }
+            
+            # Only include template_id if specified
+            if template_id is not None:
+                request_data["template_id"] = template_id
             
             async with httpx.AsyncClient(timeout=600.0) as client:  # Longer timeout for template analysis
                 response = await client.post(
