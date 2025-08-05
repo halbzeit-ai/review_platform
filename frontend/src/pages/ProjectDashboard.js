@@ -436,7 +436,7 @@ const ProjectDashboard = () => {
             e.stopPropagation();
             handleViewDeckAnalysis(deck);
           }}
-          disabled={!deck.results_file_path && progressData[deck.id]?.status !== 'processing'}
+          disabled={deck.processing_status === 'queued' || (deck.processing_status === 'processing' && (!progressData[deck.id] || progressData[deck.id].progress_percentage < 20))}
         >
           {t('project.actions.deckViewer')}
         </Button>
