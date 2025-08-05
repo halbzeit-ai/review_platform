@@ -3,6 +3,16 @@ import { Box, Typography, Button, Alert, CircularProgress } from '@mui/material'
 import { useTranslation } from 'react-i18next';
 import { updatePipelinePrompt, resetPipelinePrompt } from '../services/api';
 
+const getPromptTitle = (stageName, t) => {
+  const titleMap = {
+    'image_analysis': t('labels.imageAnalysisPrompt'),
+    'offering_extraction': t('labels.companyOfferingPrompt'),
+    'startup_name_extraction': 'Startup Name Extraction Prompt',
+    'scoring_analysis': 'Question Scoring & Rationale Prompt'
+  };
+  return titleMap[stageName] || stageName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) + ' Prompt';
+};
+
 const PromptEditor = ({ initialPrompt, stageName, onSave }) => {
   const { t } = useTranslation('templates');
   const [text, setText] = useState(initialPrompt || '');
@@ -44,8 +54,25 @@ const PromptEditor = ({ initialPrompt, stageName, onSave }) => {
   return (
     <Box>
       <Typography variant="h6" sx={{ mb: 2 }}>
-        {t('labels.imageAnalysisPrompt')}
+        {getPromptTitle(stageName, t)}
       </Typography>
+      
+      {stageName === 'scoring_analysis' && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            Available Template Variables:
+          </Typography>
+          <Typography variant="body2" component="div" sx={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
+            • <strong>{`{question_text}`}</strong> - The specific question being scored<br/>
+            • <strong>{`{scoring_criteria}`}</strong> - The scoring criteria for this question<br/>
+            • <strong>{`{response}`}</strong> - The AI's analysis response to the question<br/>
+            • <strong>{`{pitch_deck_text}`}</strong> - The full text content of the pitch deck
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
+            These variables will be automatically replaced with actual content during processing.
+          </Typography>
+        </Alert>
+      )}
       
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>

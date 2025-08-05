@@ -4,6 +4,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
+import re
+from typing import List
 from ..db.database import get_db
 from ..db.models import User
 from ..services.email_service import email_service
@@ -11,6 +13,64 @@ from ..services.token_service import token_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def validate_password_strength(password: str) -> List[str]:
+    """
+    Validate password strength according to OWASP Authentication Cheat Sheet
+    Returns list of error messages, empty list if password is valid
+    """
+    errors = []
+    
+    # Minimum length: 8 characters
+    if len(password) < 8:
+        errors.append("must be at least 8 characters long")
+    
+    # Maximum length: 128 characters (prevent DoS)
+    if len(password) > 128:
+        errors.append("must not exceed 128 characters")
+    
+    # Must contain at least 3 of the following 4 character types:
+    checks = {
+        'lowercase': bool(re.search(r'[a-z]', password)),
+        'uppercase': bool(re.search(r'[A-Z]', password)),
+        'digits': bool(re.search(r'[0-9]', password)),
+        'special': bool(re.search(r'[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>/?`~]', password))
+    }
+    
+    complexity_count = sum(checks.values())
+    
+    if complexity_count < 3:
+        missing = []
+        if not checks['lowercase']:
+            missing.append("lowercase letters")
+        if not checks['uppercase']:
+            missing.append("uppercase letters") 
+        if not checks['digits']:
+            missing.append("numbers")
+        if not checks['special']:
+            missing.append("special characters (!@#$%^&* etc.)")
+        
+        errors.append(f"must contain at least 3 of: {', '.join(missing)}")
+    
+    # Check against common passwords (basic check)
+    common_passwords = [
+        'password', '123456', '123456789', 'qwerty', 'abc123', 
+        'password123', '111111', '123123', 'admin', 'letmein',
+        'welcome', 'monkey', '1234567890', 'password1'
+    ]
+    
+    if password.lower() in common_passwords:
+        errors.append("cannot be a common password")
+    
+    # No sequential characters (basic check)
+    if re.search(r'(012|123|234|345|456|567|678|789|890|abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)', password.lower()):
+        errors.append("cannot contain sequential characters (123, abc, etc.)")
+    
+    # No repeated characters (more than 2 in a row)
+    if re.search(r'(.)\1{2,}', password):
+        errors.append("cannot contain more than 2 repeated characters in a row")
+    
+    return errors
 
 def is_first_user(db: Session) -> bool:
     return db.query(User).first() is None
@@ -28,6 +88,10 @@ class RegisterData(BaseModel):
     password: str
     company_name: str
     role: str
+
+class InviteGPData(BaseModel):
+    email: str
+    name: str
     preferred_language: str = "de"
 
 class LanguagePreferenceData(BaseModel):
@@ -38,6 +102,13 @@ class ForgotPasswordData(BaseModel):
 
 class ResetPasswordData(BaseModel):
     token: str
+    new_password: str
+
+class ChangePasswordData(BaseModel):
+    current_password: str
+    new_password: str
+
+class ForcedPasswordChangeData(BaseModel):
     new_password: str
 
 class UpdateProfileData(BaseModel):
@@ -110,6 +181,7 @@ async def register(data: RegisterData, db: Session = Depends(get_db)):
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from ..core.config import settings
+import secrets
 
 @router.post("/login")
 async def login(data: LoginData, db: Session = Depends(get_db)):
@@ -123,6 +195,27 @@ async def login(data: LoginData, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=403, 
             detail="Please verify your email address before logging in. Check your inbox for the verification email."
+        )
+    
+    # Check if user must change password
+    if user.must_change_password:
+        # Create temporary token for password change
+        access_token_expires = timedelta(minutes=30)  # Short-lived token for password change
+        access_token = create_access_token(
+            data={"sub": user.email, "role": user.role, "must_change_password": True},
+            expires_delta=access_token_expires
+        )
+        
+        return JSONResponse(
+            status_code=200,
+            content={
+                "message": "Password change required",
+                "email": user.email,
+                "role": user.role,
+                "must_change_password": True,
+                "access_token": access_token,
+                "token_type": "Bearer"
+            }
         )
     
     # Create access token
@@ -184,6 +277,10 @@ async def update_role(data: UpdateRoleData, current_user: User = Depends(get_cur
     target_user = db.query(User).filter(User.email == data.user_email).first()
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prevent role change for the primary GP admin
+    if data.user_email.lower() == "ramin@halbzeit.ai":
+        raise HTTPException(status_code=403, detail="Cannot change the role of the primary GP administrator")
     
     if data.new_role not in ["gp", "startup"]:
         raise HTTPException(status_code=400, detail="Invalid role specified")
@@ -249,6 +346,10 @@ async def delete_user(
     # Prevent self-deletion
     if current_user.email == user_email:
         raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    
+    # Prevent deletion of the primary GP admin
+    if user_email.lower() == "ramin@halbzeit.ai":
+        raise HTTPException(status_code=403, detail="Cannot delete the primary GP administrator")
     
     # Find the user to delete
     print(f"[DEBUG] Attempting to delete user with email: '{user_email}'")
@@ -593,11 +694,12 @@ async def reset_password(data: ResetPasswordData, db: Session = Depends(get_db))
             detail="Invalid or expired password reset token"
         )
     
-    # Validate new password
-    if len(data.new_password) < 6:
+    # Validate new password according to OWASP standards
+    password_errors = validate_password_strength(data.new_password)
+    if password_errors:
         raise HTTPException(
             status_code=400,
-            detail="Password must be at least 6 characters long"
+            detail=f"Password requirements not met: {', '.join(password_errors)}"
         )
     
     # Update password
@@ -611,5 +713,167 @@ async def reset_password(data: ResetPasswordData, db: Session = Depends(get_db))
         content={
             "message": "Password reset successful. You can now login with your new password.",
             "email": user.email
+        }
+    )
+
+@router.post("/change-password")
+async def change_password(
+    data: ChangePasswordData, 
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """Change password (for forced password changes or user-initiated changes)"""
+    
+    # Verify current password
+    if not pwd_context.verify(data.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=400, 
+            detail="Current password is incorrect"
+        )
+    
+    # Validate new password according to OWASP standards
+    password_errors = validate_password_strength(data.new_password)
+    if password_errors:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Password requirements not met: {', '.join(password_errors)}"
+        )
+    
+    if data.current_password == data.new_password:
+        raise HTTPException(
+            status_code=400,
+            detail="New password must be different from current password"
+        )
+    
+    # Update password and clear must_change_password flag
+    current_user.password_hash = pwd_context.hash(data.new_password)
+    current_user.must_change_password = False
+    db.commit()
+    
+    # Generate new access token without must_change_password flag
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": current_user.email, "role": current_user.role},
+        expires_delta=access_token_expires
+    )
+    
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": "Password changed successfully",
+            "email": current_user.email,
+            "role": current_user.role,
+            "access_token": access_token,
+            "token_type": "Bearer"
+        }
+    )
+
+@router.post("/change-password-forced")
+async def change_password_forced(
+    data: ForcedPasswordChangeData, 
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """Change password for users with must_change_password=True (no current password required)"""
+    
+    # Verify this user actually needs to change password
+    if not current_user.must_change_password:
+        raise HTTPException(
+            status_code=400, 
+            detail="Password change not required for this user"
+        )
+    
+    # Validate new password according to OWASP standards
+    password_errors = validate_password_strength(data.new_password)
+    if password_errors:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Password requirements not met: {', '.join(password_errors)}"
+        )
+    
+    # Update password and clear must_change_password flag
+    current_user.password_hash = pwd_context.hash(data.new_password)
+    current_user.must_change_password = False
+    # Update last login time since this is effectively their first real login
+    current_user.last_login = datetime.now()
+    db.commit()
+    
+    # Generate new access token without must_change_password flag
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": current_user.email, "role": current_user.role},
+        expires_delta=access_token_expires
+    )
+    
+    return JSONResponse(
+        status_code=200,
+        content={
+            "message": "Password changed successfully",
+            "email": current_user.email,
+            "role": current_user.role,
+            "access_token": access_token,
+            "token_type": "Bearer"
+        }
+    )
+
+@router.post("/invite-gp")
+async def invite_gp(
+    data: InviteGPData,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Invite a new GP to the platform (GP only)"""
+    # Verify the requester is a GP
+    if current_user.role != "gp":
+        raise HTTPException(status_code=403, detail="Only GPs can invite other GPs")
+    
+    # Check if user already exists
+    existing_user = db.query(User).filter(User.email == data.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User with this email already exists")
+    
+    # Generate a temporary password
+    import secrets
+    temp_password = secrets.token_urlsafe(12)
+    
+    # Create the new GP user
+    new_user = User(
+        email=data.email,
+        password_hash=pwd_context.hash(temp_password),
+        company_name=data.name,  # For GPs, we use their name as company name
+        role="gp",
+        first_name=data.name.split()[0] if " " in data.name else data.name,
+        last_name=" ".join(data.name.split()[1:]) if " " in data.name else "",
+        preferred_language=data.preferred_language,
+        is_verified=False,
+        must_change_password=True  # Force password change on first login
+    )
+    
+    # Generate verification token
+    verification_token, expires_at = token_service.generate_verification_token()
+    token_hash = token_service.hash_token(verification_token)
+    new_user.verification_token = token_hash
+    new_user.verification_token_expires = expires_at
+    
+    db.add(new_user)
+    db.commit()
+    
+    # Send invitation email with temporary password and verification link
+    email_sent = email_service.send_gp_invitation_email(
+        email=data.email,
+        name=data.name,
+        temp_password=temp_password,
+        verification_token=verification_token,
+        invited_by=current_user.company_name or current_user.email,
+        language=data.preferred_language
+    )
+    
+    return JSONResponse(
+        status_code=201,
+        content={
+            "message": "GP invitation sent successfully",
+            "email": data.email,
+            "name": data.name,
+            "email_sent": email_sent
         }
     )

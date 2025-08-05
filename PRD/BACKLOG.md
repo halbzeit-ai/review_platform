@@ -4,6 +4,27 @@ This document tracks features, improvements, and technical debt that need to be 
 
 ## High Priority
 
+### Frontend Navigation & Startup Interface
+- **GP Admin View Not Using Startup Results Page**
+  - Status: Active issue - GP admin view navigation broken
+  - Description: When GPs view dojo-generated companies in admin mode, clicking "View Results" navigates to project results page instead of startup results page
+  - Current Behavior: 
+    - GP clicks "Open Project" → correctly goes to `/admin/project/27/startup-view`
+    - GP clicks "View Results" → incorrectly goes to `/project/lilio/results/45`
+    - Should go to `/results/45` (startup results page)
+  - Investigation Done:
+    - Code changes made to `handleViewResults` in `ProjectDashboard.js` to check `isAdminView` flag
+    - Debug logging added but not appearing in browser console
+    - Frontend recompiled but browser appears to be caching old JavaScript bundle
+  - Root Cause: Likely browser caching issue preventing updated code from loading
+  - Tasks:
+    - Investigate webpack hot reload configuration
+    - Consider production build to force cache refresh
+    - Alternative: Add query parameter to force cache bust
+    - Verify `isAdminView` detection is working correctly
+    - Consider adding visual indicator when in admin view mode
+  - Impact: GPs cannot experience the startup interface as intended, seeing legacy dojo results viewer instead
+
 ### Data Integrity & User Management
 - **Multi-User Project Management System**
   - Status: Critical - Data integrity issue identified

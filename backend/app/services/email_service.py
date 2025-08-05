@@ -2,9 +2,10 @@
 Email service for sending verification emails using Hetzner SMTP
 """
 import smtplib
+import secrets
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.utils import formataddr
+from email.utils import formataddr, formatdate
 import logging
 from typing import Optional
 from ..core.config import settings
@@ -22,13 +23,25 @@ class EmailService:
         self.from_name = settings.FROM_NAME
 
     def send_email(self, to_email: str, subject: str, html_body: str, text_body: Optional[str] = None) -> bool:
-        """Send an email using Hetzner SMTP"""
+        """Send an email using Hetzner SMTP with improved Gmail deliverability"""
         try:
-            # Create message
+            # Create message with proper headers for better deliverability
             msg = MIMEMultipart('alternative')
             msg['Subject'] = subject
             msg['From'] = formataddr((self.from_name, self.from_email))
             msg['To'] = to_email
+            msg['Reply-To'] = self.from_email
+            
+            # Add additional headers for better deliverability
+            msg['Message-ID'] = f"<{secrets.token_urlsafe(16)}@halbzeit.ai>"
+            msg['Date'] = formatdate(localtime=True)
+            msg['X-Mailer'] = 'HALBZEIT AI Platform'
+            msg['X-Priority'] = '3'
+            msg['Importance'] = 'Normal'
+            
+            # SPF/DKIM friendly headers
+            msg['Return-Path'] = self.from_email
+            msg['Sender'] = self.from_email
 
             # Add text version if provided
             if text_body:
@@ -550,6 +563,225 @@ class EmailService:
         {footer_text}
         
         HALBZEIT AI Team
+        """
+        
+        return self.send_email(email, subject, html_body, text_body)
+
+    def send_gp_invitation_email(self, email: str, name: str, temp_password: str, verification_token: str, invited_by: str, language: str = "en") -> bool:
+        """Send GP invitation email with temporary password"""
+        
+        # Create verification URL
+        verification_url = f"{settings.FRONTEND_URL}/verify-email?token={verification_token}"
+        
+        # Get translations (using existing ones for now)
+        subject = i18n_service.t("emails.invitation.subject", language)
+        
+        # Create HTML body with improved Gmail compatibility
+        html_body = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>HALBZEIT AI - GP Invitation</title>
+            <!--[if mso]>
+            <noscript>
+                <xml>
+                    <o:OfficeDocumentSettings>
+                        <o:PixelsPerInch>96</o:PixelsPerInch>
+                    </o:OfficeDocumentSettings>
+                </xml>
+            </noscript>
+            <![endif]-->
+            <style type="text/css">
+                /* Email client compatibility */
+                body, table, td, p, a, li, blockquote {{
+                    -webkit-text-size-adjust: 100%;
+                    -ms-text-size-adjust: 100%;
+                }}
+                table, td {{
+                    mso-table-lspace: 0pt;
+                    mso-table-rspace: 0pt;
+                }}
+                img {{
+                    -ms-interpolation-mode: bicubic;
+                    border: 0;
+                    height: auto;
+                    line-height: 100%;
+                    outline: none;
+                    text-decoration: none;
+                }}
+                
+                /* Main styles */
+                body {{
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    font-family: Arial, Helvetica, sans-serif;
+                    background-color: #f8f9fa;
+                }}
+                
+                .email-container {{
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background-color: #ffffff;
+                }}
+                
+                .header {{
+                    background-color: #1976d2;
+                    text-align: center;
+                    padding: 30px 20px;
+                }}
+                
+                .header h1 {{
+                    color: #ffffff;
+                    font-size: 24px;
+                    margin: 0;
+                    font-weight: bold;
+                }}
+                
+                .content {{
+                    padding: 40px 30px;
+                }}
+                
+                .invitation-title {{
+                    font-size: 22px;
+                    color: #1976d2;
+                    margin-bottom: 20px;
+                    font-weight: bold;
+                }}
+                
+                .credentials-box {{
+                    background-color: #f8f9fa;
+                    border: 2px solid #e9ecef;
+                    border-radius: 8px;
+                    padding: 20px;
+                    margin: 25px 0;
+                    font-family: Monaco, Consolas, "Lucida Console", monospace;
+                }}
+                
+                .cta-button {{
+                    display: inline-block;
+                    background-color: #1976d2;
+                    color: #ffffff;
+                    padding: 15px 30px;
+                    text-decoration: none;
+                    border-radius: 6px;
+                    font-weight: bold;
+                    font-size: 16px;
+                    margin: 20px 0;
+                    text-align: center;
+                }}
+                
+                .cta-container {{
+                    text-align: center;
+                    padding: 20px 0;
+                }}
+                
+                .footer {{
+                    background-color: #f8f9fa;
+                    padding: 30px;
+                    text-align: center;
+                    font-size: 14px;
+                    color: #6c757d;
+                    border-top: 1px solid #e9ecef;
+                }}
+                
+                .security-note {{
+                    background-color: #fff3cd;
+                    border: 1px solid #ffeaa7;
+                    border-radius: 6px;
+                    padding: 15px;
+                    margin: 20px 0;
+                    color: #856404;
+                }}
+                
+                /* Mobile responsiveness */
+                @media screen and (max-width: 600px) {{
+                    .content {{
+                        padding: 20px 15px;
+                    }}
+                    .cta-button {{
+                        display: block;
+                        width: 90%;
+                        margin: 20px auto;
+                    }}
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="email-container">
+                <div class="header">
+                    <h1>HALBZEIT AI</h1>
+                    <div style="color: #e3f2fd; font-size: 14px;">Healthcare Investment Platform</div>
+                </div>
+                
+                <div class="content">
+                    <div class="invitation-title">Welcome to HALBZEIT AI</div>
+                    
+                    <p>Hello {name},</p>
+                    
+                    <p>You have been invited by <strong>{invited_by}</strong> to join HALBZEIT AI as a General Partner (GP) to evaluate healthcare startup investments.</p>
+                    
+                    <p>We've created your account with the following temporary credentials:</p>
+                    
+                    <div class="credentials-box">
+                        <strong>Email:</strong> {email}<br>
+                        <strong>Temporary Password:</strong> {temp_password}
+                    </div>
+                    
+                    <div class="security-note">
+                        <strong>Security Notice:</strong> You will be required to change this temporary password when you first log in.
+                    </div>
+                    
+                    <p><strong>Next Steps:</strong></p>
+                    <ol>
+                        <li>Click the button below to verify your email address</li>
+                        <li>Log in with your temporary password</li>
+                        <li>Set your new secure password</li>
+                        <li>Start evaluating healthcare startups</li>
+                    </ol>
+                    
+                    <div class="cta-container">
+                        <a href="{verification_url}" class="cta-button">Verify Email & Get Started</a>
+                    </div>
+                    
+                    <p style="font-size: 14px; color: #6c757d;">If the button doesn't work, copy and paste this link into your browser:</p>
+                    <p style="word-break: break-all; font-size: 12px; background-color: #f8f9fa; padding: 10px; border-radius: 4px;">
+                        {verification_url}
+                    </p>
+                </div>
+                
+                <div class="footer">
+                    <p><strong>This invitation expires in 7 days.</strong></p>
+                    <p>© 2025 HALBZEIT AI - Advanced Healthcare Investment Analysis</p>
+                    <p>Secure • Professional • Trusted by Healthcare Investors</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Text version
+        text_body = f"""
+        Welcome to HALBZEIT AI
+        
+        Hello {name},
+        
+        You have been invited by {invited_by} to join HALBZEIT AI as a General Partner (GP).
+        
+        We've created an account for you with the following credentials:
+        
+        Email: {email}
+        Temporary Password: {temp_password}
+        
+        IMPORTANT: Please verify your email address first by visiting:
+        {verification_url}
+        
+        After verifying your email, you can log in with your temporary password and we recommend changing it immediately.
+        
+        This invitation will expire in 7 days.
+        
+        © 2025 HALBZEIT AI
         """
         
         return self.send_email(email, subject, html_body, text_body)

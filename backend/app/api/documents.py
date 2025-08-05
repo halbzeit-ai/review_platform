@@ -292,7 +292,8 @@ async def get_processing_status(
         "pitch_deck_id": pitch_deck_id,
         "processing_status": pitch_deck.processing_status,
         "file_name": pitch_deck.file_name,
-        "created_at": pitch_deck.created_at
+        "created_at": pitch_deck.created_at,
+        "company_id": pitch_deck.company_id
     }
 
 @router.get("/results/{pitch_deck_id}")

@@ -41,7 +41,8 @@ import {
   Storefront as StorefrontIcon,
   Category as CategoryIcon,
   PlayArrow as PlayArrowIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  Assignment as AssignmentIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -100,7 +101,8 @@ const TemplateManagement = () => {
   const [promptTexts, setPromptTexts] = useState({
     image_analysis: '',
     offering_extraction: '',
-    startup_name_extraction: ''
+    startup_name_extraction: '',
+    scoring_analysis: ''
   });
   
   const breadcrumbs = [
@@ -184,7 +186,8 @@ const TemplateManagement = () => {
       setPromptTexts({
         image_analysis: prompts.image_analysis || '',
         offering_extraction: prompts.offering_extraction || '',
-        startup_name_extraction: prompts.startup_name_extraction || ''
+        startup_name_extraction: prompts.startup_name_extraction || '',
+        scoring_analysis: prompts.scoring_analysis || ''
       });
       
     } catch (err) {
@@ -941,6 +944,12 @@ const TemplateManagement = () => {
         name: 'Startup Name Extraction',
         description: 'Extract the startup name from pitch deck content',
         icon: <StorefrontIcon />
+      },
+      {
+        key: 'scoring_analysis',
+        name: 'Question Scoring & Rationale',
+        description: 'Template for scoring individual questions and providing detailed rationale',
+        icon: <AssignmentIcon />
       }
     ];
 

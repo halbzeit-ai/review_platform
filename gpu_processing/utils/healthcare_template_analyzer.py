@@ -1362,45 +1362,34 @@ class HealthcareTemplateAnalyzer:
     
     def _score_question(self, question_text: str, scoring_criteria: str, response: str, pitch_deck_text: str) -> tuple[int, str]:
         """Score a specific question response and return both score and scoring response"""
-        scoring_prompt = f"""
-        You are a healthcare venture capital analyst scoring a pitch deck analysis.
+        # Get the scoring prompt from the pipeline prompts system
+        scoring_prompt_template = self._get_pipeline_prompt("scoring_analysis")
         
-        Question: {question_text}
-        
-        Scoring Criteria: {scoring_criteria}
-        
-        Analysis Response: {response}
-        
-        Based on the original pitch deck content and the analysis response, provide a score from 0-7 where:
-        - 0-1: Very poor, missing critical information
-        - 2-3: Poor, limited information provided
-        - 4-5: Good, adequate information with some gaps
-        - 6-7: Excellent, comprehensive and well-supported information
-        
-        Consider healthcare-specific requirements and clinical validation needs.
-        
-        Provide only the numeric score (0-7), no additional text.
-        
-        Original pitch deck content: {pitch_deck_text}
-        """
+        # Format the prompt with the specific question data
+        scoring_prompt = scoring_prompt_template.format(
+            question_text=question_text,
+            scoring_criteria=scoring_criteria,
+            response=response, 
+            pitch_deck_text=pitch_deck_text
+        )
         
         try:
-            response = ollama.generate(
+            llm_response = ollama.generate(
                 model=self.scoring_model,
                 prompt=scoring_prompt,
                 options={**self.model_options, 'temperature': 0.1}
             )
             
-            score_text = response['response'].strip()
+            score_text = llm_response['response'].strip()
             
             # Try to extract numeric score from the response
             try:
                 # Handle various formats in priority order to avoid conflicts
                 
-                # 1. First try to find "Score: X" pattern (most reliable)
-                score_pattern_match = re.search(r'[Ss]core:?\s*(\d+)', score_text)
+                # 1. First try to find "Final Score: X" or "Score: X" pattern (most reliable)
+                score_pattern_match = re.search(r'[Ff]inal\s+[Ss]core:?\s*(\d+)|[Ss]core:?\s*(\d+)', score_text)
                 if score_pattern_match:
-                    score = int(score_pattern_match.group(1))
+                    score = int(score_pattern_match.group(1) or score_pattern_match.group(2))
                 
                 # 2. Try to find a number in markdown bold format
                 elif re.search(r'\*\*(\d+)\*\*', score_text):

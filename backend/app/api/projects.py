@@ -1121,8 +1121,6 @@ async def delete_deck(
 class CreateProjectRequest(BaseModel):
     project_name: str = Field(..., min_length=1, max_length=255)
     company_name: str = Field(..., min_length=1, max_length=255)
-    funding_round: Optional[str] = None
-    funding_sought: Optional[str] = None
     invite_emails: Optional[List[str]] = []
     invitation_language: Optional[str] = "en"
 
@@ -1170,8 +1168,6 @@ async def create_project(
         new_project = Project(
             company_id=company_id,
             project_name=request.project_name,
-            funding_round=request.funding_round,
-            funding_sought=request.funding_sought,
             owner_id=current_user.id,
             is_test=False,
             is_active=True

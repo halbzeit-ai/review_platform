@@ -9,7 +9,14 @@ const api = axios.create({
 
 // Add auth token to requests
 api.interceptors.request.use((config) => {
-  const user = JSON.parse(localStorage.getItem('user'));
+  // Check for regular user token first
+  let user = JSON.parse(localStorage.getItem('user'));
+  
+  // If no regular user, check for temporary user (password change flow)
+  if (!user) {
+    user = JSON.parse(localStorage.getItem('tempUser'));
+  }
+  
   if (user?.token) {
     config.headers.Authorization = `Bearer ${user.token}`;
   }
@@ -46,6 +53,12 @@ export const forgotPassword = (email) =>
 
 export const resetPassword = (token, newPassword) =>
   api.post('/auth/reset-password', { token, new_password: newPassword });
+
+export const changePassword = (currentPassword, newPassword) =>
+  api.post('/auth/change-password', { current_password: currentPassword, new_password: newPassword });
+
+export const changeForcedPassword = (newPassword) =>
+  api.post('/auth/change-password-forced', { new_password: newPassword });
 
 export const uploadPitchDeck = (file) => {
   const formData = new FormData();
@@ -204,5 +217,13 @@ export const cancelInvitation = (invitationId) =>
 // Project Creation API
 export const createProject = (projectData) =>
   api.post('/projects/create', projectData);
+
+// Processing Progress API
+export const getProcessingProgress = (pitchDeckId) =>
+  api.get(`/documents/processing-progress/${pitchDeckId}`);
+
+// GP Invitation API
+export const inviteGP = (inviteData) =>
+  api.post('/auth/invite-gp', inviteData);
 
 export default api;

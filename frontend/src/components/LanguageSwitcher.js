@@ -31,11 +31,14 @@ function LanguageSwitcher() {
 
     const handleLanguageChange = async (languageCode) => {
         // Update frontend immediately
-        i18n.changeLanguage(languageCode);
+        await i18n.changeLanguage(languageCode);
         handleClose();
         
         // Store in localStorage for persistence
         localStorage.setItem('language', languageCode);
+        
+        // Force reload all namespaces for the new language
+        await i18n.reloadResources(languageCode, ['common', 'auth']);
         
         // Update user preference in backend if logged in
         const user = JSON.parse(localStorage.getItem('user'));

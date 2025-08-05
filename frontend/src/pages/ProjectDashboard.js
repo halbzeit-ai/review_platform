@@ -41,7 +41,8 @@ import {
   getMyProjects,
   getAllProjects,
   getProjectJourney,
-  getProjectDecks
+  getProjectDecks,
+  getProcessingProgress
 } from '../services/api';
 import ProjectUploads from '../components/ProjectUploads';
 
@@ -61,6 +62,8 @@ const ProjectDashboard = () => {
   const [projectDecks, setProjectDecks] = useState([]);
   const [selectedDeck, setSelectedDeck] = useState(null);
   const [actualCompanyId, setActualCompanyId] = useState(null);
+  const [progressData, setProgressData] = useState({});
+  const [progressIntervals, setProgressIntervals] = useState({});
   
   // Funding journey data
   const [projects, setProjects] = useState([]);
@@ -78,6 +81,16 @@ const ProjectDashboard = () => {
     loadProjectData();
     loadFundingData();
   }, [companyId, projectId]);
+
+  // Cleanup intervals on unmount
+  useEffect(() => {
+    return () => {
+      // Clear all progress polling intervals
+      Object.values(progressIntervals).forEach(intervalId => {
+        clearInterval(intervalId);
+      });
+    };
+  }, [progressIntervals]);
 
   // Debug actualCompanyId changes
   useEffect(() => {
@@ -127,6 +140,9 @@ const ProjectDashboard = () => {
         setSelectedDeck(decks[0]);
       }
       
+      // Start polling for processing decks
+      startProgressPollingForDecks(decks);
+      
       // Update breadcrumbs
       const dashboardPath = isAdminView ? '/dashboard/gp' : '/dashboard';
       setBreadcrumbs([
@@ -139,6 +155,63 @@ const ProjectDashboard = () => {
       setError(err.response?.data?.detail || err.message || 'Failed to load project data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const startProgressPollingForDecks = (decks) => {
+    // Clear existing intervals
+    Object.values(progressIntervals).forEach(intervalId => {
+      clearInterval(intervalId);
+    });
+    setProgressIntervals({});
+    
+    // Only poll for decks that are processing
+    const processingDecks = decks.filter(deck => !deck.results_file_path);
+    const newIntervals = {};
+    
+    processingDecks.forEach(deck => {
+      // Fetch initial progress
+      fetchProgressForDeck(deck.id);
+      
+      // Set up polling interval
+      const intervalId = setInterval(() => {
+        fetchProgressForDeck(deck.id);
+      }, 3000); // Poll every 3 seconds
+      
+      newIntervals[deck.id] = intervalId;
+    });
+    
+    setProgressIntervals(newIntervals);
+  };
+  
+  const fetchProgressForDeck = async (deckId) => {
+    try {
+      const response = await getProcessingProgress(deckId);
+      const data = response.data || response;
+      
+      setProgressData(prev => ({
+        ...prev,
+        [deckId]: data
+      }));
+      
+      // If processing is complete, stop polling for this deck
+      if (data.status === 'completed' || data.status === 'failed') {
+        if (progressIntervals[deckId]) {
+          clearInterval(progressIntervals[deckId]);
+          setProgressIntervals(prev => {
+            const newIntervals = { ...prev };
+            delete newIntervals[deckId];
+            return newIntervals;
+          });
+        }
+        
+        // Reload deck data to get updated results
+        if (data.status === 'completed') {
+          loadProjectData();
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching progress for deck', deckId, error);
     }
   };
 
@@ -284,21 +357,62 @@ const ProjectDashboard = () => {
         </Box>
         
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {t('project.labels.uploaded')} {new Date(deck.created_at).toLocaleDateString()}
+          {t('project.labels.uploaded')} {new Date(deck.created_at).toLocaleString('en-US', { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+          })}
         </Typography>
         
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-          <Chip 
-            label={deck.results_file_path ? t('project.status.analyzed') : t('project.status.processing')} 
-            color={deck.results_file_path ? 'success' : 'warning'}
-            size="small"
-          />
+          {deck.results_file_path ? (
+            <Chip 
+              label={t('project.status.analyzed')} 
+              color="success"
+              size="small"
+            />
+          ) : (
+            <>
+              <Chip 
+                label={progressData[deck.id]?.current_stage || t('project.status.processing')} 
+                color="warning"
+                size="small"
+              />
+              {progressData[deck.id]?.progress_percentage !== undefined && (
+                <Chip 
+                  label={`${Math.round(progressData[deck.id].progress_percentage)}%`} 
+                  color="info"
+                  size="small"
+                  variant="outlined"
+                />
+              )}
+            </>
+          )}
           <Chip 
             label={t('project.status.pdf')} 
             variant="outlined"
             size="small"
           />
         </Box>
+        
+        {/* Progress bar for processing decks */}
+        {!deck.results_file_path && progressData[deck.id]?.progress_percentage !== undefined && (
+          <Box sx={{ mb: 2 }}>
+            <LinearProgress 
+              variant="determinate" 
+              value={progressData[deck.id].progress_percentage} 
+              sx={{ height: 6, borderRadius: 3 }}
+            />
+            {progressData[deck.id]?.message && (
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                {progressData[deck.id].message}
+              </Typography>
+            )}
+          </Box>
+        )}
       </CardContent>
       
       <CardActions>

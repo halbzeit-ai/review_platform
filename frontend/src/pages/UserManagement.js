@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, IconButton, Box, Snackbar, Alert } from '@mui/material';
-import { Delete as DeleteIcon, People } from '@mui/icons-material';
+import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, IconButton, Box, Snackbar, Alert, Dialog, DialogActions, DialogContent, DialogTitle, TextField } from '@mui/material';
+import { Delete as DeleteIcon, People, PersonAdd } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { getAllUsers, updateUserRole, deleteUser } from '../services/api';
+import { getAllUsers, updateUserRole, deleteUser, inviteGP } from '../services/api';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 function UserManagement() {
@@ -12,6 +12,9 @@ function UserManagement() {
   const [users, setUsers] = useState([]);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, user: null });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [inviteDialog, setInviteDialog] = useState({ open: false });
+  const [inviteForm, setInviteForm] = useState({ email: '', name: '', preferred_language: 'de' });
+  const [inviteLoading, setInviteLoading] = useState(false);
 
   const handleRoleChange = async (userEmail, newRole) => {
     try {
@@ -81,6 +84,44 @@ function UserManagement() {
     }
   };
 
+  const handleInviteGP = async () => {
+    if (!inviteForm.email || !inviteForm.name) {
+      setSnackbar({
+        open: true,
+        message: 'Please fill in all required fields',
+        severity: 'error'
+      });
+      return;
+    }
+
+    setInviteLoading(true);
+    try {
+      const response = await inviteGP(inviteForm);
+      setSnackbar({
+        open: true,
+        message: 'GP invitation sent successfully!',
+        severity: 'success'
+      });
+      setInviteDialog({ open: false });
+      setInviteForm({ email: '', name: '', preferred_language: 'de' });
+      // Refresh the user list
+      await refreshUsers();
+    } catch (error) {
+      console.error('Error inviting GP:', error);
+      let errorMessage = 'Failed to send invitation';
+      if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      }
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: 'error'
+      });
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -116,7 +157,16 @@ function UserManagement() {
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>{t('gp.usersSection.title')}</Typography>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+              <Typography variant="h6" gutterBottom>{t('gp.usersSection.title')}</Typography>
+              <Button
+                variant="contained"
+                startIcon={<PersonAdd />}
+                onClick={() => setInviteDialog({ open: true })}
+              >
+                Invite GP
+              </Button>
+            </Box>
             <TableContainer>
               <Table>
                 <TableHead>
@@ -138,8 +188,9 @@ function UserManagement() {
                           variant="outlined"
                           size="small"
                           onClick={() => handleRoleChange(user.email, user.role === 'startup' ? 'gp' : 'startup')}
+                          disabled={user.email.toLowerCase() === 'ramin@halbzeit.ai'}
                         >
-                          {user.role.toUpperCase()} ({t('gp.usersSection.actions.changeRole')})
+                          {user.role.toUpperCase()} {user.email.toLowerCase() === 'ramin@halbzeit.ai' ? '(Protected)' : `(${t('gp.usersSection.actions.changeRole')})`}
                         </Button>
                       </TableCell>
                       <TableCell>{user.last_login ? new Date(user.last_login).toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }) : t('common:messages.never')}</TableCell>
@@ -150,6 +201,7 @@ function UserManagement() {
                             size="small"
                             onClick={() => handleDeleteUser(user)}
                             title={t('gp.usersSection.actions.delete')}
+                            disabled={user.email.toLowerCase() === 'ramin@halbzeit.ai'}
                           >
                             <DeleteIcon />
                           </IconButton>
@@ -193,6 +245,58 @@ ${t('gp.cascadeDeletion.warning')}`}
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Invite GP Dialog */}
+      <Dialog
+        open={inviteDialog.open}
+        onClose={() => setInviteDialog({ open: false })}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Invite New GP</DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              label="Email Address"
+              type="email"
+              fullWidth
+              value={inviteForm.email}
+              onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+              required
+            />
+            <TextField
+              label="Full Name"
+              fullWidth
+              value={inviteForm.name}
+              onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })}
+              required
+            />
+            <TextField
+              label="Language Preference"
+              select
+              fullWidth
+              value={inviteForm.preferred_language}
+              onChange={(e) => setInviteForm({ ...inviteForm, preferred_language: e.target.value })}
+              SelectProps={{ native: true }}
+            >
+              <option value="de">Deutsch</option>
+              <option value="en">English</option>
+            </TextField>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setInviteDialog({ open: false })} disabled={inviteLoading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleInviteGP}
+            variant="contained"
+            disabled={inviteLoading}
+          >
+            {inviteLoading ? 'Sending...' : 'Send Invitation'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }

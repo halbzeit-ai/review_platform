@@ -153,35 +153,7 @@ const ProjectResults = ({ companyId, deckId }) => {
     );
   }
 
-  // Check if this is structured data (startup-compatible format) - redirect to startup results page
-  const hasStructuredData = results.chapter_analysis || results.report_chapters || results.report_scores;
-  
-  if (hasStructuredData) {
-    // For structured data, redirect to the existing startup results page for true re-use
-    return (
-      <Card variant="outlined" sx={{ mb: 3, bgcolor: 'success.50' }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom color="success.main">
-            ✨ Startup Experience Ready
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            This deck has been processed with startup-compatible data. Click below to view the results exactly as a startup would see them.
-          </Typography>
-          <Button 
-            variant="contained" 
-            color="primary"
-            href={`/results/${deckId}`}
-            sx={{ mr: 2 }}
-          >
-            View as Startup Experience
-          </Button>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            You'll see the same interface, scoring, and analysis that startups experience.
-          </Typography>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Display results directly - no interceptor needed since we've unified the experience
 
   return (
     <Box>
@@ -412,13 +384,13 @@ const ProjectResults = ({ companyId, deckId }) => {
                                   {formatText(question.response)}
                                 </Box>
                                 
-                                {/* Debug: Show scoring response */}
+                                {/* Scoring and Rationale */}
                                 {question.scoring_response && (
-                                  <Box sx={{ mt: 1.5, p: 1.5, bgcolor: 'warning.50', borderRadius: 1, border: '1px solid', borderColor: 'warning.200' }}>
-                                    <Typography variant="caption" color="warning.dark" fontWeight="bold" sx={{ fontSize: '0.75rem' }}>
-                                      {t('debug.scoringResponse')}
+                                  <Box sx={{ mt: 1.5, p: 1.5, bgcolor: 'grey.50', borderRadius: 1, border: '1px solid', borderColor: 'grey.300' }}>
+                                    <Typography variant="caption" color="text.primary" fontWeight="bold" sx={{ fontSize: '0.75rem' }}>
+                                      Scoring and Rationale
                                     </Typography>
-                                    <Box sx={{ mt: 0.5, '& .MuiTypography-root': { color: 'warning.dark', fontSize: '0.8rem' } }}>
+                                    <Box sx={{ mt: 0.5, '& .MuiTypography-root': { color: 'text.secondary', fontSize: '0.8rem' } }}>
                                       {formatText(question.scoring_response)}
                                     </Box>
                                   </Box>

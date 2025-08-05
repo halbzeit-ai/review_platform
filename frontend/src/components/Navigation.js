@@ -21,18 +21,11 @@ function Navigation() {
     <AppBar position="static">
       <Toolbar>
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
-          HALBZEIT AI Review Platform
+          HALBZEIT AI: Funding Health Innovations Together
         </Typography>
         <LanguageSwitcher />
         {!isLoggedIn ? (
-          <>
-            <Button color="inherit" onClick={() => navigate('/login')}>
-              {t('navigation.login')}
-            </Button>
-            <Button color="inherit" onClick={() => navigate('/register')}>
-              {t('navigation.register')}
-            </Button>
-          </>
+          <></>
         ) : (
           <>
             <Button color="inherit" onClick={() => navigate('/dashboard')}>

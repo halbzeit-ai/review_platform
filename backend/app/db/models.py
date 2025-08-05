@@ -24,6 +24,7 @@ class User(Base):
     is_verified = Column(Boolean, default=False)
     verification_token = Column(String, nullable=True, index=True)
     verification_token_expires = Column(DateTime, nullable=True)
+    must_change_password = Column(Boolean, default=False)  # Force password change on next login
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login = Column(DateTime, nullable=True)
     

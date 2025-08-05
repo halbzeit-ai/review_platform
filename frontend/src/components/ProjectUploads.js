@@ -72,6 +72,7 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
     }
   };
 
+
   const handleViewDetails = (upload) => {
     setSelectedUpload(upload);
     setDetailsOpen(true);
@@ -223,12 +224,22 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
               {upload.filename}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {formatFileSize(upload.file_size)} • {upload.pages ? `${upload.pages} pages` : (upload.processing_status === 'completed' ? 'Analyzed' : 'Processing...')} • {new Date(upload.upload_date).toLocaleString()}
+              {formatFileSize(upload.file_size)} • {upload.pages ? `${upload.pages} pages` : (upload.processing_status === 'completed' ? 'Analyzed' : 'Processing...')} • {new Date(upload.upload_date).toLocaleString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: false 
+              })}
             </Typography>
           </Box>
         </Box>
         
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {upload.processing_status === 'processing' && (
+            <CircularProgress size={20} sx={{ mr: 1 }} />
+          )}
           <IconButton
             size="small"
             onClick={(e) => {
@@ -297,7 +308,15 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
                 </ListItemIcon>
                 <ListItemText
                   primary="Upload Date"
-                  secondary={new Date(selectedUpload.upload_date).toLocaleString()}
+                  secondary={new Date(selectedUpload.upload_date).toLocaleString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric', 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false 
+                  })}
                 />
               </ListItem>
               

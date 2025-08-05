@@ -532,6 +532,75 @@ curl http://localhost:8000/api/health
 # Check browser console for correct environment detection
 ```
 
+## Email Configuration
+
+The platform uses a centralized email system for user communication (registration verification, GP invitations, password resets, welcome emails).
+
+### Email Configuration Management
+**Configuration Location**: `/environments/.env.backend.production`
+```bash
+SMTP_SERVER=mail.halbzeit.ai
+SMTP_PORT=587
+SMTP_USERNAME=registration@halbzeit.ai
+SMTP_PASSWORD=$HZregistration1024
+FROM_EMAIL=registration@halbzeit.ai
+FROM_NAME=HALBZEIT AI Review Platform
+```
+
+### Email Configuration Deployment Process
+```bash
+# 1. Edit centralized environment file (NEVER edit backend/.env directly)
+# /environments/.env.backend.production
+
+# 2. Deploy using environment script
+./environments/deploy-environment.sh production --component backend
+
+# 3. Restart backend service to load new configuration
+sudo systemctl restart review-platform.service
+
+# 4. Verify service is running
+sudo systemctl status review-platform.service
+```
+
+### Email Features
+- **User Registration**: Verification emails with activation links
+- **GP Invitations**: Invitation emails with temporary passwords and verification links
+- **Password Reset**: Secure password reset emails with time-limited tokens
+- **Welcome Messages**: Welcome emails sent after successful email verification
+
+### Email Service Architecture
+- **Service**: `backend/app/services/email_service.py`
+- **SMTP Provider**: Hetzner mail server (mail.halbzeit.ai)
+- **Templates**: Multilingual support (German/English)
+- **Security**: All tokens are hashed and time-limited
+- **Gmail Compatibility**: Enhanced headers and HTML structure for better deliverability
+
+## Forced Password Change System
+
+All invited users (GPs and project participants) must change their temporary password on first login for security.
+
+### Database Schema
+```sql
+-- User table includes forced password change tracking
+ALTER TABLE users ADD COLUMN must_change_password BOOLEAN DEFAULT FALSE;
+```
+
+### Backend Implementation
+- **Login Flow**: `/auth/login` returns `must_change_password: true` for users requiring password change
+- **Change Password Endpoint**: `/auth/change-password` validates current password and updates to new one
+- **Security**: Temporary tokens expire in 30 minutes for password changes
+
+### Frontend Flow
+1. **Login Check**: Login component detects `must_change_password` response
+2. **Redirect**: User redirected to `/change-password` with temporary token
+3. **Password Change**: Secure form with current/new/confirm password fields
+4. **Completion**: After successful change, user proceeds to dashboard
+
+### Automatic Triggers
+- **GP Invitations**: All invited GPs automatically get `must_change_password = true`
+- **Migration**: Existing GPs (except ramin@halbzeit.ai) were flagged for password change
+- **Security**: Prevents use of temporary passwords beyond initial login
+
 ## Critical Architecture Rules (NEVER VIOLATE)
 
 ### 1. No Hardcoded Paths in Source Code
