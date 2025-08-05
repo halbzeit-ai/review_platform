@@ -1,0 +1,32 @@
+[Unit]
+Description=HALBZEIT Processing Worker Service
+Documentation=https://docs.halbzeit.ai
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=exec
+User=root
+Group=root
+WorkingDirectory=/opt/review-platform/backend
+Environment=PYTHONPATH=/opt/review-platform/backend
+EnvironmentFile=/opt/review-platform/backend/.env
+ExecStart=/opt/review-platform/venv/bin/python /opt/review-platform/backend/app/services/processing_worker.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Security settings
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/review-platform /mnt/CPU-GPU /var/log
+PrivateTmp=true
+
+# Resource limits
+LimitNOFILE=65536
+MemoryMax=2G
+
+[Install]
+WantedBy=multi-user.target
