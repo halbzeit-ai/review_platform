@@ -13,16 +13,24 @@ the startup can react on feedback by:
 - adding infomation to the dataroom
 - modifying the deck and re-uploading it
 
+GPs can enter a startups deck via the Gallery View on the GP dashboard.
+The can then look at various elements of the project (we will explicitly
+define which, please do not add this functionality on your own). And
+add a comment. 
+
 our AI needs to give feeback on four levels:
-1) feedback on each single deck slide
+1) feedback on each single deck slide 
 2) feedback on the template chapters
 4) feeback on the slide deck as a whole
 1) business case as a whole covering multiple documents
 
 
 ad 1)
-for each slide, we can provide feedback on clarity, visual complexity, and "helpfulness for the biz case"
-we need a prompt that looks at the visual analysis of this particular slide and generates feedback on that.
+in the deck viewer for each slide, our AI can provide feedback on clarity, visual complexity, and 
+"helpfulness for explaining the biz case", "can the reader understand in 10 seconds what the slide 
+is supposed to communicated". we need a prompt that looks at the visual analysis (i.e. the textual
+description) of this particular slide and generates feedback on that. the AI may also decide not
+to generate feedback if the slide is okay, we don't want to spam the user. 
 
 
 ad 2) 
@@ -42,13 +50,13 @@ chapter.
 
 
 ad 3)
-the deck itself may have weaknesses in story telling, amounts of slides per chapter,
-sequence slides in context story telling 
-the we render this functionality by looking at the suggestions that we generated in step 2 and then 
+the deck as a whole may have weaknesses in story telling, amounts of slides per chapter (too many, 
+not enough), sequence of slides in context story telling quality / logical order, etc.
+we implement this functionality by looking at the suggestions that we generated in step 2 and then 
 generate a suggestion list by taking the set of slides into account. ideally, the system then 
 would suggest for example:
-- slide 4 needs to go back behind slide 13, 
-- here is one slide missing that exmplaings x
+- slide 4 needs to go back behind slide 13, because there we're covering topic z
+- here is one slide missing that exmplains / covers x, it hasn't been introduced before
 - this section has too many slides covering topic y
 - the overall number of slides is too high, suggestions for deletions: 6, 12, 18
 
