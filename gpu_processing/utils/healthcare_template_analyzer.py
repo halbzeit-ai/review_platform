@@ -1127,16 +1127,16 @@ class HealthcareTemplateAnalyzer:
             conn = psycopg2.connect(self.database_url)
             cursor = conn.cursor()
             
-            # Insert or update slide feedback
+            # Insert or update slide feedback (include feedback_type in conflict resolution)
             cursor.execute("""
-                INSERT INTO slide_feedback (pitch_deck_id, slide_number, slide_filename, feedback_text, has_issues, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (pitch_deck_id, slide_number) 
+                INSERT INTO slide_feedback (pitch_deck_id, slide_number, slide_filename, feedback_text, feedback_type, has_issues, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (pitch_deck_id, slide_number, feedback_type) 
                 DO UPDATE SET 
                     feedback_text = EXCLUDED.feedback_text,
                     has_issues = EXCLUDED.has_issues,
                     updated_at = EXCLUDED.updated_at
-            """, (deck_id, slide_number, slide_filename, feedback_text, has_issues, datetime.now(), datetime.now()))
+            """, (deck_id, slide_number, slide_filename, feedback_text, 'ai_analysis', has_issues, datetime.now(), datetime.now()))
             
             conn.commit()
             conn.close()

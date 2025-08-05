@@ -1,10 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+import asyncio
 from .core.config import settings
 from .core.logging_config import setup_shared_logging
 from .api import auth, decks, reviews, questions, documents, documents_robust, config, healthcare_templates, pipeline, projects, internal, dojo, project_management, project_stages, dojo_experiments, funding_stages, invitations, feedback
 from .db.models import Base
 from .db.database import engine
+from .services.queue_processor import queue_processor
 
 # Configure shared filesystem logging
 logger = setup_shared_logging("backend")
@@ -12,7 +15,27 @@ logger = setup_shared_logging("backend")
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title=settings.PROJECT_NAME)
+# Background task for queue processing
+background_task = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    global background_task
+    logger.info("Starting queue processor background task")
+    background_task = asyncio.create_task(queue_processor.start())
+    yield
+    # Shutdown
+    logger.info("Stopping queue processor background task")
+    await queue_processor.stop()
+    if background_task:
+        background_task.cancel()
+        try:
+            await background_task
+        except asyncio.CancelledError:
+            pass
+
+app = FastAPI(title=settings.PROJECT_NAME, lifespan=lifespan)
 
 # CORS middleware
 app.add_middleware(
