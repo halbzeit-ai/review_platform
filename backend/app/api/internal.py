@@ -56,8 +56,33 @@ async def update_deck_results(
             "pitch_deck_id": request.pitch_deck_id
         })
         
+        logger.info(f"🔍 DEBUG: Pitch decks update affected {result.rowcount} rows")
+        
+        # CRITICAL FIX: Also update the processing_queue table
+        queue_update_query = text("""
+            UPDATE processing_queue 
+            SET status = :queue_status, 
+                completed_at = CURRENT_TIMESTAMP,
+                results_file_path = :results_file_path,
+                progress_percentage = 100,
+                current_step = 'Analysis Complete',
+                progress_message = 'PDF analysis completed successfully'
+            WHERE pitch_deck_id = :pitch_deck_id 
+            AND status = 'processing'
+        """)
+        
+        # Map processing status to queue status
+        queue_status = "completed" if request.processing_status == "completed" else "failed"
+        
+        queue_result = db.execute(queue_update_query, {
+            "queue_status": queue_status,
+            "results_file_path": request.results_file_path,
+            "pitch_deck_id": request.pitch_deck_id
+        })
+        
+        logger.info(f"🔍 DEBUG: Processing queue update affected {queue_result.rowcount} rows")
+        
         db.commit()
-        logger.info(f"🔍 DEBUG: Update affected {result.rowcount} rows")
         
         if result.rowcount == 0:
             raise HTTPException(
