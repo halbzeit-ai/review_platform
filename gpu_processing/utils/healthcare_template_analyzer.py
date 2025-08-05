@@ -339,7 +339,7 @@ class HealthcareTemplateAnalyzer:
             
             # Get healthcare sectors with their associated data
             cursor.execute("""
-                SELECT id, name, display_name, description, keywords, sector_focus
+                SELECT id, name, display_name, description, keywords, subcategories
                 FROM healthcare_sectors 
                 WHERE is_active = true 
                 ORDER BY id
@@ -347,7 +347,7 @@ class HealthcareTemplateAnalyzer:
             
             sectors = []
             for row in cursor.fetchall():
-                sector_id, name, display_name, description, keywords, sector_focus = row
+                sector_id, name, display_name, description, keywords, subcategories = row
                 
                 # Parse keywords if they exist
                 keywords_list = []
@@ -364,7 +364,7 @@ class HealthcareTemplateAnalyzer:
                     "display_name": display_name,
                     "description": description or "",
                     "keywords": keywords_list,
-                    "sector_focus": sector_focus or ""
+                    "subcategories": subcategories or ""
                 })
             
             conn.close()

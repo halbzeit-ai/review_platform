@@ -211,6 +211,7 @@ class ProcessingQueueManager:
         try:
             # Use the PostgreSQL function to atomically get and lock a task
             capabilities_dict = {"pdf_analysis": True}
+            logger.debug("About to call get_next_processing_task function")
             result = db.execute(text("""
                 SELECT * FROM get_next_processing_task(:server_id, :capabilities)
             """), {
@@ -221,7 +222,9 @@ class ProcessingQueueManager:
             if not result:
                 return None
             
+            logger.debug(f"Got result from get_next_processing_task: {result}")
             task_id, pitch_deck_id, task_type, file_path, company_id, processing_options = result
+            logger.debug(f"processing_options type: {type(processing_options)}, value: {processing_options}")
             
             # Get full task details
             task_query = text("""
@@ -235,10 +238,25 @@ class ProcessingQueueManager:
                 WHERE id = :task_id
             """)
             
+            logger.debug("About to execute task details query")
             task_row = db.execute(task_query, {"task_id": task_id}).fetchone()
             if not task_row:
                 return None
             
+            logger.debug(f"Got task_row: {task_row}")
+            logger.debug(f"task_row[7] (processing_options) type: {type(task_row[7])}, value: {task_row[7]}")
+            
+            # Ensure processing_options is a dict (handle both dict and string cases)
+            processing_opts = task_row[7]
+            if isinstance(processing_opts, str):
+                # If it's a string, parse it as JSON
+                processing_opts = json.loads(processing_opts)
+            elif processing_opts is None:
+                # If it's None, use empty dict
+                processing_opts = {}
+            # If it's already a dict, use it as-is
+            
+            logger.debug("About to create ProcessingTask object")
             return ProcessingTask(
                 id=task_row[0],
                 pitch_deck_id=task_row[1],
@@ -247,7 +265,7 @@ class ProcessingQueueManager:
                 priority=TaskPriority(task_row[4]),
                 file_path=task_row[5],
                 company_id=task_row[6],
-                processing_options=task_row[7] if task_row[7] is not None else {},
+                processing_options=processing_opts,
                 progress_percentage=task_row[8] or 0,
                 current_step=task_row[9],
                 progress_message=task_row[10],
@@ -261,6 +279,8 @@ class ProcessingQueueManager:
             
         except Exception as e:
             logger.error(f"Failed to get next task: {e}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             return None
     
     def update_task_progress(
