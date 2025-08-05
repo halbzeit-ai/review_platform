@@ -1499,6 +1499,12 @@ class HealthcareTemplateAnalyzer:
         # Get the scoring prompt from the pipeline prompts system
         scoring_prompt_template = self._get_pipeline_prompt("scoring_analysis")
         
+        # Debug logging
+        logger.info(f"📋 Scoring prompt template loaded: {scoring_prompt_template[:200]}...")
+        logger.info(f"🔍 Formatting with question_text: {question_text[:100]}...")
+        logger.info(f"🔍 Formatting with scoring_criteria: {scoring_criteria[:100]}...")
+        logger.info(f"🔍 Formatting with response: {response[:100]}...")
+        
         # Format the prompt with the specific question data
         scoring_prompt = scoring_prompt_template.format(
             question_text=question_text,
@@ -1506,6 +1512,9 @@ class HealthcareTemplateAnalyzer:
             response=response, 
             pitch_deck_text=pitch_deck_text
         )
+        
+        # Log the formatted prompt
+        logger.info(f"📝 Prompt: {scoring_prompt[:200]}...")
         
         try:
             llm_response = ollama.generate(

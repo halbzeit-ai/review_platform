@@ -90,16 +90,19 @@ class QueueProcessor:
                 task.id, 5, "Sending to GPU for processing", "Task picked up by queue processor", db
             )
             
-            # Send to GPU using split processing approach
+            # Use split processing for incremental progress updates
+            logger.info(f"Using split processing for task {task.id}")
             success = await self.send_to_gpu_split_processing(task, db)
             
             if not success:
                 # Mark as failed if couldn't send to GPU
                 processing_queue_manager.complete_task(
                     task.id, 
-                    False, 
-                    error_message="Failed to send task to GPU server",
-                    db=db
+                    False,  # success = False 
+                    None,   # results_path
+                    "Failed to send task to GPU server",  # error_message
+                    None,   # metadata
+                    db
                 )
         
         except Exception as e:
@@ -173,6 +176,8 @@ class QueueProcessor:
             
             visual_success = await self.run_visual_analysis_phase(task, full_file_path, db)
             if not visual_success:
+                logger.error(f"Visual analysis failed for deck {task.pitch_deck_id} - failing task")
+                await self.fail_task_with_error(task, "Visual analysis failed - could not process slides", db)
                 return False
                 
             await self.update_progress(task.pitch_deck_id, 30, "Visual Analysis Complete", "Slides analyzed, starting extraction", db)
@@ -183,6 +188,8 @@ class QueueProcessor:
             
             extraction_success = await self.run_extraction_phase(task, db)
             if not extraction_success:
+                logger.error(f"Extraction failed for deck {task.pitch_deck_id} - failing task")
+                await self.fail_task_with_error(task, "Data extraction failed - could not extract company details", db)
                 return False
                 
             await self.update_progress(task.pitch_deck_id, 60, "Extraction Complete", "Company data extracted, starting template analysis", db)
@@ -193,11 +200,31 @@ class QueueProcessor:
             
             template_success = await self.run_template_analysis_phase(task, progress_callback_url, db)
             if not template_success:
+                logger.error(f"Template analysis failed for deck {task.pitch_deck_id} - failing task")
+                await self.fail_task_with_error(task, "Template analysis failed - could not complete AI analysis", db)
                 return False
                 
             await self.update_progress(task.pitch_deck_id, 95, "Analysis Complete", "Finalizing results", db)
             
-            logger.info(f"Split processing completed successfully for task {task.id}")
+            # CRITICAL: Manually complete the task since template processing doesn't send final callback
+            logger.info(f"Split processing completed successfully for task {task.id} - marking as completed")
+            processing_queue_manager.complete_task(
+                task.id, 
+                True,  # success = True
+                None,  # results_path
+                None,  # error_message
+                None,  # metadata
+                db
+            )
+            
+            # Also update pitch deck status
+            from sqlalchemy import text
+            db.execute(text(
+                "UPDATE pitch_decks SET processing_status = 'completed' WHERE id = :pitch_deck_id"
+            ), {"pitch_deck_id": task.pitch_deck_id})
+            db.commit()
+            
+            logger.info(f"Task {task.id} marked as completed in both processing_queue and pitch_decks")
             return True
             
         except Exception as e:
@@ -223,14 +250,44 @@ class QueueProcessor:
         except Exception as e:
             logger.error(f"Error updating progress for deck {pitch_deck_id}: {e}")
     
+    async def fail_task_with_error(self, task: ProcessingTask, error_message: str, db: Session):
+        """Mark task as failed with clear error message"""
+        try:
+            logger.error(f"Failing task {task.id} for deck {task.pitch_deck_id}: {error_message}")
+            
+            processing_queue_manager.complete_task(
+                task.id, 
+                False,  # success = False for failed tasks
+                None,   # results_path
+                error_message,  # error_message
+                None,   # metadata
+                db
+            )
+            
+            # Also update the pitch deck status
+            from sqlalchemy import text
+            db.execute(text(
+                "UPDATE pitch_decks SET processing_status = 'failed' WHERE id = :pitch_deck_id"
+            ), {"pitch_deck_id": task.pitch_deck_id})
+            db.commit()
+            
+            logger.info(f"Task {task.id} marked as failed with error: {error_message}")
+            
+        except Exception as e:
+            logger.error(f"Error failing task {task.id}: {e}")
+    
     async def run_visual_analysis_phase(self, task: ProcessingTask, full_file_path: str, db: Session) -> bool:
         """Run visual analysis phase using existing Dojo infrastructure"""
         try:
+            # The visual analysis batch API expects deck_ids, file_paths, vision_model, and analysis_prompt
             request_data = {
                 "deck_ids": [task.pitch_deck_id],
-                "vision_model": "llama3.2-vision:latest",
+                "file_paths": [full_file_path],  # CRITICAL: This was missing!
+                "vision_model": "llama3.2-vision:latest", 
                 "analysis_prompt": "Describe this slide from a pitchdeck from a perspective of an investor, but do not interpret the content, just describe what you see."
             }
+            
+            logger.info(f"Visual analysis request: deck_id={task.pitch_deck_id}, file_path={full_file_path}")
             
             async with httpx.AsyncClient(timeout=300.0) as client:
                 response = await client.post(
