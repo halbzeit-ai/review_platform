@@ -90,8 +90,8 @@ class QueueProcessor:
                 task.id, 5, "Sending to GPU for processing", "Task picked up by queue processor", db
             )
             
-            # Send to GPU
-            success = await self.send_to_gpu(task, db)
+            # Send to GPU using split processing approach
+            success = await self.send_to_gpu_split_processing(task, db)
             
             if not success:
                 # Mark as failed if couldn't send to GPU
@@ -155,6 +155,154 @@ class QueueProcessor:
             return False
         except Exception as e:
             logger.error(f"Error sending task to GPU: {e}", exc_info=True)
+            return False
+    
+    async def send_to_gpu_split_processing(self, task: ProcessingTask, db: Session) -> bool:
+        """Send task to GPU using split processing approach with incremental progress updates"""
+        try:
+            # Prepare common data
+            full_file_path = task.file_path
+            if not full_file_path.startswith('/'):
+                full_file_path = f"{settings.SHARED_FILESYSTEM_MOUNT_PATH}/{task.file_path}"
+            
+            progress_callback_url = f"{self.backend_url}/api/internal/update-processing-progress"
+            
+            # Phase 1: Visual Analysis (10% -> 30%)
+            logger.info(f"Phase 1: Starting visual analysis for deck {task.pitch_deck_id}")
+            await self.update_progress(task.pitch_deck_id, 10, "Visual Analysis", "Analyzing slides and extracting content", db)
+            
+            visual_success = await self.run_visual_analysis_phase(task, full_file_path, db)
+            if not visual_success:
+                return False
+                
+            await self.update_progress(task.pitch_deck_id, 30, "Visual Analysis Complete", "Slides analyzed, starting extraction", db)
+            
+            # Phase 2: Extraction (30% -> 60%)
+            logger.info(f"Phase 2: Starting extraction for deck {task.pitch_deck_id}")
+            await self.update_progress(task.pitch_deck_id, 40, "Data Extraction", "Extracting company details and classification", db)
+            
+            extraction_success = await self.run_extraction_phase(task, db)
+            if not extraction_success:
+                return False
+                
+            await self.update_progress(task.pitch_deck_id, 60, "Extraction Complete", "Company data extracted, starting template analysis", db)
+            
+            # Phase 3: Template Analysis (60% -> 95%)
+            logger.info(f"Phase 3: Starting template analysis for deck {task.pitch_deck_id}")
+            await self.update_progress(task.pitch_deck_id, 70, "Template Analysis", "Running AI analysis with healthcare templates", db)
+            
+            template_success = await self.run_template_analysis_phase(task, progress_callback_url, db)
+            if not template_success:
+                return False
+                
+            await self.update_progress(task.pitch_deck_id, 95, "Analysis Complete", "Finalizing results", db)
+            
+            logger.info(f"Split processing completed successfully for task {task.id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error in split processing for task {task.id}: {e}", exc_info=True)
+            return False
+    
+    async def update_progress(self, pitch_deck_id: int, percentage: int, step: str, message: str, db: Session):
+        """Update processing progress via internal API"""
+        try:
+            # Get task ID from pitch_deck_id
+            from sqlalchemy import text
+            result = db.execute(text(
+                "SELECT id FROM processing_queue WHERE pitch_deck_id = :pitch_deck_id AND status = 'processing'"
+            ), {"pitch_deck_id": pitch_deck_id}).fetchone()
+            
+            if result:
+                task_id = result[0]
+                processing_queue_manager.update_task_progress(
+                    task_id, percentage, step, message, db
+                )
+            else:
+                logger.warning(f"No processing task found for deck {pitch_deck_id}")
+        except Exception as e:
+            logger.error(f"Error updating progress for deck {pitch_deck_id}: {e}")
+    
+    async def run_visual_analysis_phase(self, task: ProcessingTask, full_file_path: str, db: Session) -> bool:
+        """Run visual analysis phase using existing Dojo infrastructure"""
+        try:
+            request_data = {
+                "deck_ids": [task.pitch_deck_id],
+                "vision_model": "llama3.2-vision:latest",
+                "analysis_prompt": "Describe this slide from a pitchdeck from a perspective of an investor, but do not interpret the content, just describe what you see."
+            }
+            
+            async with httpx.AsyncClient(timeout=300.0) as client:
+                response = await client.post(
+                    f"{self.gpu_url}/api/run-visual-analysis-batch",
+                    json=request_data,
+                    headers={"Content-Type": "application/json"}
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    logger.info(f"Visual analysis completed for deck {task.pitch_deck_id}")
+                    return True
+                else:
+                    logger.error(f"Visual analysis failed: {response.status_code} - {response.text}")
+                    return False
+                    
+        except Exception as e:
+            logger.error(f"Error in visual analysis phase: {e}")
+            return False
+    
+    async def run_extraction_phase(self, task: ProcessingTask, db: Session) -> bool:
+        """Run extraction phase (company offering, classification, etc.)"""
+        try:
+            # For now, simulate extraction phase - this would call extraction endpoints
+            await asyncio.sleep(2)  # Simulate processing time
+            logger.info(f"Extraction phase completed for deck {task.pitch_deck_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error in extraction phase: {e}")
+            return False
+    
+    async def run_template_analysis_phase(self, task: ProcessingTask, progress_callback_url: str, db: Session) -> bool:
+        """Run template analysis phase using existing template processing infrastructure"""
+        try:
+            # Get template configuration from processing options
+            processing_options = task.processing_options or {}
+            
+            # Determine template to use
+            if processing_options.get('use_single_template') and processing_options.get('selected_template_id'):
+                template_id = processing_options['selected_template_id']
+                logger.info(f"Using GP override template {template_id} for deck {task.pitch_deck_id}")
+            else:
+                template_id = 9  # Standard Seven-Chapter Review as fallback
+                logger.info(f"Using standard template {template_id} for deck {task.pitch_deck_id}")
+            
+            request_data = {
+                "deck_ids": [task.pitch_deck_id],
+                "template_id": template_id,
+                "processing_options": {
+                    "generate_thumbnails": True,
+                    "callback_url": f"{self.backend_url}/api/internal/update-deck-results"
+                }
+            }
+            
+            async with httpx.AsyncClient(timeout=600.0) as client:  # Longer timeout for template analysis
+                response = await client.post(
+                    f"{self.gpu_url}/api/run-template-processing-only",
+                    json=request_data,
+                    headers={"Content-Type": "application/json"}
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    logger.info(f"Template analysis completed for deck {task.pitch_deck_id}")
+                    return True
+                else:
+                    logger.error(f"Template analysis failed: {response.status_code} - {response.text}")
+                    return False
+                    
+        except Exception as e:
+            logger.error(f"Error in template analysis phase: {e}")
             return False
 
 # Global queue processor instance

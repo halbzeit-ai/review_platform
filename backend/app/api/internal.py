@@ -108,3 +108,57 @@ async def update_deck_results(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update deck results: {str(e)}"
         )
+
+class ProcessingProgressUpdateRequest(BaseModel):
+    pitch_deck_id: int
+    progress_percentage: int
+    current_step: str
+    progress_message: str
+    phase: str  # 'visual_analysis', 'extraction', 'template_analysis'
+
+@router.post("/update-processing-progress")
+async def update_processing_progress(
+    request: ProcessingProgressUpdateRequest,
+    db: Session = Depends(get_db)
+):
+    """Internal endpoint for GPU to send incremental progress updates during processing"""
+    try:
+        logger.info(f"📊 Progress update for deck {request.pitch_deck_id}: {request.progress_percentage}% - {request.current_step}")
+        
+        # Update the processing_queue table with incremental progress
+        progress_query = text("""
+            UPDATE processing_queue 
+            SET progress_percentage = :progress_percentage,
+                current_step = :current_step,
+                progress_message = :progress_message
+            WHERE pitch_deck_id = :pitch_deck_id 
+            AND status = 'processing'
+        """)
+        
+        result = db.execute(progress_query, {
+            "progress_percentage": request.progress_percentage,
+            "current_step": request.current_step,
+            "progress_message": request.progress_message,
+            "pitch_deck_id": request.pitch_deck_id
+        })
+        
+        db.commit()
+        logger.info(f"📊 Progress update applied to {result.rowcount} queue entries")
+        
+        if result.rowcount == 0:
+            logger.warning(f"📊 No processing queue entry found for deck {request.pitch_deck_id}")
+        
+        return {
+            "success": True,
+            "message": f"Progress updated for deck {request.pitch_deck_id}",
+            "pitch_deck_id": request.pitch_deck_id,
+            "progress_percentage": request.progress_percentage,
+            "current_step": request.current_step
+        }
+        
+    except Exception as e:
+        logger.error(f"Error updating processing progress: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update processing progress: {str(e)}"
+        )
