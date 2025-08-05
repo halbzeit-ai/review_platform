@@ -288,6 +288,7 @@ class QueueProcessor:
             }
             
             logger.info(f"Visual analysis request: deck_id={task.pitch_deck_id}, file_path={full_file_path}")
+            logger.info(f"Request data being sent: {json.dumps(request_data, indent=2)}")
             
             async with httpx.AsyncClient(timeout=300.0) as client:
                 response = await client.post(

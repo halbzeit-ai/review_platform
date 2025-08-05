@@ -525,19 +525,7 @@ class GPUHTTPServer:
                         "timestamp": datetime.now().isoformat()
                     }), 400
                 
-                if not vision_model:
-                    return jsonify({
-                        "success": False,
-                        "error": "vision_model is required",
-                        "timestamp": datetime.now().isoformat()
-                    }), 400
-                
-                if not analysis_prompt:
-                    return jsonify({
-                        "success": False,
-                        "error": "analysis_prompt is required",
-                        "timestamp": datetime.now().isoformat()
-                    }), 400
+                # vision_model and analysis_prompt are now optional - will use database defaults if not provided
                 
                 logger.info(f"Starting visual analysis batch for {len(deck_ids)} decks using {vision_model}")
                 
