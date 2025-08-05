@@ -63,17 +63,18 @@ class HealthcareTemplateAnalyzer:
             db_password = os.getenv('DATABASE_PASSWORD', 'review_password')
             self.database_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
         
-        # Model configuration
-        # Check if we should skip database lookups (for development)
-        if os.getenv('SKIP_DB_MODEL_CONFIG', 'false').lower() == 'true':
-            self.vision_model = os.getenv('DEFAULT_VISION_MODEL', 'gemma3:12b')
-            self.text_model = text_model_override or os.getenv('DEFAULT_TEXT_MODEL', 'gemma3:12b')
-            self.scoring_model = scoring_model_override or os.getenv('DEFAULT_SCORING_MODEL', 'phi4:latest')
-            logger.info("📋 Skipping database model config, using environment defaults")
-        else:
-            self.vision_model = self.get_model_by_type("vision") or os.getenv('DEFAULT_VISION_MODEL', 'gemma3:12b')
-            self.text_model = text_model_override or self.get_model_by_type("text") or os.getenv('DEFAULT_TEXT_MODEL', 'gemma3:12b')
-            self.scoring_model = scoring_model_override or self.get_model_by_type("scoring") or os.getenv('DEFAULT_SCORING_MODEL', 'phi4:latest')
+        # Model configuration - MUST come from database, no fallbacks
+        self.vision_model = self.get_model_by_type("vision")
+        self.text_model = text_model_override or self.get_model_by_type("text")
+        self.scoring_model = scoring_model_override or self.get_model_by_type("scoring")
+        
+        # Validate that all required models were loaded from database
+        if not self.vision_model:
+            raise RuntimeError("CRITICAL: No active vision model found in database. Configure model_configs table.")
+        if not self.text_model:
+            raise RuntimeError("CRITICAL: No active text model found in database. Configure model_configs table.")
+        if not self.scoring_model:
+            raise RuntimeError("CRITICAL: No active scoring model found in database. Configure model_configs table.")
         
         # Debug logging to track model selection
         logger.info(f"🎯 Model Configuration Complete:")
@@ -103,11 +104,20 @@ class HealthcareTemplateAnalyzer:
         self.question_results = {}
         self.specialized_results = {}
         
-        # Initialize pipeline prompts
+        # Initialize pipeline prompts - MUST come from database, no fallbacks
         logger.info("🔧 Initializing pipeline prompts from PostgreSQL...")
         self.image_analysis_prompt = self._get_pipeline_prompt("image_analysis")
         self.offering_extraction_prompt = self._get_pipeline_prompt("offering_extraction")
         self.startup_name_extraction_prompt = self._get_pipeline_prompt("startup_name_extraction")
+        
+        # Validate that all required prompts were loaded from database
+        if not self.image_analysis_prompt:
+            raise RuntimeError("CRITICAL: No image_analysis prompt found in database. Configure pipeline_prompts table.")
+        if not self.offering_extraction_prompt:
+            raise RuntimeError("CRITICAL: No offering_extraction prompt found in database. Configure pipeline_prompts table.")
+        if not self.startup_name_extraction_prompt:
+            raise RuntimeError("CRITICAL: No startup_name_extraction prompt found in database. Configure pipeline_prompts table.")
+            
         logger.info(f"📝 Loaded image_analysis_prompt: {self.image_analysis_prompt[:100]}...")
         logger.info(f"📝 Loaded startup_name_extraction_prompt: {self.startup_name_extraction_prompt[:100]}...")
         
@@ -212,14 +222,17 @@ class HealthcareTemplateAnalyzer:
                 logger.info(f"✅ Using configured {model_type} model: {result[0]}")
                 return result[0]
             else:
-                logger.warning(f"❌ No active {model_type} model found in database")
+                logger.error(f"❌ CRITICAL: No active {model_type} model found in database")
+                logger.error(f"   Available models in database: {active_models}")
+                logger.error(f"   Please configure an active {model_type} model in model_configs table")
+                return None
                 
         except Exception as e:
-            logger.error(f"❌ Could not get {model_type} model from PostgreSQL: {e}")
+            logger.error(f"❌ CRITICAL: Database connection failed for model configuration: {e}")
+            logger.error(f"   Database URL: {self.database_url}")
             logger.error(f"   Exception type: {type(e).__name__}")
-        
-        logger.info(f"⚠️  Falling back to default for {model_type} model")
-        return None
+            logger.error(f"   Please check database connectivity and model_configs table")
+            raise RuntimeError(f"Cannot connect to database for model configuration: {e}")
     
     def _get_company_info_from_path(self, pdf_path: str) -> tuple:
         """Extract company_id and deck_name from file path"""
@@ -290,7 +303,7 @@ class HealthcareTemplateAnalyzer:
             return os.path.join(shared_mount, "temp", "analysis")
     
     def _get_pipeline_prompt(self, stage_name: str) -> str:
-        """Get pipeline prompt from PostgreSQL database"""
+        """Get pipeline prompt from PostgreSQL database - NO FALLBACKS"""
         logger.info(f"🔍 Loading {stage_name} prompt from PostgreSQL database")
         
         try:
@@ -309,20 +322,15 @@ class HealthcareTemplateAnalyzer:
                 logger.info(f"📝 Prompt: {result[0][:200]}{'...' if len(result[0]) > 200 else ''}")
                 return result[0]
             else:
-                logger.warning(f"❌ No {stage_name} prompt found in PostgreSQL database")
+                logger.error(f"❌ CRITICAL: No active {stage_name} prompt found in database")
+                logger.error(f"   Please configure an active {stage_name} prompt in pipeline_prompts table")
+                return None
+                
         except Exception as e:
-            logger.warning(f"❌ Could not get {stage_name} prompt from PostgreSQL: {e}")
-        
-        # Default fallback prompts (only used if database is unavailable)
-        default_prompts = {
-            "image_analysis": "Describe this image and make sure to include anything notable about it (include text you see in the image):",
-            "offering_extraction": "Your Task is to explain in one single short sentence the service or product the startup provides. Do not mention the name of the product or the company."
-        }
-        
-        default_prompt = default_prompts.get(stage_name, f"No default prompt for {stage_name}")
-        logger.info(f"⚠️  Using default fallback {stage_name} prompt:")
-        logger.info(f"📝 Default prompt: {default_prompt}")
-        return default_prompt
+            logger.error(f"❌ CRITICAL: Database connection failed for pipeline prompt: {e}")
+            logger.error(f"   Database URL: {self.database_url}")
+            logger.error(f"   Please check database connectivity and pipeline_prompts table")
+            raise RuntimeError(f"Cannot connect to database for pipeline prompt {stage_name}: {e}")
     
     def _classify_startup(self, company_offering: str) -> Dict[str, Any]:
         """Classify startup using direct PostgreSQL access and local AI processing"""
