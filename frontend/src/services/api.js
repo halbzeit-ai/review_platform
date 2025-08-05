@@ -63,7 +63,7 @@ export const changeForcedPassword = (newPassword) =>
 export const uploadPitchDeck = (file) => {
   const formData = new FormData();
   formData.append('file', file);
-  return api.post('/documents/upload', formData);
+  return api.post('/robust/documents/upload', formData);
 };
 
 export const getReview = (id) =>
@@ -220,7 +220,7 @@ export const createProject = (projectData) =>
 
 // Processing Progress API
 export const getProcessingProgress = (pitchDeckId) =>
-  api.get(`/documents/processing-progress/${pitchDeckId}`);
+  api.get(`/robust/documents/processing-progress/${pitchDeckId}`);
 
 // GP Invitation API
 export const inviteGP = (inviteData) =>
