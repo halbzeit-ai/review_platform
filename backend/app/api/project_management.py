@@ -736,9 +736,10 @@ async def get_project_decks(
             )
         
         # Get all project documents (pitch decks) for this project
+        # Use LEFT JOIN with pitch_decks to get the correct deck ID for deck viewer
         decks_query = text("""
             SELECT 
-                pd.id,
+                COALESCE(deck.id, pd.id) as id,
                 pd.uploaded_by as user_id,
                 p.company_id,
                 pd.file_name,
@@ -759,6 +760,7 @@ async def get_project_decks(
             FROM project_documents pd
             JOIN projects p ON pd.project_id = p.id
             LEFT JOIN users u ON pd.uploaded_by = u.id
+            LEFT JOIN pitch_decks deck ON pd.file_name = deck.file_name AND p.company_id = deck.company_id
             WHERE pd.project_id = :project_id 
             AND pd.document_type = 'pitch_deck'
             AND pd.is_active = TRUE

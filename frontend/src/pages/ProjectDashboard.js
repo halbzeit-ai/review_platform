@@ -100,6 +100,8 @@ const ProjectDashboard = () => {
   // Function to refresh project data (can be called after upload)
   const refreshProjectData = () => {
     loadProjectData();
+    // Automatically switch to overview tab after upload (tab index 1)
+    setActiveTab(1);
   };
 
   const loadProjectData = async () => {
@@ -189,13 +191,19 @@ const ProjectDashboard = () => {
       const response = await getProcessingProgress(deckId);
       const data = response.data || response;
       
+      // Extract GPU progress data if available
+      const progressInfo = data.gpu_progress || data;
+      
       setProgressData(prev => ({
         ...prev,
-        [deckId]: data
+        [deckId]: progressInfo
       }));
       
+      // Check processing status from either gpu_progress or root level
+      const status = progressInfo.status || data.processing_status;
+      
       // If processing is complete, stop polling for this deck
-      if (data.status === 'completed' || data.status === 'failed') {
+      if (status === 'completed' || status === 'failed') {
         if (progressIntervals[deckId]) {
           clearInterval(progressIntervals[deckId]);
           setProgressIntervals(prev => {
@@ -205,9 +213,14 @@ const ProjectDashboard = () => {
           });
         }
         
-        // Reload deck data to get updated results
-        if (data.status === 'completed') {
-          loadProjectData();
+        // Update just this deck's status without reloading everything
+        if (status === 'completed') {
+          // Mark this deck as completed with results
+          setProjectDecks(prev => prev.map(deck => 
+            deck.id === deckId 
+              ? { ...deck, results_file_path: 'completed', processing_status: 'completed' }
+              : deck
+          ));
         }
       }
     } catch (error) {
@@ -423,7 +436,7 @@ const ProjectDashboard = () => {
             e.stopPropagation();
             handleViewDeckAnalysis(deck);
           }}
-          disabled={!deck.visual_analysis_completed && !deck.results_file_path}
+          disabled={!deck.results_file_path && progressData[deck.id]?.status !== 'processing'}
         >
           {t('project.actions.deckViewer')}
         </Button>

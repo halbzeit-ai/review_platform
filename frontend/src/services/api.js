@@ -236,4 +236,7 @@ export const getSlideSpecificFeedback = (companyId, deckId, slideNumber) =>
 export const getDeckFeedbackSummary = (companyId, deckId) =>
   api.get(`/feedback/projects/${companyId}/decks/${deckId}/feedback-summary`);
 
+export const addManualFeedback = (companyId, deckId, slideNumber, feedbackData) =>
+  api.post(`/feedback/projects/${companyId}/decks/${deckId}/slides/${slideNumber}/feedback`, feedbackData);
+
 export default api;

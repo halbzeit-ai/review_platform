@@ -25,12 +25,31 @@ our AI needs to give feeback on four levels:
 1) business case as a whole covering multiple documents
 
 
-ad 1)
+ad 1) **SLIDE-LEVEL FEEDBACK - IMPLEMENTED** ✅
 in the deck viewer for each slide, our AI can provide feedback on clarity, visual complexity, and 
 "helpfulness for explaining the biz case", "can the reader understand in 10 seconds what the slide 
 is supposed to communicated". we need a prompt that looks at the visual analysis (i.e. the textual
 description) of this particular slide and generates feedback on that. the AI may also decide not
-to generate feedback if the slide is okay, we don't want to spam the user. 
+to generate feedback if the slide is okay, we don't want to spam the user.
+
+**Implementation Details:**
+- **Location**: Deck viewer - slide-by-slide view (PowerPoint-like interface)
+- **Data Source**: Uses Step 2 visual analysis from Dojo extraction process
+- **Storage**: New `slide_feedback` table in project management functionality
+- **Access Control**: Both startups and GPs can view slide feedback
+- **Generation**: Automatically generated when slides are processed during PDF upload
+- **Display Position**: Between slide image and visual analysis description box
+- **Visual Design**: 
+  - No issues: Green checkmark with "No issues identified" message
+  - Has issues: Blue feedback box with specific improvement suggestions
+  - Loading: Skeleton placeholder during processing
+- **Caching**: Feedback cached in database, regenerated only when deck re-uploaded
+- **Prompt**: Stored in `pipeline_prompts` table as 'slide_feedback' stage
+- **API Endpoints**: 
+  - `GET /api/feedback/projects/{company_id}/decks/{deck_id}/slide-feedback`
+  - `GET /api/feedback/projects/{company_id}/decks/{deck_id}/slides/{slide_number}/feedback`
+  - `GET /api/feedback/projects/{company_id}/decks/{deck_id}/feedback-summary`
+- **Smart Logic**: AI responds with "SLIDE_OK" for good slides (no feedback stored) 
 
 
 ad 2) 
@@ -68,4 +87,70 @@ a scientific paper or competitor analysis.
 in this feedback area, we may have two sections:
 - why we recommend to invest
 - what is concerning us
+
+
+## Technical Architecture
+
+### Database Schema
+- **slide_feedback**: Stores slide-level AI feedback
+  - `pitch_deck_id` (FK to pitch_decks)
+  - `slide_number` (1-based slide index)
+  - `slide_filename` (e.g., slide_001.jpg)
+  - `feedback_text` (AI-generated feedback or NULL for SLIDE_OK)
+  - `has_issues` (boolean: true = feedback provided, false = no issues)
+  - `feedback_type` (default: 'ai_analysis')
+  - Unique constraint on (pitch_deck_id, slide_number)
+
+### Processing Pipeline Integration
+- **Step 1**: Visual analysis (existing)
+- **Step 1.5**: Slide feedback generation (NEW) ✅
+- **Step 2**: Company offering extraction (existing)
+- **Step 3**: Classification and template processing (existing)
+
+### Prompt Management
+All feedback prompts stored in `pipeline_prompts` table:
+- `slide_feedback`: OWASP-inspired slide clarity analysis
+- Future: `chapter_feedback`, `deck_feedback`, `business_case_feedback`
+
+### API Design Pattern
+RESTful endpoints follow project-based structure:
+- `/api/feedback/projects/{company_id}/decks/{deck_id}/...`
+- Consistent access control (startups: own projects, GPs: all projects)
+
+## Implementation Roadmap
+
+### ✅ **Phase 1: Slide-Level Feedback** (COMPLETED)
+- Automatic generation during PDF processing
+- Storage in dedicated database table
+- Frontend display in deck viewer
+- API endpoints for data retrieval
+- Smart "no feedback" logic for good slides
+
+### 🔄 **Phase 2: Template Chapter Feedback** (NEXT)
+- Aggregate feedback across chapter questions
+- Maximum 5 improvement suggestions per chapter
+- Context: questions + answers + scores
+- Display in template analysis results
+
+### 📋 **Phase 3: Deck-Level Feedback** (FUTURE)
+- Holistic slide deck analysis
+- Story flow and narrative coherence
+- Slide sequencing and organization
+- Overall slide count optimization
+- Structural recommendations
+
+### 🎯 **Phase 4: Business Case Feedback** (FUTURE)
+- Multi-document analysis (deck + dataroom)
+- Investment recommendation framework
+- "Why recommend" vs "What concerns us"
+- Dynamic updates when documents added
+
+## Design Principles
+
+1. **Non-Intrusive**: Feedback appears contextually where relevant
+2. **Smart Generation**: AI decides when feedback is necessary
+3. **Cached Performance**: Generate once, display many times
+4. **Access Control**: Role-based viewing permissions
+5. **Visual Hierarchy**: Color-coded feedback types (green=OK, blue=suggestions)
+6. **Progressive Enhancement**: System works without feedback, enhanced with it
 

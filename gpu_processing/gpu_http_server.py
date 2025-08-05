@@ -809,6 +809,62 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                     "timestamp": datetime.now().isoformat()
                 }), 500
         
+        @self.app.route('/api/processing-progress/<int:pitch_deck_id>', methods=['GET'])
+        def get_processing_progress(pitch_deck_id: int):
+            """Get processing progress for a specific pitch deck"""
+            try:
+                logger.info(f"Getting processing progress for pitch deck {pitch_deck_id}")
+                
+                # For now, we'll implement a basic progress tracking system
+                # In a real implementation, this would track actual processing stages
+                
+                # Check if there's an active processing job for this deck
+                # This is a simplified version - in production you'd track actual progress
+                
+                # Try to determine status based on file system state
+                import os
+                from pathlib import Path
+                
+                # Check for results file
+                results_pattern = f"job_{pitch_deck_id}_*_results.json"
+                results_dir = config.results_path
+                import glob
+                result_files = glob.glob(str(results_dir / results_pattern))
+                
+                if result_files:
+                    # Processing completed
+                    return jsonify({
+                        "success": True,
+                        "status": "completed",
+                        "progress": {
+                            "current_step": "Analysis Complete",
+                            "progress_percentage": 100,
+                            "message": "PDF analysis completed successfully"
+                        },
+                        "timestamp": datetime.now().isoformat()
+                    })
+                else:
+                    # Check if processing is actually happening
+                    # This is a simplified approach - in reality you'd track active jobs
+                    return jsonify({
+                        "success": True,
+                        "status": "processing",
+                        "progress": {
+                            "current_step": "Analyzing PDF content",
+                            "progress_percentage": 45,
+                            "message": "Processing pitch deck slides and generating analysis..."
+                        },
+                        "timestamp": datetime.now().isoformat()
+                    })
+                
+            except Exception as e:
+                logger.error(f"Error getting processing progress for pitch deck {pitch_deck_id}: {e}")
+                return jsonify({
+                    "success": False,
+                    "error": str(e),
+                    "timestamp": datetime.now().isoformat()
+                }), 500
+        
         @self.app.route('/api/run-template-processing-batch', methods=['POST'])
         def run_template_processing_batch():
             """Run template processing for multiple decks with optional thumbnail generation"""

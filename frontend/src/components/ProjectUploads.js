@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -41,17 +41,12 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
   const [uploadStatus, setUploadStatus] = useState(null);
   const [deleting, setDeleting] = useState(null);
 
-  useEffect(() => {
-    console.log('ProjectUploads - companyId changed:', companyId);
-    if (companyId) {
-      console.log('ProjectUploads - calling loadUploads with companyId:', companyId);
-      loadUploads();
-    } else {
-      console.log('ProjectUploads - no companyId provided, not loading uploads');
-    }
-  }, [companyId]);
-
-  const loadUploads = async () => {
+  // Track previous companyId to prevent unnecessary reloads
+  const prevCompanyIdRef = useRef();
+  
+  const loadUploads = useCallback(async () => {
+    if (!companyId) return;
+    
     try {
       console.log('ProjectUploads - loadUploads called with companyId:', companyId);
       setLoading(true);
@@ -70,7 +65,21 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [companyId]);
+  
+  useEffect(() => {
+    console.log('ProjectUploads - companyId prop:', companyId, 'prev:', prevCompanyIdRef.current);
+    // Only load if companyId actually changed
+    if (companyId && companyId !== prevCompanyIdRef.current) {
+      console.log('ProjectUploads - companyId actually changed, calling loadUploads');
+      prevCompanyIdRef.current = companyId;
+      loadUploads();
+    } else if (!companyId) {
+      console.log('ProjectUploads - no companyId provided, not loading uploads');
+    } else {
+      console.log('ProjectUploads - companyId unchanged, skipping reload');
+    }
+  }, [companyId, loadUploads]);
 
 
   const handleViewDetails = (upload) => {

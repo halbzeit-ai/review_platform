@@ -15,7 +15,9 @@ import {
   Chip,
   Divider,
   IconButton,
-  Skeleton
+  Skeleton,
+  TextField,
+  Avatar
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -24,28 +26,110 @@ import {
   ZoomIn as ZoomInIcon,
   ZoomOut as ZoomOutIcon,
   SmartToy as SmartToyIcon,
-  CheckCircle as CheckCircleIcon
+  CheckCircle as CheckCircleIcon,
+  Add as AddIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { 
   getProjectDeckAnalysis,
-  getSlideFeedback
+  getSlideFeedback,
+  addManualFeedback
 } from '../services/api';
 import api from '../services/api';
 import { formatMarkdownText } from '../utils/markdownFormatter';
 
+// Individual Feedback Bubble Component
+const FeedbackBubble = ({ feedbackItem }) => {
+  const getAvatarProps = () => {
+    if (feedbackItem.feedback_type === 'ai_analysis') {
+      return {
+        text: 'HZ',
+        backgroundColor: feedbackItem.has_issues ? 'primary.main' : 'success.main',
+        bubbleColor: feedbackItem.has_issues ? '#f8f9ff' : '#f1f8e9',
+        borderColor: feedbackItem.has_issues ? '#e3f2fd' : '#c8e6c9'
+      };
+    } else if (feedbackItem.feedback_type === 'gp_feedback') {
+      return {
+        text: 'GP',
+        backgroundColor: 'secondary.main',
+        bubbleColor: '#fdf4ff',
+        borderColor: '#f3e8ff'
+      };
+    } else {
+      return {
+        text: 'SU',
+        backgroundColor: 'info.main',
+        bubbleColor: '#f0f9ff',
+        borderColor: '#e0f2fe'
+      };
+    }
+  };
+
+  const avatarProps = getAvatarProps();
+  
+  // Handle "no issues" case for AI feedback
+  const displayText = feedbackItem.feedback_text || 
+    (feedbackItem.feedback_type === 'ai_analysis' && !feedbackItem.has_issues 
+      ? 'No issues identified - this slide is clear and effective' 
+      : '');
+
+  return (
+    <Box sx={{ 
+      display: 'flex', 
+      alignItems: 'flex-start', 
+      mb: 2,
+      gap: 1
+    }}>
+      <Avatar sx={{ 
+        width: 32, 
+        height: 32,
+        backgroundColor: avatarProps.backgroundColor,
+        fontSize: '0.75rem',
+        fontWeight: 'bold'
+      }}>
+        {avatarProps.text}
+      </Avatar>
+      <Paper sx={{ 
+        p: 2, 
+        backgroundColor: avatarProps.bubbleColor,
+        border: `1px solid ${avatarProps.borderColor}`,
+        borderRadius: 2,
+        flex: 1,
+        position: 'relative'
+      }}>
+        <Box sx={{ 
+          position: 'absolute',
+          left: -8,
+          top: 12,
+          width: 0,
+          height: 0,
+          borderTop: '8px solid transparent',
+          borderBottom: '8px solid transparent',
+          borderRight: `8px solid ${avatarProps.bubbleColor}`
+        }} />
+        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+          {displayText}
+        </Typography>
+      </Paper>
+    </Box>
+  );
+};
+
 // Slide Feedback Display Component
-const SlideFeedbackDisplay = ({ slideNumber, feedback, loading = false }) => {
+const SlideFeedbackDisplay = ({ slideNumber, feedback, loading = false, companyId, deckId, currentUser, onFeedbackAdded }) => {
   const { t } = useTranslation(['deckViewer', 'common']);
+  const [showAddFeedback, setShowAddFeedback] = useState(false);
+  const [newFeedback, setNewFeedback] = useState('');
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
   
   if (loading) {
     return (
       <Box sx={{ mb: 3 }}>
         <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
           <SmartToyIcon sx={{ mr: 1, color: 'primary.main' }} />
-          AI Feedback
+          Feedback
         </Typography>
         <Paper sx={{ p: 2, backgroundColor: 'grey.50' }}>
           <Skeleton variant="text" width="80%" />
@@ -55,58 +139,124 @@ const SlideFeedbackDisplay = ({ slideNumber, feedback, loading = false }) => {
     );
   }
   
-  if (!feedback) {
-    return null;
-  }
-  
-  if (!feedback.has_issues) {
-    return (
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-          <SmartToyIcon sx={{ mr: 1, color: 'primary.main' }} />
-          AI Feedback
-        </Typography>
-        <Paper sx={{ 
-          p: 2, 
-          backgroundColor: 'success.light', 
-          borderLeft: '4px solid',
-          borderLeftColor: 'success.main'
-        }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', color: 'success.contrastText' }}>
-            <CheckCircleIcon sx={{ mr: 1, fontSize: 20 }} />
-            <Typography variant="body2" fontWeight="medium">
-              No issues identified - this slide is clear and effective
-            </Typography>
-          </Box>
-        </Paper>
-      </Box>
-    );
-  }
+  const handleAddFeedback = async () => {
+    if (!newFeedback.trim()) return;
+    
+    setSubmittingFeedback(true);
+    try {
+      const feedbackData = {
+        feedback_text: newFeedback,
+        feedback_type: currentUser?.role === 'gp' ? 'gp_feedback' : 'startup_feedback'
+      };
+      
+      await addManualFeedback(companyId, deckId, slideNumber, feedbackData);
+      
+      setNewFeedback('');
+      setShowAddFeedback(false);
+      
+      // Refresh feedback data
+      if (onFeedbackAdded) {
+        onFeedbackAdded();
+      }
+      
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      // TODO: Show error message to user
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  };
   
   return (
     <Box sx={{ mb: 3 }}>
-      <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-        <SmartToyIcon sx={{ mr: 1, color: 'primary.main' }} />
-        AI Feedback
+      <Typography variant="h6" sx={{ mb: 2 }}>
+        Feedback
       </Typography>
-      <Paper sx={{ 
-        p: 2, 
-        backgroundColor: 'info.light',
-        borderLeft: '4px solid',
-        borderLeftColor: 'info.main'
-      }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-          <SmartToyIcon sx={{ mr: 1, color: 'info.main', fontSize: 20, mt: 0.5 }} />
+      
+      {/* Display all feedback entries */}
+      {Array.isArray(feedback) ? (
+        feedback.map((feedbackItem, index) => (
+          <FeedbackBubble key={index} feedbackItem={feedbackItem} />
+        ))
+      ) : feedback ? (
+        <FeedbackBubble feedbackItem={feedback} />
+      ) : null}
+      
+      {/* Add Feedback Section */}
+      {!showAddFeedback ? (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+          <Button
+            startIcon={<AddIcon />}
+            onClick={() => setShowAddFeedback(true)}
+            variant="outlined"
+            size="small"
+            sx={{ 
+              borderColor: 'grey.300',
+              color: 'text.secondary',
+              '&:hover': {
+                borderColor: 'primary.main',
+                backgroundColor: 'primary.light'
+              }
+            }}
+          >
+            Add feedback
+          </Button>
+        </Box>
+      ) : (
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'flex-start', 
+          gap: 1,
+          mt: 2
+        }}>
+          <Avatar sx={{ 
+            width: 32, 
+            height: 32,
+            backgroundColor: currentUser?.role === 'gp' ? 'secondary.main' : 'primary.main',
+            fontSize: '0.875rem'
+          }}>
+            {currentUser?.role === 'gp' ? 'GP' : 'SU'}
+          </Avatar>
           <Box sx={{ flex: 1 }}>
-            <Typography variant="subtitle2" color="info.main" sx={{ mb: 1 }}>
-              Suggestions for improvement:
-            </Typography>
-            <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
-              {feedback.feedback_text}
-            </Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              placeholder={`Add your feedback as ${currentUser?.role === 'gp' ? 'GP' : 'Startup'}...`}
+              value={newFeedback}
+              onChange={(e) => setNewFeedback(e.target.value)}
+              variant="outlined"
+              size="small"
+              sx={{
+                backgroundColor: 'white',
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2
+                }
+              }}
+            />
+            <Box sx={{ display: 'flex', gap: 1, mt: 1, justifyContent: 'flex-end' }}>
+              <Button
+                size="small"
+                onClick={() => {
+                  setShowAddFeedback(false);
+                  setNewFeedback('');
+                }}
+                disabled={submittingFeedback}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                onClick={handleAddFeedback}
+                disabled={!newFeedback.trim() || submittingFeedback}
+              >
+                {submittingFeedback ? 'Adding...' : 'Add Feedback'}
+              </Button>
+            </Box>
           </Box>
         </Box>
-      </Paper>
+      )}
     </Box>
   );
 };
@@ -182,7 +332,14 @@ const DeckViewer = () => {
       
     } catch (err) {
       console.error('Error loading deck analysis:', err);
-      setError(err.response?.data?.detail || err.message || 'Failed to load deck analysis');
+      const errorMessage = err.response?.data?.detail || err.message || 'Failed to load deck analysis';
+      
+      // Handle the specific case where analysis is not ready yet
+      if (errorMessage.includes('Analysis results not found') || errorMessage.includes('analysis not found')) {
+        setError('This deck is still being processed. Please check back in a few minutes once the analysis is complete.');
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -223,13 +380,8 @@ const DeckViewer = () => {
       const response = await getSlideFeedback(companyId, deckId);
       const feedbackData = response.data || response;
       
-      // Convert feedback array to object keyed by slide number for easy lookup
-      const feedbackBySlide = {};
-      if (feedbackData.feedback) {
-        feedbackData.feedback.forEach(feedback => {
-          feedbackBySlide[feedback.slide_number] = feedback;
-        });
-      }
+      // feedbackData.feedback is already keyed by slide number
+      const feedbackBySlide = feedbackData.feedback || {};
       
       setSlideFeedback(feedbackBySlide);
       
@@ -571,6 +723,10 @@ const DeckViewer = () => {
                   slideNumber={currentSlideData.page_number}
                   feedback={slideFeedback[currentSlideData.page_number]}
                   loading={feedbackLoading}
+                  companyId={companyId}
+                  deckId={deckId}
+                  currentUser={JSON.parse(localStorage.getItem('user'))}
+                  onFeedbackAdded={loadSlideFeedback}
                 />
 
                 <Divider sx={{ mb: 3 }} />
