@@ -534,6 +534,7 @@ class GPUHTTPServer:
                 # vision_model and analysis_prompt are now optional - will use database defaults if not provided
                 
                 logger.info(f"Starting visual analysis batch for {len(deck_ids)} decks using {vision_model}")
+                logger.info(f"DEBUG: vision_model type: {type(vision_model)}, value: '{vision_model}'")
                 
                 # Process each deck
                 batch_results = {}
