@@ -22,6 +22,20 @@ function Navigation() {
       <Toolbar>
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           HALBZEIT AI: Funding Health Innovations Together
+          <Typography 
+            component="span" 
+            variant="caption" 
+            sx={{ 
+              ml: 2, 
+              opacity: 0.7, 
+              backgroundColor: 'rgba(255,255,255,0.1)', 
+              padding: '2px 8px', 
+              borderRadius: '4px',
+              fontSize: '11px'
+            }}
+          >
+            build_20250806_103037_TABPANEL_FIX
+          </Typography>
         </Typography>
         <LanguageSwitcher />
         {!isLoggedIn ? (

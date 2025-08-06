@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -45,6 +45,13 @@ import {
   getProcessingProgress
 } from '../services/api';
 import ProjectUploads from '../components/ProjectUploads';
+
+// CRITICAL FIX: Move TabPanel OUTSIDE component to prevent recreation on every render
+const TabPanel = ({ children, value, index }) => (
+  <div hidden={value !== index}>
+    {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+  </div>
+);
 
 const ProjectDashboard = () => {
   const { t } = useTranslation('dashboard');
@@ -97,14 +104,7 @@ const ProjectDashboard = () => {
     console.log('actualCompanyId state changed to:', actualCompanyId);
   }, [actualCompanyId]);
 
-  // Function to refresh project data (can be called after upload)
-  const refreshProjectData = () => {
-    loadProjectData();
-    // Automatically switch to overview tab after upload (tab index 1)
-    setActiveTab(1);
-  };
-
-  const loadProjectData = async () => {
+  const loadProjectData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -158,7 +158,14 @@ const ProjectDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAdminView, projectId, companyId]); // Removed 't' dependency to prevent infinite recreations
+
+  // Function to refresh project data (can be called after upload)
+  const refreshProjectData = useCallback(() => {
+    loadProjectData();
+    // Automatically switch to overview tab after upload (tab index 1)
+    setActiveTab(1);
+  }, [loadProjectData]);
 
   const startProgressPollingForDecks = (decks) => {
     // Clear existing intervals
@@ -341,11 +348,6 @@ const ProjectDashboard = () => {
   };
 
 
-  const TabPanel = ({ children, value, index }) => (
-    <div hidden={value !== index}>
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  );
 
   const DeckCard = ({ deck }) => (
     <Card 
@@ -580,26 +582,12 @@ const ProjectDashboard = () => {
     </Box>
   );
 
-  const UploadsContent = () => {
-    console.log('UploadsContent render - isAdminView:', isAdminView, 'actualCompanyId:', actualCompanyId, 'companyId:', companyId);
-    
-    // Wait for actualCompanyId to be loaded in admin view
-    if (isAdminView && !actualCompanyId) {
-      console.log('UploadsContent - waiting for actualCompanyId...');
-      return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-          <CircularProgress />
-        </Box>
-      );
-    }
-    
-    const finalCompanyId = actualCompanyId || companyId;
-    console.log('UploadsContent - passing companyId to ProjectUploads:', finalCompanyId);
-    
-    return (
-      <ProjectUploads companyId={finalCompanyId} onUploadComplete={refreshProjectData} />
-    );
-  };
+  // FIXED: Stable finalCompanyId - only changes when the actual result value changes
+  const finalCompanyId = useMemo(() => {
+    const result = actualCompanyId || companyId;
+    console.log('finalCompanyId computed:', result, 'from actualCompanyId:', actualCompanyId, 'companyId:', companyId);
+    return result;
+  }, [actualCompanyId || companyId]); // Depend on the result, not the inputs
 
   const FundingJourneyContent = () => {
     if (journeyLoading) {
@@ -798,7 +786,16 @@ const ProjectDashboard = () => {
         </TabPanel>
 
         <TabPanel value={activeTab} index={3}>
-          <UploadsContent />
+          {isAdminView && !actualCompanyId ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <ProjectUploads 
+              companyId={finalCompanyId} 
+              onUploadComplete={refreshProjectData} 
+            />
+          )}
         </TabPanel>
       </Paper>
     </Box>

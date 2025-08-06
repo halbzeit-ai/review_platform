@@ -279,12 +279,23 @@ class QueueProcessor:
     async def run_visual_analysis_phase(self, task: ProcessingTask, full_file_path: str, db: Session) -> bool:
         """Run visual analysis phase using existing Dojo infrastructure"""
         try:
+            # Retrieve configured models from database - CRITICAL for startup processing
+            vision_model = db.execute(text(
+                "SELECT model_name FROM model_configs WHERE model_type = 'vision' AND is_active = true LIMIT 1"
+            )).scalar()
+            
+            if not vision_model:
+                logger.error("No active vision model configured in database")
+                return False
+                
+            logger.info(f"Using database-configured vision model: {vision_model}")
+            
             # The visual analysis batch API expects deck_ids, file_paths, vision_model, and analysis_prompt
-            # Let the GPU service handle model and prompt selection from database
             request_data = {
                 "deck_ids": [task.pitch_deck_id],
-                "file_paths": [full_file_path]  # CRITICAL: This was missing!
-                # vision_model and analysis_prompt will be loaded by GPU from database
+                "file_paths": [full_file_path],
+                "vision_model": vision_model  # CRITICAL: Send database-configured model
+                # analysis_prompt will be loaded by GPU from database
             }
             
             logger.info(f"Visual analysis request: deck_id={task.pitch_deck_id}, file_path={full_file_path}")
