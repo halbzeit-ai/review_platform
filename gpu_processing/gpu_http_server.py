@@ -518,6 +518,12 @@ class GPUHTTPServer:
                 analysis_prompt = data.get('analysis_prompt')
                 file_paths = data.get('file_paths', [])
                 
+                logger.info(f"📥 Received visual analysis request:")
+                logger.info(f"   deck_ids: {deck_ids}")
+                logger.info(f"   vision_model: {vision_model}")
+                logger.info(f"   analysis_prompt: {analysis_prompt[:50] if analysis_prompt else None}...")
+                logger.info(f"   file_paths count: {len(file_paths)}")
+                
                 if not deck_ids:
                     return jsonify({
                         "success": False,
