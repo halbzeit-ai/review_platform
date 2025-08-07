@@ -217,8 +217,35 @@ echo "y" | sudo ufw enable
 # 2a. Geographic IP Blocking for China and Russia
 echo -e "${BLUE}🌍 Setting up geographic IP blocking (China & Russia)...${NC}"
 
-# Install required packages
-sudo apt install -y ipset wget iptables-persistent
+# Install required packages for geographic IP blocking
+echo -e "${BLUE}📦 Checking and installing required packages for geo-blocking...${NC}"
+
+# Check and install ipset
+if ! command -v ipset &> /dev/null; then
+    echo -e "  Installing ipset..."
+    sudo apt install -y ipset
+else
+    echo -e "  ${GREEN}✓${NC} ipset already installed"
+fi
+
+# Check and install wget
+if ! command -v wget &> /dev/null; then
+    echo -e "  Installing wget..."
+    sudo apt install -y wget
+else
+    echo -e "  ${GREEN}✓${NC} wget already installed"
+fi
+
+# Check and install iptables-persistent
+if ! dpkg -l | grep -q iptables-persistent; then
+    echo -e "  Installing iptables-persistent..."
+    # Pre-configure to avoid interactive prompts
+    echo "iptables-persistent iptables-persistent/autosave_v4 boolean false" | sudo debconf-set-selections
+    echo "iptables-persistent iptables-persistent/autosave_v6 boolean false" | sudo debconf-set-selections
+    DEBIAN_FRONTEND=noninteractive sudo apt install -y iptables-persistent
+else
+    echo -e "  ${GREEN}✓${NC} iptables-persistent already installed"
+fi
 
 # Create directory for IP lists
 sudo mkdir -p /etc/security/ip-blocks

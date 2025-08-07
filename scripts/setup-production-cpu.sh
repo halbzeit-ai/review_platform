@@ -35,7 +35,7 @@ SKIP_SECURITY=false
 SKIP_BACKUP=false
 RESTORE_DB=""
 CREATE_SUDO_USER=""
-SETUP_SSL=""
+SETUP_SSL="auto"  # Default to auto-detect
 DOMAIN_NAME="halbzeit.ai"
 SSL_EMAIL="ramin@halbzeit.ai"
 
@@ -59,6 +59,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --setup-ssl)
             SETUP_SSL="yes"
+            shift
+            ;;
+        --no-ssl)
+            SETUP_SSL="no"
             shift
             ;;
         --domain)
@@ -90,10 +94,16 @@ Options:
   --skip-backup       Skip database backup step
   --restore-db FILE   Restore database from backup file
   --create-user NAME  Create sudo user with given name
-  --setup-ssl         Enable SSL/TLS certificate setup
+  --setup-ssl         Force SSL/TLS certificate setup (default: auto-detect)
+  --no-ssl           Skip SSL setup entirely
   --domain NAME       Domain name for SSL certificates (default: halbzeit.ai)
   --ssl-email EMAIL   Email for Let's Encrypt notifications (default: ramin@halbzeit.ai)
   --help, -h         Show this help message
+
+SSL Configuration:
+  By default, the script auto-detects if SSL certificates should be installed
+  by checking if the domain points to this server. This prevents the network
+  errors that occur when frontend expects HTTPS but server only has HTTP.
 
 Examples:
   # Fresh installation
@@ -172,15 +182,15 @@ log_success "System dependencies installed"
 # Step 2: Clone Repository (if not exists)
 log_section "Step 2: Repository Setup"
 
-if [[ ! -d "$PROJECT_ROOT" ]]; then
-    log_info "Cloning repository..."
-    git clone https://github.com/your-repo/review-platform.git "$PROJECT_ROOT"
-    cd "$PROJECT_ROOT"
-else
-    log_info "Repository already exists at $PROJECT_ROOT"
-    cd "$PROJECT_ROOT"
-    git pull origin main || log_warning "Could not pull latest changes"
-fi
+#if [[ ! -d "$PROJECT_ROOT" ]]; then
+#    log_info "Cloning repository..."
+#    git clone git@github.com:halbzeit-ai/review_platform.git "$PROJECT_ROOT"
+#    cd "$PROJECT_ROOT"
+#else
+#    log_info "Repository already exists at $PROJECT_ROOT"
+#    cd "$PROJECT_ROOT"
+#    git pull origin main || log_warning "Could not pull latest changes"
+#fi
 
 # Step 3: PostgreSQL Setup
 log_section "Step 3: PostgreSQL Database Setup"
@@ -199,9 +209,15 @@ sudo -u postgres psql -c "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME'" 
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE \"$DB_NAME\" TO $DB_USER;"
 
 # Configure PostgreSQL for remote connections (from GPU server)
-PG_VERSION=$(sudo -u postgres psql -t -c "SELECT version();" | grep -oP '\d+(?=\.)')
+# Use a more reliable method to detect PostgreSQL version
+PG_VERSION=$(ls /etc/postgresql/ | head -1)
 PG_CONFIG="/etc/postgresql/$PG_VERSION/main/postgresql.conf"
 PG_HBA="/etc/postgresql/$PG_VERSION/main/pg_hba.conf"
+
+# Verify config files exist
+if [[ ! -f "$PG_CONFIG" ]]; then
+    log_error "PostgreSQL config file not found at $PG_CONFIG"
+fi
 
 # Update listen_addresses
 grep -q "^listen_addresses = '\*'" "$PG_CONFIG" || \
@@ -258,7 +274,7 @@ source "$PROJECT_ROOT/venv/bin/activate"
 # Install dependencies
 log_info "Installing Python dependencies..."
 pip install --upgrade pip
-pip install -r requirements.txt
+pip install -r "$PROJECT_ROOT/requirements.txt"
 
 # Deploy production environment configuration
 log_info "Deploying production environment configuration..."
@@ -316,9 +332,20 @@ cd "$PROJECT_ROOT/frontend"
 log_info "Installing frontend dependencies..."
 npm install
 
-# Build production frontend
+# Build production frontend with correct API URL
 log_info "Building frontend for production..."
-REACT_APP_API_URL="https://$DOMAIN_NAME" npm run build
+
+# Determine API URL based on SSL setup
+if [[ "$SETUP_SSL" == "yes" ]]; then
+    FRONTEND_API_URL="https://$DOMAIN_NAME"
+    log_info "Building frontend with HTTPS API URL: $FRONTEND_API_URL"
+else
+    FRONTEND_API_URL="http://$DOMAIN_NAME"
+    log_info "Building frontend with HTTP API URL: $FRONTEND_API_URL"
+    log_warning "⚠️  Frontend will use HTTP - consider setting up SSL for production security"
+fi
+
+REACT_APP_API_URL="$FRONTEND_API_URL" npm run build
 
 # Deploy with zero-downtime method
 log_info "Deploying frontend with zero-downtime..."
@@ -381,15 +408,68 @@ rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl reload nginx
 log_success "Nginx configured"
 
-# Step 8: SSL/TLS Setup (if domain is configured)
+# Step 8: SSL/TLS Setup (auto-detect or manual)
 log_section "Step 8: SSL/TLS Certificate Setup"
 
+# Function to check if domain resolves to this server
+check_domain_resolution() {
+    local domain=$1
+    local server_ip=$2
+    
+    # Get domain's IP address
+    domain_ip=$(dig +short "$domain" | head -1)
+    
+    if [[ "$domain_ip" == "$server_ip" ]]; then
+        return 0  # Domain points to this server
+    else
+        return 1  # Domain doesn't point to this server
+    fi
+}
+
+# Auto-detect SSL setup need
+if [[ "$SETUP_SSL" == "auto" ]]; then
+    log_info "Auto-detecting SSL setup requirements for $DOMAIN_NAME..."
+    
+    if check_domain_resolution "$DOMAIN_NAME" "$PRODUCTION_CPU_IP"; then
+        log_info "✅ Domain $DOMAIN_NAME resolves to this server ($PRODUCTION_CPU_IP)"
+        log_info "🔒 Setting up SSL certificates automatically..."
+        SETUP_SSL="yes"
+    else
+        domain_ip=$(dig +short "$DOMAIN_NAME" | head -1)
+        log_warning "⚠️  Domain $DOMAIN_NAME resolves to $domain_ip, not this server ($PRODUCTION_CPU_IP)"
+        log_warning "SSL setup will be skipped. Update DNS or use --setup-ssl to force SSL setup."
+        SETUP_SSL="no"
+    fi
+fi
+
+# Setup SSL if enabled
 if [[ "$SETUP_SSL" == "yes" ]]; then
     log_info "Setting up Let's Encrypt SSL certificates for $DOMAIN_NAME..."
-    certbot --nginx -d "$DOMAIN_NAME" -d "www.$DOMAIN_NAME" --non-interactive --agree-tos --email "$SSL_EMAIL"
-    log_success "SSL certificates installed for $DOMAIN_NAME"
+    
+    # Install certbot if not present
+    if ! command -v certbot &> /dev/null; then
+        log_info "Installing certbot..."
+        apt install -y certbot python3-certbot-nginx
+    fi
+    
+    # Setup SSL certificates
+    if certbot --nginx -d "$DOMAIN_NAME" -d "www.$DOMAIN_NAME" --non-interactive --agree-tos --email "$SSL_EMAIL"; then
+        log_success "SSL certificates installed for $DOMAIN_NAME"
+        
+        # Test HTTPS endpoint
+        sleep 2
+        if curl -s -f "https://$DOMAIN_NAME/api/health" >/dev/null; then
+            log_success "HTTPS endpoint verification successful"
+        else
+            log_warning "HTTPS endpoint test failed - please check manually"
+        fi
+    else
+        log_error "SSL certificate installation failed"
+    fi
 else
-    log_info "SSL setup skipped (use --setup-ssl flag to enable)"
+    log_info "SSL setup skipped"
+    log_warning "⚠️  IMPORTANT: Frontend may expect HTTPS. Consider setting up SSL certificates manually:"
+    log_warning "   certbot --nginx -d $DOMAIN_NAME -d www.$DOMAIN_NAME --email $SSL_EMAIL"
 fi
 
 # Step 9: Shared Filesystem Mount
@@ -469,11 +549,43 @@ systemctl is-active --quiet processing-worker && \
 systemctl is-active --quiet nginx && \
     log_success "Nginx: Active" || log_warning "Nginx: Inactive"
 
-# Check API endpoint
-if curl -s "http://localhost:8000/api/health" | grep -q "ok"; then
-    log_success "API Health Check: Passed"
+# Check API endpoints
+log_info "Testing API endpoints..."
+
+# Test backend directly
+if curl -s "http://localhost:8000/api/health" | grep -q "healthy"; then
+    log_success "Backend API: Health check passed"
 else
-    log_warning "API Health Check: Failed"
+    log_warning "Backend API: Health check failed"
+fi
+
+# Test through Nginx (HTTP)
+if curl -s "http://localhost/api/health" | grep -q "healthy"; then
+    log_success "Nginx Proxy (HTTP): Working"
+else
+    log_warning "Nginx Proxy (HTTP): Failed"
+fi
+
+# Test HTTPS if SSL was configured
+if [[ "$SETUP_SSL" == "yes" ]]; then
+    log_info "Testing HTTPS configuration..."
+    
+    if curl -s -f "https://$DOMAIN_NAME/api/health" | grep -q "healthy"; then
+        log_success "HTTPS API: Working correctly"
+    else
+        log_warning "HTTPS API: Failed - frontend may experience network errors"
+        log_warning "Manual SSL setup may be required"
+    fi
+    
+    # Check SSL certificate
+    if openssl s_client -connect "$DOMAIN_NAME:443" -servername "$DOMAIN_NAME" </dev/null 2>/dev/null | grep -q "Verify return code: 0"; then
+        log_success "SSL Certificate: Valid"
+    else
+        log_warning "SSL Certificate: Validation issues detected"
+    fi
+else
+    log_warning "HTTPS: Not configured - frontend may expect HTTPS endpoints"
+    log_info "To enable HTTPS later: certbot --nginx -d $DOMAIN_NAME -d www.$DOMAIN_NAME --email $SSL_EMAIL"
 fi
 
 # Final Summary

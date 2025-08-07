@@ -6,9 +6,24 @@ echo "=================================================="
 
 echo ""
 echo "🌍 Geographic IP Blocking:"
-geo_rules=$(sudo iptables -L GEO_BLOCK -n | wc -l)
-if [ $geo_rules -gt 10 ]; then
-    echo "   ✅ Active - Blocking $((geo_rules-2)) IP ranges from China and Russia"
+# Check for GEO_BLOCK chain existence and ipset-based blocking
+if sudo iptables -L GEO_BLOCK -n >/dev/null 2>&1; then
+    # Check if ipset-based rules exist
+    cn_blocked=$(sudo ipset list geoblock_cn 2>/dev/null | grep "Number of entries" | awk '{print $4}' || echo "0")
+    ru_blocked=$(sudo ipset list geoblock_ru 2>/dev/null | grep "Number of entries" | awk '{print $4}' || echo "0")
+    
+    if [ "$cn_blocked" -gt 0 ] || [ "$ru_blocked" -gt 0 ]; then
+        total_blocked=$((cn_blocked + ru_blocked))
+        echo "   ✅ Active - Blocking $total_blocked IP ranges from China ($cn_blocked) and Russia ($ru_blocked)"
+    else
+        # Fallback to old method for legacy rule-based blocking
+        geo_rules=$(sudo iptables -L GEO_BLOCK -n | wc -l)
+        if [ $geo_rules -gt 10 ]; then
+            echo "   ✅ Active - Blocking $((geo_rules-2)) IP ranges from China and Russia"
+        else
+            echo "   ❌ Not configured"
+        fi
+    fi
 else
     echo "   ❌ Not configured"
 fi
