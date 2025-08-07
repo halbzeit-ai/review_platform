@@ -1,5 +1,5 @@
 
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Text, Numeric, UniqueConstraint
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Text, Numeric, UniqueConstraint, Index
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import relationship, DeclarativeBase
 from datetime import datetime
@@ -45,8 +45,10 @@ class PitchDeck(Base):
     ai_extracted_startup_name = Column(String, nullable=True)  # AI-extracted startup name from pitch deck content
     data_source = Column(String, default="startup")  # Source: 'startup' or 'dojo'
     zip_filename = Column(String, nullable=True)  # Original ZIP filename for dojo files
+    current_processing_task_id = Column(Integer, ForeignKey("processing_queue.id"), nullable=True)  # Reference to current processing task
     created_at = Column(DateTime, default=datetime.utcnow)
     user = relationship("User")
+    current_processing_task = relationship("ProcessingQueue", foreign_keys=[current_processing_task_id], post_update=True)
 
 class Review(Base):
     __tablename__ = "reviews"
@@ -526,3 +528,108 @@ class SlideFeedback(Base):
     
     # Unique constraint
     __table_args__ = (UniqueConstraint('pitch_deck_id', 'slide_number'),)
+
+
+class ProcessingQueue(Base):
+    __tablename__ = "processing_queue"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    pitch_deck_id = Column(Integer, ForeignKey("pitch_decks.id", ondelete="CASCADE"), nullable=False, index=True)
+    task_type = Column(String(50), nullable=False, default="pdf_analysis")
+    status = Column(String(20), nullable=False, default="queued")  # queued, processing, completed, failed, retry
+    priority = Column(Integer, nullable=False, default=1)  # 1=normal, 2=high, 3=urgent
+    
+    # Task parameters
+    file_path = Column(Text, nullable=False)
+    company_id = Column(String(255), nullable=False)
+    processing_options = Column(postgresql.JSONB, default={})
+    
+    # Progress tracking
+    progress_percentage = Column(Integer, default=0)
+    current_step = Column(String(255))
+    progress_message = Column(Text)
+    
+    # Timing and retry logic
+    created_at = Column(DateTime, default=datetime.utcnow)
+    started_at = Column(DateTime)
+    completed_at = Column(DateTime)
+    retry_count = Column(Integer, default=0)
+    max_retries = Column(Integer, default=3)
+    next_retry_at = Column(DateTime)
+    
+    # Error handling
+    last_error = Column(Text)
+    error_count = Column(Integer, default=0)
+    
+    # Locking mechanism for concurrent processing
+    locked_by = Column(String(255))  # server instance identifier
+    locked_at = Column(DateTime)
+    lock_expires_at = Column(DateTime)
+    
+    # Results
+    results_file_path = Column(Text)
+    processing_metadata = Column(postgresql.JSONB, default={})
+    
+    # Relationships
+    pitch_deck = relationship("PitchDeck", foreign_keys=[pitch_deck_id], backref="processing_tasks")
+    progress_steps = relationship("ProcessingProgress", back_populates="processing_task", cascade="all, delete-orphan")
+    dependent_tasks = relationship("TaskDependency", foreign_keys="TaskDependency.depends_on_task_id", back_populates="depends_on_task")
+    dependency_tasks = relationship("TaskDependency", foreign_keys="TaskDependency.dependent_task_id", back_populates="dependent_task")
+    
+    # Indexes for efficient queue processing
+    __table_args__ = (
+        Index('idx_processing_queue_status_priority', 'status', 'priority', 'created_at'),
+        Index('idx_processing_queue_pitch_deck', 'pitch_deck_id'),
+        Index('idx_processing_queue_retry', 'status', 'next_retry_at'),
+        Index('idx_processing_queue_lock', 'locked_by', 'lock_expires_at'),
+    )
+
+
+class ProcessingProgress(Base):
+    __tablename__ = "processing_progress"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    processing_queue_id = Column(Integer, ForeignKey("processing_queue.id", ondelete="CASCADE"), nullable=False, index=True)
+    step_name = Column(String(255), nullable=False)
+    step_status = Column(String(20), nullable=False)  # started, completed, failed
+    progress_percentage = Column(Integer, default=0)
+    message = Column(Text)
+    step_data = Column(postgresql.JSONB, default={})
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    processing_task = relationship("ProcessingQueue", back_populates="progress_steps")
+    
+    # Index for better query performance
+    __table_args__ = (
+        Index('idx_processing_progress_queue', 'processing_queue_id', 'created_at'),
+    )
+
+
+class ProcessingServer(Base):
+    __tablename__ = "processing_servers"
+    
+    id = Column(String(255), primary_key=True)  # server identifier (hostname + process_id)
+    server_type = Column(String(50), nullable=False)  # 'cpu', 'gpu'
+    status = Column(String(20), nullable=False, default="active")  # active, inactive, maintenance
+    last_heartbeat = Column(DateTime, default=datetime.utcnow)
+    capabilities = Column(postgresql.JSONB, default={})
+    current_load = Column(Integer, default=0)
+    max_concurrent_tasks = Column(Integer, default=5)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class TaskDependency(Base):
+    __tablename__ = "task_dependencies"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    dependent_task_id = Column(Integer, ForeignKey("processing_queue.id", ondelete="CASCADE"), nullable=False)
+    depends_on_task_id = Column(Integer, ForeignKey("processing_queue.id", ondelete="CASCADE"), nullable=False)
+    dependency_type = Column(String(50), default="completion")  # completion, success_only
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    dependent_task = relationship("ProcessingQueue", foreign_keys=[dependent_task_id], back_populates="dependency_tasks")
+    depends_on_task = relationship("ProcessingQueue", foreign_keys=[depends_on_task_id], back_populates="dependent_tasks")

@@ -153,6 +153,56 @@ deploy_component() {
     return 0
 }
 
+# Function to restart services after deployment
+restart_services() {
+    local environment=$1
+    local component=$2
+    
+    echo -e "${BLUE}🔄 Restarting services after deployment...${NC}"
+    
+    case $component in
+        "backend"|"")
+            if systemctl is-enabled review-platform.service &>/dev/null; then
+                echo -e "${YELLOW}  Restarting backend API service...${NC}"
+                sudo systemctl restart review-platform.service || true
+                echo -e "${GREEN}  ✅ Backend API service restarted${NC}"
+            fi
+            
+            if systemctl is-enabled processing-worker.service &>/dev/null; then
+                echo -e "${YELLOW}  Restarting processing worker service...${NC}"
+                sudo systemctl restart processing-worker.service || true
+                echo -e "${GREEN}  ✅ Processing worker service restarted${NC}"
+            fi
+            ;;
+        "gpu")
+            if systemctl is-enabled gpu-http-server.service &>/dev/null; then
+                echo -e "${YELLOW}  Restarting GPU HTTP server service...${NC}"
+                sudo systemctl restart gpu-http-server.service || true
+                echo -e "${GREEN}  ✅ GPU HTTP server service restarted${NC}"
+            fi
+            ;;
+    esac
+    
+    # Always show service status after restart
+    echo ""
+    echo -e "${BLUE}📊 Service Status:${NC}"
+    if [[ "$component" == "backend" || -z "$component" ]]; then
+        systemctl is-active --quiet review-platform && \
+            echo -e "${GREEN}  ✅ Backend API: Active${NC}" || \
+            echo -e "${RED}  ❌ Backend API: Inactive${NC}"
+            
+        systemctl is-active --quiet processing-worker && \
+            echo -e "${GREEN}  ✅ Processing Worker: Active${NC}" || \
+            echo -e "${RED}  ❌ Processing Worker: Inactive${NC}"
+    fi
+    
+    if [[ "$component" == "gpu" ]]; then
+        systemctl is-active --quiet gpu-http-server && \
+            echo -e "${GREEN}  ✅ GPU HTTP Server: Active${NC}" || \
+            echo -e "${RED}  ❌ GPU HTTP Server: Inactive${NC}"
+    fi
+}
+
 # Function to show current status
 show_status() {
     echo -e "${BLUE}📊 Current Environment Status${NC}"
@@ -279,11 +329,15 @@ main() {
     if [[ "$success" == "true" ]]; then
         if [[ "$dry_run" == "false" ]]; then
             echo -e "${GREEN}✅ Environment deployment completed successfully!${NC}"
+            
+            # Restart services automatically
+            restart_services "$environment" "$specific_component"
+            
             echo ""
-            echo -e "${YELLOW}📋 Next steps:${NC}"
-            echo -e "  1. Restart services: sudo systemctl restart review-platform.service"
-            echo -e "  2. Restart GPU service: sudo systemctl restart gpu-http-server.service"
-            echo -e "  3. Rebuild frontend: scripts/build-frontend.sh $environment"
+            echo -e "${YELLOW}📋 Additional steps (if needed):${NC}"
+            echo -e "  1. Rebuild frontend: scripts/build-frontend.sh $environment"
+            echo -e "  2. Check logs: journalctl -u review-platform.service -f"
+            echo -e "  3. Check worker logs: journalctl -u processing-worker.service -f"
         else
             echo -e "${BLUE}✅ Dry run completed - deployment looks good!${NC}"
         fi

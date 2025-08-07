@@ -10,7 +10,7 @@ HOSTNAME=$(hostname)
 # Known server IPs and their identifiers
 DEV_CPU_IP="65.108.32.143"
 DEV_GPU_IP="135.181.71.17"
-PROD_CPU_IP="65.108.32.168"
+PROD_CPU_IP="135.181.63.224"
 PROD_GPU_IP="135.181.63.133"
 
 # Detect environment based on IP

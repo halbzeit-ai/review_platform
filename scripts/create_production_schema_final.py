@@ -43,12 +43,22 @@ def create_production_schema():
         dojo_tables = ['analysis_templates', 'template_chapters', 'chapter_questions', 
                       'extraction_experiments', 'visual_analysis_cache', 'pipeline_prompts']
         
+        # Check for critical processing queue tables
+        processing_tables = ['processing_queue', 'processing_progress', 'processing_servers', 'task_dependencies']
+        
         missing_dojo = [t for t in dojo_tables if t not in tables]
+        missing_processing = [t for t in processing_tables if t not in tables]
+        
         if missing_dojo:
             print(f"❌ MISSING CRITICAL DOJO TABLES: {missing_dojo}")
             return False
+            
+        if missing_processing:
+            print(f"❌ MISSING CRITICAL PROCESSING QUEUE TABLES: {missing_processing}")
+            return False
         
         print("✅ All critical dojo tables created successfully")
+        print("✅ All critical processing queue tables created successfully")
         
         # Create the project_progress view (since it's not a table)
         print("🔄 Creating project_progress view...")
@@ -85,7 +95,7 @@ def create_production_schema():
         print("📊 Summary:")
         print(f"  - Tables: {len(tables)}")
         print(f"  - Views: 1 (project_progress)")
-        print(f"  - Models: 28 SQLAlchemy models")
+        print(f"  - Models: 32+ SQLAlchemy models (includes processing queue system)")
         print("  - Status: ✅ NO CODE VS DATABASE DRIFT")
         
         return True

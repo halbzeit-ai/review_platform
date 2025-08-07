@@ -1,0 +1,18 @@
+  The problem was exactly as you diagnosed:
+
+  1. Dojo works because users select models manually in the UI
+  2. Startup processing failed because my split processing code was NOT sending the database-configured models to the GPU
+  3. GPU defaulted to llama3.2-vision:latest which doesn't exist, causing visual analysis to fail
+  4. Processing completed quickly with empty results because visual analysis failed but template processing continued
+
+  The Fix:
+  - Modified run_visual_analysis_phase() to retrieve vision_model from database (gemma3:12b) and send it to GPU
+  - Now startup processing will use the same database-configured models as the rest of the system
+
+  Result:
+  - Startup uploads will now use gemma3:12b for visual analysis (which exists on the GPU server)
+  - Visual analysis will succeed and populate the cache properly
+  - Template analysis will have proper data to work with
+  - Progress bars will show realistic progress as the analysis actually runs
+
+  The fix is deployed and ready for testing. Upload a new deck and it should now process properly with the correct models!

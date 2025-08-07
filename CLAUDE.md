@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Server Infrastructure**:
 - **dev_cpu** (65.108.32.143): Development CPU server
 - **dev_gpu** (135.181.71.17): Development GPU server  
-- **prod_cpu** (65.108.32.168): Production CPU server
+- **prod_cpu** (135.181.63.224): Production CPU server
 - **prod_gpu** (135.181.63.133): Production GPU server
 - **Local machines**: NixOS, MacBook Air, etc. (developer workstations)
 
@@ -27,7 +27,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - ❌ **No production access** - Cannot directly modify production
 - ✅ **Git operations** - Can commit changes for user to deploy
 
-### If Claude is on prod_cpu (65.108.32.168):
+### If Claude is on prod_cpu (135.181.63.224):
 - ✅ **Production management** - Can deploy, restart services, check logs
 - ✅ **Database access** - Can run production queries and migrations
 - ✅ **Service debugging** - Can check systemd services, nginx configuration
@@ -44,7 +44,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### If Claude is on prod_gpu (135.181.63.133):
 - ✅ **AI processing** - Can run production GPU tasks, debug AI issues
 - ✅ **Processing debugging** - Can check production AI pipeline logs
-- ✅ **Database access** - Can connect to production database on prod_cpu (65.108.32.168)
+- ✅ **Database access** - Can connect to production database on prod_cpu (135.181.63.224)
 - ❌ **No service management** - Cannot start/stop CPU services  
 - ✅ **Shared filesystem** - Can access production shared storage
 
@@ -52,11 +52,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### From dev_cpu (65.108.32.143):
 1. Claude makes changes in development environment
-2. User pulls changes to prod_cpu (`git pull origin main` on 65.108.32.168)
+2. User pulls changes to prod_cpu (`git pull origin main` on 135.181.63.224)
 3. User runs deployment commands on production servers
 4. User provides production logs/output back to Claude for analysis
 
-### From prod_cpu (65.108.32.168):
+### From prod_cpu (135.181.63.224):
 1. Claude can deploy directly from git
 2. Claude can restart services and check deployment status
 3. Claude can verify deployment and provide real-time feedback
@@ -65,7 +65,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 # The script will output one of:
 # "dev_cpu" (65.108.32.143)
-# "prod_cpu" (65.108.32.168)
+# "prod_cpu" (135.181.63.224)
 # "dev_gpu" (135.181.71.17) 
 # "prod_gpu" (135.181.63.133)
 # "local" (developer workstation)

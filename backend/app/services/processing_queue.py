@@ -19,6 +19,7 @@ import socket
 from sqlalchemy.orm import Session
 from sqlalchemy import text, and_, or_
 from ..db.database import SessionLocal, get_db
+from ..db.models import ProcessingQueue, ProcessingProgress, ProcessingServer, TaskDependency
 from ..core.config import settings
 
 logger = logging.getLogger(__name__)
