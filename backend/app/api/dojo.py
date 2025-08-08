@@ -1450,15 +1450,24 @@ async def get_experiment_details(
         # Parse classification results if available
         classification_data = {}
         classification_results = []
+        logger.info(f"Checking classification for experiment {experiment_id}: enabled={experiment[8]}, has_data={bool(experiment[9])}")
         if experiment[8] and experiment[9]:  # classification_enabled and classification_results_json
             try:
-                classification_data = json.loads(experiment[9])
-                classification_results = classification_data.get("classification_results", [])
-            except json.JSONDecodeError:
-                logger.warning(f"Failed to parse classification results for experiment {experiment_id}")
+                # Parse classification results - it's stored as an array directly
+                classification_results = json.loads(experiment[9])
+                if not isinstance(classification_results, list):
+                    classification_results = []
+                logger.info(f"Parsed {len(classification_results)} classification results")
+            except json.JSONDecodeError as e:
+                logger.warning(f"Failed to parse classification results for experiment {experiment_id}: {e}")
         
         # Create a lookup for classification results by deck_id
-        classification_lookup = {result.get("deck_id"): result for result in classification_results}
+        classification_lookup = {}
+        for result in classification_results:
+            deck_id = result.get("deck_id")
+            classification = result.get("classification_result", {})
+            if deck_id:
+                classification_lookup[deck_id] = classification
         
         # Enhance results with deck information and classification data
         enhanced_results = []
@@ -1518,8 +1527,8 @@ async def get_experiment_details(
             "deck_ids": deck_ids,
             "classification_enabled": bool(experiment[8]),
             "classification_completed_at": experiment[10].isoformat() if experiment[10] else None,
-            "classification_statistics": classification_data.get("statistics", {}) if classification_data else {},
-            "classification_results_json": json.dumps(classification_data.get("classification_by_deck", {})) if classification_data else None,
+            "classification_statistics": {},  # TODO: Calculate statistics if needed
+            "classification_results_json": json.dumps(classification_lookup) if classification_lookup else None,
             "company_name_completed_at": experiment[12].isoformat() if experiment[12] else None,
             "company_name_statistics": company_name_data.get("statistics", {}) if company_name_data else {},
             "company_name_results": company_name_data.get("company_name_results", []) if company_name_data else [],
