@@ -1264,6 +1264,25 @@ Please provide a comprehensive analysis focusing on the requested areas."""
             logger.error(f"Error getting visual analysis for deck {deck_id}: {e}")
             return {}
 
+    def _format_visual_analysis_for_extraction(self, visual_analysis: Dict) -> str:
+        """Format visual analysis data for extraction prompts"""
+        try:
+            if 'visual_analysis_results' not in visual_analysis:
+                return "No visual analysis available"
+            
+            slides = visual_analysis['visual_analysis_results']
+            formatted_text = ""
+            
+            for slide in slides:
+                page_num = slide.get('page_number', 'Unknown')
+                description = slide.get('description', 'No description available')
+                formatted_text += f"Slide {page_num}: {description}\n\n"
+            
+            return formatted_text.strip()
+        except Exception as e:
+            logger.error(f"Error formatting visual analysis for extraction: {e}")
+            return f"Error formatting visual analysis: {str(e)}"
+
     def _get_cached_visual_analysis(self, deck_ids: List[int]) -> Dict[int, Dict]:
         """Get cached visual analysis via HTTP from backend"""
         try:
