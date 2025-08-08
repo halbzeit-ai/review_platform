@@ -10,6 +10,7 @@ import sys
 import json
 import os
 import time
+import requests
 from pathlib import Path
 from typing import Dict, Any, List
 import logging
@@ -243,6 +244,38 @@ class PDFProcessor:
         # Create marker file
         Path(marker_path).touch()
         logger.info(f"Created completion marker: {marker_path}")
+    
+    def save_specialized_analysis(self, pitch_deck_id: int, specialized_analysis: Dict[str, Any]) -> bool:
+        """Save specialized analysis results to backend database"""
+        try:
+            # Filter out empty or None values
+            filtered_analysis = {
+                key: value for key, value in specialized_analysis.items() 
+                if value and str(value).strip()
+            }
+            
+            if not filtered_analysis:
+                logger.info(f"No specialized analysis to save for deck {pitch_deck_id}")
+                return True
+            
+            endpoint = f"{self.backend_url}/api/internal/save-specialized-analysis"
+            payload = {
+                "pitch_deck_id": pitch_deck_id,
+                "specialized_analysis": filtered_analysis
+            }
+            
+            logger.info(f"💾 Saving specialized analysis to backend: {list(filtered_analysis.keys())}")
+            
+            response = requests.post(endpoint, json=payload, timeout=30)
+            response.raise_for_status()
+            
+            result = response.json()
+            logger.info(f"✅ Specialized analysis saved successfully: {result.get('saved_analyses', [])}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Error saving specialized analysis for deck {pitch_deck_id}: {e}")
+            return False
 
 
 def main():

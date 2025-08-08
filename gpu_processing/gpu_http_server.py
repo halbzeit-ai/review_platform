@@ -306,6 +306,13 @@ class GPUHTTPServer:
                 # Update database with results file path
                 self._update_database_with_results(pitch_deck_id, results_filename)
                 
+                # Save specialized analysis to database
+                specialized_analysis = results.get("specialized_analysis", {})
+                if specialized_analysis:
+                    self._save_specialized_analysis(pitch_deck_id, specialized_analysis)
+                else:
+                    logger.info(f"No specialized analysis found for deck {pitch_deck_id}")
+                
                 return jsonify({
                     "success": True,
                     "message": f"Successfully processed PDF {file_path}",
@@ -1632,6 +1639,46 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
             
         except Exception as e:
             logger.error(f"Error updating database via HTTP for deck {pitch_deck_id}: {e}")
+    
+    def _save_specialized_analysis(self, pitch_deck_id: int, specialized_analysis: dict):
+        """Save specialized analysis results to database via HTTP request"""
+        try:
+            import requests
+            
+            # Filter out empty or None values
+            filtered_analysis = {
+                key: value for key, value in specialized_analysis.items() 
+                if value and str(value).strip()
+            }
+            
+            if not filtered_analysis:
+                logger.info(f"No specialized analysis to save for deck {pitch_deck_id}")
+                return
+            
+            logger.info(f"💾 Saving specialized analysis for deck {pitch_deck_id}: {list(filtered_analysis.keys())}")
+            
+            # Prepare the specialized analysis data
+            analysis_data = {
+                "pitch_deck_id": pitch_deck_id,
+                "specialized_analysis": filtered_analysis
+            }
+            
+            # Make HTTP request to save specialized analysis
+            response = requests.post(
+                f"{self.backend_url}/api/internal/save-specialized-analysis",
+                json=analysis_data,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                saved_analyses = result.get('saved_analyses', [])
+                logger.info(f"✅ Successfully saved specialized analysis: {saved_analyses}")
+            else:
+                logger.error(f"❌ Failed to save specialized analysis: {response.status_code} - {response.text}")
+            
+        except Exception as e:
+            logger.error(f"❌ Error saving specialized analysis for deck {pitch_deck_id}: {e}")
     
     def run(self, host: str = None, port: int = None):
         """Run the HTTP server"""

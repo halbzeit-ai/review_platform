@@ -162,3 +162,56 @@ async def update_processing_progress(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update processing progress: {str(e)}"
         )
+
+class SpecializedAnalysisRequest(BaseModel):
+    pitch_deck_id: int
+    specialized_analysis: dict  # e.g. {"clinical_validation": "...", "regulatory_pathway": "...", "scientific_hypothesis": "..."}
+
+@router.post("/save-specialized-analysis")
+async def save_specialized_analysis(
+    request: SpecializedAnalysisRequest,
+    db: Session = Depends(get_db)
+):
+    """Internal endpoint for GPU to save specialized analysis results"""
+    try:
+        logger.info(f"💾 Saving specialized analysis for deck {request.pitch_deck_id}")
+        
+        # First, delete any existing specialized analysis for this deck
+        delete_query = text("DELETE FROM specialized_analysis_results WHERE pitch_deck_id = :pitch_deck_id")
+        db.execute(delete_query, {"pitch_deck_id": request.pitch_deck_id})
+        
+        # Save each specialized analysis result
+        saved_analyses = []
+        for analysis_type, analysis_result in request.specialized_analysis.items():
+            if analysis_result and analysis_result.strip():  # Only save non-empty results
+                insert_query = text("""
+                    INSERT INTO specialized_analysis_results 
+                    (pitch_deck_id, analysis_type, analysis_result, created_at) 
+                    VALUES (:pitch_deck_id, :analysis_type, :analysis_result, NOW())
+                """)
+                
+                db.execute(insert_query, {
+                    "pitch_deck_id": request.pitch_deck_id,
+                    "analysis_type": analysis_type,
+                    "analysis_result": analysis_result
+                })
+                
+                saved_analyses.append(analysis_type)
+                logger.info(f"✅ Saved {analysis_type} analysis for deck {request.pitch_deck_id}")
+        
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": f"Saved {len(saved_analyses)} specialized analyses for deck {request.pitch_deck_id}",
+            "pitch_deck_id": request.pitch_deck_id,
+            "saved_analyses": saved_analyses
+        }
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error saving specialized analysis: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to save specialized analysis: {str(e)}"
+        )

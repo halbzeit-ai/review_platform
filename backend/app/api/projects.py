@@ -733,6 +733,25 @@ async def get_project_results(
         with open(results_full_path, 'r') as f:
             results_data = json.load(f)
         
+        # Load specialized analysis results from database
+        specialized_analysis_query = text("""
+            SELECT analysis_type, analysis_result 
+            FROM specialized_analysis_results 
+            WHERE pitch_deck_id = :deck_id
+        """)
+        specialized_results = db.execute(specialized_analysis_query, {"deck_id": deck_id}).fetchall()
+        
+        # Add specialized analysis to results
+        if specialized_results:
+            specialized_analysis = {}
+            for analysis_type, analysis_result in specialized_results:
+                specialized_analysis[analysis_type] = analysis_result
+            
+            results_data["specialized_analysis"] = specialized_analysis
+            logger.info(f"Added {len(specialized_results)} specialized analysis results for deck {deck_id}")
+        else:
+            logger.info(f"No specialized analysis found for deck {deck_id}")
+        
         # Remove visual_analysis_results from this endpoint (it's in deck-analysis)
         if "visual_analysis_results" in results_data:
             del results_data["visual_analysis_results"]
@@ -1332,7 +1351,8 @@ async def get_extraction_results(
                         if result.get("deck_id") == row.deck_id:
                             class_result = result.get("classification_result", {})
                             if isinstance(class_result, dict):
-                                classification = class_result.get("sector", "")
+                                # Use primary_sector instead of sector
+                                classification = class_result.get("primary_sector", class_result.get("sector", ""))
                             break
                 except:
                     pass
