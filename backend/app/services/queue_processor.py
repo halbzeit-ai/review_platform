@@ -81,6 +81,7 @@ class QueueProcessor:
             # Get next task
             task = processing_queue_manager.get_next_task(db)
             if not task:
+                db.commit()  # Commit the get_next_task transaction
                 return
             
             logger.info(f"Processing task {task.id} for pitch deck {task.pitch_deck_id}")
@@ -89,6 +90,7 @@ class QueueProcessor:
             processing_queue_manager.update_task_progress(
                 task.id, 5, "Sending to GPU for processing", "Task picked up by queue processor", db
             )
+            db.commit()  # Commit progress update immediately
             
             # Use split processing for incremental progress updates
             logger.info(f"Using split processing for task {task.id}")
@@ -104,11 +106,21 @@ class QueueProcessor:
                     None,   # metadata
                     db
                 )
+                db.commit()  # Commit failure state
+            else:
+                db.commit()  # Commit success state
         
         except Exception as e:
             logger.error(f"Error processing task: {e}", exc_info=True)
+            try:
+                db.rollback()  # Rollback on error
+            except Exception as rollback_error:
+                logger.error(f"Error during rollback: {rollback_error}")
         finally:
-            db.close()
+            try:
+                db.close()
+            except Exception as close_error:
+                logger.error(f"Error closing database session: {close_error}")
     
     async def send_to_gpu(self, task: ProcessingTask, db: Session) -> bool:
         """Send task to GPU server for processing"""

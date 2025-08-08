@@ -34,7 +34,7 @@ function Navigation() {
               fontSize: '11px'
             }}
           >
-            build_20250806_103037_TABPANEL_FIX
+            build_20250808_084503_PROGRESS_BARS_RESTORED
           </Typography>
         </Typography>
         <LanguageSwitcher />

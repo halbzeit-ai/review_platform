@@ -20,8 +20,8 @@ const ENVIRONMENTS = {
     // Production environment - relative URLs for same-server deployment
     BACKEND_URL: '', // Same server
     API_BASE_URL: '/api', // Relative path
-    WS_URL: `ws://${window?.location?.host || 'localhost'}/ws`,
-    FRONTEND_URL: window?.location?.origin || 'https://review.halbzeit.ai'
+    WS_URL: `wss://${window?.location?.host || 'halbzeit.ai'}/ws`,
+    FRONTEND_URL: window?.location?.origin || 'https://halbzeit.ai'
   }
 };
 

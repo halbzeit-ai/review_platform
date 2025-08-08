@@ -174,8 +174,14 @@ const ProjectDashboard = () => {
     });
     setProgressIntervals({});
     
-    // Only poll for decks that are processing
-    const processingDecks = decks.filter(deck => !deck.results_file_path);
+    // Only poll for decks that are actually processing or queued (not failed/completed)
+    const processingDecks = decks.filter(deck => 
+      deck.processing_status === 'processing' || 
+      deck.processing_status === 'queued' ||
+      (deck.processing_status === 'pending' && !deck.results_file_path)
+    );
+    
+    console.log(`Progress polling: Found ${processingDecks.length} processing decks out of ${decks.length} total decks`);
     const newIntervals = {};
     
     processingDecks.forEach(deck => {
