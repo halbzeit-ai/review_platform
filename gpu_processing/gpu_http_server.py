@@ -1439,11 +1439,13 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                     })
                     continue
                 
-                # Use existing classification logic via HTTP call to backend
+                # Use internal classification endpoint (no authentication required)
                 import requests
                 backend_url = os.getenv('BACKEND_PRODUCTION', 'http://65.108.32.168:8000')
-                response = requests.post(f"{backend_url}/api/healthcare-templates/classify",
-                    json={"company_offering": deck_offering},
+                response = requests.post(f"{backend_url}/api/dojo/internal/classify",
+                    json={
+                        "company_offering": deck_offering
+                    },
                     timeout=30
                 )
                 

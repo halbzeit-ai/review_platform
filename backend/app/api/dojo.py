@@ -740,7 +740,7 @@ class ExtractionTestRequest(BaseModel):
 class SaveExtractionExperimentRequest(BaseModel):
     experiment_name: str
     deck_ids: List[int]
-    results: List[Dict[str, Any]]
+    results: Dict[str, Any]  # Changed from List to Dict to handle comprehensive results
     experiment_type: str
 
 @router.post("/extraction-test/sample")
@@ -3089,3 +3089,31 @@ async def save_extraction_experiment(
         logger.error(f"Error saving extraction experiment: {e}")
         db.rollback()
         return {"success": False, "error": str(e)}
+
+@router.post("/internal/classify")
+async def internal_classify(
+    request: Dict[str, Any],
+    db: Session = Depends(get_db)
+):
+    """Internal classification endpoint for GPU server - uses existing classification service"""
+    try:
+        company_offering = request.get("company_offering", "")
+        if not company_offering:
+            return {"error": "No company offering provided"}
+        
+        # Import the existing classification service
+        from ..services.startup_classifier import classify_startup_offering
+        
+        # Use the same classification logic as the authenticated endpoint
+        classification_result = await classify_startup_offering(
+            company_offering,
+            db,
+            manual_classification=None
+        )
+        
+        return classification_result
+        
+    except Exception as e:
+        logger.error(f"Error in internal classification: {e}")
+        return {"error": str(e)}
+

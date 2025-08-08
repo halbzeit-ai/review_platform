@@ -1270,7 +1270,8 @@ async def get_extraction_results(
         
         results = db.execute(query, {"company_id": company_id}).fetchall()
         
-        extraction_results = []
+        # Group results by deck_id to consolidate multiple experiments for the same deck
+        deck_results = {}
         
         for row in results:
             # Parse JSON results to extract data for this specific deck
@@ -1284,8 +1285,14 @@ async def get_extraction_results(
             if row.company_name_results_json:
                 try:
                     name_data = json.loads(row.company_name_results_json)
+                    # Handle both formats: direct array or wrapped in extraction_results
+                    if isinstance(name_data, list):
+                        results_array = name_data
+                    else:
+                        results_array = name_data.get("extraction_results", [])
+                    
                     # Find result for this specific deck
-                    for result in name_data.get("extraction_results", []):
+                    for result in results_array:
                         if result.get("deck_id") == row.deck_id:
                             company_name = result.get("company_name_extraction", "").strip()
                             break
@@ -1296,8 +1303,14 @@ async def get_extraction_results(
             if row.results_json:
                 try:
                     offering_data = json.loads(row.results_json)
+                    # Handle both formats: direct array or wrapped in extraction_results
+                    if isinstance(offering_data, list):
+                        results_array = offering_data
+                    else:
+                        results_array = offering_data.get("extraction_results", [])
+                    
                     # Find result for this specific deck
-                    for result in offering_data.get("extraction_results", []):
+                    for result in results_array:
                         if result.get("deck_id") == row.deck_id:
                             company_offering = result.get("offering_extraction", "").strip()
                             break
@@ -1308,8 +1321,14 @@ async def get_extraction_results(
             if row.classification_results_json:
                 try:
                     class_data = json.loads(row.classification_results_json)
+                    # Handle both formats: direct array or wrapped in classification_results
+                    if isinstance(class_data, list):
+                        results_array = class_data
+                    else:
+                        results_array = class_data.get("classification_results", [])
+                    
                     # Find result for this specific deck
-                    for result in class_data.get("classification_results", []):
+                    for result in results_array:
                         if result.get("deck_id") == row.deck_id:
                             class_result = result.get("classification_result", {})
                             if isinstance(class_result, dict):
@@ -1322,8 +1341,14 @@ async def get_extraction_results(
             if row.funding_amount_results_json:
                 try:
                     funding_data = json.loads(row.funding_amount_results_json)
+                    # Handle both formats: direct array or wrapped in extraction_results
+                    if isinstance(funding_data, list):
+                        results_array = funding_data
+                    else:
+                        results_array = funding_data.get("extraction_results", [])
+                    
                     # Find result for this specific deck
-                    for result in funding_data.get("extraction_results", []):
+                    for result in results_array:
                         if result.get("deck_id") == row.deck_id:
                             funding_amount = result.get("funding_amount_extraction", "").strip()
                             break
@@ -1334,28 +1359,64 @@ async def get_extraction_results(
             if row.deck_date_results_json:
                 try:
                     date_data = json.loads(row.deck_date_results_json)
+                    # Handle both formats: direct array or wrapped in extraction_results
+                    if isinstance(date_data, list):
+                        results_array = date_data
+                    else:
+                        results_array = date_data.get("extraction_results", [])
+                    
                     # Find result for this specific deck  
-                    for result in date_data.get("extraction_results", []):
+                    for result in results_array:
                         if result.get("deck_id") == row.deck_id:
                             deck_date = result.get("deck_date_extraction", "").strip()
                             break
                 except:
                     pass
             
+            # Consolidate results by deck_id
+            deck_id = row.deck_id
+            if deck_id not in deck_results:
+                deck_results[deck_id] = {
+                    'deck_id': deck_id,
+                    'deck_name': row.deck_name,
+                    'company_name': None,
+                    'company_offering': None,
+                    'classification': None,
+                    'funding_amount': None,
+                    'deck_date': None,
+                    'extracted_at': row.extracted_at
+                }
+            
+            # Update with any non-empty values (latest experiments take precedence)
+            if company_name:
+                deck_results[deck_id]['company_name'] = company_name
+            if company_offering:
+                deck_results[deck_id]['company_offering'] = company_offering
+            if classification:
+                deck_results[deck_id]['classification'] = classification
+            if funding_amount:
+                deck_results[deck_id]['funding_amount'] = funding_amount
+            if deck_date:
+                deck_results[deck_id]['deck_date'] = deck_date
+        
+        # Convert consolidated results to final format
+        extraction_results = []
+        for deck_data in deck_results.values():
             # Only add if we have at least some extraction data
-            if any([company_name, company_offering, classification, funding_amount, deck_date]):
+            if any([deck_data['company_name'], deck_data['company_offering'], 
+                   deck_data['classification'], deck_data['funding_amount'], deck_data['deck_date']]):
                 extraction_results.append(ExtractionResult(
-                    deck_id=row.deck_id,
-                    deck_name=row.deck_name,
-                    company_name=company_name,
-                    company_offering=company_offering,
-                    classification=classification,
-                    funding_amount=funding_amount,
-                    deck_date=deck_date,
-                    extracted_at=row.extracted_at
+                    deck_id=deck_data['deck_id'],
+                    deck_name=deck_data['deck_name'],
+                    company_name=deck_data['company_name'],
+                    company_offering=deck_data['company_offering'],
+                    classification=deck_data['classification'],
+                    funding_amount=deck_data['funding_amount'],
+                    deck_date=deck_data['deck_date'],
+                    extracted_at=deck_data['extracted_at']
                 ))
         
-        logger.info(f"Found {len(extraction_results)} extraction results for user {current_user.email}")
+        logger.info(f"Found {len(extraction_results)} consolidated extraction results for user {current_user.email}")
         return extraction_results
         
     except Exception as e:
