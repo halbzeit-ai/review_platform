@@ -31,7 +31,12 @@ import {
   CheckCircle,
   RadioButtonUnchecked,
   Schedule,
-  Info as InfoIcon
+  Info as InfoIcon,
+  Psychology,
+  Business,
+  AttachMoney,
+  DateRange,
+  Category
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -42,7 +47,8 @@ import {
   getAllProjects,
   getProjectJourney,
   getProjectDecks,
-  getProcessingProgress
+  getProcessingProgress,
+  getExtractionResults
 } from '../services/api';
 import ProjectUploads from '../components/ProjectUploads';
 
@@ -71,6 +77,8 @@ const ProjectDashboard = () => {
   const [actualCompanyId, setActualCompanyId] = useState(null);
   const [progressData, setProgressData] = useState({});
   const [progressIntervals, setProgressIntervals] = useState({});
+  const [extractionResults, setExtractionResults] = useState([]);
+  const [extractionLoading, setExtractionLoading] = useState(true);
   
   // Funding journey data
   const [projects, setProjects] = useState([]);
@@ -87,6 +95,7 @@ const ProjectDashboard = () => {
   useEffect(() => {
     loadProjectData();
     loadFundingData();
+    fetchExtractionResults();
   }, [companyId, projectId]);
 
   // Cleanup intervals on unmount
@@ -266,6 +275,20 @@ const ProjectDashboard = () => {
       // Regular startup view uses project results page
       console.log('Navigating to project results page:', `/project/${companyId}/results/${deck.id}`);
       navigate(`/project/${companyId}/results/${deck.id}`);
+    }
+  };
+
+  // Extraction results functions
+  const fetchExtractionResults = async () => {
+    try {
+      console.log('Fetching extraction results...');
+      const response = await getExtractionResults();
+      console.log('Extraction results response:', response.data);
+      setExtractionResults(response.data);
+    } catch (error) {
+      console.error('Error fetching extraction results:', error);
+    } finally {
+      setExtractionLoading(false);
     }
   };
 
@@ -777,6 +800,7 @@ const ProjectDashboard = () => {
           <Tab label={t('project.tabs.overview')} />
           <Tab label={t('project.tabs.allDecks')} />
           <Tab label={t('project.tabs.uploads')} />
+          <Tab label="Extraction Results" />
         </Tabs>
 
         <TabPanel value={activeTab} index={0}>
@@ -801,6 +825,101 @@ const ProjectDashboard = () => {
               companyId={finalCompanyId} 
               onUploadComplete={refreshProjectData} 
             />
+          )}
+        </TabPanel>
+
+        <TabPanel value={activeTab} index={4}>
+          <Typography variant="h6" gutterBottom>
+            <Psychology sx={{ mr: 1, verticalAlign: 'middle' }} />
+            Extraction Results
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Key information extracted from your pitch decks by our AI analysis.
+          </Typography>
+          
+          {extractionLoading ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CircularProgress size={16} />
+              <Typography variant="body2" color="text.secondary">Loading extraction results...</Typography>
+            </Box>
+          ) : extractionResults.length === 0 ? (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              No extraction results available yet. Upload and analyze a deck to see extracted information.
+            </Alert>
+          ) : (
+            <Grid container spacing={2}>
+              {extractionResults.map((result, index) => (
+                <Grid item xs={12} md={6} key={index}>
+                  <Card variant="outlined">
+                    <CardContent>
+                      <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
+                        {result.deck_name}
+                      </Typography>
+                      
+                      {result.company_name && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <Business sx={{ fontSize: 16, color: 'primary.main' }} />
+                          <Typography variant="body2">
+                            <strong>Company:</strong> {result.company_name}
+                          </Typography>
+                        </Box>
+                      )}
+                      
+                      {result.classification && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <Category sx={{ fontSize: 16, color: 'secondary.main' }} />
+                          <Typography variant="body2">
+                            <strong>Sector:</strong> {result.classification}
+                          </Typography>
+                        </Box>
+                      )}
+                      
+                      {result.funding_amount && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <AttachMoney sx={{ fontSize: 16, color: 'success.main' }} />
+                          <Typography variant="body2">
+                            <strong>Funding:</strong> {result.funding_amount}
+                          </Typography>
+                        </Box>
+                      )}
+                      
+                      {result.deck_date && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <DateRange sx={{ fontSize: 16, color: 'info.main' }} />
+                          <Typography variant="body2">
+                            <strong>Date:</strong> {result.deck_date}
+                          </Typography>
+                        </Box>
+                      )}
+                      
+                      {result.company_offering && (
+                        <Box sx={{ mt: 2 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                            Company Offering:
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ 
+                            maxHeight: 100, 
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 4,
+                            WebkitBoxOrient: 'vertical'
+                          }}>
+                            {result.company_offering}
+                          </Typography>
+                        </Box>
+                      )}
+                      
+                      {result.extracted_at && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                          Extracted: {new Date(result.extracted_at).toLocaleDateString()}
+                        </Typography>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
           )}
         </TabPanel>
       </Paper>

@@ -1255,6 +1255,15 @@ Please provide a comprehensive analysis focusing on the requested areas."""
             logger.error(f"Error formatting template analysis: {e}")
             return f"Error formatting analysis results: {str(e)}"
     
+    def _get_visual_analysis_for_deck(self, deck_id: int) -> Dict:
+        """Get cached visual analysis for a single deck"""
+        try:
+            cached_analysis = self._get_cached_visual_analysis([deck_id])
+            return cached_analysis.get(deck_id, {})
+        except Exception as e:
+            logger.error(f"Error getting visual analysis for deck {deck_id}: {e}")
+            return {}
+
     def _get_cached_visual_analysis(self, deck_ids: List[int]) -> Dict[int, Dict]:
         """Get cached visual analysis via HTTP from backend"""
         try:

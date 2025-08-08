@@ -1262,7 +1262,7 @@ async def get_extraction_results(
                 ee.deck_date_results_json,
                 ee.created_at as extracted_at
             FROM pitch_decks pd
-            LEFT JOIN extraction_experiments ee ON pd.id = ANY(ee.pitch_deck_ids)
+            LEFT JOIN extraction_experiments ee ON pd.id::text = ANY(string_to_array(trim(both '{}' from ee.pitch_deck_ids), ','))
             WHERE pd.company_id = :company_id
             AND ee.id IS NOT NULL
             ORDER BY ee.created_at DESC
