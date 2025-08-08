@@ -1226,3 +1226,141 @@ async def create_project(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create project"
         )
+
+# Extraction Results API
+class ExtractionResult(BaseModel):
+    deck_id: int
+    deck_name: str
+    company_name: Optional[str] = None
+    company_offering: Optional[str] = None
+    classification: Optional[str] = None
+    funding_amount: Optional[str] = None
+    deck_date: Optional[str] = None
+    extracted_at: Optional[datetime] = None
+
+@router.get("/extraction-results", response_model=List[ExtractionResult])
+async def get_extraction_results(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get extraction results for current user's decks"""
+    try:
+        logger.info(f"Getting extraction results for user {current_user.email}")
+        
+        # Get user's company_id
+        company_id = get_company_id_from_user(current_user)
+        
+        # Query extraction results from user's pitch decks
+        query = text("""
+            SELECT DISTINCT
+                pd.id as deck_id,
+                pd.file_name as deck_name,
+                ee.company_name_results_json,
+                ee.results_json,
+                ee.classification_results_json,
+                ee.funding_amount_results_json,
+                ee.deck_date_results_json,
+                ee.created_at as extracted_at
+            FROM pitch_decks pd
+            LEFT JOIN extraction_experiments ee ON pd.id = ANY(ee.pitch_deck_ids)
+            WHERE pd.company_id = :company_id
+            AND ee.id IS NOT NULL
+            ORDER BY ee.created_at DESC
+        """)
+        
+        results = db.execute(query, {"company_id": company_id}).fetchall()
+        
+        extraction_results = []
+        
+        for row in results:
+            # Parse JSON results to extract data for this specific deck
+            company_name = None
+            company_offering = None
+            classification = None
+            funding_amount = None
+            deck_date = None
+            
+            # Parse company name results
+            if row.company_name_results_json:
+                try:
+                    name_data = json.loads(row.company_name_results_json)
+                    # Find result for this specific deck
+                    for result in name_data.get("extraction_results", []):
+                        if result.get("deck_id") == row.deck_id:
+                            company_name = result.get("company_name_extraction", "").strip()
+                            break
+                except:
+                    pass
+            
+            # Parse company offering results
+            if row.results_json:
+                try:
+                    offering_data = json.loads(row.results_json)
+                    # Find result for this specific deck
+                    for result in offering_data.get("extraction_results", []):
+                        if result.get("deck_id") == row.deck_id:
+                            company_offering = result.get("offering_extraction", "").strip()
+                            break
+                except:
+                    pass
+            
+            # Parse classification results
+            if row.classification_results_json:
+                try:
+                    class_data = json.loads(row.classification_results_json)
+                    # Find result for this specific deck
+                    for result in class_data.get("classification_results", []):
+                        if result.get("deck_id") == row.deck_id:
+                            class_result = result.get("classification_result", {})
+                            if isinstance(class_result, dict):
+                                classification = class_result.get("sector", "")
+                            break
+                except:
+                    pass
+            
+            # Parse funding amount results
+            if row.funding_amount_results_json:
+                try:
+                    funding_data = json.loads(row.funding_amount_results_json)
+                    # Find result for this specific deck
+                    for result in funding_data.get("extraction_results", []):
+                        if result.get("deck_id") == row.deck_id:
+                            funding_amount = result.get("funding_amount_extraction", "").strip()
+                            break
+                except:
+                    pass
+            
+            # Parse deck date results
+            if row.deck_date_results_json:
+                try:
+                    date_data = json.loads(row.deck_date_results_json)
+                    # Find result for this specific deck  
+                    for result in date_data.get("extraction_results", []):
+                        if result.get("deck_id") == row.deck_id:
+                            deck_date = result.get("deck_date_extraction", "").strip()
+                            break
+                except:
+                    pass
+            
+            # Only add if we have at least some extraction data
+            if any([company_name, company_offering, classification, funding_amount, deck_date]):
+                extraction_results.append(ExtractionResult(
+                    deck_id=row.deck_id,
+                    deck_name=row.deck_name,
+                    company_name=company_name,
+                    company_offering=company_offering,
+                    classification=classification,
+                    funding_amount=funding_amount,
+                    deck_date=deck_date,
+                    extracted_at=row.extracted_at
+                ))
+        
+        logger.info(f"Found {len(extraction_results)} extraction results for user {current_user.email}")
+        return extraction_results
+        
+    except Exception as e:
+        logger.error(f"Error getting extraction results: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get extraction results"
+        )

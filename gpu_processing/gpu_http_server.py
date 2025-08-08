@@ -758,6 +758,98 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                     "timestamp": datetime.now().isoformat()
                 }), 500
         
+        @self.app.route('/api/run-extraction-experiment', methods=['POST'])
+        def run_extraction_experiment():
+            """Run comprehensive extraction experiment (all Step 3 extractions)"""
+            try:
+                data = request.get_json()
+                if not data:
+                    return jsonify({
+                        "success": False,
+                        "error": "No JSON data provided",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                deck_ids = data.get('deck_ids', [])
+                experiment_name = data.get('experiment_name', f'experiment_{datetime.now().strftime("%Y%m%d_%H%M%S")}')
+                extraction_type = data.get('extraction_type', 'all')
+                text_model = data.get('text_model', 'gemma3:12b')
+                processing_options = data.get('processing_options', {})
+                
+                if not deck_ids:
+                    return jsonify({
+                        "success": False,
+                        "error": "deck_ids is required",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                logger.info(f"Starting comprehensive extraction experiment '{experiment_name}' for {len(deck_ids)} decks")
+                
+                # Step 1: Run offering extraction
+                logger.info("Step 3.1: Running company offering extraction...")
+                offering_prompt = analyzer._get_pipeline_prompt('offering_extraction')
+                offering_results = self._run_extraction_step(deck_ids, offering_prompt, text_model, 'offering_extraction')
+                
+                # Save offering extraction results
+                experiment_id = self._save_extraction_experiment(experiment_name, deck_ids, offering_results, 'offering')
+                
+                # Step 2: Run classification (if enabled)
+                classification_results = []
+                if processing_options.get('do_classification', True):
+                    logger.info("Step 3.2: Running sector classification...")
+                    # Use the existing dojo classification logic
+                    classification_results = self._run_classification_step(deck_ids, offering_results)
+                    self._update_experiment_classification(experiment_id, classification_results)
+                
+                # Step 3: Extract company names (if enabled)  
+                company_name_results = []
+                if processing_options.get('extract_company_name', True):
+                    logger.info("Step 3.3: Extracting company names...")
+                    name_prompt = analyzer._get_pipeline_prompt('startup_name_extraction')
+                    company_name_results = self._run_extraction_step(deck_ids, name_prompt, text_model, 'company_name_extraction')
+                    self._update_experiment_company_names(experiment_id, company_name_results)
+                
+                # Step 4: Extract funding amounts (if enabled)
+                funding_results = []
+                if processing_options.get('extract_funding_amount', True):
+                    logger.info("Step 3.4: Extracting funding amounts...")
+                    funding_prompt = analyzer._get_pipeline_prompt('funding_amount_extraction')
+                    funding_results = self._run_extraction_step(deck_ids, funding_prompt, text_model, 'funding_amount_extraction')
+                    self._update_experiment_funding_amounts(experiment_id, funding_results)
+                
+                # Step 5: Extract deck dates (if enabled)
+                date_results = []
+                if processing_options.get('extract_deck_date', True):
+                    logger.info("Step 3.5: Extracting deck dates...")
+                    date_prompt = analyzer._get_pipeline_prompt('deck_date_extraction')
+                    date_results = self._run_extraction_step(deck_ids, date_prompt, text_model, 'deck_date_extraction')
+                    self._update_experiment_deck_dates(experiment_id, date_results)
+                
+                logger.info(f"Comprehensive extraction experiment '{experiment_name}' completed successfully")
+                
+                return jsonify({
+                    "success": True,
+                    "message": f"Extraction experiment completed for {len(deck_ids)} decks",
+                    "experiment_id": experiment_id,
+                    "experiment_name": experiment_name,
+                    "results": {
+                        "offering_extraction": offering_results,
+                        "classification": classification_results,
+                        "company_names": company_name_results,
+                        "funding_amounts": funding_results, 
+                        "deck_dates": date_results
+                    },
+                    "timestamp": datetime.now().isoformat()
+                })
+                
+            except Exception as e:
+                logger.error(f"Error in extraction experiment: {e}")
+                return jsonify({
+                    "success": False,
+                    "error": f"Error in extraction experiment: {str(e)}",
+                    "timestamp": datetime.now().isoformat()
+                }), 500
+        
         @self.app.route('/api/run-classification', methods=['POST'])
         def run_classification():
             """Run classification using text model"""
@@ -1196,6 +1288,209 @@ Please provide a comprehensive analysis focusing on the requested areas."""
         except Exception as e:
             logger.error(f"Error getting cached visual analysis from backend: {e}")
             return {}
+    
+    def _run_extraction_step(self, deck_ids: List[int], prompt: str, text_model: str, extraction_type: str) -> List[Dict]:
+        """Run a single extraction step for multiple decks"""
+        extraction_results = []
+        
+        for deck_id in deck_ids:
+            try:
+                # Get visual analysis for this deck
+                visual_analysis = self._get_visual_analysis_for_deck(deck_id)
+                
+                if not visual_analysis or 'slides' not in visual_analysis:
+                    logger.warning(f"No visual analysis found for deck {deck_id}")
+                    extraction_results.append({
+                        "deck_id": deck_id,
+                        f"{extraction_type}": "No visual analysis available for extraction"
+                    })
+                    continue
+                
+                # Format visual analysis for extraction prompt
+                visual_context = self._format_visual_analysis_for_extraction(visual_analysis)
+                
+                # Create full prompt with visual context
+                if "visual analysis" in prompt.lower():
+                    full_prompt = f"""{prompt}
+
+VISUAL ANALYSIS:
+{visual_context}"""
+                else:
+                    full_prompt = f"""Based on the pitch deck visual analysis provided below, {prompt}
+
+VISUAL ANALYSIS:
+{visual_context}
+
+IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful visual analysis is provided, respond with "No visual analysis available for extraction"."""
+                
+                # Use ollama for extraction
+                import ollama
+                response = ollama.chat(
+                    model=text_model,
+                    messages=[{
+                        'role': 'user',
+                        'content': full_prompt
+                    }],
+                    options={'num_ctx': 32768, 'temperature': 0.3}
+                )
+                
+                extraction_result = response['message']['content']
+                
+                extraction_results.append({
+                    "deck_id": deck_id,
+                    f"{extraction_type}": extraction_result,
+                    "text_model_used": text_model
+                })
+                
+                logger.info(f"Completed {extraction_type} for deck {deck_id}")
+                
+            except Exception as e:
+                logger.error(f"Error in {extraction_type} for deck {deck_id}: {e}")
+                extraction_results.append({
+                    "deck_id": deck_id,
+                    f"{extraction_type}": f"Error: {str(e)}",
+                    "text_model_used": text_model
+                })
+        
+        return extraction_results
+    
+    def _save_extraction_experiment(self, experiment_name: str, deck_ids: List[int], results: List[Dict], experiment_type: str) -> int:
+        """Save extraction experiment results to database via HTTP"""
+        try:
+            import requests
+            import json
+            
+            # Call backend to save experiment
+            backend_url = os.getenv('BACKEND_PRODUCTION', 'http://65.108.32.168:8000')
+            response = requests.post(f"{backend_url}/api/dojo/save-extraction-experiment", 
+                json={
+                    "experiment_name": experiment_name,
+                    "deck_ids": deck_ids,
+                    "results": results,
+                    "experiment_type": experiment_type
+                },
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                return data.get('experiment_id', 0)
+            else:
+                logger.error(f"Failed to save experiment: {response.status_code} - {response.text}")
+                return 0
+                
+        except Exception as e:
+            logger.error(f"Error saving extraction experiment: {e}")
+            return 0
+    
+    def _run_classification_step(self, deck_ids: List[int], offering_results: List[Dict]) -> List[Dict]:
+        """Run classification step using offering results"""
+        classification_results = []
+        
+        for deck_id in deck_ids:
+            try:
+                # Find offering result for this deck
+                deck_offering = None
+                for result in offering_results:
+                    if result.get('deck_id') == deck_id:
+                        deck_offering = result.get('offering_extraction', '')
+                        break
+                
+                if not deck_offering:
+                    classification_results.append({
+                        "deck_id": deck_id,
+                        "classification_result": {"error": "No offering available for classification"}
+                    })
+                    continue
+                
+                # Use existing classification logic via HTTP call to backend
+                import requests
+                backend_url = os.getenv('BACKEND_PRODUCTION', 'http://65.108.32.168:8000')
+                response = requests.post(f"{backend_url}/api/healthcare-templates/classify",
+                    json={"company_offering": deck_offering},
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    classification_data = response.json()
+                    classification_results.append({
+                        "deck_id": deck_id,
+                        "classification_result": classification_data
+                    })
+                else:
+                    classification_results.append({
+                        "deck_id": deck_id,
+                        "classification_result": {"error": f"Classification failed: {response.status_code}"}
+                    })
+                
+            except Exception as e:
+                logger.error(f"Error in classification for deck {deck_id}: {e}")
+                classification_results.append({
+                    "deck_id": deck_id,
+                    "classification_result": {"error": str(e)}
+                })
+        
+        return classification_results
+    
+    def _update_experiment_classification(self, experiment_id: int, results: List[Dict]):
+        """Update experiment with classification results"""
+        try:
+            import requests
+            backend_url = os.getenv('BACKEND_PRODUCTION', 'http://65.108.32.168:8000')
+            requests.post(f"{backend_url}/api/dojo/update-extraction-classification", 
+                json={
+                    "experiment_id": experiment_id,
+                    "classification_results": results
+                },
+                timeout=30
+            )
+        except Exception as e:
+            logger.error(f"Error updating classification results: {e}")
+    
+    def _update_experiment_company_names(self, experiment_id: int, results: List[Dict]):
+        """Update experiment with company name results"""
+        try:
+            import requests
+            backend_url = os.getenv('BACKEND_PRODUCTION', 'http://65.108.32.168:8000')
+            requests.post(f"{backend_url}/api/dojo/update-extraction-company-names", 
+                json={
+                    "experiment_id": experiment_id,
+                    "company_name_results": results
+                },
+                timeout=30
+            )
+        except Exception as e:
+            logger.error(f"Error updating company name results: {e}")
+    
+    def _update_experiment_funding_amounts(self, experiment_id: int, results: List[Dict]):
+        """Update experiment with funding amount results"""
+        try:
+            import requests
+            backend_url = os.getenv('BACKEND_PRODUCTION', 'http://65.108.32.168:8000')
+            requests.post(f"{backend_url}/api/dojo/update-extraction-funding-amounts", 
+                json={
+                    "experiment_id": experiment_id,
+                    "funding_amount_results": results
+                },
+                timeout=30
+            )
+        except Exception as e:
+            logger.error(f"Error updating funding amount results: {e}")
+    
+    def _update_experiment_deck_dates(self, experiment_id: int, results: List[Dict]):
+        """Update experiment with deck date results"""
+        try:
+            import requests
+            backend_url = os.getenv('BACKEND_PRODUCTION', 'http://65.108.32.168:8000')
+            requests.post(f"{backend_url}/api/dojo/update-extraction-deck-dates", 
+                json={
+                    "experiment_id": experiment_id,
+                    "deck_date_results": results
+                },
+                timeout=30
+            )
+        except Exception as e:
+            logger.error(f"Error updating deck date results: {e}")
     
     def _get_extraction_results_for_deck(self, deck_id: int) -> Dict[str, Any]:
         """Get extraction results from extraction experiments for a deck via HTTP"""

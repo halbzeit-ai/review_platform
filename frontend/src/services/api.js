@@ -246,4 +246,8 @@ export const getTemplateConfig = () =>
 export const saveTemplateConfig = (config) =>
   api.post('/healthcare-templates/template-config', config);
 
+// Extraction Results API
+export const getExtractionResults = () =>
+  api.get('/projects/extraction-results');
+
 export default api;
