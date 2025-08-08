@@ -3377,9 +3377,13 @@ const DojoManagement = () => {
                     const isSuccess = !result.offering_extraction.startsWith('Error:');
                     const extractionLength = result.offering_extraction?.length || 0;
                     
-                    // Get classification data from the experiment's classification results
-                    const classificationData = experimentDetails.classification_results_json && 
-                      JSON.parse(experimentDetails.classification_results_json)[result.deck_id];
+                    // Classification data is embedded directly in the result
+                    const classificationData = result.primary_sector ? {
+                      primary_sector: result.primary_sector,
+                      secondary_sector: result.secondary_sector,
+                      confidence_score: result.confidence_score,
+                      reasoning: result.classification_reasoning
+                    } : null;
                     
                     return (
                       <ListItem 

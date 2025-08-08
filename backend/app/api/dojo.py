@@ -1485,6 +1485,10 @@ async def get_experiment_details(
                     "primary_sector": classification.get("primary_sector"),
                     "secondary_sector": classification.get("secondary_sector"),
                     "confidence_score": classification.get("confidence_score"),
+                    "classification_reasoning": classification.get("reasoning"),
+                    "subcategory": classification.get("subcategory"),
+                    "keywords_matched": classification.get("keywords_matched"),
+                    "recommended_template": classification.get("recommended_template"),
                     "classification_error": classification.get("error")
                 })
             
