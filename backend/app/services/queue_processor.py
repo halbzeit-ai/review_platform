@@ -292,6 +292,7 @@ class QueueProcessor:
         """Run visual analysis phase using existing Dojo infrastructure"""
         try:
             # Retrieve configured models from database - CRITICAL for startup processing
+            from sqlalchemy import text
             vision_model = db.execute(text(
                 "SELECT model_name FROM model_configs WHERE model_type = 'vision' AND is_active = true LIMIT 1"
             )).scalar()
@@ -335,10 +336,46 @@ class QueueProcessor:
     async def run_extraction_phase(self, task: ProcessingTask, db: Session) -> bool:
         """Run extraction phase (company offering, classification, etc.)"""
         try:
-            # For now, simulate extraction phase - this would call extraction endpoints
-            await asyncio.sleep(2)  # Simulate processing time
-            logger.info(f"Extraction phase completed for deck {task.pitch_deck_id}")
-            return True
+            logger.info(f"Running Dojo Step 3 extractions for deck {task.pitch_deck_id}")
+            
+            # Prepare request for extraction
+            request_data = {
+                "deck_ids": [task.pitch_deck_id],
+                "experiment_name": f"extraction_deck_{task.pitch_deck_id}",
+                "extraction_type": "all",  # Run all extractions
+                "text_model": "gemma3:12b",
+                "processing_options": {
+                    "do_classification": True,
+                    "extract_company_name": True,
+                    "extract_funding_amount": True,
+                    "extract_deck_date": True
+                }
+            }
+            
+            logger.info(f"Calling GPU extraction endpoint for deck {task.pitch_deck_id}")
+            
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                response = await client.post(
+                    f"{self.gpu_url}/api/run-extraction-experiment",
+                    json=request_data,
+                    headers={"Content-Type": "application/json"}
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    logger.info(f"Extraction completed: offering, classification, company name, funding, date for deck {task.pitch_deck_id}")
+                    
+                    # Save extraction results if needed
+                    if result.get('success'):
+                        # The results are stored in the extraction_experiments table by the GPU
+                        logger.info(f"Extraction phase completed successfully for deck {task.pitch_deck_id}")
+                        return True
+                    else:
+                        logger.error(f"Extraction failed: {result.get('error')}")
+                        return False
+                else:
+                    logger.error(f"Extraction request failed: {response.status_code} - {response.text}")
+                    return False
             
         except Exception as e:
             logger.error(f"Error in extraction phase: {e}")
@@ -355,21 +392,22 @@ class QueueProcessor:
                 template_id = processing_options['selected_template_id']
                 logger.info(f"Using GP override template {template_id} for deck {task.pitch_deck_id}")
             else:
-                # Let GPU determine default template from database
-                template_id = None
-                logger.info(f"Using default template (determined by GPU) for deck {task.pitch_deck_id}")
+                # Get default template from database
+                from sqlalchemy import text
+                default_template_id = db.execute(text(
+                    "SELECT id FROM analysis_templates WHERE is_default = true LIMIT 1"
+                )).scalar()
+                template_id = default_template_id or 5  # Fallback to template 5 if no default
+                logger.info(f"Using default template {template_id} for deck {task.pitch_deck_id}")
             
             request_data = {
                 "deck_ids": [task.pitch_deck_id],
+                "template_id": template_id,  # Always include template_id  
                 "processing_options": {
                     "generate_thumbnails": True,
                     "callback_url": f"{self.backend_url}/api/internal/update-deck-results"
                 }
             }
-            
-            # Only include template_id if specified
-            if template_id is not None:
-                request_data["template_id"] = template_id
             
             async with httpx.AsyncClient(timeout=600.0) as client:  # Longer timeout for template analysis
                 response = await client.post(
@@ -381,6 +419,25 @@ class QueueProcessor:
                 if response.status_code == 200:
                     result = response.json()
                     logger.info(f"Template analysis completed for deck {task.pitch_deck_id}")
+                    
+                    # Save the results to the database
+                    if result.get('success') and result.get('results'):
+                        for deck_result in result['results']:
+                            if deck_result['deck_id'] == task.pitch_deck_id and deck_result.get('success'):
+                                template_analysis = deck_result.get('template_analysis', {})
+                                
+                                # Save template analysis results as JSON to pitch_decks table
+                                from sqlalchemy import text
+                                db.execute(text(
+                                    "UPDATE pitch_decks SET ai_analysis_results = :results WHERE id = :deck_id"
+                                ), {
+                                    "results": json.dumps(template_analysis),
+                                    "deck_id": task.pitch_deck_id
+                                })
+                                db.commit()
+                                logger.info(f"Saved template analysis results for deck {task.pitch_deck_id}")
+                                break
+                    
                     return True
                 else:
                     logger.error(f"Template analysis failed: {response.status_code} - {response.text}")

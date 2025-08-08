@@ -572,6 +572,11 @@ class GPUHTTPServer:
                         # Run visual analysis only
                         analyzer._analyze_visual_content(full_pdf_path, company_id="dojo")
                         
+                        # Generate slide feedback after visual analysis
+                        logger.info(f"Generating slide feedback for deck {deck_id}")
+                        analyzer.deck_id = deck_id  # Set deck_id for feedback storage
+                        analyzer._generate_slide_feedback()
+                        
                         # Format results for caching
                         visual_results = {
                             "visual_analysis_results": analyzer.visual_analysis_results

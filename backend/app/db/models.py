@@ -633,3 +633,18 @@ class TaskDependency(Base):
     # Relationships
     dependent_task = relationship("ProcessingQueue", foreign_keys=[dependent_task_id], back_populates="dependency_tasks")
     depends_on_task = relationship("ProcessingQueue", foreign_keys=[depends_on_task_id], back_populates="dependent_tasks")
+
+
+class TemplateConfiguration(Base):
+    __tablename__ = "template_configurations"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    use_single_template = Column(Boolean)
+    selected_template_id = Column(Integer, ForeignKey("analysis_templates.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = relationship("User")
+    selected_template = relationship("AnalysisTemplate")

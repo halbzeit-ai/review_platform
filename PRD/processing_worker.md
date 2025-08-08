@@ -191,17 +191,92 @@ psql -d review-platform -c "DELETE FROM processing_servers WHERE last_heartbeat 
 2. **Stuck Tasks**: Check lock expiration and run recovery procedures
 3. **GPU Connection Issues**: Monitor shared logs for GPU HTTP client errors
 4. **Database Connection**: Verify environment variables and PostgreSQL service
+5. **🆕 Database Transaction Lockup**: System unresponsive, 30+ second API timeouts
+6. **🆕 Connection Pool Exhaustion**: High connection count, "pool limit reached" errors
+
+#### 🆕 Database Health Troubleshooting
+```bash
+# Quick health check - run immediately for any database issues
+/opt/review-platform/scripts/database-health-monitor.sh
+
+# Detailed connection analysis
+sudo -u postgres psql -d review-platform -f scripts/db-connection-monitor.sql
+
+# Check for stuck transactions (most common issue)
+sudo -u postgres psql -d review-platform -c "
+SELECT pid, state, query_start, NOW() - query_start as duration
+FROM pg_stat_activity 
+WHERE state = 'idle in transaction' AND datname = 'review-platform'
+ORDER BY query_start;"
+
+# Emergency transaction cleanup (use with caution)
+sudo -u postgres psql -d review-platform -c "
+SELECT pg_terminate_backend(pid) 
+FROM pg_stat_activity 
+WHERE state = 'idle in transaction' 
+  AND query_start < NOW() - INTERVAL '5 minutes';"
+
+# Check processing queue for stuck decks
+sudo -u postgres psql -d review-platform -c "
+SELECT processing_status, COUNT(*), 
+       COUNT(CASE WHEN created_at < NOW() - INTERVAL '30 minutes' THEN 1 END) as stuck
+FROM pitch_decks 
+WHERE processing_status IN ('pending', 'processing', 'queued')
+GROUP BY processing_status;"
+
+# Clean up stuck processing decks
+sudo -u postgres psql -d review-platform -c "
+UPDATE pitch_decks 
+SET processing_status = 'failed', current_processing_task_id = NULL
+WHERE processing_status IN ('pending', 'processing', 'queued') 
+  AND created_at < NOW() - INTERVAL '30 minutes';"
+```
 
 #### Log Analysis
 ```bash
 # Monitor real-time processing
 tail -f /mnt/CPU-GPU/logs/processing_worker.log
 
+# Monitor database health logs
+tail -f /mnt/CPU-GPU/logs/database-health.log
+
 # Search for errors across all services
 grep -i "error\|failed" /mnt/CPU-GPU/logs/*.log
 
 # Check specific task processing
 grep "task.*123" /mnt/CPU-GPU/logs/processing_worker.log
+
+# Look for database connection issues
+grep -i "connection\|pool\|transaction" /mnt/CPU-GPU/logs/backend.log
+
+# Check for queue processor issues
+grep -i "queue_processor\|idle in transaction" /mnt/CPU-GPU/logs/backend.log
+```
+
+#### 🆕 Emergency Response Procedures
+
+**Symptoms**: API timeouts, frontend login failures, slow response times
+
+**Immediate Actions:**
+1. **Run health monitor**: `/opt/review-platform/scripts/database-health-monitor.sh`
+2. **Check service status**: `sudo systemctl status review-platform.service`
+3. **Monitor active connections**: Check for high idle transaction counts
+4. **Emergency cleanup**: Kill stuck transactions if >20 detected
+5. **Service restart**: `sudo systemctl restart review-platform.service` if necessary
+
+**Recovery Verification:**
+```bash
+# Test API responsiveness
+curl -w "Time: %{time_total}s" "https://halbzeit.ai/api/health"
+
+# Verify connection health
+sudo -u postgres psql -d review-platform -c "
+SELECT COUNT(*) as active_connections,
+       COUNT(CASE WHEN state = 'idle in transaction' THEN 1 END) as idle_in_transaction
+FROM pg_stat_activity WHERE datname = 'review-platform';"
+
+# Check processing queue status
+curl -H "Authorization: Bearer $GP_TOKEN" "https://halbzeit.ai/api/robust/documents/queue-stats"
 ```
 
 ## Performance Characteristics
@@ -218,14 +293,128 @@ grep "task.*123" /mnt/CPU-GPU/logs/processing_worker.log
 - **Database**: Efficient indexes on status, priority, and timestamps
 - **Storage**: Minimal - only task metadata stored
 
+## Critical Production Issues & Solutions (Updated 2025-08-08)
+
+### Database Transaction Management Crisis
+
+#### **Issue**: Production Database Lockup (Severity: Critical)
+On 2025-08-08, the production system experienced complete unresponsiveness due to database transaction management issues in the processing queue system.
+
+**Root Cause Analysis:**
+- **Transaction Leaks**: `queue_processor.py` created database sessions without proper commit/rollback
+- **Long-running Operations**: Split processing (30+ seconds) kept transactions open indefinitely  
+- **Exception Handling Gap**: Errors left transactions in "idle in transaction" state
+- **Connection Pool Exhaustion**: 15+ stuck transactions blocked new connections → 30-second API timeouts
+
+**Symptoms:**
+- Backend API responses: 30+ seconds instead of milliseconds
+- Frontend login timeouts: "Request aborted" errors
+- Database showing multiple "idle in transaction" connections
+- Connection pool exhaustion despite low actual load
+
+#### **Immediate Fixes Applied** ✅
+
+1. **Queue Processor Transaction Management** (`backend/app/services/queue_processor.py`)
+   ```python
+   # Before: Missing transaction management
+   db = SessionLocal()
+   # ... long operations ...
+   finally:
+       db.close()  # Never committed!
+   
+   # After: Explicit transaction management
+   db = SessionLocal()
+   try:
+       task = processing_queue_manager.get_next_task(db)
+       if not task:
+           db.commit()  # Commit even empty operations
+           return
+       
+       # ... process task ...
+       db.commit()  # Commit success
+   except Exception as e:
+       db.rollback()  # Rollback on error
+   finally:
+       db.close()
+   ```
+
+2. **Database Connection Pool Configuration** (`backend/app/db/database.py`)
+   ```python
+   engine = create_engine(
+       settings.DATABASE_URL,
+       pool_size=10,           # Increased from default 5
+       max_overflow=20,        # Additional connections
+       pool_timeout=30,        # Timeout when getting connection
+       pool_recycle=3600,      # Recycle connections hourly
+       pool_pre_ping=True,     # Validate connections
+   )
+   ```
+
+3. **Automated Cleanup & Recovery** (`scripts/database-health-monitor.sh`)
+   - Runs every 5 minutes via cron
+   - Detects stuck transactions (>2 minutes)
+   - Auto-kills transactions stuck >5 minutes
+   - Auto-restarts backend if >10 transactions cleaned
+   - Monitors processing queue health
+
+#### **Prevention Systems** 🛡️
+
+**Automated Monitoring & Recovery:**
+- **Health Monitor**: `scripts/database-health-monitor.sh` (cron: */5 * * * *)
+- **Connection Monitoring**: `scripts/db-connection-monitor.sql` (manual diagnostics)
+- **Alert Thresholds**: 
+  - Warning: >10 idle transactions
+  - Critical: >20 idle transactions (auto-cleanup)
+  - Processing: >15 stuck decks (auto-reset to failed)
+
+**Operational Procedures:**
+```bash
+# Real-time health check
+/opt/review-platform/scripts/database-health-monitor.sh
+
+# Manual diagnostics
+sudo -u postgres psql -d review-platform -f scripts/db-connection-monitor.sql
+
+# Emergency cleanup (if needed)
+sudo -u postgres psql -d review-platform -c "
+SELECT pg_terminate_backend(pid) 
+FROM pg_stat_activity 
+WHERE state = 'idle in transaction' 
+  AND query_start < NOW() - INTERVAL '5 minutes';"
+```
+
+#### **Lessons Learned** 📚
+
+1. **Transaction Discipline**: Every database session MUST have explicit commit/rollback
+2. **Connection Pool Sizing**: Default settings insufficient for concurrent processing
+3. **Monitoring Essential**: Problems compound quickly without early detection
+4. **Graceful Degradation**: System should fail gracefully, not lock up completely
+5. **Documentation Critical**: Team needs runbooks for rapid incident response
+
+#### **Future Improvements**
+
+**Technical Debt:**
+- Audit ALL database session usage for proper transaction management
+- Implement connection pool metrics and alerting
+- Add circuit breaker pattern for GPU communication failures
+- Consider read-only replicas for progress polling to reduce primary load
+
+**Operational Improvements:**
+- Dashboard for real-time database health metrics
+- Automated alerts via Slack/email for critical thresholds
+- Runbook automation for common recovery procedures
+- Load testing to validate connection pool sizing
+
 ## Future Enhancements
 
 ### Planned Improvements
-1. **Concurrency Optimization**: Fix duplicate task processing issue
-2. **Priority Queues**: Enhanced priority handling for urgent tasks
-3. **Workflow Support**: Complex multi-step processing workflows
-4. **Metrics Integration**: Prometheus/Grafana monitoring
-5. **Auto-scaling**: Dynamic worker scaling based on queue depth
+1. **Transaction Audit**: Complete audit of all database session usage patterns
+2. **Circuit Breakers**: Implement circuit breaker pattern for external service calls
+3. **Connection Pool Metrics**: Real-time monitoring of database connection health
+4. **Priority Queues**: Enhanced priority handling for urgent tasks
+5. **Workflow Support**: Complex multi-step processing workflows
+6. **Metrics Integration**: Prometheus/Grafana monitoring with database health metrics
+7. **Auto-scaling**: Dynamic worker scaling based on queue depth
 
 ### Frontend Integration
 1. **Progressive Enhancement**: Gradually migrate to robust endpoints

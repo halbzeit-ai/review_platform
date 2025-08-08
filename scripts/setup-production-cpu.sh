@@ -79,11 +79,12 @@ Production CPU Server Setup Script
 
 This script sets up a complete production CPU server including:
 - System dependencies and packages
-- PostgreSQL database server
-- Backend API service (FastAPI)
-- Frontend static files (React)
+- PostgreSQL database server with connection pool optimization
+- Backend API service (FastAPI) with transaction management fixes
+- Frontend static files (React) with zero-downtime deployment
 - Processing Queue Worker service
-- Nginx web server
+- Nginx web server with improved proxy configuration
+- Database health monitoring system (prevents transaction lockups)
 - Security hardening (optional)
 - SSL/TLS certificates (Let's Encrypt)
 
@@ -358,45 +359,83 @@ log_success "Frontend deployed"
 # Step 7: Nginx Configuration
 log_section "Step 7: Nginx Web Server Setup"
 
-log_info "Configuring Nginx..."
+log_info "Configuring Nginx with improved proxy settings..."
 
+# Create nginx configuration with HTTPS redirect and proper proxy settings
 cat > /etc/nginx/sites-available/review-platform << EOF
+# HTTP -> HTTPS redirect (if SSL is enabled, this will be updated later)
 server {
     listen 80;
+    listen [::]:80;
     server_name $DOMAIN_NAME www.$DOMAIN_NAME;
 
     # Frontend
     root /var/www/html/build;
     index index.html;
 
-    # API proxy
-    location /api {
-        proxy_pass http://localhost:8000;
+    # API proxy with improved reliability
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000/api/;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
         
-        # Timeouts for long-running requests
+        # CORS headers for API calls
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE' always;
+        add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
+        
+        # Handle preflight OPTIONS requests
+        if (\$request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' '*';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE';
+            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
+            add_header 'Access-Control-Max-Age' 1728000;
+            add_header 'Content-Type' 'text/plain; charset=utf-8';
+            add_header 'Content-Length' 0;
+            return 204;
+        }
+        
+        # Timeouts for processing requests
         proxy_read_timeout 300;
         proxy_connect_timeout 300;
         proxy_send_timeout 300;
     }
-
-    # Frontend routing
-    location / {
-        try_files $uri $uri/ /index.html;
+    
+    # WebSocket proxy
+    location /ws {
+        proxy_pass http://127.0.0.1:8000/ws;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
     }
 
-    # Security headers
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    # Frontend routing - serve index.html for all non-API routes
+    location / {
+        try_files \$uri \$uri/ /index.html;
+        
+        # Security headers
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "no-referrer-when-downgrade" always;
+        add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
+    }
+    
+    # Cache static assets
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
     
     # File upload size limit
     client_max_body_size 100M;
@@ -455,6 +494,105 @@ if [[ "$SETUP_SSL" == "yes" ]]; then
     # Setup SSL certificates
     if certbot --nginx -d "$DOMAIN_NAME" -d "www.$DOMAIN_NAME" --non-interactive --agree-tos --email "$SSL_EMAIL"; then
         log_success "SSL certificates installed for $DOMAIN_NAME"
+        
+        # Update nginx configuration for HTTPS with proper proxy settings
+        log_info "Updating nginx configuration for HTTPS..."
+        cat > /etc/nginx/sites-available/review-platform << EOF
+# HTTP -> HTTPS redirect
+server {
+    listen 80;
+    listen [::]:80;
+    server_name $DOMAIN_NAME www.$DOMAIN_NAME;
+    return 301 https://\$server_name\$request_uri;
+}
+
+# HTTPS server
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    
+    server_name $DOMAIN_NAME www.$DOMAIN_NAME;
+    
+    # SSL configuration (managed by certbot)
+    ssl_certificate /etc/letsencrypt/live/$DOMAIN_NAME/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN_NAME/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    # Frontend
+    root /var/www/html/build;
+    index index.html;
+
+    # API proxy with improved reliability
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_cache_bypass \$http_upgrade;
+        
+        # CORS headers for API calls
+        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE' always;
+        add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
+        
+        # Handle preflight OPTIONS requests
+        if (\$request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' '*';
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE';
+            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
+            add_header 'Access-Control-Max-Age' 1728000;
+            add_header 'Content-Type' 'text/plain; charset=utf-8';
+            add_header 'Content-Length' 0;
+            return 204;
+        }
+        
+        # Timeouts for processing requests
+        proxy_read_timeout 300;
+        proxy_connect_timeout 300;
+        proxy_send_timeout 300;
+    }
+    
+    # WebSocket proxy (secure)
+    location /ws {
+        proxy_pass http://127.0.0.1:8000/ws;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    # Frontend routing - serve index.html for all non-API routes
+    location / {
+        try_files \$uri \$uri/ /index.html;
+        
+        # Security headers
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "no-referrer-when-downgrade" always;
+        add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
+    }
+    
+    # Cache static assets
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+    
+    # File upload size limit
+    client_max_body_size 100M;
+}
+EOF
+        nginx -t && systemctl reload nginx
+        log_success "Nginx HTTPS configuration updated"
         
         # Test HTTPS endpoint
         sleep 2
@@ -588,6 +726,48 @@ else
     log_info "To enable HTTPS later: certbot --nginx -d $DOMAIN_NAME -d www.$DOMAIN_NAME --email $SSL_EMAIL"
 fi
 
+# Step 13: Database Health Monitoring Setup
+log_section "Step 13: Database Health Monitoring Setup"
+
+log_info "Setting up automated database health monitoring..."
+
+# Ensure monitoring script exists and is executable
+if [[ -f "$PROJECT_ROOT/scripts/database-health-monitor.sh" ]]; then
+    chmod +x "$PROJECT_ROOT/scripts/database-health-monitor.sh"
+    log_success "Database health monitor script is ready"
+else
+    log_warning "Database health monitor script not found at $PROJECT_ROOT/scripts/database-health-monitor.sh"
+    log_warning "This is critical for preventing database lockup issues!"
+fi
+
+# Install cron job for database monitoring
+log_info "Installing database health monitoring cron job..."
+(crontab -l 2>/dev/null || echo "") | grep -v "database-health-monitor" > /tmp/current_crontab
+
+cat >> /tmp/current_crontab << 'CRON_EOF'
+# Database health monitoring - prevents transaction lockup issues
+*/5 * * * * /opt/review-platform/scripts/database-health-monitor.sh >/dev/null 2>&1
+
+# Daily cleanup of old log files  
+0 2 * * * find /mnt/CPU-GPU/logs/ -name '*.log' -mtime +7 -delete
+CRON_EOF
+
+crontab /tmp/current_crontab
+rm /tmp/current_crontab
+log_success "Database health monitoring cron job installed (runs every 5 minutes)"
+
+# Create logs directory if it doesn't exist
+mkdir -p "$SHARED_FILESYSTEM/logs"
+log_success "Database monitoring configured"
+
+# Test the monitoring script
+log_info "Testing database health monitor..."
+if "$PROJECT_ROOT/scripts/database-health-monitor.sh" 2>/dev/null; then
+    log_success "Database health monitor test passed"
+else
+    log_warning "Database health monitor test failed - please check manually"
+fi
+
 # Final Summary
 log_section "Installation Complete!"
 
@@ -605,6 +785,12 @@ echo "  • View worker logs: journalctl -u processing-worker -f"
 echo "  • Restart backend: systemctl restart review-platform"
 echo "  • Restart worker: systemctl restart processing-worker"
 echo "  • Check status: systemctl status review-platform processing-worker"
+echo ""
+echo -e "${BLUE}Database Health Monitoring:${NC}"
+echo "  • Run health check: $PROJECT_ROOT/scripts/database-health-monitor.sh"
+echo "  • View health logs: tail -f $SHARED_FILESYSTEM/logs/database-health.log"
+echo "  • Manual diagnostics: sudo -u postgres psql -d review-platform -f scripts/db-connection-monitor.sql"
+echo "  • Emergency cleanup: See PRD/processing_worker.md for procedures"
 echo ""
 
 if [[ "$SKIP_SECURITY" == "true" ]]; then
@@ -628,4 +814,8 @@ LOG_FILE="$PROJECT_ROOT/installation_$(date +%Y%m%d_%H%M%S).log"
 echo "Installation completed at $(date)" > "$LOG_FILE"
 echo "Server IP: $CURRENT_IP" >> "$LOG_FILE"
 echo "Services installed: PostgreSQL, Backend API, Processing Worker, Nginx" >> "$LOG_FILE"
+echo "SSL configured: $SETUP_SSL" >> "$LOG_FILE"
+echo "Database health monitoring: Enabled (cron every 5 minutes)" >> "$LOG_FILE"
+echo "Transaction management: Improved with proper commit/rollback" >> "$LOG_FILE"
+echo "Nginx proxy: Updated with IPv4 binding and CORS headers" >> "$LOG_FILE"
 log_info "Installation log saved to: $LOG_FILE"
