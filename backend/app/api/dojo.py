@@ -737,6 +737,12 @@ class ExtractionTestRequest(BaseModel):
     extraction_prompt: Optional[str] = None  # Optional, will be looked up from database
     use_cached_visual: bool = True
 
+class SaveExtractionExperimentRequest(BaseModel):
+    experiment_name: str
+    deck_ids: List[int]
+    results: List[Dict[str, Any]]
+    experiment_type: str
+
 @router.post("/extraction-test/sample")
 async def create_extraction_sample(
     request: ExtractionSampleRequest,
@@ -2972,4 +2978,114 @@ async def template_progress_callback(
         return {"success": True}
     except Exception as e:
         logger.error(f"Error in template progress callback: {e}")
+        return {"success": False, "error": str(e)}
+
+@router.post("/save-extraction-experiment")
+async def save_extraction_experiment(
+    request: SaveExtractionExperimentRequest,
+    db: Session = Depends(get_db)
+):
+    """Save extraction experiment results to database"""
+    try:
+        logger.info(f"Saving extraction experiment: {request.experiment_name}")
+        
+        # Convert deck_ids list to PostgreSQL array format
+        deck_ids_str = "{" + ",".join(map(str, request.deck_ids)) + "}"
+        
+        # The GPU sends results in this format:
+        # {
+        #   "offering_extraction": [...],
+        #   "company_names": [...],
+        #   "funding_amounts": [...],
+        #   "deck_dates": [...],
+        #   "classification": [...]
+        # }
+        
+        # Extract specific result types from the results
+        offering_results_json = None
+        company_name_results_json = None
+        funding_amount_results_json = None 
+        deck_date_results_json = None
+        classification_results_json = None
+        
+        # Process the results if they exist
+        if isinstance(request.results, list) and len(request.results) > 0:
+            # Handle array format from GPU
+            results_json = json.dumps(request.results)
+        elif isinstance(request.results, dict):
+            # Handle dict format with separate categories
+            results_dict = request.results
+            
+            if "offering_extraction" in results_dict:
+                offering_results_json = json.dumps(results_dict["offering_extraction"])
+            if "company_names" in results_dict:
+                company_name_results_json = json.dumps(results_dict["company_names"])
+            if "funding_amounts" in results_dict:
+                funding_amount_results_json = json.dumps(results_dict["funding_amounts"])
+            if "deck_dates" in results_dict:
+                deck_date_results_json = json.dumps(results_dict["deck_dates"])
+            if "classification" in results_dict:
+                classification_results_json = json.dumps(results_dict["classification"])
+                
+            results_json = json.dumps(request.results)
+        else:
+            results_json = json.dumps(request.results)
+        
+        # Insert into extraction_experiments table with all columns
+        query = text("""
+            INSERT INTO extraction_experiments (
+                experiment_name, 
+                pitch_deck_ids, 
+                extraction_type, 
+                text_model_used,
+                extraction_prompt,
+                results_json,
+                company_name_results_json,
+                classification_results_json,
+                funding_amount_results_json,
+                deck_date_results_json,
+                created_at
+            ) VALUES (
+                :experiment_name,
+                :deck_ids,
+                :experiment_type,
+                :text_model,
+                :extraction_prompt,
+                :results_json,
+                :company_name_results_json,
+                :classification_results_json,
+                :funding_amount_results_json,
+                :deck_date_results_json,
+                :created_at
+            ) RETURNING id
+        """)
+        
+        result = db.execute(query, {
+            "experiment_name": request.experiment_name,
+            "deck_ids": deck_ids_str,
+            "experiment_type": request.experiment_type,
+            "text_model": "gemma3:12b",  # Default from GPU request
+            "extraction_prompt": f"Extraction for {request.experiment_type}",
+            "results_json": results_json,
+            "company_name_results_json": company_name_results_json,
+            "classification_results_json": classification_results_json,
+            "funding_amount_results_json": funding_amount_results_json,
+            "deck_date_results_json": deck_date_results_json,
+            "created_at": datetime.utcnow()
+        })
+        
+        experiment_id = result.fetchone()[0]
+        db.commit()
+        
+        logger.info(f"Successfully saved extraction experiment {experiment_id}")
+        
+        return {
+            "success": True,
+            "experiment_id": experiment_id,
+            "message": f"Saved extraction experiment for {len(request.deck_ids)} decks"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error saving extraction experiment: {e}")
+        db.rollback()
         return {"success": False, "error": str(e)}

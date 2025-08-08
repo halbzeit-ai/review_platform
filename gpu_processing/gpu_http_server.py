@@ -789,13 +789,14 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                 from utils.healthcare_template_analyzer import HealthcareTemplateAnalyzer
                 analyzer = HealthcareTemplateAnalyzer()
                 
+                # Collect all extraction results
+                all_results = {}
+                
                 # Step 1: Run offering extraction
                 logger.info("Step 3.1: Running company offering extraction...")
                 offering_prompt = analyzer._get_pipeline_prompt('offering_extraction')
                 offering_results = self._run_extraction_step(deck_ids, offering_prompt, text_model, 'offering_extraction')
-                
-                # Save offering extraction results
-                experiment_id = self._save_extraction_experiment(experiment_name, deck_ids, offering_results, 'offering')
+                all_results["offering_extraction"] = offering_results
                 
                 # Step 2: Run classification (if enabled)
                 classification_results = []
@@ -803,7 +804,7 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                     logger.info("Step 3.2: Running sector classification...")
                     # Use the existing dojo classification logic
                     classification_results = self._run_classification_step(deck_ids, offering_results)
-                    self._update_experiment_classification(experiment_id, classification_results)
+                all_results["classification"] = classification_results
                 
                 # Step 3: Extract company names (if enabled)  
                 company_name_results = []
@@ -811,7 +812,7 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                     logger.info("Step 3.3: Extracting company names...")
                     name_prompt = analyzer._get_pipeline_prompt('startup_name_extraction')
                     company_name_results = self._run_extraction_step(deck_ids, name_prompt, text_model, 'company_name_extraction')
-                    self._update_experiment_company_names(experiment_id, company_name_results)
+                all_results["company_names"] = company_name_results
                 
                 # Step 4: Extract funding amounts (if enabled)
                 funding_results = []
@@ -819,7 +820,7 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                     logger.info("Step 3.4: Extracting funding amounts...")
                     funding_prompt = analyzer._get_pipeline_prompt('funding_amount_extraction')
                     funding_results = self._run_extraction_step(deck_ids, funding_prompt, text_model, 'funding_amount_extraction')
-                    self._update_experiment_funding_amounts(experiment_id, funding_results)
+                all_results["funding_amounts"] = funding_results
                 
                 # Step 5: Extract deck dates (if enabled)
                 date_results = []
@@ -827,7 +828,10 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                     logger.info("Step 3.5: Extracting deck dates...")
                     date_prompt = analyzer._get_pipeline_prompt('deck_date_extraction')
                     date_results = self._run_extraction_step(deck_ids, date_prompt, text_model, 'deck_date_extraction')
-                    self._update_experiment_deck_dates(experiment_id, date_results)
+                all_results["deck_dates"] = date_results
+                
+                # Save ALL extraction results together in one experiment
+                experiment_id = self._save_extraction_experiment(experiment_name, deck_ids, all_results, 'comprehensive')
                 
                 logger.info(f"Comprehensive extraction experiment '{experiment_name}' completed successfully")
                 
