@@ -13,6 +13,7 @@ NC='\033[0m' # No Color
 # Configuration
 FRONTEND_DIR="/opt/review-platform/frontend"
 DEV_FRONTEND_DIR="/opt/review-platform-dev/frontend"
+NGINX_SERVE_DIR="/var/www/html"
 
 echo -e "${GREEN}🏗️  Fixed Environment-Aware Frontend Build${NC}"
 
@@ -96,29 +97,37 @@ if [ "$ENVIRONMENT" = "production" ]; then
     
     echo -e "${GREEN}✅ New build successful!${NC}"
     
-    # Nginx-compatible atomic deployment - FIXED
-    echo -e "${YELLOW}🔄 Performing nginx-compatible atomic deployment...${NC}"
+    # Deploy to nginx directory with zero downtime
+    echo -e "${YELLOW}🔄 Deploying to nginx directory with zero downtime...${NC}"
     
-    # Backup current version properly
-    if [ -L "$ACTIVE_LINK" ]; then
-        CURRENT_TARGET=$(readlink "$ACTIVE_LINK")
-        if [ -d "$CURRENT_TARGET" ] && [ "$CURRENT_TARGET" != "$BACKUP_DIR" ]; then
-            echo -e "${YELLOW}💾 Creating backup of current version...${NC}"
-            if [ -d "$BACKUP_DIR" ] && [ ! -L "$BACKUP_DIR" ]; then
-                rm -rf "$BACKUP_DIR"
+    # Copy new build to nginx directory
+    echo -e "${YELLOW}📋 Copying build to nginx directory...${NC}"
+    sudo cp -r "$NEW_BUILD_DIR" "${NGINX_SERVE_DIR}/build_${TIMESTAMP}"
+    
+    # Backup current nginx version properly
+    if [ -L "${NGINX_SERVE_DIR}/build" ]; then
+        CURRENT_TARGET=$(readlink "${NGINX_SERVE_DIR}/build")
+        CURRENT_DIR=$(basename "$CURRENT_TARGET")
+        if [ -d "$CURRENT_TARGET" ] && [ "$CURRENT_DIR" != "build_backup" ]; then
+            echo -e "${YELLOW}💾 Creating backup of current nginx version...${NC}"
+            if [ -d "${NGINX_SERVE_DIR}/build_backup" ]; then
+                sudo rm -rf "${NGINX_SERVE_DIR}/build_backup"
             fi
-            # Copy (don't move) so the current symlink remains valid during switch
-            cp -r "$CURRENT_TARGET" "$BACKUP_DIR"
+            sudo cp -r "$CURRENT_TARGET" "${NGINX_SERVE_DIR}/build_backup"
         fi
     fi
     
-    # Atomic switch: update symlink (no downtime for nginx)
-    echo -e "${GREEN}⚡ Atomic symlink switch...${NC}"
+    # Atomic switch: update nginx symlink (zero downtime)
+    echo -e "${GREEN}⚡ Atomic nginx symlink switch...${NC}"
+    sudo ln -sfn "${NGINX_SERVE_DIR}/build_${TIMESTAMP}" "${NGINX_SERVE_DIR}/build"
+    
+    # Also update local symlink for consistency
     ln -sfn "$NEW_BUILD_DIR" "$ACTIVE_LINK"
     
     echo -e "${GREEN}⚡ Atomic switch complete! New version is live.${NC}"
-    echo -e "${GREEN}📁 Active build: ${WORK_DIR}/${ACTIVE_LINK} -> ${NEW_BUILD_DIR}${NC}"
-    echo -e "${GREEN}💾 Backup available: ${WORK_DIR}/${BACKUP_DIR}${NC}"
+    echo -e "${GREEN}📁 Local build: ${WORK_DIR}/${ACTIVE_LINK} -> ${NEW_BUILD_DIR}${NC}"
+    echo -e "${GREEN}🌐 Nginx build: ${NGINX_SERVE_DIR}/build -> build_${TIMESTAMP}${NC}"
+    echo -e "${GREEN}💾 Backup available: ${NGINX_SERVE_DIR}/build_backup${NC}"
     
     # Cleanup old builds (keep last 3, but not backup or active)
     echo -e "${YELLOW}🧹 Cleaning up old builds...${NC}"
@@ -128,15 +137,64 @@ if [ "$ENVIRONMENT" = "production" ]; then
         tail -n +4 | \
         xargs rm -rf 2>/dev/null || true
     
-    # Health check
+    # Comprehensive deployment verification
+    echo -e "${YELLOW}🔍 Verifying deployment...${NC}"
+    
+    # Check local build
     if [ -f "${ACTIVE_LINK}/index.html" ]; then
-        echo -e "${GREEN}✅ Health check passed - index.html exists${NC}"
+        echo -e "${GREEN}✅ Local build - index.html exists${NC}"
     else
-        echo -e "${RED}⚠️  Health check warning - index.html not found${NC}"
+        echo -e "${RED}❌ Local build - index.html missing${NC}"
     fi
+    
+    # Check nginx build
+    if [ -f "${NGINX_SERVE_DIR}/build/index.html" ]; then
+        echo -e "${GREEN}✅ Nginx build - index.html exists${NC}"
+    else
+        echo -e "${RED}❌ Nginx build - index.html missing${NC}"
+    fi
+    
+    # Extract main JS filename from index.html
+    MAIN_JS_FILE=$(grep -o "static/js/main\.[a-f0-9]*\.js" "${NGINX_SERVE_DIR}/build/index.html" | head -1)
+    if [ -n "$MAIN_JS_FILE" ]; then
+        echo -e "${GREEN}✅ Main JS file identified: ${MAIN_JS_FILE}${NC}"
+        
+        # Test if main JS file is accessible via nginx
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost/${MAIN_JS_FILE}")
+        if [ "$HTTP_CODE" = "200" ]; then
+            echo -e "${GREEN}✅ Main JS file accessible via nginx (HTTP ${HTTP_CODE})${NC}"
+        else
+            echo -e "${RED}❌ Main JS file NOT accessible via nginx (HTTP ${HTTP_CODE})${NC}"
+        fi
+        
+        # Test if index.html is accessible via nginx
+        INDEX_HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost/")
+        if [ "$INDEX_HTTP_CODE" = "200" ]; then
+            echo -e "${GREEN}✅ Frontend accessible via nginx (HTTP ${INDEX_HTTP_CODE})${NC}"
+        else
+            echo -e "${RED}❌ Frontend NOT accessible via nginx (HTTP ${INDEX_HTTP_CODE})${NC}"
+        fi
+        
+        # Check if the deployed version matches what we built
+        DEPLOYED_JS=$(curl -s http://localhost/ | grep -o "static/js/main\.[a-f0-9]*\.js" | head -1)
+        if [ "$DEPLOYED_JS" = "$MAIN_JS_FILE" ]; then
+            echo -e "${GREEN}✅ Deployed version matches build${NC}"
+        else
+            echo -e "${RED}❌ Version mismatch - deployed: ${DEPLOYED_JS}, built: ${MAIN_JS_FILE}${NC}"
+        fi
+    else
+        echo -e "${RED}❌ Could not identify main JS file in index.html${NC}"
+    fi
+    
+    # Summary of verification
+    echo -e "${CYAN}📋 Deployment Verification Summary:${NC}"
+    echo -e "${GREEN}   Build timestamp: ${TIMESTAMP}${NC}"
+    echo -e "${GREEN}   Main JS file: ${MAIN_JS_FILE}${NC}"
+    echo -e "${GREEN}   Nginx serving from: ${NGINX_SERVE_DIR}/build${NC}"
     
     # Show rollback instructions
     echo -e "${YELLOW}🔄 To rollback if needed:${NC}"
+    echo -e "${YELLOW}   sudo ln -sfn ${NGINX_SERVE_DIR}/build_backup ${NGINX_SERVE_DIR}/build${NC}"
     echo -e "${YELLOW}   ln -sfn ${BACKUP_DIR} ${ACTIVE_LINK}${NC}"
     
     # Show deployment summary

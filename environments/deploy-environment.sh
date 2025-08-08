@@ -178,7 +178,11 @@ restart_services() {
             if systemctl is-enabled gpu-http-server.service &>/dev/null; then
                 echo -e "${YELLOW}  Restarting GPU HTTP server service...${NC}"
                 sudo systemctl restart gpu-http-server.service || true
+                sleep 2  # Give service time to start
                 echo -e "${GREEN}  ✅ GPU HTTP server service restarted${NC}"
+            else
+                echo -e "${YELLOW}  Note: gpu-http-server.service not found or not enabled${NC}"
+                echo -e "${YELLOW}  Try manual restart: cd gpu_processing && python main.py${NC}"
             fi
             ;;
     esac
@@ -196,7 +200,7 @@ restart_services() {
             echo -e "${RED}  ❌ Processing Worker: Inactive${NC}"
     fi
     
-    if [[ "$component" == "gpu" ]]; then
+    if [[ "$component" == "gpu" || -z "$component" ]]; then
         systemctl is-active --quiet gpu-http-server && \
             echo -e "${GREEN}  ✅ GPU HTTP Server: Active${NC}" || \
             echo -e "${RED}  ❌ GPU HTTP Server: Inactive${NC}"
@@ -336,8 +340,10 @@ main() {
             echo ""
             echo -e "${YELLOW}📋 Additional steps (if needed):${NC}"
             echo -e "  1. Rebuild frontend: scripts/build-frontend.sh $environment"
-            echo -e "  2. Check logs: journalctl -u review-platform.service -f"
+            echo -e "  2. Check backend logs: journalctl -u review-platform.service -f"
             echo -e "  3. Check worker logs: journalctl -u processing-worker.service -f"
+            echo -e "  4. Check GPU logs: journalctl -u gpu-http-server.service -f"
+            echo -e "  5. Verify environment: grep DATABASE_HOST $PROJECT_ROOT/gpu_processing/.env"
         else
             echo -e "${BLUE}✅ Dry run completed - deployment looks good!${NC}"
         fi

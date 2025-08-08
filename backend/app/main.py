@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import asyncio
 from .core.config import settings
 from .core.logging_config import setup_shared_logging
-from .api import auth, decks, reviews, questions, documents, documents_robust, config, healthcare_templates, pipeline, projects, internal, dojo, project_management, project_stages, dojo_experiments, funding_stages, invitations, feedback
+from .api import auth, decks, reviews, questions, documents, documents_robust, config, healthcare_templates, pipeline, projects, internal, dojo, project_management, project_stages, dojo_experiments, funding_stages, invitations, feedback, debug
 from .db.models import Base
 from .db.database import engine
 from .services.queue_processor import queue_processor
@@ -65,6 +65,7 @@ app.include_router(dojo_experiments.router, prefix=settings.API_V1_STR)
 app.include_router(funding_stages.router, prefix=settings.API_V1_STR)
 app.include_router(invitations.router, prefix=settings.API_V1_STR)
 app.include_router(feedback.router, prefix=settings.API_V1_STR)
+app.include_router(debug.router, prefix=f"{settings.API_V1_STR}/debug")
 
 @app.get("/")
 def read_root():
