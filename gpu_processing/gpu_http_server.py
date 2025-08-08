@@ -1311,7 +1311,7 @@ Please provide a comprehensive analysis focusing on the requested areas."""
                 # Get visual analysis for this deck
                 visual_analysis = self._get_visual_analysis_for_deck(deck_id)
                 
-                if not visual_analysis or 'slides' not in visual_analysis:
+                if not visual_analysis or 'visual_analysis_results' not in visual_analysis:
                     logger.warning(f"No visual analysis found for deck {deck_id}")
                     extraction_results.append({
                         "deck_id": deck_id,
