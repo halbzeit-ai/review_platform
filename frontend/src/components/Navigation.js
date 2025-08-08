@@ -4,6 +4,7 @@ import { AppBar, Toolbar, Typography, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
+import buildInfo from '../utils/buildInfo';
 
 function Navigation() {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ function Navigation() {
               fontSize: '11px'
             }}
           >
-            build_20250808_084503_PROGRESS_BARS_RESTORED
+{buildInfo.fullVersion}
           </Typography>
         </Typography>
         <LanguageSwitcher />

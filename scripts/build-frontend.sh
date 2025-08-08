@@ -78,7 +78,16 @@ if [ "$ENVIRONMENT" = "production" ]; then
         mv "$ACTIVE_LINK" "${ACTIVE_LINK}_temp"
     fi
     
-    # Build (React creates 'build' directory)
+    # Generate build information
+    BUILD_TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+    GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+    BUILD_DESCRIPTION="AUTO_GENERATED"
+    
+    # Build (React creates 'build' directory) with build info
+    REACT_APP_BUILD_TIMESTAMP="$BUILD_TIMESTAMP" \
+    REACT_APP_BUILD_VERSION="production" \
+    REACT_APP_GIT_COMMIT="$GIT_COMMIT" \
+    REACT_APP_BUILD_DESCRIPTION="$BUILD_DESCRIPTION" \
     NODE_ENV=production npm run build
     
     # Move the new build to timestamped directory
@@ -209,7 +218,16 @@ else
     echo -e "${YELLOW}   ✅ Will use development backend (65.108.32.143:8000)${NC}"
     echo -e "${YELLOW}   ✅ Will include debug information${NC}"
     
+    # Generate build information for development
+    BUILD_TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+    GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+    BUILD_DESCRIPTION="DEVELOPMENT"
+    
     # Development build (for testing)
+    REACT_APP_BUILD_TIMESTAMP="$BUILD_TIMESTAMP" \
+    REACT_APP_BUILD_VERSION="development" \
+    REACT_APP_GIT_COMMIT="$GIT_COMMIT" \
+    REACT_APP_BUILD_DESCRIPTION="$BUILD_DESCRIPTION" \
     NODE_ENV=development npm run build
     
     echo -e "${GREEN}✅ Development build complete!${NC}"

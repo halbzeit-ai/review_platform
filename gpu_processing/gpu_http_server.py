@@ -785,6 +785,10 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                 
                 logger.info(f"Starting comprehensive extraction experiment '{experiment_name}' for {len(deck_ids)} decks")
                 
+                # Import and instantiate the analyzer
+                from utils.healthcare_template_analyzer import HealthcareTemplateAnalyzer
+                analyzer = HealthcareTemplateAnalyzer()
+                
                 # Step 1: Run offering extraction
                 logger.info("Step 3.1: Running company offering extraction...")
                 offering_prompt = analyzer._get_pipeline_prompt('offering_extraction')
