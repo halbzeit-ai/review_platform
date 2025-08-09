@@ -231,18 +231,67 @@ curl -s "http://localhost:8000/api/debug/environment"
 }
 ```
 
-### Development Helper Commands
+## Claude Development Helper Script: Comprehensive Toolkit ⭐
+
+**Location**: `./claude-dev-helper.sh`
+
+**Core Purpose**: Provides elevated-privilege database operations and comprehensive development diagnostics that Claude frequently needs.
+
+### Database Management Commands
+```bash
+# Database migrations with elevated privileges
+./claude-dev-helper.sh migrate migrations/filename.sql
+
+# Database connectivity and health checks
+./claude-dev-helper.sh db-check              # Test connection and show dojo files count
+./claude-dev-helper.sh migrate-check         # Check if specific columns exist
+./claude-dev-helper.sh db-connect            # Direct PostgreSQL connection
+./claude-dev-helper.sh query "SELECT * FROM table_name;"  # Execute custom SQL
+```
+
+### GPU Processing & Cache Debugging
+```bash
+# GPU log monitoring (shared filesystem access)
+./claude-dev-helper.sh gpu-logs              # Last 50 lines
+./claude-dev-helper.sh gpu-logs tail         # Follow in real-time
+./claude-dev-helper.sh gpu-logs errors       # Recent errors and warnings
+./claude-dev-helper.sh gpu-logs backend      # Backend URL configuration
+./claude-dev-helper.sh gpu-logs cache        # Caching operations
+
+# Visual analysis cache debugging
+./claude-dev-helper.sh debug-cache           # Comprehensive cache analysis
+./claude-dev-helper.sh cache-check          # Database cache status
+```
+
+### Development & Service Management
 ```bash
 # Comprehensive development test
-./claude-dev-helper.sh quick-test
+./claude-dev-helper.sh quick-test           # Services + database + API endpoints
 
-# Service management via helper
-./claude-dev-helper.sh services start
-./claude-dev-helper.sh services status
+# Service management via delegation
+./claude-dev-helper.sh services start       # Start all development services
+./claude-dev-helper.sh services status      # Check service health
+./claude-dev-helper.sh services stop        # Stop all services
 
-# Git status summary
-./claude-dev-helper.sh git-status
+# Git workflow assistance
+./claude-dev-helper.sh git-status          # Branch + changes + recent commits
 ```
+
+**Key Advantages Over Other Scripts**:
+- **Database Privileges**: Uses `sudo -u postgres` for direct database access
+- **GPU Access**: Reads GPU processing logs from shared filesystem (`/mnt/dev-shared/logs/`)
+- **Cache Debugging**: Specialized tools for visual analysis caching issues
+- **Cross-Service**: Combines backend, database, and GPU debugging in one tool
+- **Claude-Optimized**: Designed specifically for Claude's debugging workflow
+
+**When to Use claude-dev-helper.sh**:
+- ✅ Database schema investigations and migrations
+- ✅ GPU processing pipeline debugging  
+- ✅ Visual analysis cache troubleshooting
+- ✅ Cross-system health checks
+- ✅ When you need elevated database privileges
+
+**vs dev-services-improved.sh**: claude-dev-helper focuses on debugging and database operations with elevated privileges, while dev-services-improved.sh focuses on service lifecycle management with smart port detection.
 
 ### Manual Commands (Fallback if scripts don't work)
 
@@ -346,7 +395,7 @@ Production frontend uses nginx-compatible atomic deployment via symlinks:
 
 ```bash
 # Zero-downtime deployment script
-/opt/review-platform/scripts/build-frontend.sh production
+./scripts/build-frontend.sh production
 
 # Process:
 # 1. Build new version in timestamped directory (current stays online)
@@ -359,6 +408,48 @@ Production frontend uses nginx-compatible atomic deployment via symlinks:
 ```bash
 ln -sfn build_backup build
 ```
+
+## Frontend Build Script: Advanced Deployment Tool ⭐
+
+**Location**: `./scripts/build-frontend.sh`
+
+**Core Functionality**:
+```bash
+# Zero-downtime production deployment
+./scripts/build-frontend.sh production
+
+# Development build with live reload
+./scripts/build-frontend.sh development
+
+# Build with environment validation
+./scripts/build-frontend.sh production --env-check
+
+# Force rebuild (ignore existing builds)  
+./scripts/build-frontend.sh production --force
+```
+
+**Key Features**:
+- **Atomic Deployment**: Uses timestamped directories and symlink switching for zero downtime
+- **Environment Detection**: Automatically configures build for correct backend URLs
+- **Rollback Support**: Maintains backup builds for instant rollback capability
+- **Build Optimization**: Production builds are minified and optimized for performance
+- **Health Verification**: Validates build success before deployment
+- **Nginx Integration**: Seamlessly works with nginx reverse proxy configuration
+
+**Deployment Flow**:
+1. **Build Preparation**: Creates timestamped build directory (`build_YYYYMMDD_HHMMSS`)
+2. **Environment Setup**: Configures REACT_APP variables for target environment  
+3. **Compilation**: Runs `npm run build` with optimizations
+4. **Health Check**: Validates build artifacts and entry points
+5. **Atomic Switch**: Updates symlink to new build (zero downtime)
+6. **Cleanup**: Maintains backup builds, removes old builds
+7. **Verification**: Confirms deployment success
+
+**Production Safety**:
+- Never interrupts running services
+- Preserves previous build as automatic backup
+- Detailed logging for deployment tracking
+- Error handling with automatic rollback on failure
 
 ## Environment Configuration
 
