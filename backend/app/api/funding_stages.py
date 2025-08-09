@@ -50,7 +50,7 @@ class ProjectJourneyResponse(BaseModel):
     project_id: int
     company_id: str
     project_name: str
-    funding_round: str
+    funding_round: Optional[str] = None
     total_stages: int
     completed_stages: int
     active_stages: int
