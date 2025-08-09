@@ -20,7 +20,7 @@ import ProjectDashboard from './pages/ProjectDashboard';
 import DeckViewer from './pages/DeckViewer';
 import ProjectResultsPage from './pages/ProjectResultsPage';
 import Profile from './pages/Profile';
-import StartupDashboardRedirect from './components/StartupDashboardRedirect';
+// Removed: StartupDashboard - legacy component archived
 import DashboardRedirect from './components/DashboardRedirect';
 import StartupJourney from './pages/StartupJourney';
 import InvitationAcceptance from './pages/InvitationAcceptance';
@@ -54,7 +54,7 @@ function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/dashboard" element={<DashboardRedirect />} />
-          <Route path="/dashboard/startup" element={<StartupDashboardRedirect />} />
+          {/* Removed: /dashboard/startup route - legacy component archived */}
           <Route path="/dashboard/gp" element={<GPDashboard />} />
           <Route path="/gp-dashboard" element={<GPDashboard />} />
           <Route path="/users" element={<UserManagement />} />

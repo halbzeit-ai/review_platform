@@ -3130,3 +3130,188 @@ async def internal_classify(
         logger.error(f"Error in internal classification: {e}")
         return {"error": str(e)}
 
+
+@router.post("/internal/add-classification-to-experiment")
+async def add_classification_to_experiment(
+    request: Dict[str, Any],
+    db: Session = Depends(get_db)
+):
+    """Internal endpoint to add classification data to an experiment for a specific deck"""
+    try:
+        deck_id = request.get("deck_id")
+        classification_data = request.get("classification_data")
+        
+        if not deck_id or not classification_data:
+            return {"error": "Missing deck_id or classification_data"}
+        
+        # Find experiments containing this deck
+        experiments = db.execute(text("""
+            SELECT id, experiment_name, classification_results_json, classification_enabled
+            FROM extraction_experiments 
+            WHERE pitch_deck_ids::text LIKE :deck_search
+            ORDER BY id DESC
+        """), {"deck_search": f"%{deck_id}%"}).fetchall()
+        
+        updated_experiments = []
+        
+        for exp in experiments:
+            exp_id = exp[0]
+            existing_results = exp[2]
+            
+            # Parse existing classification results
+            if existing_results:
+                try:
+                    results_list = json.loads(existing_results)
+                    if not isinstance(results_list, list):
+                        results_list = []
+                except:
+                    results_list = []
+            else:
+                results_list = []
+            
+            # Create classification entry
+            classification_entry = {
+                "deck_id": deck_id,
+                "classification_result": classification_data
+            }
+            
+            # Update or add classification for this deck
+            updated = False
+            for i, r in enumerate(results_list):
+                if r.get('deck_id') == deck_id:
+                    results_list[i] = classification_entry
+                    updated = True
+                    break
+            
+            if not updated:
+                results_list.append(classification_entry)
+            
+            # Update the experiment
+            db.execute(text("""
+                UPDATE extraction_experiments 
+                SET classification_results_json = :results,
+                    classification_enabled = true,
+                    classification_completed_at = NOW()
+                WHERE id = :exp_id
+            """), {
+                "results": json.dumps(results_list),
+                "exp_id": exp_id
+            })
+            
+            updated_experiments.append(exp_id)
+        
+        db.commit()
+        
+        return {
+            "success": True,
+            "updated_experiments": updated_experiments,
+            "deck_id": deck_id
+        }
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error adding classification to experiment: {e}")
+        return {"error": str(e)}
+
+
+@router.post("/internal/add-template-results")
+async def add_template_results_to_deck(
+    request: Dict[str, Any],
+    db: Session = Depends(get_db)
+):
+    """Internal endpoint to add template processing results for a specific deck"""
+    try:
+        deck_id = request.get("deck_id")
+        template_results = request.get("template_results")
+        
+        if not deck_id or not template_results:
+            return {"error": "Missing deck_id or template_results"}
+        
+        # Store template processing results directly in pitch_decks table
+        db.execute(text("""
+            UPDATE pitch_decks 
+            SET template_processing_results_json = :results_json
+            WHERE id = :deck_id
+        """), {
+            "results_json": json.dumps(template_results),
+            "deck_id": deck_id
+        })
+        
+        # Also update extraction experiments containing this deck
+        experiments = db.execute(text("""
+            SELECT id, template_processing_results_json
+            FROM extraction_experiments 
+            WHERE pitch_deck_ids::text LIKE :deck_search
+        """), {"deck_search": f"%{deck_id}%"}).fetchall()
+        
+        updated_experiments = []
+        
+        for exp in experiments:
+            exp_id = exp[0]
+            existing_results = exp[1]
+            
+            # Parse existing template results
+            if existing_results:
+                try:
+                    results_data = json.loads(existing_results)
+                    if isinstance(results_data, dict):
+                        template_processing_results = results_data.get("template_processing_results", [])
+                    else:
+                        template_processing_results = []
+                except:
+                    template_processing_results = []
+            else:
+                template_processing_results = []
+            
+            # Create template processing entry
+            template_entry = {
+                "deck_id": deck_id,
+                "template_analysis": template_results,
+                "processing_success": True,
+                "error": None,
+                "data_source": "internal"
+            }
+            
+            # Update or add template results for this deck
+            updated = False
+            for i, r in enumerate(template_processing_results):
+                if r.get('deck_id') == deck_id:
+                    template_processing_results[i] = template_entry
+                    updated = True
+                    break
+            
+            if not updated:
+                template_processing_results.append(template_entry)
+            
+            # Update the experiment
+            updated_data = {
+                "template_processing_results": template_processing_results,
+                "total_decks": len(template_processing_results),
+                "successful_template_processing": len([r for r in template_processing_results if r.get("processing_success")]),
+                "processing_timestamp": json.dumps({"completed_at": str(datetime.utcnow())})
+            }
+            
+            db.execute(text("""
+                UPDATE extraction_experiments 
+                SET template_processing_results_json = :results
+                WHERE id = :exp_id
+            """), {
+                "results": json.dumps(updated_data),
+                "exp_id": exp_id
+            })
+            
+            updated_experiments.append(exp_id)
+        
+        db.commit()
+        
+        return {
+            "success": True,
+            "deck_id": deck_id,
+            "updated_experiments": updated_experiments
+        }
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error adding template results: {e}")
+        return {"error": str(e)}
+

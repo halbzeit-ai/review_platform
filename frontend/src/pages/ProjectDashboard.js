@@ -39,7 +39,7 @@ import {
   Category
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { 
   getPitchDecks,
@@ -63,11 +63,16 @@ const ProjectDashboard = () => {
   const { t } = useTranslation('dashboard');
   const navigate = useNavigate();
   const { companyId, projectId } = useParams();
+  const [searchParams] = useSearchParams();
   
   // Determine if this is GP admin view
   const isAdminView = window.location.pathname.includes('/admin/project/');
   
-  const [activeTab, setActiveTab] = useState(0);
+  // Initialize activeTab from URL parameter or default to 0
+  const [activeTab, setActiveTab] = useState(() => {
+    const tabParam = searchParams.get('tab');
+    return tabParam ? parseInt(tabParam, 10) : 0;
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
@@ -191,21 +196,49 @@ const ProjectDashboard = () => {
     );
     
     console.log(`Progress polling: Found ${processingDecks.length} processing decks out of ${decks.length} total decks`);
-    const newIntervals = {};
     
-    processingDecks.forEach(deck => {
-      // Fetch initial progress
-      fetchProgressForDeck(deck.id);
+    if (processingDecks.length === 0) {
+      return; // No polling needed
+    }
+    
+    // Use a single interval that batches all progress requests with intelligent throttling
+    let batchIndex = 0;
+    const BATCH_SIZE = 3; // Process max 3 decks at a time
+    const BATCH_DELAY = 8000; // 8 seconds between batches (increased from 3s)
+    const STAGGER_DELAY = 1000; // 1 second between individual requests in batch
+    
+    const batchedPollingInterval = setInterval(async () => {
+      // Get current batch of decks to poll
+      const batchStart = batchIndex * BATCH_SIZE;
+      const batchEnd = Math.min(batchStart + BATCH_SIZE, processingDecks.length);
+      const currentBatch = processingDecks.slice(batchStart, batchEnd);
       
-      // Set up polling interval
-      const intervalId = setInterval(() => {
+      console.log(`Progress polling: Batch ${Math.floor(batchIndex * BATCH_SIZE / BATCH_SIZE) + 1}, processing ${currentBatch.length} decks (${currentBatch.map(d => d.id).join(', ')})`);
+      
+      // Process batch with staggered requests to avoid overwhelming server
+      for (let i = 0; i < currentBatch.length; i++) {
+        const deck = currentBatch[i];
+        
+        // Stagger requests within batch
+        setTimeout(() => {
+          fetchProgressForDeck(deck.id);
+        }, i * STAGGER_DELAY);
+      }
+      
+      // Move to next batch, cycling back to start
+      batchIndex = (batchIndex + 1) % Math.ceil(processingDecks.length / BATCH_SIZE);
+      
+    }, BATCH_DELAY);
+    
+    // Store the single interval for cleanup
+    setProgressIntervals({ batched: batchedPollingInterval });
+    
+    // Initial batch - fetch progress for first batch immediately
+    processingDecks.slice(0, BATCH_SIZE).forEach((deck, index) => {
+      setTimeout(() => {
         fetchProgressForDeck(deck.id);
-      }, 3000); // Poll every 3 seconds
-      
-      newIntervals[deck.id] = intervalId;
+      }, index * STAGGER_DELAY);
     });
-    
-    setProgressIntervals(newIntervals);
   };
   
   const fetchProgressForDeck = async (deckId) => {
@@ -224,25 +257,27 @@ const ProjectDashboard = () => {
       // Check processing status from either gpu_progress or root level
       const status = progressInfo.status || data.processing_status;
       
-      // If processing is complete, stop polling for this deck
+      // If processing is complete, mark deck for removal from polling
       if (status === 'completed' || status === 'failed') {
-        if (progressIntervals[deckId]) {
-          clearInterval(progressIntervals[deckId]);
-          setProgressIntervals(prev => {
-            const newIntervals = { ...prev };
-            delete newIntervals[deckId];
-            return newIntervals;
-          });
-        }
+        console.log(`Deck ${deckId} finished processing with status: ${status}`);
         
         // Update just this deck's status without reloading everything
         if (status === 'completed') {
-          // Mark this deck as completed with results
-          setProjectDecks(prev => prev.map(deck => 
-            deck.id === deckId 
-              ? { ...deck, results_file_path: 'completed', processing_status: 'completed' }
-              : deck
-          ));
+          // Mark this deck as completed with results and restart polling with updated list
+          setProjectDecks(prev => {
+            const updatedDecks = prev.map(deck => 
+              deck.id === deckId 
+                ? { ...deck, results_file_path: 'completed', processing_status: 'completed' }
+                : deck
+            );
+            
+            // Restart polling with updated deck list (async to avoid state conflicts)
+            setTimeout(() => {
+              startProgressPollingForDecks(updatedDecks);
+            }, 1000);
+            
+            return updatedDecks;
+          });
         }
       }
     } catch (error) {

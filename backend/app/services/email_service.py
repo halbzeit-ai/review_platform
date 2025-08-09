@@ -523,7 +523,7 @@ class EmailService:
                 <p>{description}</p>
                 
                 <div style="text-align: center;">
-                    <a href="{invitation_url}" class="cta-button">{button_text}</a>
+                    <a href="{invitation_url}" class="cta-button" style="display: inline-block; background-color: #1976d2; color: #ffffff !important; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; margin: 20px 0; text-align: center;">{button_text}</a>
                 </div>
                 
                 <div class="important">

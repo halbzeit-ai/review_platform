@@ -13,9 +13,13 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
   Divider
 } from '@mui/material';
-import { Business, Email, Person, VpnKey } from '@mui/icons-material';
+import { Business, Email, Person, VpnKey, CheckCircle, Cancel } from '@mui/icons-material';
 import { getInvitationDetails, acceptInvitation } from '../services/api';
 
 const InvitationAcceptance = () => {
@@ -35,6 +39,14 @@ const InvitationAcceptance = () => {
     password: '',
     confirm_password: '',
     preferred_language: 'en'
+  });
+
+  const [passwordValidation, setPasswordValidation] = useState({
+    length: false,
+    complexity: false,
+    noCommon: false,
+    noSequential: false,
+    noRepeated: false
   });
 
   useEffect(() => {
@@ -59,6 +71,58 @@ const InvitationAcceptance = () => {
     }
   };
 
+  // Real-time password validation
+  useEffect(() => {
+    if (!formData.password) {
+      setPasswordValidation({
+        length: false,
+        complexity: false,
+        noCommon: false,
+        noSequential: false,
+        noRepeated: false
+      });
+      return;
+    }
+
+    const validation = {
+      length: formData.password.length >= 8 && formData.password.length <= 128,
+      complexity: validateComplexity(formData.password),
+      noCommon: !isCommonPassword(formData.password),
+      noSequential: !hasSequentialChars(formData.password),
+      noRepeated: !hasRepeatedChars(formData.password)
+    };
+    
+    setPasswordValidation(validation);
+  }, [formData.password]);
+
+  const validateComplexity = (password) => {
+    const checks = {
+      lowercase: /[a-z]/.test(password),
+      uppercase: /[A-Z]/.test(password),
+      digits: /[0-9]/.test(password),
+      special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?`~]/.test(password)
+    };
+    return Object.values(checks).filter(Boolean).length >= 3;
+  };
+
+  const isCommonPassword = (password) => {
+    const common = [
+      'password', '123456', '123456789', 'qwerty', 'abc123', 
+      'password123', '111111', '123123', 'admin', 'letmein',
+      'welcome', 'monkey', '1234567890', 'password1'
+    ];
+    return common.includes(password.toLowerCase());
+  };
+
+  const hasSequentialChars = (password) => {
+    const sequential = /(012|123|234|345|456|567|678|789|890|abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz)/;
+    return sequential.test(password.toLowerCase());
+  };
+
+  const hasRepeatedChars = (password) => {
+    return /(.)\1{2,}/.test(password);
+  };
+
   const handleInputChange = (field) => (event) => {
     setFormData({
       ...formData,
@@ -79,10 +143,14 @@ const InvitationAcceptance = () => {
       setError('Company name is required');
       return false;
     }
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    
+    // Check if all password requirements are met
+    const allValid = Object.values(passwordValidation).every(Boolean);
+    if (!allValid) {
+      setError('Please ensure your password meets all security requirements');
       return false;
     }
+    
     if (formData.password !== formData.confirm_password) {
       setError('Passwords do not match');
       return false;
@@ -111,16 +179,29 @@ const InvitationAcceptance = () => {
 
       const response = await acceptInvitation(token, acceptData);
       
-      setSuccess('Account created successfully! You will be redirected to your project.');
+      // Store full authentication data for immediate login
+      localStorage.setItem('user', JSON.stringify({
+        email: response.data.email,
+        role: response.data.role,
+        token: response.data.access_token,
+        companyName: acceptData.company_name,
+        preferred_language: acceptData.preferred_language || 'de'
+      }));
       
-      // Redirect after a short delay
+      setSuccess('Account created successfully! Redirecting to upload your first document...');
+      
+      // Direct redirect to project uploads tab - user is now logged in
       setTimeout(() => {
         if (response.data.redirect_url) {
-          navigate(response.data.redirect_url);
+          // If backend provides specific project URL, append tab parameter for uploads
+          const url = new URL(response.data.redirect_url, window.location.origin);
+          url.searchParams.set('tab', '3'); // Upload tab is index 3
+          window.location.href = url.toString();
         } else {
-          navigate('/login');
+          // Default fallback to dashboard with upload tab
+          navigate('/dashboard?tab=3');
         }
-      }, 2000);
+      }, 1500);
 
     } catch (error) {
       console.error('Error accepting invitation:', error);
@@ -244,12 +325,52 @@ const InvitationAcceptance = () => {
             value={formData.password}
             onChange={handleInputChange('password')}
             required
-            sx={{ mb: 2 }}
-            helperText="Minimum 6 characters"
+            sx={{ mb: 1 }}
+            helperText="Create a strong password meeting all requirements below"
             InputProps={{
               startAdornment: <VpnKey sx={{ color: 'action.active', mr: 1 }} />,
             }}
           />
+
+          {formData.password && (
+            <Box sx={{ mb: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+              <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                Password Requirements:
+              </Typography>
+              <List dense>
+                <ListItem sx={{ py: 0 }}>
+                  <ListItemIcon sx={{ minWidth: 32 }}>
+                    {passwordValidation.length ? <CheckCircle color="success" /> : <Cancel color="error" />}
+                  </ListItemIcon>
+                  <ListItemText primary="8-128 characters long" />
+                </ListItem>
+                <ListItem sx={{ py: 0 }}>
+                  <ListItemIcon sx={{ minWidth: 32 }}>
+                    {passwordValidation.complexity ? <CheckCircle color="success" /> : <Cancel color="error" />}
+                  </ListItemIcon>
+                  <ListItemText primary="At least 3 of: lowercase, uppercase, numbers, special chars" />
+                </ListItem>
+                <ListItem sx={{ py: 0 }}>
+                  <ListItemIcon sx={{ minWidth: 32 }}>
+                    {passwordValidation.noCommon ? <CheckCircle color="success" /> : <Cancel color="error" />}
+                  </ListItemIcon>
+                  <ListItemText primary="Not a common password" />
+                </ListItem>
+                <ListItem sx={{ py: 0 }}>
+                  <ListItemIcon sx={{ minWidth: 32 }}>
+                    {passwordValidation.noSequential ? <CheckCircle color="success" /> : <Cancel color="error" />}
+                  </ListItemIcon>
+                  <ListItemText primary="No sequential characters (123, abc, etc.)" />
+                </ListItem>
+                <ListItem sx={{ py: 0 }}>
+                  <ListItemIcon sx={{ minWidth: 32 }}>
+                    {passwordValidation.noRepeated ? <CheckCircle color="success" /> : <Cancel color="error" />}
+                  </ListItemIcon>
+                  <ListItemText primary="No more than 2 repeated characters" />
+                </ListItem>
+              </List>
+            </Box>
+          )}
 
           <TextField
             fullWidth

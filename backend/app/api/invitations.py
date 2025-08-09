@@ -167,12 +167,29 @@ def accept_project_invitation(
         # If user exists and is verified, just add them to project
         if existing_user.is_verified:
             try:
+                # No need to force password change for existing users - they already have secure passwords
                 member = accept_invitation(db, invitation, existing_user)
+                
+                # Create full authentication token
+                from app.api.auth import create_access_token
+                from datetime import timedelta
+                
+                access_token_expires = timedelta(minutes=11520)  # Same as regular login (8 days)
+                access_token = create_access_token(
+                    data={"sub": existing_user.email, "role": existing_user.role, "must_change_password": False},
+                    expires_delta=access_token_expires
+                )
+                
                 return {
                     "message": "Invitation accepted successfully",
                     "user_id": existing_user.id,
                     "project_id": invitation.project_id,
-                    "redirect_url": f"/project/{member.project.company_id}"
+                    "redirect_url": f"/project/{member.project.company_id}",
+                    "must_change_password": False,
+                    "access_token": access_token,
+                    "token_type": "Bearer",
+                    "email": existing_user.email,
+                    "role": existing_user.role
                 }
             except Exception as e:
                 logger.error(f"Error accepting invitation for existing user: {e}")
@@ -185,6 +202,15 @@ def accept_project_invitation(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="User exists but is not verified. Please verify your email first."
             )
+    
+    # Validate password strength according to OWASP standards
+    from app.api.auth import validate_password_strength
+    password_errors = validate_password_strength(request.password)
+    if password_errors:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Password requirements not met: {', '.join(password_errors)}"
+        )
     
     # Create new user account
     try:
@@ -199,7 +225,8 @@ def accept_project_invitation(
             company_name=request.company_name,
             role="startup",
             preferred_language=request.preferred_language,
-            is_verified=True  # Auto-verify invited users
+            is_verified=True,  # Auto-verify invited users
+            must_change_password=False  # They already set a secure password during acceptance
         )
         
         db.add(new_user)
@@ -209,13 +236,28 @@ def accept_project_invitation(
         # Accept invitation and add to project
         member = accept_invitation(db, invitation, new_user)
         
+        # Create full authentication token (not temporary)
+        from app.api.auth import create_access_token
+        from datetime import timedelta
+        
+        access_token_expires = timedelta(minutes=11520)  # Same as regular login (8 days)
+        access_token = create_access_token(
+            data={"sub": new_user.email, "role": new_user.role, "must_change_password": False},
+            expires_delta=access_token_expires
+        )
+        
         logger.info(f"Created new user {new_user.id} and accepted invitation to project {invitation.project_id}")
         
         return {
             "message": "Account created and invitation accepted successfully",
             "user_id": new_user.id,
             "project_id": invitation.project_id,
-            "redirect_url": f"/project/{member.project.company_id}"
+            "redirect_url": f"/project/{member.project.company_id}",
+            "must_change_password": False,
+            "access_token": access_token,
+            "token_type": "Bearer",
+            "email": new_user.email,
+            "role": new_user.role
         }
         
     except Exception as e:

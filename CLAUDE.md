@@ -176,60 +176,85 @@ This is a startup review platform with a Python FastAPI backend and React fronte
 sudo -u postgres psql review-platform
 ```
 
-### API Debugging Tools (For Claude) ⭐ ENHANCED ⭐
+### API Debugging Tools (For Claude) ⭐ MASSIVELY ENHANCED ⭐
 
-**CRITICAL FOR EFFICIENT DEBUGGING**: Use these authentication-free debug endpoints and project management tools instead of regular API endpoints that require authentication.
+**CRITICAL FOR EFFICIENT DEBUGGING**: Comprehensive debugging toolkit with 20+ commands covering all system areas, using authentication-free debug endpoints and direct database queries.
 
+#### 📊 SYSTEM & ENVIRONMENT
 ```bash
-# Enhanced Debug API Script - NO AUTHENTICATION REQUIRED
-./scripts/debug-api.sh health           # System health check
-./scripts/debug-api.sh deck 143         # Check specific deck processing status
-./scripts/debug-api.sh tables           # List all database tables
-./scripts/debug-api.sh table pitch_decks # Get table structure and sample data
-./scripts/debug-api.sh env              # Environment configuration
-
-# PROJECT MANAGEMENT DEBUGGING (NEW)
-./scripts/debug-api.sh project 31       # Analyze project relationships and data
-./scripts/debug-api.sh user user@company.com  # Check user dependencies and memberships
-./scripts/debug-api.sh deletion 31      # Preview what would be deleted (SAFE - no actual deletion)
-./scripts/debug-api.sh orphans          # List orphaned projects with recovery options
-./scripts/debug-api.sh all              # Comprehensive debug report including orphans
-
-# Direct curl access to debug endpoints
-curl -s "http://localhost:8000/api/debug/health-detailed"
-curl -s "http://localhost:8000/api/debug/deck/143/status"  
-curl -s "http://localhost:8000/api/debug/database/tables"
-curl -s "http://localhost:8000/api/debug/environment"
+./scripts/debug-api.sh health                       # System health check
+./scripts/debug-api.sh env                          # Environment configuration  
+./scripts/debug-api.sh tables                       # List all database tables
+./scripts/debug-api.sh table pitch_decks            # Table structure & sample data
+./scripts/debug-api.sh models                       # AI model configuration
+./scripts/debug-api.sh prompts                      # All pipeline prompts
+./scripts/debug-api.sh prompts offering_extraction  # Specific prompt stage
 ```
 
-**Why These Exist**: Regular API endpoints return `{"detail": "Not authenticated"}` which makes debugging inefficient. These debug endpoints bypass authentication and provide detailed information for troubleshooting.
-
-**When to Use**:
-- ✅ Investigating deck processing issues (instead of /api/documents/processing-progress/{id})
-- ✅ Checking database table existence and structure
-- ✅ Verifying system health and environment config
-- ✅ **NEW: Analyzing project relationships before deletion** (`deletion` command)
-- ✅ **NEW: Understanding user dependencies** (`user` command)
-- ✅ **NEW: Managing orphaned projects** (`orphans` command)
-- ✅ **NEW: Comprehensive project data analysis** (`project` command)
-- ✅ Understanding data relationships between tables
-- ✅ Getting sample data for analysis
-
-**Sample Output**:
-```json
-{
-  "deck_id": 143,
-  "startup_name": "AskMika",
-  "processing_status": "completed", 
-  "file_name": "20250310_AskMika_csi.pdf",
-  "exists": true,
-  "tables": {
-    "pitch_decks": 1,
-    "reviews": 0,
-    "documents": 2
-  }
-}
+#### 🔧 PROCESSING & DOCUMENTS  
+```bash
+./scripts/debug-api.sh processing                   # Overall processing queue analysis
+./scripts/debug-api.sh processing 152               # Specific deck processing details
+./scripts/debug-api.sh queue                        # Queue health & failed tasks
+./scripts/debug-api.sh deck 152                     # Deck status (API endpoint)
+./scripts/debug-api.sh specialized 152              # Specialized analysis results
 ```
+
+#### 🏗️ PROJECTS & USERS
+```bash
+./scripts/debug-api.sh project 31                   # Project relationships & overview
+./scripts/debug-api.sh project-docs 31              # Project document processing pipeline  
+./scripts/debug-api.sh user user@startup.com        # User relationships & dependencies
+./scripts/debug-api.sh invitations user@email.com   # User invitation history
+./scripts/debug-api.sh invitations 42               # Project invitation status
+./scripts/debug-api.sh deletion 31                  # Preview deletion impact
+./scripts/debug-api.sh orphans                      # Orphaned projects analysis
+```
+
+#### 🧪 DOJO & EXPERIMENTS
+```bash
+./scripts/debug-api.sh dojo stats                   # Dojo system statistics
+./scripts/debug-api.sh dojo experiments             # Active extraction experiments
+./scripts/debug-api.sh dojo cache                   # Visual analysis cache status
+./scripts/debug-api.sh dojo projects                # Dojo test projects
+./scripts/debug-api.sh dojo cleanup                 # Storage impact analysis
+```
+
+#### 🏥 HEALTHCARE TEMPLATES
+```bash
+./scripts/debug-api.sh templates list               # Available templates
+./scripts/debug-api.sh templates performance        # Usage & performance metrics
+./scripts/debug-api.sh templates sectors            # Healthcare sectors & classification
+./scripts/debug-api.sh templates customizations     # GP template customizations
+```
+
+#### ⚡ COMPREHENSIVE ANALYSIS
+```bash
+./scripts/debug-api.sh all                          # Full system debug report
+./scripts/debug-api.sh help                         # Complete usage guide
+```
+
+**Architecture**: Combines authentication-free API endpoints with direct PostgreSQL queries for comprehensive system analysis without authentication barriers.
+
+**New API Endpoints Added**:
+```bash
+# Authentication-free debug endpoints
+GET /api/debug/processing/queue-stats          # Processing queue statistics
+GET /api/debug/processing/deck/{id}            # Comprehensive deck processing info
+GET /api/debug/dojo/experiments-summary        # Dojo experiment statistics  
+GET /api/debug/templates/performance           # Template usage metrics
+GET /api/debug/models/config                   # AI model configuration
+```
+
+**Why This Exists**: Regular API endpoints return `{"detail": "Not authenticated"}` which makes debugging inefficient. This toolkit provides instant access to all system areas for comprehensive troubleshooting.
+
+**Key Capabilities**:
+- ✅ **Processing Pipeline**: Queue health, deck processing, error analysis
+- ✅ **Project System**: Relationships, documents, invitations, orphaned projects
+- ✅ **Dojo Experiments**: Visual cache, extraction experiments, test data
+- ✅ **Healthcare Templates**: Performance, sectors, customizations
+- ✅ **System Configuration**: Models, prompts, environment settings
+- ✅ **Cross-System Analysis**: Relationships between users, projects, and data
 
 ## Claude Development Helper Script: Comprehensive Toolkit ⭐
 

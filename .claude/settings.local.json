@@ -3,7 +3,8 @@
     "allow": [
       "Bash(grep:*)",
       "Bash(git add:*)",
-      "Bash(./scripts/debug-api.sh:*)"
+      "Bash(./scripts/debug-api.sh:*)",
+      "Bash(./scripts/build-frontend.sh:*)"
     ],
     "deny": []
   }

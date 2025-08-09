@@ -64,15 +64,34 @@ def get_company_id_from_user(user: User) -> str:
     # Fallback to email prefix if company name is not available
     return user.email.split('@')[0]
 
-def check_project_access(user: User, company_id: str) -> bool:
+def check_project_access(user: User, company_id: str, db: Session = None) -> bool:
     """Check if user has access to the project"""
-    # Startups can only access their own company projects
-    if user.role == "startup":
-        return get_company_id_from_user(user) == company_id
-    
     # GPs can access any company project
     if user.role == "gp":
         return True
+    
+    # For startups, check if they're a member of a project with this company_id
+    if user.role == "startup":
+        # First check legacy: does their own company_id match?
+        if get_company_id_from_user(user) == company_id:
+            return True
+        
+        # Then check project membership if db session is available
+        if db:
+            from sqlalchemy import text
+            member_query = text("""
+                SELECT 1 FROM projects p
+                JOIN project_members pm ON p.id = pm.project_id
+                WHERE pm.user_id = :user_id 
+                AND p.company_id = :company_id
+                AND p.is_active = TRUE
+                LIMIT 1
+            """)
+            result = db.execute(member_query, {
+                "user_id": user.id,
+                "company_id": company_id
+            }).fetchone()
+            return result is not None
     
     return False
 
@@ -88,7 +107,7 @@ async def get_deck_analysis(
         logger.info(f"Getting deck analysis for company_id='{company_id}', deck_id={deck_id}, user={current_user.email}")
         
         # Check access permissions
-        if not check_project_access(current_user, company_id):
+        if not check_project_access(current_user, company_id, db):
             logger.warning(f"Access denied for user {current_user.email} to company {company_id}")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -434,7 +453,7 @@ async def get_project_results(
     """Get analysis results for a specific deck"""
     try:
         # Check access permissions
-        if not check_project_access(current_user, company_id):
+        if not check_project_access(current_user, company_id, db):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You don't have access to this project"
@@ -776,7 +795,7 @@ async def get_project_uploads(
     """Get all uploads for a company project"""
     try:
         # Check access permissions
-        if not check_project_access(current_user, company_id):
+        if not check_project_access(current_user, company_id, db):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You don't have access to this project"
@@ -895,7 +914,7 @@ async def get_slide_image(
     """Serve slide images from project storage"""
     try:
         # Check access permissions
-        if not check_project_access(current_user, company_id):
+        if not check_project_access(current_user, company_id, db):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You don't have access to this project"
@@ -1043,7 +1062,7 @@ async def delete_deck(
     """Delete a pitch deck including PDF, images, and results"""
     try:
         # Check access permissions
-        if not check_project_access(current_user, company_id):
+        if not check_project_access(current_user, company_id, db):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You don't have access to this project"

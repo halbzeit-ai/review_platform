@@ -42,16 +42,34 @@ async def upload_document_robust(
         if not volume_storage.is_volume_mounted():
             raise HTTPException(status_code=503, detail="Storage volume is not available")
         
+        # For project members, use the project's company_id instead of generating from user profile
+        # Check if user is a member of any project
+        project_query = text("""
+            SELECT p.company_id, p.project_name
+            FROM projects p
+            JOIN project_members pm ON p.id = pm.project_id
+            WHERE pm.user_id = :user_id AND p.is_active = TRUE
+            ORDER BY p.created_at DESC
+            LIMIT 1
+        """)
+        project_result = db.execute(project_query, {"user_id": current_user.id}).fetchone()
+        
+        if project_result:
+            # User is a member of a project, use that project's company_id
+            company_id = project_result[0]
+            logger.info(f"User {current_user.email} uploading to project company_id: {company_id}")
+        else:
+            # Fallback to legacy behavior for users not in any project
+            from ..api.projects import get_company_id_from_user
+            company_id = get_company_id_from_user(current_user)
+            logger.info(f"User {current_user.email} using legacy company_id: {company_id}")
+        
         # Save file to shared volume
         file_path = volume_storage.save_upload(
             file.file, 
             file.filename, 
             current_user.company_name
         )
-        
-        # Create PitchDeck record in database
-        from ..api.projects import get_company_id_from_user
-        company_id = get_company_id_from_user(current_user)
         
         pitch_deck = PitchDeck(
             user_id=current_user.id,

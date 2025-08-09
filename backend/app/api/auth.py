@@ -124,6 +124,14 @@ async def register(data: RegisterData, db: Session = Depends(get_db)):
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
+    # Validate password strength according to OWASP standards
+    password_errors = validate_password_strength(data.password)
+    if password_errors:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Password requirements not met: {', '.join(password_errors)}"
+        )
+    
     # Determine role - first user is GP, others are startup by default
     assigned_role = "gp" if is_first_user(db) else "startup"
     
@@ -443,8 +451,11 @@ async def delete_user(
             print(f"[WARNING] Could not delete project directory {project_dir}: {e}")
     
     # Delete all database records related to this user
-    # Delete in correct order: questions -> reviews -> pitch_decks
+    # Delete in correct order to avoid foreign key constraint violations
     
+    print(f"[DEBUG] Deleting user {user_to_delete.id} with company_id {company_id}")
+    
+    # 1. Delete old pitch deck system data
     # Delete questions (if they exist)
     db.execute(text("DELETE FROM questions WHERE review_id IN (SELECT id FROM reviews WHERE pitch_deck_id IN (SELECT id FROM pitch_decks WHERE user_id = :user_id OR company_id = :company_id))"), {"user_id": user_to_delete.id, "company_id": company_id})
     
@@ -454,7 +465,20 @@ async def delete_user(
     # Delete pitch decks
     db.execute(text("DELETE FROM pitch_decks WHERE user_id = :user_id OR company_id = :company_id"), {"user_id": user_to_delete.id, "company_id": company_id})
     
-    # Finally, delete the user
+    # 2. Delete project system data (new)
+    # Delete project members where this user is a member
+    db.execute(text("DELETE FROM project_members WHERE user_id = :user_id"), {"user_id": user_to_delete.id})
+    
+    # Delete project invitations where this user is involved (as inviter or invitee)
+    db.execute(text("DELETE FROM project_invitations WHERE invited_by_id = :user_id OR accepted_by_id = :user_id"), {"user_id": user_to_delete.id})
+    
+    # Update project_documents to remove user reference (don't delete documents, just unlink user)
+    db.execute(text("UPDATE project_documents SET uploaded_by = NULL WHERE uploaded_by = :user_id"), {"user_id": user_to_delete.id})
+    
+    # Update projects to remove user as owner (don't delete projects, just unlink owner)
+    db.execute(text("UPDATE projects SET owner_id = NULL WHERE owner_id = :user_id"), {"user_id": user_to_delete.id})
+    
+    # 3. Finally, delete the user
     db.delete(user_to_delete)
     db.commit()
     

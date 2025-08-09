@@ -22,7 +22,7 @@ import {
   CheckCircle, 
   Cancel 
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { changeForcedPassword } from '../services/api';
 import i18n from '../i18n';
 
@@ -42,6 +42,7 @@ function ChangePassword() {
     noRepeated: false
   });
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     // Get temporary user data from localStorage
@@ -153,11 +154,20 @@ function ChangePassword() {
         preferred_language: userInfo.preferred_language || 'de'
       }));
 
-      // Redirect based on role
-      if (data.role === 'startup') {
-        window.location.href = '/dashboard';
+      // Check if there's a redirect URL from invitation acceptance
+      const redirectUrl = location.state?.redirectUrl;
+      const fromInvitation = location.state?.fromInvitation;
+      
+      if (redirectUrl && fromInvitation) {
+        // Redirect to the specific project that user was invited to
+        window.location.href = redirectUrl;
       } else {
-        window.location.href = '/dashboard/gp';
+        // Default redirect based on role
+        if (data.role === 'startup') {
+          window.location.href = '/dashboard';
+        } else {
+          window.location.href = '/dashboard/gp';
+        }
       }
     } catch (error) {
       console.error('Change password error:', error);
