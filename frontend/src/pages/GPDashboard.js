@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, Box, Snackbar, Alert, Tabs, Tab, Divider, LinearProgress, Chip, Dialog, DialogContent, DialogTitle, Select, MenuItem, FormControl, InputLabel, TextField, Card, CardContent, CardMedia, List, ListItem, ListItemText } from '@mui/material';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { Settings, Assignment, Storage, People, Add } from '@mui/icons-material';
+import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, Box, Snackbar, Alert, Tabs, Tab, Divider, LinearProgress, Chip, Dialog, DialogContent, DialogTitle, Select, MenuItem, FormControl, InputLabel, TextField, Card, CardContent, CardMedia, List, ListItem, ListItemText, DialogActions, DialogContentText, IconButton, Tooltip } from '@mui/material';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip as RechartsTooltip } from 'recharts';
+import { Settings, Assignment, Storage, People, Add, Delete } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { getPerformanceMetrics, getAllProjects, getProjectJourney, updateStageStatus } from '../services/api';
+import { getPerformanceMetrics, getAllProjects, getProjectJourney, updateStageStatus, getOrphanedProjects, deleteProject } from '../services/api';
 import ProjectInvitationManager from '../components/ProjectInvitationManager';
 import CreateProjectDialog from '../components/CreateProjectDialog';
 
@@ -34,6 +34,11 @@ function GPDashboard() {
   const [thumbnailUrls, setThumbnailUrls] = useState({});
   const [invitationDialog, setInvitationDialog] = useState({ open: false, project: null });
   const [createProjectDialog, setCreateProjectDialog] = useState(false);
+  const [orphanedProjects, setOrphanedProjects] = useState([]);
+  const [loadingOrphaned, setLoadingOrphaned] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, project: null });
+  const [deleting, setDeleting] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
 
 
@@ -63,6 +68,23 @@ function GPDashboard() {
       });
     } finally {
       setLoadingProjects(false);
+    }
+  };
+
+  const fetchOrphanedProjects = async () => {
+    setLoadingOrphaned(true);
+    try {
+      const response = await getOrphanedProjects();
+      setOrphanedProjects(response.data);
+    } catch (error) {
+      console.error('Error fetching orphaned projects:', error);
+      setSnackbar({
+        open: true,
+        message: 'Error fetching orphaned projects: ' + (error.response?.data?.detail || error.message),
+        severity: 'error'
+      });
+    } finally {
+      setLoadingOrphaned(false);
     }
   };
 
@@ -150,6 +172,8 @@ function GPDashboard() {
 
   const handleCloseInvitations = () => {
     setInvitationDialog({ open: false, project: null });
+    // Refresh orphaned projects in case we added an invitation to one
+    fetchOrphanedProjects();
   };
 
   const handleOpenCreateProject = () => {
@@ -171,9 +195,53 @@ function GPDashboard() {
     });
   };
 
+  const handleDeleteProject = (project) => {
+    setDeleteDialog({ open: true, project });
+    setDeleteConfirmText(''); // Reset confirmation text
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteDialog.project) return;
+    
+    setDeleting(true);
+    try {
+      const response = await deleteProject(deleteDialog.project.id);
+      
+      setSnackbar({
+        open: true,
+        message: `Project "${deleteDialog.project.project_name || deleteDialog.project.company_id}" has been permanently deleted`,
+        severity: 'success'
+      });
+      
+      // Close dialog
+      setDeleteDialog({ open: false, project: null });
+      setDeleteConfirmText(''); // Reset confirmation text
+      
+      // Refresh both project lists
+      fetchProjects();
+      fetchOrphanedProjects();
+      
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to delete project: ' + (error.response?.data?.detail || error.message),
+        severity: 'error'
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteDialog({ open: false, project: null });
+    setDeleteConfirmText(''); // Reset confirmation text
+  };
+
   useEffect(() => {
     fetchPerformanceMetrics();
     fetchProjects();
+    fetchOrphanedProjects();
   }, [includeTestData]);
 
   // Process projects data to create classification distribution for pie chart
@@ -311,7 +379,7 @@ function GPDashboard() {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value, name) => [`${value} projects`, name]} />
+                      <RechartsTooltip formatter={(value, name) => [`${value} projects`, name]} />
                     </PieChart>
                   </ResponsiveContainer>
                 </Box>
@@ -454,6 +522,16 @@ function GPDashboard() {
                       >
                         Invite Person
                       </Button>
+                      <Tooltip title="Permanently delete project and all data">
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleDeleteProject(project)}
+                          sx={{ ml: 1 }}
+                        >
+                          <Delete />
+                        </IconButton>
+                      </Tooltip>
                     </Box>
                   </TableCell>
                 </TableRow>
@@ -462,6 +540,102 @@ function GPDashboard() {
           </Table>
         </TableContainer>
       )}
+      
+      {/* Orphaned Projects Section */}
+      <Box sx={{ mt: 4 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Orphaned Projects ({orphanedProjects.length})
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Projects with no members and no pending invitations
+        </Typography>
+        
+        {loadingOrphaned ? (
+          <CircularProgress size={24} />
+        ) : orphanedProjects.length === 0 ? (
+          <Paper sx={{ p: 2, textAlign: 'center' }}>
+            <Typography color="text.secondary">
+              No orphaned projects found
+            </Typography>
+          </Paper>
+        ) : (
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Company ID</TableCell>
+                  <TableCell>Project Name</TableCell>
+                  <TableCell>Funding Round</TableCell>
+                  <TableCell>User Emails</TableCell>
+                  <TableCell>Documents</TableCell>
+                  <TableCell>Created</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {orphanedProjects.map((project) => (
+                  <TableRow key={project.id}>
+                    <TableCell>{project.company_id}</TableCell>
+                    <TableCell>{project.project_name}</TableCell>
+                    <TableCell>
+                      <Chip 
+                        label={project.funding_round || 'N/A'} 
+                        size="small" 
+                        variant="outlined"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {project.deleted_user_emails || 'No user emails'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {project.document_count || 0} docs
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {new Date(project.created_at).toLocaleDateString()}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="primary"
+                          onClick={() => handleOpenProject(project.id)}
+                        >
+                          Open Project
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          color="primary"
+                          onClick={() => handleOpenInvitations(project)}
+                        >
+                          Invite Person
+                        </Button>
+                        <Tooltip title="Permanently delete project and all data">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleDeleteProject(project)}
+                            sx={{ ml: 1 }}
+                          >
+                            <Delete />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Box>
     </Box>
   );
 
@@ -660,9 +834,20 @@ function GPDashboard() {
                         size="small"
                         fullWidth
                         onClick={() => handleOpenInvitations(project)}
-                        sx={{ textTransform: 'none' }}
+                        sx={{ textTransform: 'none', mb: 1 }}
                       >
                         Invite Person
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        fullWidth
+                        color="error"
+                        startIcon={<Delete />}
+                        onClick={() => handleDeleteProject(project)}
+                        sx={{ textTransform: 'none' }}
+                      >
+                        Delete Project
                       </Button>
                     </Box>
                   </CardContent>
@@ -928,6 +1113,85 @@ function GPDashboard() {
         onClose={handleCloseCreateProject}
         onProjectCreated={handleProjectCreated}
       />
+
+      {/* Delete Project Confirmation Dialog */}
+      <Dialog
+        open={deleteDialog.open}
+        onClose={handleCancelDelete}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ color: 'error.main' }}>
+          ⚠️ Permanently Delete Project
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            You are about to <strong>permanently delete</strong> the following project:
+          </DialogContentText>
+          
+          {deleteDialog.project && (
+            <Box sx={{ 
+              p: 2, 
+              bgcolor: 'error.50', 
+              border: 1, 
+              borderColor: 'error.200', 
+              borderRadius: 1,
+              mb: 2 
+            }}>
+              <Typography variant="h6" color="error.main">
+                {deleteDialog.project.project_name || deleteDialog.project.company_id}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Company: {deleteDialog.project.company_id}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Documents: {deleteDialog.project.document_count || 0}
+              </Typography>
+            </Box>
+          )}
+          
+          <Alert severity="error" sx={{ mb: 2 }}>
+            <Typography variant="body2">
+              <strong>This action cannot be undone!</strong> This will permanently delete:
+            </Typography>
+            <ul style={{ marginTop: 8, marginBottom: 0, paddingLeft: 20 }}>
+              <li>All project documents and uploaded files</li>
+              <li>All project members and invitations</li>
+              <li>All computed results and analysis</li>
+              <li>All project stages and progress</li>
+              <li>Associated startup users (if they only belong to this project)</li>
+            </ul>
+          </Alert>
+          
+          <DialogContentText>
+            Are you absolutely sure you want to delete this project? Type <strong>DELETE</strong> below to confirm:
+          </DialogContentText>
+          
+          <TextField
+            fullWidth
+            label="Type DELETE to confirm"
+            variant="outlined"
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            error={deleteConfirmText && deleteConfirmText !== 'DELETE'}
+            helperText={deleteConfirmText && deleteConfirmText !== 'DELETE' ? 'You must type DELETE exactly' : ''}
+            sx={{ mt: 2 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete} disabled={deleting}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+            disabled={deleting || deleteConfirmText !== 'DELETE'}
+            startIcon={deleting ? <CircularProgress size={16} /> : <Delete />}
+          >
+            {deleting ? 'Deleting...' : 'DELETE PROJECT'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Success/Error Snackbar */}
       <Snackbar

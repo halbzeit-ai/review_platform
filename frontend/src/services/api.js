@@ -253,4 +253,12 @@ export const saveTemplateConfig = (config) =>
 export const getExtractionResults = () =>
   api.get('/projects/extraction-results');
 
+// Orphaned Projects API
+export const getOrphanedProjects = () =>
+  api.get('/project-management/orphaned-projects');
+
+// Project Deletion API
+export const deleteProject = (projectId) =>
+  api.delete(`/project-management/projects/${projectId}`);
+
 export default api;

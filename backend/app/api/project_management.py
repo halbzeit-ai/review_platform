@@ -846,3 +846,423 @@ async def get_project_decks(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve project decks"
         )
+
+class OrphanedProjectResponse(BaseModel):
+    id: int
+    company_id: str
+    project_name: str
+    funding_round: Optional[str] = None
+    deleted_user_emails: Optional[str] = None
+    company_offering: Optional[str] = None
+    created_at: datetime
+    member_count: int = 0
+    invitation_count: int = 0
+    document_count: int = 0
+
+@router.get("/orphaned-projects", response_model=List[OrphanedProjectResponse])
+async def get_orphaned_projects(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get projects that have no members and no pending invitations (GP only)"""
+    if current_user.role != "gp":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only GPs can view orphaned projects"
+        )
+    
+    try:
+        query = text("""
+        SELECT 
+            p.id,
+            p.company_id,
+            p.project_name,
+            p.funding_round,
+            STRING_AGG(DISTINCT u_deleted.email, ', ') as deleted_user_emails,
+            p.company_offering,
+            p.created_at,
+            COUNT(pm.id) as member_count,
+            COUNT(pi.id) as invitation_count,
+            COUNT(pd_doc.id) as document_count
+        FROM projects p
+        LEFT JOIN project_members pm ON p.id = pm.project_id
+        LEFT JOIN project_invitations pi ON p.id = pi.project_id AND pi.status = 'pending'
+        LEFT JOIN project_documents pd_doc ON p.id = pd_doc.project_id
+        -- Look for users who uploaded documents for this project but are not members
+        LEFT JOIN users u_deleted ON u_deleted.id = pd_doc.uploaded_by 
+            AND u_deleted.id NOT IN (
+                SELECT DISTINCT user_id FROM project_members WHERE project_id = p.id
+                UNION
+                SELECT DISTINCT accepted_by_id FROM project_invitations WHERE project_id = p.id AND accepted_by_id IS NOT NULL
+            )
+        WHERE p.is_active = TRUE
+        GROUP BY p.id, p.company_id, p.project_name, p.funding_round, p.company_offering, p.created_at
+        HAVING COUNT(pm.id) = 0 AND COUNT(pi.id) = 0
+        ORDER BY p.created_at DESC
+        """)
+        
+        results = db.execute(query).fetchall()
+        
+        orphaned_projects = []
+        for row in results:
+            orphaned_projects.append(OrphanedProjectResponse(
+                id=row[0],
+                company_id=row[1],
+                project_name=row[2],
+                funding_round=row[3],
+                deleted_user_emails=row[4],
+                company_offering=row[5],
+                created_at=row[6],
+                member_count=row[7],
+                invitation_count=row[8],
+                document_count=row[9]
+            ))
+        
+        logger.info(f"Found {len(orphaned_projects)} orphaned projects")
+        return orphaned_projects
+        
+    except Exception as e:
+        logger.error(f"Error getting orphaned projects: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve orphaned projects"
+        )
+
+
+@router.delete("/projects/{project_id}")
+async def delete_project(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    COMPLETELY delete a project and ALL associated data including:
+    - Project documents (files on filesystem)
+    - Project members and invitations
+    - Project stages and progress 
+    - Computed results (reviews, analysis, extraction results)
+    - Associated users (startup users that only exist for this project)
+    - All database references
+    
+    This is a DESTRUCTIVE operation that cannot be undone.
+    Only GPs can perform this operation.
+    """
+    # Verify GP permissions
+    if current_user.role != "gp":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only General Partners can delete projects"
+        )
+    
+    try:
+        # Step 1: Get project information first
+        project_query = text("""
+            SELECT p.id, p.company_id, p.project_name, p.is_test,
+                   COUNT(pm.user_id) as member_count,
+                   COUNT(pd.id) as document_count
+            FROM projects p
+            LEFT JOIN project_members pm ON p.id = pm.project_id
+            LEFT JOIN project_documents pd ON p.id = pd.project_id
+            WHERE p.id = :project_id
+            GROUP BY p.id, p.company_id, p.project_name, p.is_test
+        """)
+        
+        project_result = db.execute(project_query, {"project_id": project_id}).fetchone()
+        
+        if not project_result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project {project_id} not found"
+            )
+        
+        company_id = project_result[1]
+        project_name = project_result[2]
+        is_test = project_result[3]
+        member_count = project_result[4]
+        document_count = project_result[5]
+        
+        logger.info(f"Starting COMPLETE deletion of project {project_id} ({company_id} - {project_name})")
+        logger.info(f"Project has {member_count} members and {document_count} documents")
+        
+        # Track deletion statistics
+        deleted_counts = {
+            "project_documents": 0,
+            "project_members": 0,
+            "project_invitations": 0,
+            "project_stages": 0,
+            "users_deleted": 0,
+            "reviews_deleted": 0,
+            "questions_deleted": 0,
+            "pitch_decks_deleted": 0,
+            "analysis_results_deleted": 0,
+            "extraction_results_deleted": 0,
+            "files_deleted": 0,
+            "filesystem_errors": []
+        }
+        
+        # Step 2: Delete physical files from filesystem
+        try:
+            # Get all document file paths for this project
+            doc_files_query = text("""
+                SELECT file_path, file_name 
+                FROM project_documents 
+                WHERE project_id = :project_id AND file_path IS NOT NULL
+            """)
+            
+            doc_files = db.execute(doc_files_query, {"project_id": project_id}).fetchall()
+            
+            for file_path, file_name in doc_files:
+                try:
+                    full_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, file_path.lstrip('/'))
+                    if os.path.exists(full_path):
+                        os.remove(full_path)
+                        deleted_counts["files_deleted"] += 1
+                        logger.info(f"Deleted file: {full_path}")
+                    else:
+                        logger.warning(f"File not found for deletion: {full_path}")
+                        
+                    # Also try to delete any associated result/thumbnail directories
+                    file_base = os.path.splitext(file_name)[0]
+                    results_dir = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "results", file_base)
+                    if os.path.exists(results_dir):
+                        shutil.rmtree(results_dir)
+                        logger.info(f"Deleted results directory: {results_dir}")
+                        
+                except Exception as file_error:
+                    logger.error(f"Error deleting file {file_path}: {file_error}")
+                    deleted_counts["filesystem_errors"].append(f"Failed to delete {file_path}: {str(file_error)}")
+                    
+        except Exception as e:
+            logger.error(f"Error during filesystem cleanup: {e}")
+            deleted_counts["filesystem_errors"].append(f"Filesystem cleanup error: {str(e)}")
+        
+        # Step 3: Find users that should be deleted (startup users only associated with this project)
+        users_to_delete_query = text("""
+            SELECT DISTINCT u.id, u.email, u.role
+            FROM users u
+            JOIN project_members pm ON u.id = pm.user_id
+            WHERE pm.project_id = :project_id 
+            AND u.role = 'startup'
+            AND u.id NOT IN (
+                -- Don't delete users who are members of other projects
+                SELECT DISTINCT pm2.user_id
+                FROM project_members pm2
+                WHERE pm2.project_id != :project_id
+                UNION
+                -- Don't delete users who have accepted invitations to other projects
+                SELECT DISTINCT pi.accepted_by_id
+                FROM project_invitations pi
+                WHERE pi.project_id != :project_id AND pi.accepted_by_id IS NOT NULL
+            )
+        """)
+        
+        users_to_delete = db.execute(users_to_delete_query, {"project_id": project_id}).fetchall()
+        
+        # Step 4: Delete computed results and analysis data (with savepoints for error handling)
+        
+        # Helper function to execute SQL with savepoints
+        def safe_execute(query, params, description):
+            try:
+                # Create savepoint
+                savepoint_name = f"sp_{description.replace(' ', '_')}"
+                db.execute(text(f"SAVEPOINT {savepoint_name}"))
+                
+                # Execute the query
+                result = db.execute(query, params)
+                
+                # Release savepoint on success
+                db.execute(text(f"RELEASE SAVEPOINT {savepoint_name}"))
+                return result.rowcount
+                
+            except Exception as e:
+                # Roll back to savepoint on error
+                try:
+                    db.execute(text(f"ROLLBACK TO SAVEPOINT {savepoint_name}"))
+                    db.execute(text(f"RELEASE SAVEPOINT {savepoint_name}"))
+                except:
+                    pass  # Savepoint may not exist
+                
+                logger.warning(f"Error {description}: {e}")
+                return 0
+        
+        # Delete extraction experiment results that reference this project's documents
+        extraction_cleanup_query = text("""
+            UPDATE extraction_experiments 
+            SET results_json = NULL,
+                classification_results_json = NULL,
+                company_name_results_json = NULL,
+                funding_amount_results_json = NULL,
+                deck_date_results_json = NULL,
+                template_processing_results_json = NULL
+            WHERE pitch_deck_ids && ARRAY(
+                SELECT COALESCE(pd.reference_pitch_deck_id, 0)
+                FROM project_documents pd 
+                WHERE pd.project_id = :project_id AND pd.reference_pitch_deck_id IS NOT NULL
+            )
+        """)
+        
+        extraction_count = safe_execute(extraction_cleanup_query, {"project_id": project_id}, "cleaning extraction experiments")
+        if extraction_count > 0:
+            deleted_counts["extraction_results_deleted"] = extraction_count
+        
+        # Delete specialized analysis results 
+        analysis_cleanup_query = text("""
+            DELETE FROM specialized_analysis_results 
+            WHERE pitch_deck_id IN (
+                SELECT pd.reference_pitch_deck_id 
+                FROM project_documents pd 
+                WHERE pd.project_id = :project_id AND pd.reference_pitch_deck_id IS NOT NULL
+            )
+        """)
+        
+        deleted_counts["analysis_results_deleted"] = safe_execute(
+            analysis_cleanup_query, {"project_id": project_id}, "deleting specialized analysis results"
+        )
+        
+        # Delete visual analysis cache
+        visual_cache_query = text("""
+            DELETE FROM visual_analysis_cache 
+            WHERE pitch_deck_id IN (
+                SELECT pd.reference_pitch_deck_id 
+                FROM project_documents pd 
+                WHERE pd.project_id = :project_id AND pd.reference_pitch_deck_id IS NOT NULL
+            )
+        """)
+        
+        safe_execute(visual_cache_query, {"project_id": project_id}, "deleting visual analysis cache")
+        
+        # Delete questions and reviews for referenced pitch decks
+        questions_cleanup_query = text("""
+            DELETE FROM questions 
+            WHERE review_id IN (
+                SELECT r.id FROM reviews r
+                WHERE r.pitch_deck_id IN (
+                    SELECT pd.reference_pitch_deck_id 
+                    FROM project_documents pd 
+                    WHERE pd.project_id = :project_id AND pd.reference_pitch_deck_id IS NOT NULL
+                )
+            )
+        """)
+        
+        deleted_counts["questions_deleted"] = safe_execute(
+            questions_cleanup_query, {"project_id": project_id}, "deleting questions"
+        )
+        
+        reviews_cleanup_query = text("""
+            DELETE FROM reviews 
+            WHERE pitch_deck_id IN (
+                SELECT pd.reference_pitch_deck_id 
+                FROM project_documents pd 
+                WHERE pd.project_id = :project_id AND pd.reference_pitch_deck_id IS NOT NULL
+            )
+        """)
+        
+        deleted_counts["reviews_deleted"] = safe_execute(
+            reviews_cleanup_query, {"project_id": project_id}, "deleting reviews"
+        )
+        
+        # Delete referenced pitch decks (if they exist and are safe to delete)
+        pitch_decks_cleanup_query = text("""
+            DELETE FROM pitch_decks 
+            WHERE id IN (
+                SELECT pd.reference_pitch_deck_id 
+                FROM project_documents pd 
+                WHERE pd.project_id = :project_id 
+                AND pd.reference_pitch_deck_id IS NOT NULL
+                AND pd.reference_pitch_deck_id NOT IN (
+                    -- Don't delete pitch decks referenced by other projects
+                    SELECT DISTINCT pd2.reference_pitch_deck_id
+                    FROM project_documents pd2
+                    WHERE pd2.project_id != :project_id AND pd2.reference_pitch_deck_id IS NOT NULL
+                )
+            )
+        """)
+        
+        deleted_counts["pitch_decks_deleted"] = safe_execute(
+            pitch_decks_cleanup_query, {"project_id": project_id}, "deleting pitch decks"
+        )
+        
+        # Step 5: Delete project-specific data (in dependency order)
+        
+        # Delete project documents
+        delete_docs_query = text("DELETE FROM project_documents WHERE project_id = :project_id")
+        deleted_counts["project_documents"] = db.execute(delete_docs_query, {"project_id": project_id}).rowcount
+        
+        # Delete project stages
+        delete_stages_query = text("DELETE FROM project_stages WHERE project_id = :project_id")
+        deleted_counts["project_stages"] = db.execute(delete_stages_query, {"project_id": project_id}).rowcount
+        
+        # Delete project invitations
+        delete_invitations_query = text("DELETE FROM project_invitations WHERE project_id = :project_id")
+        deleted_counts["project_invitations"] = db.execute(delete_invitations_query, {"project_id": project_id}).rowcount
+        
+        # Delete project members
+        delete_members_query = text("DELETE FROM project_members WHERE project_id = :project_id")
+        deleted_counts["project_members"] = db.execute(delete_members_query, {"project_id": project_id}).rowcount
+        
+        # Step 6: Delete users that were only associated with this project
+        for user_id, user_email, user_role in users_to_delete:
+            try:
+                # Final safety check - ensure user has no other project associations
+                safety_check_query = text("""
+                    SELECT COUNT(*) as count FROM (
+                        SELECT 1 FROM project_members pm WHERE pm.user_id = :user_id
+                        UNION ALL
+                        SELECT 1 FROM project_invitations pi WHERE pi.accepted_by_id = :user_id
+                        UNION ALL
+                        SELECT 1 FROM pitch_decks pd WHERE pd.user_id = :user_id
+                    ) as associations
+                """)
+                
+                safety_result = db.execute(safety_check_query, {"user_id": user_id}).fetchone()
+                
+                if safety_result and safety_result[0] == 0:
+                    # Safe to delete this user
+                    delete_user_query = text("DELETE FROM users WHERE id = :user_id")
+                    db.execute(delete_user_query, {"user_id": user_id})
+                    deleted_counts["users_deleted"] += 1
+                    logger.info(f"Deleted user {user_email} (ID: {user_id}) - was only associated with this project")
+                else:
+                    logger.info(f"Preserved user {user_email} (ID: {user_id}) - has other associations")
+                    
+            except Exception as e:
+                logger.error(f"Error deleting user {user_email}: {e}")
+                # Continue without failing the entire deletion
+        
+        # Step 7: Finally, delete the project itself
+        delete_project_query = text("DELETE FROM projects WHERE id = :project_id")
+        project_deleted = db.execute(delete_project_query, {"project_id": project_id}).rowcount
+        
+        if project_deleted == 0:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete project - may have been deleted by another process"
+            )
+        
+        # Commit all changes
+        db.commit()
+        
+        logger.info(f"Successfully COMPLETELY deleted project {project_id} ({company_id} - {project_name})")
+        logger.info(f"Deletion statistics: {deleted_counts}")
+        
+        return {
+            "message": f"Successfully deleted project '{project_name}' (ID: {project_id}) and all associated data",
+            "project_id": project_id,
+            "company_id": company_id,
+            "project_name": project_name,
+            "is_test": is_test,
+            "deletion_statistics": deleted_counts,
+            "warning": "This operation is irreversible - all project data has been permanently removed"
+        }
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 404, 403)
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error during project deletion: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete project: {str(e)}"
+        )

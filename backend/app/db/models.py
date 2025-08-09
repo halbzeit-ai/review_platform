@@ -157,6 +157,7 @@ class ProjectDocument(Base):
     processing_status = Column(String, default="pending")  # pending, processing, completed, failed
     extracted_data = Column(Text, nullable=True)  # JSON for document-specific extractions
     analysis_results_path = Column(String, nullable=True)  # Path to analysis results file
+    reference_pitch_deck_id = Column(Integer, ForeignKey("pitch_decks.id"), nullable=True)  # Link to legacy pitch deck data
     uploaded_by = Column(Integer, ForeignKey("users.id"))
     upload_date = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
@@ -164,6 +165,7 @@ class ProjectDocument(Base):
     # Relationships
     project = relationship("Project", back_populates="documents")
     uploader = relationship("User")
+    reference_pitch_deck = relationship("PitchDeck")
 
 class ProjectInteraction(Base):
     __tablename__ = "project_interactions"
