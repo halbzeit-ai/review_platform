@@ -67,6 +67,7 @@ Usage: $0 [command] [options]
 Commands:
   health           - Detailed health check
   deck <id>        - Get deck status and processing info
+  specialized <id> - Get specialized analysis results for deck
   tables           - List all database tables
   table <name>     - Get table structure and info
   env              - Show environment configuration
@@ -76,6 +77,7 @@ Commands:
 Examples:
   $0 health                    # Basic health check
   $0 deck 143                  # Check deck 143 status
+  $0 specialized 151          # Get specialized analysis for deck 151
   $0 table pitch_decks         # Get pitch_decks table info
   $0 tables                    # List all tables
   $0 all                       # Run comprehensive debug
@@ -83,6 +85,7 @@ Examples:
 Debug Endpoints Available:
   GET /api/debug/health-detailed
   GET /api/debug/deck/{id}/status
+  GET /api/debug/deck/{id}/specialized-analysis
   GET /api/debug/database/tables
   GET /api/debug/database/table/{name}/info
   GET /api/debug/environment
@@ -106,6 +109,18 @@ cmd_deck() {
     
     log_section "Deck Status Check"
     api_call "/deck/$deck_id/status" "Deck $deck_id processing status"
+}
+
+cmd_specialized() {
+    local deck_id=$1
+    if [[ -z "$deck_id" ]]; then
+        log_error "Please provide a deck ID"
+        echo "Usage: $0 specialized <deck_id>"
+        exit 1
+    fi
+    
+    log_section "Specialized Analysis Results"
+    api_call "/deck/$deck_id/specialized-analysis" "Specialized analysis for deck $deck_id (clinical_validation, regulatory_pathway, scientific_hypothesis)"
 }
 
 cmd_tables() {
@@ -151,6 +166,9 @@ case "${1:-help}" in
         ;;
     "deck")
         cmd_deck "$2"
+        ;;
+    "specialized")
+        cmd_specialized "$2"
         ;;
     "tables")
         cmd_tables

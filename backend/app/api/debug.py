@@ -23,6 +23,61 @@ def detailed_health_check():
         }
     }
 
+@router.get("/deck/{deck_id}/specialized-analysis")
+def get_specialized_analysis_debug(deck_id: int, db: Session = Depends(get_db)):
+    """Get specialized analysis results without authentication for debugging"""
+    
+    try:
+        # Check if deck exists
+        deck_check = db.execute(text("SELECT id, ai_extracted_startup_name FROM pitch_decks WHERE id = :deck_id"), {"deck_id": deck_id}).fetchone()
+        
+        if not deck_check:
+            raise HTTPException(status_code=404, detail=f"Deck {deck_id} not found")
+        
+        # Get specialized analysis results
+        results = db.execute(text("""
+            SELECT 
+                analysis_type, 
+                LENGTH(analysis_result) as result_length,
+                LEFT(analysis_result, 500) as sample,
+                confidence_score,
+                model_used,
+                created_at
+            FROM specialized_analysis_results 
+            WHERE pitch_deck_id = :deck_id
+            ORDER BY created_at DESC
+        """), {"deck_id": deck_id}).fetchall()
+        
+        analyses = []
+        for row in results:
+            analyses.append({
+                "type": row[0],
+                "length": row[1],
+                "sample": row[2] + "..." if row[1] and row[1] > 500 else row[2],
+                "confidence_score": float(row[3]) if row[3] else None,
+                "model_used": row[4],
+                "created_at": str(row[5]) if row[5] else None
+            })
+        
+        return {
+            "deck_id": deck_id,
+            "startup_name": deck_check[1] if deck_check[1] else "Unknown",
+            "specialized_analyses_count": len(analyses),
+            "analyses": analyses,
+            "expected_types": ["clinical_validation", "regulatory_pathway", "scientific_hypothesis"],
+            "missing_types": [t for t in ["clinical_validation", "regulatory_pathway", "scientific_hypothesis"] if t not in [a["type"] for a in analyses]]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {
+            "deck_id": deck_id,
+            "error": str(e),
+            "specialized_analyses_count": 0,
+            "analyses": []
+        }
+
 @router.get("/deck/{deck_id}/status")
 def get_deck_status_debug(deck_id: int, db: Session = Depends(get_db)):
     """Get deck status without authentication for debugging"""
