@@ -3,13 +3,14 @@ import { Container, Typography, Grid, Paper, Table, TableBody, TableCell, TableC
 import { Delete as DeleteIcon, People, PersonAdd } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { getAllUsers, updateUserRole, deleteUser, inviteGP } from '../services/api';
+import { getAllUsers, updateUserRole, deleteUser, inviteGP, getPendingInvitations, cancelInvitation } from '../services/api';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 function UserManagement() {
   const { t } = useTranslation('dashboard');
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
+  const [pendingInvitations, setPendingInvitations] = useState([]);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, user: null });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [inviteDialog, setInviteDialog] = useState({ open: false });
@@ -41,6 +42,37 @@ function UserManagement() {
       }
     } catch (error) {
       console.error('Failed to refresh users:', error);
+    }
+  };
+
+  const refreshPendingInvitations = async () => {
+    try {
+      const response = await getPendingInvitations();
+      if (response.data) {
+        setPendingInvitations(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to refresh pending invitations:', error);
+    }
+  };
+
+  const handleCancelInvitation = async (invitationId) => {
+    try {
+      await cancelInvitation(invitationId);
+      setSnackbar({
+        open: true,
+        message: 'Invitation cancelled successfully',
+        severity: 'success'
+      });
+      // Refresh pending invitations list
+      await refreshPendingInvitations();
+    } catch (error) {
+      console.error('Error cancelling invitation:', error);
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.detail || 'Failed to cancel invitation',
+        severity: 'error'
+      });
     }
   };
 
@@ -123,20 +155,30 @@ function UserManagement() {
   };
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchData = async () => {
       try {
-        const response = await getAllUsers();
-        if (response.data) {
-          setUsers(response.data);
+        // Fetch both users and pending invitations
+        const [usersResponse, invitationsResponse] = await Promise.all([
+          getAllUsers(),
+          getPendingInvitations()
+        ]);
+        
+        if (usersResponse.data) {
+          setUsers(usersResponse.data);
         } else {
           console.error('No user data received');
         }
+        
+        if (invitationsResponse.data) {
+          setPendingInvitations(invitationsResponse.data);
+        }
+        
       } catch (error) {
-        console.error('Failed to fetch users:', error);
+        console.error('Failed to fetch data:', error);
         alert(t('common:messages.connectionError'));
       }
     };
-    fetchUsers();
+    fetchData();
   }, []);
 
   return (
@@ -212,6 +254,67 @@ function UserManagement() {
                 </TableBody>
               </Table>
             </TableContainer>
+          </Paper>
+        </Grid>
+        
+        {/* Pending Invitations Section */}
+        <Grid item xs={12}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Pending Project Invitations ({pendingInvitations.length})
+            </Typography>
+            {pendingInvitations.length === 0 ? (
+              <Typography color="text.secondary" sx={{ py: 2 }}>
+                No pending invitations
+              </Typography>
+            ) : (
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Email</TableCell>
+                      <TableCell>Project</TableCell>
+                      <TableCell>Company</TableCell>
+                      <TableCell>Invited</TableCell>
+                      <TableCell>Expires</TableCell>
+                      <TableCell>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {pendingInvitations.map((invitation) => (
+                      <TableRow key={invitation.id}>
+                        <TableCell>{invitation.email}</TableCell>
+                        <TableCell>{invitation.project_name}</TableCell>
+                        <TableCell>{invitation.company_id}</TableCell>
+                        <TableCell>
+                          {new Date(invitation.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <Typography 
+                            color={new Date(invitation.expires_at) < new Date() ? 'error' : 'inherit'}
+                            variant="body2"
+                          >
+                            {new Date(invitation.expires_at).toLocaleDateString()}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Box display="flex" gap={1}>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              color="error"
+                              onClick={() => handleCancelInvitation(invitation.id)}
+                            >
+                              Cancel
+                            </Button>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
           </Paper>
         </Grid>
       </Grid>

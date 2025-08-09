@@ -558,6 +558,47 @@ async def get_all_users(current_user: User = Depends(get_current_user), db: Sess
     users = db.query(User).all()
     return [{"email": user.email, "company_name": user.company_name, "role": user.role, "created_at": user.created_at, "last_login": user.last_login, "is_verified": user.is_verified} for user in users]
 
+@router.get("/pending-invitations")
+async def get_all_pending_invitations(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get all pending invitations across all projects for GP management"""
+    if current_user.role != "gp":
+        raise HTTPException(status_code=403, detail="Only GPs can view pending invitations")
+    
+    from sqlalchemy import text
+    
+    # Get all pending invitations with project details
+    pending_invitations = db.execute(text("""
+        SELECT 
+            pi.id,
+            pi.invitation_token,
+            pi.email,
+            pi.status,
+            pi.created_at,
+            pi.expires_at,
+            pi.project_id,
+            p.project_name,
+            p.company_id,
+            u.email as invited_by_email
+        FROM project_invitations pi
+        JOIN projects p ON pi.project_id = p.id  
+        LEFT JOIN users u ON pi.invited_by_id = u.id
+        WHERE pi.status = 'pending'
+        ORDER BY pi.created_at DESC
+    """)).fetchall()
+    
+    return [{
+        "id": row[0],
+        "invitation_token": row[1],
+        "email": row[2],
+        "status": row[3],
+        "created_at": row[4].isoformat() if row[4] else None,
+        "expires_at": row[5].isoformat() if row[5] else None,
+        "project_id": row[6],
+        "project_name": row[7],
+        "company_id": row[8],
+        "invited_by_email": row[9]
+    } for row in pending_invitations]
+
 @router.get("/profile")
 async def get_profile(current_user: User = Depends(get_current_user)):
     """Get current user's profile information"""

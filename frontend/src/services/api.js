@@ -78,6 +78,9 @@ export const submitAnswer = (questionId, answer) =>
 export const getAllUsers = () => 
   api.get('/auth/users');
 
+export const getPendingInvitations = () =>
+  api.get('/auth/pending-invitations');
+
 export const getPitchDecks = () => api.get('/decks');
 
 export const updateUserRole = (userEmail, newRole) => 
