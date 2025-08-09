@@ -176,18 +176,24 @@ This is a startup review platform with a Python FastAPI backend and React fronte
 sudo -u postgres psql review-platform
 ```
 
-### API Debugging Tools (For Claude) ⭐ NEW ⭐
+### API Debugging Tools (For Claude) ⭐ ENHANCED ⭐
 
-**CRITICAL FOR EFFICIENT DEBUGGING**: Use these authentication-free debug endpoints instead of regular API endpoints that require authentication.
+**CRITICAL FOR EFFICIENT DEBUGGING**: Use these authentication-free debug endpoints and project management tools instead of regular API endpoints that require authentication.
 
 ```bash
-# Debug API Script - NO AUTHENTICATION REQUIRED
+# Enhanced Debug API Script - NO AUTHENTICATION REQUIRED
 ./scripts/debug-api.sh health           # System health check
 ./scripts/debug-api.sh deck 143         # Check specific deck processing status
 ./scripts/debug-api.sh tables           # List all database tables
 ./scripts/debug-api.sh table pitch_decks # Get table structure and sample data
 ./scripts/debug-api.sh env              # Environment configuration
-./scripts/debug-api.sh all              # Comprehensive debug report
+
+# PROJECT MANAGEMENT DEBUGGING (NEW)
+./scripts/debug-api.sh project 31       # Analyze project relationships and data
+./scripts/debug-api.sh user user@company.com  # Check user dependencies and memberships
+./scripts/debug-api.sh deletion 31      # Preview what would be deleted (SAFE - no actual deletion)
+./scripts/debug-api.sh orphans          # List orphaned projects with recovery options
+./scripts/debug-api.sh all              # Comprehensive debug report including orphans
 
 # Direct curl access to debug endpoints
 curl -s "http://localhost:8000/api/debug/health-detailed"
@@ -202,6 +208,10 @@ curl -s "http://localhost:8000/api/debug/environment"
 - ✅ Investigating deck processing issues (instead of /api/documents/processing-progress/{id})
 - ✅ Checking database table existence and structure
 - ✅ Verifying system health and environment config
+- ✅ **NEW: Analyzing project relationships before deletion** (`deletion` command)
+- ✅ **NEW: Understanding user dependencies** (`user` command)
+- ✅ **NEW: Managing orphaned projects** (`orphans` command)
+- ✅ **NEW: Comprehensive project data analysis** (`project` command)
 - ✅ Understanding data relationships between tables
 - ✅ Getting sample data for analysis
 
