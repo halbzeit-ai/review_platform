@@ -36,7 +36,7 @@ class ProjectResponse(BaseModel):
     id: int
     company_id: str
     project_name: str
-    funding_round: str
+    funding_round: Optional[str] = None
     current_stage_id: Optional[int] = None
     funding_sought: Optional[str] = None
     healthcare_sector_id: Optional[int] = None
