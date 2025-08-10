@@ -1,9 +1,9 @@
-import { getCompanyInfo } from '../services/api';
+import { getCompanyInfo, getUserProjects } from '../services/api';
 
 /**
- * Get the company ID and dashboard path for the current user
- * This function calls the backend to ensure consistent company ID generation
- * @returns {Promise<{companyId: string, dashboardPath: string, companyName: string}>}
+ * Get the routing information for the current user
+ * For startup users, this returns project ID routing instead of company ID
+ * @returns {Promise<{companyId: string, dashboardPath: string, companyName: string, projectId?: number}>}
  */
 export const getCurrentUserCompanyInfo = async () => {
   try {
@@ -19,8 +19,23 @@ export const getCurrentUserCompanyInfo = async () => {
 };
 
 /**
+ * Get all projects the current user is a member of
+ * @returns {Promise<{projects: Array, totalProjects: number, primaryProject: Object}>}
+ */
+export const getCurrentUserProjects = async () => {
+  try {
+    const response = await getUserProjects();
+    return response.data;
+  } catch (error) {
+    console.error('Failed to get user projects from backend:', error);
+    throw error; // Let caller handle this error
+  }
+};
+
+/**
  * Fallback function for generating company info locally
- * Should match the backend logic exactly
+ * NOTE: This fallback still uses company_id for compatibility but ideally 
+ * the backend should always be available to provide proper project_id routing
  * @param {Object} user - User object from localStorage
  * @returns {Object} Company info object
  */
@@ -39,6 +54,8 @@ export const getCompanyInfoFallback = (user) => {
   return {
     company_name: user.companyName,
     company_id: companyId,
+    // FALLBACK: Still use company_id when backend is unavailable
+    // The backend should provide proper project_id routing when available
     dashboard_path: user.role === 'startup' ? `/project/${companyId}` : '/dashboard/gp'
   };
 };

@@ -154,11 +154,11 @@ export const getPipelineStages = () =>
 export const getProjectDeckAnalysis = (companyId, deckId) =>
   api.get(`/projects/${companyId}/deck-analysis/${deckId}`);
 
-export const getProjectResults = (companyId, deckId) =>
-  api.get(`/projects/${companyId}/results/${deckId}`);
+export const getProjectResults = (projectId, deckId) =>
+  api.get(`/projects/${projectId}/results/${deckId}`);
 
-export const getProjectUploads = (companyId) =>
-  api.get(`/projects/${companyId}/uploads`);
+export const getProjectUploads = (projectId) =>
+  api.get(`/projects/${projectId}/uploads`);
 
 export const getSlideImage = (companyId, deckName, slideFilename) =>
   api.get(`/projects/${companyId}/slide-image/${deckName}/${slideFilename}`, {
@@ -173,6 +173,9 @@ export const cleanupOrphanedDecks = () =>
 
 export const getCompanyInfo = () =>
   api.get('/auth/company-info');
+
+export const getUserProjects = () =>
+  api.get('/auth/user-projects');
 
 // Project Management API
 export const getAllProjects = (includeTestData = false, limit = 100, offset = 0) =>
