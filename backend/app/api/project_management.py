@@ -711,15 +711,8 @@ async def get_project_decks(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get pitch decks for a specific project (GP admin access)"""
+    """Get pitch decks for a specific project (GPs can access any, startups can access their own)"""
     try:
-        # Only GPs can access any project's decks
-        if current_user.role != "gp":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only GPs can access project decks"
-            )
-        
         # Get project info to verify it exists
         project_query = text("""
             SELECT id, company_id, project_name 
@@ -735,11 +728,26 @@ async def get_project_decks(
                 detail="Project not found"
             )
         
+        # Check access permissions
+        # GPs can access any project, startups can only access their own
+        if current_user.role != "gp":
+            # Check if the user is a member of this project
+            member_check = db.execute(text("""
+                SELECT 1 FROM project_members 
+                WHERE project_id = :project_id AND user_id = :user_id
+            """), {"project_id": project_id, "user_id": current_user.id}).fetchone()
+            
+            if not member_check:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You don't have access to this project"
+                )
+        
         # Get all project documents (pitch decks) for this project
         # Use LEFT JOIN with pitch_decks to get the correct deck ID for deck viewer
         decks_query = text("""
             SELECT 
-                COALESCE(deck.id, pd.id) as id,
+                pd.id,
                 pd.uploaded_by as user_id,
                 p.company_id,
                 pd.file_name,
@@ -756,11 +764,11 @@ async def get_project_decks(
                 pd.upload_date as created_at,
                 u.email as user_email,
                 u.first_name,
-                u.last_name
+                u.last_name,
+                pd.original_pitch_deck_id
             FROM project_documents pd
             JOIN projects p ON pd.project_id = p.id
             LEFT JOIN users u ON pd.uploaded_by = u.id
-            LEFT JOIN pitch_decks deck ON pd.file_name = deck.file_name AND p.company_id = deck.company_id
             WHERE pd.project_id = :project_id 
             AND pd.document_type = 'pitch_deck'
             AND pd.is_active = TRUE
@@ -771,44 +779,71 @@ async def get_project_decks(
         
         decks = []
         for row in decks_results:
-            # Check if visual analysis is completed by looking for slide images
+            # Check if visual analysis is completed by multiple methods
             visual_analysis_completed = False
+            deck_id = row[0]
             company_id = row[2]
             file_name = row[3]
+            original_pitch_deck_id = row[14] if len(row) > 14 else None
             
             if company_id and file_name:
                 try:
                     deck_name = os.path.splitext(file_name)[0]
-                    # Check dojo directory structure for slide images
-                    dojo_analysis_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis")
-                    logger.info(f"Checking visual analysis for document {row[0]}: deck_name='{deck_name}', dojo_path='{dojo_analysis_path}'")
                     
-                    if os.path.exists(dojo_analysis_path):
-                        # Create filesystem-safe version (spaces -> underscores)
-                        filesystem_deck_name = deck_name.replace(' ', '_')
-                        logger.info(f"Looking for directories containing: '{deck_name}' or '{filesystem_deck_name}'")
+                    # Method 1: Check for database-stored analysis results
+                    # Check using both the new ID and original pitch_deck_id if available
+                    try:
+                        check_ids = [str(deck_id)]
+                        if original_pitch_deck_id:
+                            check_ids.append(str(original_pitch_deck_id))
                         
-                        # Look for directories containing the deck name (with UUID prefix)
-                        for dir_name in os.listdir(dojo_analysis_path):
-                            # Check if directory name contains the deck name (original or filesystem-safe)
-                            if (deck_name in dir_name or filesystem_deck_name in dir_name):
-                                potential_dir = os.path.join(dojo_analysis_path, dir_name)
-                                logger.info(f"Found matching directory: {dir_name}")
-                                if os.path.exists(potential_dir):
-                                    # Check for slide images
-                                    slide_files = [f for f in os.listdir(potential_dir) if f.startswith('slide_') and f.endswith(('.jpg', '.png'))]
-                                    logger.info(f"Found {len(slide_files)} slide files in {dir_name}")
-                                    if slide_files:
-                                        visual_analysis_completed = True
-                                        logger.info(f"Visual analysis completed for document {row[0]}")
-                                        break
+                        for check_id in check_ids:
+                            extraction_check = db.execute(text("""
+                                SELECT 1 FROM extraction_experiments 
+                                WHERE pitch_deck_ids LIKE '%' || :deck_id || '%'
+                                AND results_json IS NOT NULL
+                                LIMIT 1
+                            """), {"deck_id": check_id}).fetchone()
+                            
+                            if extraction_check:
+                                visual_analysis_completed = True
+                                logger.info(f"Visual analysis completed for document {deck_id} (checked ID: {check_id}) - found extraction experiments")
+                                break
+                    except Exception as e:
+                        logger.error(f"Error checking extraction experiments for deck {deck_id}: {e}")
+                    
+                    # Method 2: Check dojo directory structure for slide images (if not found in database)
+                    if not visual_analysis_completed:
+                        dojo_analysis_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis")
+                        logger.info(f"Checking visual analysis for document {deck_id}: deck_name='{deck_name}', dojo_path='{dojo_analysis_path}'")
                         
-                        if not visual_analysis_completed:
-                            logger.warning(f"No slide images found for document {row[0]} with deck_name '{deck_name}'")
-                    else:
-                        logger.warning(f"Dojo analysis path does not exist: {dojo_analysis_path}")
+                        if os.path.exists(dojo_analysis_path):
+                            # Create filesystem-safe version (spaces -> underscores)
+                            filesystem_deck_name = deck_name.replace(' ', '_')
+                            logger.info(f"Looking for directories containing: '{deck_name}' or '{filesystem_deck_name}'")
+                            
+                            # Look for directories containing the deck name (with UUID prefix)
+                            for dir_name in os.listdir(dojo_analysis_path):
+                                # Check if directory name contains the deck name (original or filesystem-safe)
+                                if (deck_name in dir_name or filesystem_deck_name in dir_name):
+                                    potential_dir = os.path.join(dojo_analysis_path, dir_name)
+                                    logger.info(f"Found matching directory: {dir_name}")
+                                    if os.path.exists(potential_dir):
+                                        # Check for slide images
+                                        slide_files = [f for f in os.listdir(potential_dir) if f.startswith('slide_') and f.endswith(('.jpg', '.png'))]
+                                        logger.info(f"Found {len(slide_files)} slide files in {dir_name}")
+                                        if slide_files:
+                                            visual_analysis_completed = True
+                                            logger.info(f"Visual analysis completed for document {deck_id} - found slide images")
+                                            break
+                            
+                            if not visual_analysis_completed:
+                                logger.warning(f"No slide images found for document {deck_id} with deck_name '{deck_name}'")
+                        else:
+                            logger.warning(f"Dojo analysis path does not exist: {dojo_analysis_path}")
+                            
                 except Exception as e:
-                    logger.error(f"Error checking visual analysis for document {row[0]}: {e}")
+                    logger.error(f"Error checking visual analysis for document {deck_id}: {e}")
                     import traceback
                     logger.error(f"Traceback: {traceback.format_exc()}")
             

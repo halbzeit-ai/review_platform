@@ -497,3 +497,61 @@ async def debug_model_config(db: Session = Depends(get_db)):
         
     except Exception as e:
         return {"error": str(e), "timestamp": datetime.utcnow().isoformat()}
+
+@router.get("/slide-images/{deck_id}")
+async def debug_slide_images(deck_id: int, db: Session = Depends(get_db)):
+    """Check slide image availability for a deck without authentication"""
+    try:
+        # Get deck info
+        deck_info = db.execute(text("""
+            SELECT file_name, company_id, processing_status
+            FROM pitch_decks 
+            WHERE id = :deck_id
+        """), {"deck_id": deck_id}).fetchone()
+        
+        if not deck_info:
+            return {"error": f"Deck {deck_id} not found"}
+        
+        file_name, company_id, processing_status = deck_info
+        deck_name = file_name.replace('.pdf', '') if file_name else f"deck_{deck_id}"
+        
+        # Check possible slide image locations
+        possible_locations = [
+            f"/mnt/CPU-GPU/projects/dojo/analysis/{deck_name}",
+            f"/mnt/CPU-GPU/projects/{company_id}/analysis/{deck_name}",
+            f"/mnt/CPU-GPU/uploads/{deck_name}",
+        ]
+        
+        slide_images = []
+        for location in possible_locations:
+            if os.path.exists(location):
+                try:
+                    files = os.listdir(location)
+                    slide_files = [f for f in files if f.startswith('slide_') and f.endswith('.jpg')]
+                    if slide_files:
+                        slide_images.append({
+                            "location": location,
+                            "slide_count": len(slide_files),
+                            "slides": sorted(slide_files)[:5]  # Show first 5
+                        })
+                except Exception as e:
+                    slide_images.append({
+                        "location": location,
+                        "error": str(e)
+                    })
+        
+        return {
+            "deck_id": deck_id,
+            "file_name": file_name,
+            "deck_name": deck_name,
+            "company_id": company_id,
+            "processing_status": processing_status,
+            "slide_image_locations": slide_images,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        return {"error": str(e), "deck_id": deck_id, "timestamp": datetime.utcnow().isoformat()}
+
+# SECURITY: Removed unauthenticated slide image and feedback endpoints
+# These were creating security vulnerabilities in production

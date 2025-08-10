@@ -114,29 +114,22 @@ async def get_deck_analysis(
                 detail="You don't have access to this project"
             )
         
-        # Get deck information - check both pitch_decks and project_documents tables
-        # First try pitch_decks table (legacy)
-        deck_query = text("""
-        SELECT pd.id, pd.file_path, pd.results_file_path, u.email, u.company_name, 'pitch_decks' as source
-        FROM pitch_decks pd
-        JOIN users u ON pd.user_id = u.id
-        WHERE pd.id = :deck_id
+        # Get deck information from project_documents table only
+        project_deck_query = text("""
+        SELECT pd.id, pd.file_path, 
+               (SELECT file_path FROM project_documents pd2 
+                WHERE pd2.project_id = pd.project_id 
+                AND pd2.document_type = 'analysis_results' 
+                AND pd2.is_active = TRUE 
+                LIMIT 1) as results_file_path,
+               u.email, u.company_name, 'project_documents' as source
+        FROM project_documents pd
+        JOIN projects p ON pd.project_id = p.id
+        JOIN users u ON pd.uploaded_by = u.id
+        WHERE pd.id = :deck_id AND pd.document_type = 'pitch_deck' AND pd.is_active = TRUE
         """)
         
-        deck_result = db.execute(deck_query, {"deck_id": deck_id}).fetchone()
-        
-        # If not found in pitch_decks, try project_documents table
-        if not deck_result:
-            logger.info(f"Deck {deck_id} not found in pitch_decks, checking project_documents")
-            project_deck_query = text("""
-            SELECT pd.id, pd.file_path, NULL as results_file_path, u.email, u.company_name, 'project_documents' as source
-            FROM project_documents pd
-            JOIN projects p ON pd.project_id = p.id
-            JOIN users u ON pd.uploaded_by = u.id
-            WHERE pd.id = :deck_id AND pd.document_type = 'pitch_deck' AND pd.is_active = TRUE
-            """)
-            
-            deck_result = db.execute(project_deck_query, {"deck_id": deck_id}).fetchone()
+        deck_result = db.execute(project_deck_query, {"deck_id": deck_id}).fetchone()
         
         if not deck_result:
             raise HTTPException(
@@ -459,34 +452,23 @@ async def get_project_results(
                 detail="You don't have access to this project"
             )
         
-        # Get deck information - check both pitch_decks and project_documents
-        # First try pitch_decks table (regular uploads)
-        deck_query = text("""
-        SELECT pd.id, pd.file_path, pd.results_file_path, u.email, u.company_name, 'pitch_decks' as source
-        FROM pitch_decks pd
-        JOIN users u ON pd.user_id = u.id
-        WHERE pd.id = :deck_id
+        # Get deck information from project_documents only
+        project_doc_query = text("""
+        SELECT pd.id, pd.file_path, 
+               (SELECT file_path FROM project_documents pd2 
+                WHERE pd2.project_id = pd.project_id 
+                AND pd2.document_type = 'analysis_results' 
+                AND pd2.is_active = TRUE 
+                LIMIT 1) as results_file_path,
+               u.email, p.company_id, 'project_documents' as source,
+               pd.original_pitch_deck_id
+        FROM project_documents pd
+        JOIN projects p ON pd.project_id = p.id
+        LEFT JOIN users u ON pd.uploaded_by = u.id
+        WHERE pd.id = :deck_id AND pd.document_type = 'pitch_deck' AND pd.is_active = TRUE
         """)
         
-        deck_result = db.execute(deck_query, {"deck_id": deck_id}).fetchone()
-        
-        # If not found in pitch_decks, try project_documents (dojo projects)
-        if not deck_result:
-            project_doc_query = text("""
-            SELECT pd.id, pd.file_path, 
-                   (SELECT file_path FROM project_documents pd2 
-                    WHERE pd2.project_id = pd.project_id 
-                    AND pd2.document_type = 'analysis_results' 
-                    AND pd2.is_active = TRUE 
-                    LIMIT 1) as results_file_path,
-                   u.email, p.company_id, 'project_documents' as source
-            FROM project_documents pd
-            JOIN projects p ON pd.project_id = p.id
-            LEFT JOIN users u ON pd.uploaded_by = u.id
-            WHERE pd.id = :deck_id AND pd.document_type = 'pitch_deck' AND pd.is_active = TRUE
-            """)
-            
-            deck_result = db.execute(project_doc_query, {"deck_id": deck_id}).fetchone()
+        deck_result = db.execute(project_doc_query, {"deck_id": deck_id}).fetchone()
         
         if not deck_result:
             raise HTTPException(
@@ -494,7 +476,7 @@ async def get_project_results(
                 detail=f"Deck {deck_id} not found"
             )
         
-        deck_id_db, file_path, results_file_path, user_email, company_name, source = deck_result
+        deck_id_db, file_path, results_file_path, user_email, company_name, source, original_pitch_deck_id = deck_result
         
         # Verify this deck belongs to the requested company (skip for GP admin access)
         if current_user.role != "gp":
@@ -511,53 +493,48 @@ async def get_project_results(
         
         # Load analysis results
         if not results_file_path:
-            # Check if template processing results exist based on source
-            if source == 'pitch_decks':
-                template_check = db.execute(text("""
-                    SELECT template_processing_results_json 
-                    FROM pitch_decks 
-                    WHERE id = :deck_id AND template_processing_results_json IS NOT NULL
-                """), {"deck_id": deck_id}).fetchone()
-            else:
-                # For project_documents, check if original pitch_deck has template processing
-                template_check = db.execute(text("""
-                    SELECT pd_orig.template_processing_results_json
-                    FROM project_documents pd
-                    JOIN pitch_decks pd_orig ON pd.file_path = pd_orig.file_path
-                    WHERE pd.id = :deck_id AND pd_orig.template_processing_results_json IS NOT NULL
-                """), {"deck_id": deck_id}).fetchone()
+            # Check if extraction experiments exist for this deck
+            # Use original_pitch_deck_id if available, otherwise use current deck_id
+            check_id = original_pitch_deck_id if original_pitch_deck_id else deck_id
             
-            if not template_check:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Analysis results not found for this deck"
-                )
-            else:
+            # Check for template processing results (required for complete analysis)
+            template_check = db.execute(text("""
+                SELECT template_processing_results_json 
+                FROM extraction_experiments 
+                WHERE pitch_deck_ids LIKE '%' || :deck_id || '%' 
+                AND template_processing_results_json IS NOT NULL
+                ORDER BY created_at DESC
+                LIMIT 1
+            """), {"deck_id": str(check_id)}).fetchone()
+            
+            if template_check:
                 # Use template processing results
                 results_file_path = f"template_processed_{deck_id}"
+            else:
+                # Template processing is required - no fallback to partial results
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Analysis not yet complete. Template processing is still in progress."
+                )
         
         # Check if this is a template processing marker
         if results_file_path.startswith("template_processed"):
             logger.info(f"Loading template processing results for deck {deck_id}")
             
-            # Get template processing results from database based on source
-            if source == 'pitch_decks':
-                template_query = text("""
-                    SELECT template_processing_results_json 
-                    FROM pitch_decks 
-                    WHERE id = :deck_id
-                """)
-            else:
-                # For dojo projects, get results from original pitch_decks table
-                # Need to map project_document ID back to original pitch_deck ID
-                template_query = text("""
-                    SELECT pd_orig.template_processing_results_json, pd_orig.id as original_deck_id
-                    FROM project_documents pd
-                    JOIN pitch_decks pd_orig ON pd.file_path = pd_orig.file_path
-                    WHERE pd.id = :deck_id
-                """)
+            # Get template processing results from extraction_experiments
+            # Use original_pitch_deck_id if available, otherwise use current deck_id
+            check_id = original_pitch_deck_id if original_pitch_deck_id else deck_id
             
-            template_result = db.execute(template_query, {"deck_id": deck_id}).fetchone()
+            template_query = text("""
+                SELECT template_processing_results_json
+                FROM extraction_experiments 
+                WHERE pitch_deck_ids LIKE '%' || :deck_id || '%' 
+                AND template_processing_results_json IS NOT NULL
+                ORDER BY created_at DESC
+                LIMIT 1
+            """)
+            
+            template_result = db.execute(template_query, {"deck_id": str(check_id)}).fetchone()
             
             if not template_result or not template_result[0]:
                 raise HTTPException(
@@ -866,17 +843,52 @@ async def get_project_uploads(
                 try:
                     # Extract deck name from filename
                     deck_name = os.path.splitext(filename)[0]
-                    # Check if slide images directory exists and has images
-                    slide_images_dir = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id, "analysis", deck_name)
-                    if os.path.exists(slide_images_dir):
-                        # Count slide image files
-                        slide_files = [f for f in os.listdir(slide_images_dir) if f.startswith('slide_') and f.endswith('.jpg')]
-                        if slide_files:
-                            visual_analysis_completed = True
-                            if not pages:  # Only set pages if we don't have it from results file
-                                pages = len(slide_files)
+                    
+                    # Check multiple possible locations for slide images
+                    possible_slide_dirs = [
+                        # Dojo structure (most common)
+                        os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis", deck_name),
+                        # Company-specific structure
+                        os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id, "analysis", deck_name),
+                    ]
+                    
+                    for slide_images_dir in possible_slide_dirs:
+                        if os.path.exists(slide_images_dir):
+                            # Count slide image files
+                            slide_files = [f for f in os.listdir(slide_images_dir) if f.startswith('slide_') and f.endswith('.jpg')]
+                            if slide_files:
+                                visual_analysis_completed = True
+                                if not pages:  # Only set pages if we don't have it from results file
+                                    pages = len(slide_files)
+                                break  # Found slides, stop checking other locations
+                            
                 except Exception as e:
                     logger.warning(f"Could not check slide images for deck {deck_id}: {e}")
+            
+            # Final check: Look for database-stored analysis results (extraction experiments, slide feedback)
+            if not visual_analysis_completed:
+                try:
+                    # Check for extraction experiment results
+                    extraction_check = db.execute(text("""
+                        SELECT 1 FROM extraction_experiments 
+                        WHERE pitch_deck_ids LIKE '%' || :deck_id || '%'
+                        AND results_json IS NOT NULL
+                        LIMIT 1
+                    """), {"deck_id": str(deck_id)}).fetchone()
+                    
+                    # Check for slide feedback
+                    slide_feedback_check = db.execute(text("""
+                        SELECT 1 FROM slide_feedback 
+                        WHERE pitch_deck_id = :deck_id 
+                        LIMIT 1
+                    """), {"deck_id": deck_id}).fetchone()
+                    
+                    if extraction_check or slide_feedback_check:
+                        visual_analysis_completed = True
+                        logger.info(f"Deck {deck_id} marked as completed based on database analysis results")
+                        
+                except Exception as e:
+                    logger.warning(f"Could not check database analysis results for deck {deck_id}: {e}")
             
             uploads.append(ProjectUpload(
                 id=deck_id,
@@ -909,7 +921,8 @@ async def get_slide_image(
     company_id: str,
     deck_name: str,
     slide_filename: str,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """Serve slide images from project storage"""
     try:

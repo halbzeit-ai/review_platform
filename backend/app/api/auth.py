@@ -694,18 +694,51 @@ async def update_profile(
     )
 
 @router.get("/company-info")
-async def get_company_info(current_user: User = Depends(get_current_user)):
+async def get_company_info(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Get current user's company information and generated company ID"""
-    from ..api.projects import get_company_id_from_user
     
-    company_id = get_company_id_from_user(current_user)
+    if current_user.role == "startup":
+        # For startup users, find their project's company_id
+        from sqlalchemy import text
+        
+        # Get the project they're a member of
+        query = text("""
+            SELECT p.company_id, p.project_name 
+            FROM projects p
+            JOIN project_members pm ON p.id = pm.project_id
+            WHERE pm.user_id = :user_id AND p.is_active = TRUE
+            ORDER BY pm.added_at DESC
+            LIMIT 1
+        """)
+        
+        result = db.execute(query, {"user_id": current_user.id}).fetchone()
+        
+        if result:
+            # Use project's company_id
+            company_id = result[0]
+            project_name = result[1]
+            company_name = current_user.company_name or project_name  # Fallback to project name
+        else:
+            # Fallback to user-based company_id if no project membership
+            from ..api.projects import get_company_id_from_user
+            company_id = get_company_id_from_user(current_user)
+            company_name = current_user.company_name
+            
+        dashboard_path = f"/project/{company_id}"
+        
+    else:
+        # For GPs, use standard logic
+        from ..api.projects import get_company_id_from_user
+        company_id = get_company_id_from_user(current_user)
+        company_name = current_user.company_name
+        dashboard_path = "/dashboard/gp"
     
     return JSONResponse(
         status_code=200,
         content={
-            "company_name": current_user.company_name,
+            "company_name": company_name,
             "company_id": company_id,
-            "dashboard_path": f"/project/{company_id}" if current_user.role == "startup" else "/dashboard/gp"
+            "dashboard_path": dashboard_path
         }
     )
 

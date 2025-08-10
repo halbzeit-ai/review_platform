@@ -215,3 +215,98 @@ async def save_specialized_analysis(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to save specialized analysis: {str(e)}"
         )
+
+class TemplateProcessingRequest(BaseModel):
+    experiment_name: str
+    pitch_deck_id: int
+    template_processing_results: dict
+
+@router.post("/save-template-processing")
+async def save_template_processing(
+    request: TemplateProcessingRequest,
+    db: Session = Depends(get_db)
+):
+    """Internal endpoint for GPU to save template processing results for startup uploads"""
+    try:
+        logger.info(f"💾 Saving template processing results for deck {request.pitch_deck_id}")
+        
+        import json
+        
+        # First check if there's an existing extraction experiment for this deck
+        existing_query = text("""
+            SELECT id FROM extraction_experiments 
+            WHERE pitch_deck_ids LIKE '%' || :deck_id || '%'
+            ORDER BY created_at DESC
+            LIMIT 1
+        """)
+        existing_result = db.execute(existing_query, {"deck_id": str(request.pitch_deck_id)}).fetchone()
+        
+        if existing_result:
+            # Update existing experiment with template processing results
+            experiment_id = existing_result[0]
+            logger.info(f"Updating existing extraction experiment {experiment_id} with template processing")
+            
+            update_query = text("""
+                UPDATE extraction_experiments 
+                SET template_processing_results_json = :template_results,
+                    template_processing_completed_at = NOW()
+                WHERE id = :experiment_id
+            """)
+            
+            db.execute(update_query, {
+                "template_results": json.dumps(request.template_processing_results),
+                "experiment_id": experiment_id
+            })
+            
+        else:
+            # Create new extraction experiment entry
+            logger.info(f"Creating new extraction experiment for deck {request.pitch_deck_id}")
+            
+            insert_query = text("""
+                INSERT INTO extraction_experiments (
+                    experiment_name, 
+                    pitch_deck_ids, 
+                    extraction_type,
+                    text_model_used,
+                    extraction_prompt,
+                    results_json,
+                    template_processing_results_json,
+                    template_processing_completed_at,
+                    created_at
+                ) VALUES (
+                    :experiment_name,
+                    :pitch_deck_ids,
+                    'startup_upload',
+                    'auto',
+                    'Automatic startup upload processing',
+                    '{}',
+                    :template_results,
+                    NOW(),
+                    NOW()
+                )
+            """)
+            
+            db.execute(insert_query, {
+                "experiment_name": request.experiment_name,
+                "pitch_deck_ids": f"{{{request.pitch_deck_id}}}",  # PostgreSQL array format
+                "template_results": json.dumps(request.template_processing_results)
+            })
+        
+        db.commit()
+        
+        logger.info(f"✅ Successfully saved template processing results for deck {request.pitch_deck_id}")
+        
+        return {
+            "success": True,
+            "message": f"Template processing results saved for deck {request.pitch_deck_id}",
+            "pitch_deck_id": request.pitch_deck_id,
+            "experiment_name": request.experiment_name
+        }
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Error saving template processing results: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to save template processing results: {str(e)}"
+        )

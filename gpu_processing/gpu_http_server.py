@@ -313,6 +313,9 @@ class GPUHTTPServer:
                 else:
                     logger.info(f"No specialized analysis found for deck {pitch_deck_id}")
                 
+                # Save template processing results to extraction_experiments for startup access
+                self._save_template_processing_results(pitch_deck_id, results)
+                
                 return jsonify({
                     "success": True,
                     "message": f"Successfully processed PDF {file_path}",
@@ -1680,6 +1683,90 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
         except Exception as e:
             logger.error(f"❌ Error saving specialized analysis for deck {pitch_deck_id}: {e}")
     
+    def _save_template_processing_results(self, pitch_deck_id: int, results: dict):
+        """Save template processing results to extraction_experiments table for startup access"""
+        try:
+            import requests
+            import json
+            import time
+            
+            # Check if we have template processing results
+            chapter_analysis = results.get("chapter_analysis", {})
+            specialized_analysis = results.get("specialized_analysis", {})
+            scientific_hypotheses = results.get("scientific_hypotheses", {})
+            
+            if not chapter_analysis and not specialized_analysis and not scientific_hypotheses:
+                logger.info(f"No template processing results to save for deck {pitch_deck_id}")
+                return
+            
+            logger.info(f"💾 Saving template processing results for deck {pitch_deck_id}")
+            
+            # Create experiment name for startup upload
+            experiment_name = f"startup_upload_deck_{pitch_deck_id}_{int(time.time())}"
+            
+            # Prepare template processing data
+            template_processing_data = {
+                "template_analysis": self._format_template_analysis_for_storage(results),
+                "template_used": results.get("template_used", {}),
+                "chapter_analysis": chapter_analysis,
+                "specialized_analysis": specialized_analysis,
+                "scientific_hypotheses": scientific_hypotheses,
+                "overall_score": results.get("overall_score", 0.0),
+                "report_chapters": results.get("report_chapters", {}),
+                "report_scores": results.get("report_scores", {}),
+                "startup_name": results.get("startup_name"),
+                "funding_amount": results.get("funding_amount"),
+                "deck_date": results.get("deck_date"),
+                "processing_metadata": results.get("processing_metadata", {})
+            }
+            
+            # Call backend to save/update extraction experiment with template processing results
+            backend_url = self.backend_url
+            response = requests.post(f"{backend_url}/api/internal/save-template-processing", 
+                json={
+                    "experiment_name": experiment_name,
+                    "pitch_deck_id": pitch_deck_id,
+                    "template_processing_results": template_processing_data
+                },
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                logger.info(f"✅ Successfully saved template processing results for deck {pitch_deck_id}")
+            else:
+                logger.error(f"❌ Failed to save template processing results for deck {pitch_deck_id}: {response.status_code} {response.text}")
+                
+        except Exception as e:
+            logger.error(f"❌ Error saving template processing results for deck {pitch_deck_id}: {e}")
+    
+    def _format_template_analysis_for_storage(self, results: dict) -> str:
+        """Format template analysis as text for compatibility"""
+        chapter_analysis = results.get("chapter_analysis", {})
+        
+        if not chapter_analysis:
+            return "No template analysis available."
+        
+        analysis_parts = []
+        
+        for chapter_key, chapter_data in chapter_analysis.items():
+            chapter_name = chapter_data.get("name", chapter_key)
+            chapter_text = f"## {chapter_name}\n\n"
+            
+            questions = chapter_data.get("questions", [])
+            if questions:
+                for question in questions:
+                    chapter_text += f"**{question.get('question_text', 'Question')}**\n"
+                    chapter_text += f"{question.get('response', 'No response provided')}\n"
+                    chapter_text += f"*Score: {question.get('score', 'N/A')}/7*\n\n"
+            
+            # Add chapter score
+            if "average_score" in chapter_data:
+                chapter_text += f"**Chapter Score: {chapter_data['average_score']:.1f}/7**\n"
+            
+            analysis_parts.append(chapter_text)
+        
+        return "\n\n".join(analysis_parts)
+
     def run(self, host: str = None, port: int = None):
         """Run the HTTP server"""
         # Use environment variables or defaults

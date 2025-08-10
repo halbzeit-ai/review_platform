@@ -42,7 +42,6 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { 
-  getPitchDecks,
   getMyProjects,
   getAllProjects,
   getProjectJourney,
@@ -137,10 +136,25 @@ const ProjectDashboard = () => {
         console.log('Setting actualCompanyId to:', responseData.company_id);
         setActualCompanyId(responseData.company_id);
       } else if (companyId) {
-        // Regular startup view: get user's own decks
-        decksResponse = await getPitchDecks();
-        displayId = `Project: ${companyId}`;
-        setActualCompanyId(companyId);
+        // Regular startup view: get user's own project decks
+        // First, get the user's project to get the project ID
+        const projectsResponse = await getMyProjects();
+        const projects = projectsResponse.data || [];
+        const userProject = projects.find(p => p.company_id === companyId);
+        
+        if (userProject) {
+          // Use the project-based API with the project ID
+          decksResponse = await getProjectDecks(userProject.id);
+          const responseData = decksResponse.data || decksResponse;
+          displayId = `Project: ${companyId}`;
+          setActualCompanyId(companyId);
+        } else {
+          // Fallback if no project found
+          console.warn('No project found for company:', companyId);
+          decksResponse = { data: { decks: [] } };
+          displayId = `Project: ${companyId}`;
+          setActualCompanyId(companyId);
+        }
       } else {
         throw new Error('No valid project identifier found');
       }
@@ -513,7 +527,7 @@ const ProjectDashboard = () => {
             e.stopPropagation();
             handleViewResults(deck);
           }}
-          disabled={!deck.results_file_path}
+          disabled={!deck.results_file_path && !deck.visual_analysis_completed}
         >
           {t('project.actions.viewResults')}
         </Button>

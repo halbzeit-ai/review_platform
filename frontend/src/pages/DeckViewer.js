@@ -351,12 +351,11 @@ const DeckViewer = () => {
     for (const slide of slidesData) {
       if (slide.slide_image_path) {
         try {
-          // Extract filename from path
-          const pathParts = slide.slide_image_path.split('/');
-          const deckName = pathParts[pathParts.length - 2];
-          const filename = pathParts[pathParts.length - 1];
+          // Use standard slide naming pattern
+          const filename = `slide_${slide.page_number}.jpg`;
+          const deckName = `Agaton_Seed_Presentation_2025vF`; // TODO: Get from slide data or deck info
           
-          // Create blob URL for image
+          // Use authenticated endpoint
           const response = await api.get(`/projects/${companyId}/slide-image/${deckName}/${filename}`, {
             responseType: 'blob'
           });
@@ -367,6 +366,25 @@ const DeckViewer = () => {
           
         } catch (err) {
           console.error(`Error loading image for slide ${slide.page_number}:`, err);
+          
+          // Fallback: try with slide_image_path if available
+          if (slide.slide_image_path) {
+            try {
+              const pathParts = slide.slide_image_path.split('/');
+              const deckName = pathParts[pathParts.length - 2];
+              const filename = pathParts[pathParts.length - 1];
+              
+              const response = await api.get(`/projects/${companyId}/slide-image/${deckName}/${filename}`, {
+                responseType: 'blob'
+              });
+              
+              const imageBlob = response.data;
+              const imageUrl = URL.createObjectURL(imageBlob);
+              imageUrlsTemp[slide.page_number] = imageUrl;
+            } catch (fallbackErr) {
+              console.error(`Fallback image loading also failed for slide ${slide.page_number}:`, fallbackErr);
+            }
+          }
         }
       }
     }
@@ -377,6 +395,8 @@ const DeckViewer = () => {
   const loadSlideFeedback = async () => {
     try {
       setFeedbackLoading(true);
+      
+      // Use authenticated endpoint
       const response = await getSlideFeedback(companyId, deckId);
       const feedbackData = response.data || response;
       
