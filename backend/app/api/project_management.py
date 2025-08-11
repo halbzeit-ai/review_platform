@@ -738,7 +738,7 @@ async def get_project_decks(
                 u.email as user_email,
                 u.first_name,
                 u.last_name,
-                pd.original_pitch_deck_id
+                NULL as original_pitch_deck_id
             FROM project_documents pd
             JOIN projects p ON pd.project_id = p.id
             LEFT JOIN users u ON pd.uploaded_by = u.id
@@ -773,7 +773,7 @@ async def get_project_decks(
                         for check_id in check_ids:
                             extraction_check = db.execute(text("""
                                 SELECT 1 FROM extraction_experiments 
-                                WHERE pitch_deck_ids LIKE '%' || :deck_id || '%'
+                                WHERE document_ids LIKE '%' || :deck_id || '%'
                                 AND results_json IS NOT NULL
                                 LIMIT 1
                             """), {"deck_id": check_id}).fetchone()
@@ -1102,10 +1102,10 @@ async def delete_project(
                 funding_amount_results_json = NULL,
                 deck_date_results_json = NULL,
                 template_processing_results_json = NULL
-            WHERE pitch_deck_ids && ARRAY(
-                SELECT COALESCE(pd.reference_pitch_deck_id, 0)
+            WHERE document_ids && ARRAY(
+                SELECT pd.id
                 FROM project_documents pd 
-                WHERE pd.project_id = :project_id AND pd.reference_pitch_deck_id IS NOT NULL
+                WHERE pd.project_id = :project_id
             )
         """)
         
@@ -1116,10 +1116,10 @@ async def delete_project(
         # Delete specialized analysis results 
         analysis_cleanup_query = text("""
             DELETE FROM specialized_analysis_results 
-            WHERE pitch_deck_id IN (
-                SELECT pd.reference_pitch_deck_id 
+            WHERE document_id IN (
+                SELECT pd.id 
                 FROM project_documents pd 
-                WHERE pd.project_id = :project_id AND pd.reference_pitch_deck_id IS NOT NULL
+                WHERE pd.project_id = :project_id
             )
         """)
         
@@ -1130,24 +1130,24 @@ async def delete_project(
         # Delete visual analysis cache
         visual_cache_query = text("""
             DELETE FROM visual_analysis_cache 
-            WHERE pitch_deck_id IN (
-                SELECT pd.reference_pitch_deck_id 
+            WHERE document_id IN (
+                SELECT pd.id 
                 FROM project_documents pd 
-                WHERE pd.project_id = :project_id AND pd.reference_pitch_deck_id IS NOT NULL
+                WHERE pd.project_id = :project_id
             )
         """)
         
         safe_execute(visual_cache_query, {"project_id": project_id}, "deleting visual analysis cache")
         
-        # Delete questions and reviews for referenced pitch decks
+        # Delete questions and reviews for project documents
         questions_cleanup_query = text("""
             DELETE FROM questions 
             WHERE review_id IN (
                 SELECT r.id FROM reviews r
-                WHERE r.pitch_deck_id IN (
-                    SELECT pd.reference_pitch_deck_id 
+                WHERE r.document_id IN (
+                    SELECT pd.id 
                     FROM project_documents pd 
-                    WHERE pd.project_id = :project_id AND pd.reference_pitch_deck_id IS NOT NULL
+                    WHERE pd.project_id = :project_id
                 )
             )
         """)
@@ -1158,10 +1158,10 @@ async def delete_project(
         
         reviews_cleanup_query = text("""
             DELETE FROM reviews 
-            WHERE pitch_deck_id IN (
-                SELECT pd.reference_pitch_deck_id 
+            WHERE document_id IN (
+                SELECT pd.id 
                 FROM project_documents pd 
-                WHERE pd.project_id = :project_id AND pd.reference_pitch_deck_id IS NOT NULL
+                WHERE pd.project_id = :project_id
             )
         """)
         
@@ -1169,26 +1169,8 @@ async def delete_project(
             reviews_cleanup_query, {"project_id": project_id}, "deleting reviews"
         )
         
-        # Delete referenced pitch decks (if they exist and are safe to delete)
-        pitch_decks_cleanup_query = text("""
-            DELETE FROM pitch_decks 
-            WHERE id IN (
-                SELECT pd.reference_pitch_deck_id 
-                FROM project_documents pd 
-                WHERE pd.project_id = :project_id 
-                AND pd.reference_pitch_deck_id IS NOT NULL
-                AND pd.reference_pitch_deck_id NOT IN (
-                    -- Don't delete pitch decks referenced by other projects
-                    SELECT DISTINCT pd2.reference_pitch_deck_id
-                    FROM project_documents pd2
-                    WHERE pd2.project_id != :project_id AND pd2.reference_pitch_deck_id IS NOT NULL
-                )
-            )
-        """)
-        
-        deleted_counts["pitch_decks_deleted"] = safe_execute(
-            pitch_decks_cleanup_query, {"project_id": project_id}, "deleting pitch decks"
-        )
+        # Note: pitch_decks table no longer exists - all data is in project_documents
+        deleted_counts["pitch_decks_deleted"] = 0
         
         # Step 5: Delete project-specific data (in dependency order)
         
@@ -1218,7 +1200,7 @@ async def delete_project(
                         UNION ALL
                         SELECT 1 FROM project_invitations pi WHERE pi.accepted_by_id = :user_id
                         UNION ALL
-                        SELECT 1 FROM pitch_decks pd WHERE pd.user_id = :user_id
+                        SELECT 1 FROM project_documents pd WHERE pd.uploaded_by = :user_id
                     ) as associations
                 """)
                 

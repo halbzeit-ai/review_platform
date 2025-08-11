@@ -181,7 +181,7 @@ class ExtractionExperiment(Base):
     __tablename__ = "extraction_experiments"
     id = Column(Integer, primary_key=True, index=True)
     experiment_name = Column(String(255), nullable=False, index=True)
-    pitch_deck_ids = Column(Text, nullable=False)  # PostgreSQL array of deck IDs in sample
+    document_ids = Column(Text, nullable=False)  # PostgreSQL array of document IDs in sample
     extraction_type = Column(String(50), nullable=False, default='company_offering')
     text_model_used = Column(String(255), nullable=False)  # Model used for extraction
     extraction_prompt = Column(Text, nullable=False)  # Custom prompt for extraction

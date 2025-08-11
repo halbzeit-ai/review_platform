@@ -23536,3 +23536,352 @@ INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/101 HTTP/1
 INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/107 HTTP/1.1" 404 Not Found
 INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/117 HTTP/1.1" 404 Not Found
 INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/102 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/98 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/103 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/102 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/109 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/100 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/104 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/105 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/110 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/113 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/106 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/143 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/107 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/101 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/112 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/99 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/111 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/140 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/120 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/144 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/118 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/117 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/119 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/116 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/114 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/100 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/99 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/144 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/114 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/112 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/117 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/107 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/120 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/110 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/109 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/101 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/111 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/118 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/98 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/116 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/140 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/102 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/119 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/103 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/143 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/106 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/113 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/104 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/105 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/98 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/143 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/100 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/120 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/119 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/99 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/117 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/114 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/101 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/102 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/109 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/111 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/104 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/113 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/105 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/106 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/118 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/116 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/103 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/107 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/140 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/112 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/110 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/144 HTTP/1.1" 404 Not Found
+[DEBUG] Attempting to delete user with email: 'ramin@assadollahi.de'
+INFO:     83.171.161.95:0 - "DELETE /api/auth/delete-user?user_email=ramin%40assadollahi.de HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1969, in _exec_single_context
+    self.dialect.do_execute(
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 922, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.errors.UndefinedTable: relation "pitch_decks" does not exist
+LINE 1: ... id, file_name, file_path, results_file_path FROM pitch_deck...
+                                                             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/uvicorn/protocols/http/h11_impl.py", line 404, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 84, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/starlette/applications.py", line 123, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 146, in simple_response
+    await self.app(scope, receive, send)
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/starlette/routing.py", line 762, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/starlette/routing.py", line 782, in app
+    await route.handle(scope, receive, send)
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/starlette/routing.py", line 297, in handle
+    await self.app(scope, receive, send)
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/starlette/routing.py", line 77, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/starlette/routing.py", line 72, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/fastapi/routing.py", line 299, in app
+    raise e
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/fastapi/routing.py", line 294, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform/backend/app/api/auth.py", line 382, in delete_user
+    pitch_decks = db.execute(
+                  ^^^^^^^^^^^
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2308, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2199, in _execute_internal
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1416, in execute
+    return meth(
+           ^^^^^
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/sqlalchemy/sql/elements.py", line 517, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1639, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1848, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1988, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 2344, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 1969, in _exec_single_context
+    self.dialect.do_execute(
+  File "/opt/review-platform/venv/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 922, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedTable) relation "pitch_decks" does not exist
+LINE 1: ... id, file_name, file_path, results_file_path FROM pitch_deck...
+                                                             ^
+
+[SQL: SELECT id, file_name, file_path, results_file_path FROM pitch_decks WHERE user_id = %(user_id)s OR company_id = %(company_id)s]
+[parameters: {'user_id': 12, 'company_id': 'ismaning'}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+INFO:     83.171.161.95:0 - "GET /api/auth/users HTTP/1.1" 200 OK
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/98 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/116 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/105 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/104 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/113 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/101 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/106 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/143 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/107 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/117 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/140 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/99 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/100 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/111 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/114 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/112 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/118 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/103 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/102 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/119 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/120 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/110 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/144 HTTP/1.1" 404 Not Found
+INFO:     169.155.237.165:0 - "GET /api/documents/processing-progress/109 HTTP/1.1" 404 Not Found
+WARNING:  StatReload detected changes in 'app/api/auth.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2025-08-11 09:57:31,490 - backend - INFO - Stopping queue processor background task
+2025-08-11 09:57:31,490 - backend - INFO - Stopping queue processor background task
+2025-08-11 09:57:31,490 - app.services.queue_processor - INFO - Stopping queue processor
+INFO:     Application shutdown complete.
+INFO:     Finished server process [383071]
+2025-08-11 09:57:32,249 - backend - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/backend.log
+2025-08-11 09:57:32,249 - backend - INFO - Environment: production
+2025-08-11 09:57:32,249 - backend - INFO - Log level: INFO
+2025-08-11 09:57:32,249 - backend - INFO - Console output: True
+2025-08-11 09:57:32,469 - app.db.database - INFO - Database engine configured with pool_size=10, max_overflow=20, pool_timeout=30s
+2025-08-11 09:57:32,538 - app.services.i18n_service - INFO - Loaded translations for en/emails
+2025-08-11 09:57:32,538 - app.services.i18n_service - INFO - Loaded translations for de/emails
+2025-08-11 09:57:32,589 - app.core.volume_storage - INFO - Ensured directory exists: /mnt/CPU-GPU/uploads
+2025-08-11 09:57:32,589 - app.core.volume_storage - INFO - Ensured directory exists: /mnt/CPU-GPU/results
+2025-08-11 09:57:32,590 - app.core.volume_storage - INFO - Ensured directory exists: /mnt/CPU-GPU/temp
+2025-08-11 09:57:32,592 - app.services.processing_queue - INFO - ProcessingQueueManager initialized: server_id=prod-cpu-fin-01-384735-25a45ca2, type=cpu
+2025-08-11 09:57:32,795 - app.services.invitation_service - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/app.services.invitation_service.log
+2025-08-11 09:57:32,795 - app.services.invitation_service - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/app.services.invitation_service.log
+2025-08-11 09:57:32,796 - app.services.invitation_service - INFO - Environment: production
+2025-08-11 09:57:32,796 - app.services.invitation_service - INFO - Environment: production
+2025-08-11 09:57:32,796 - app.services.invitation_service - INFO - Log level: INFO
+2025-08-11 09:57:32,796 - app.services.invitation_service - INFO - Log level: INFO
+2025-08-11 09:57:32,796 - app.services.invitation_service - INFO - Console output: True
+2025-08-11 09:57:32,796 - app.services.invitation_service - INFO - Console output: True
+2025-08-11 09:57:32,797 - app.api.invitations - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/app.api.invitations.log
+2025-08-11 09:57:32,797 - app.api.invitations - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/app.api.invitations.log
+2025-08-11 09:57:32,797 - app.api.invitations - INFO - Environment: production
+2025-08-11 09:57:32,797 - app.api.invitations - INFO - Environment: production
+2025-08-11 09:57:32,797 - app.api.invitations - INFO - Log level: INFO
+2025-08-11 09:57:32,797 - app.api.invitations - INFO - Log level: INFO
+2025-08-11 09:57:32,797 - app.api.invitations - INFO - Console output: True
+2025-08-11 09:57:32,797 - app.api.invitations - INFO - Console output: True
+2025-08-11 09:57:32,806 - app.services.queue_processor - INFO - Queue processor initialized - GPU URL: http://135.181.63.133:8001, Backend URL: http://135.181.63.224:8000
+2025-08-11 09:57:32,812 - backend - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/backend.log
+2025-08-11 09:57:32,812 - backend - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/backend.log
+2025-08-11 09:57:32,812 - backend - INFO - Environment: production
+2025-08-11 09:57:32,812 - backend - INFO - Environment: production
+2025-08-11 09:57:32,812 - backend - INFO - Log level: INFO
+2025-08-11 09:57:32,812 - backend - INFO - Log level: INFO
+2025-08-11 09:57:32,812 - backend - INFO - Console output: True
+2025-08-11 09:57:32,812 - backend - INFO - Console output: True
+INFO:     Started server process [384735]
+INFO:     Waiting for application startup.
+2025-08-11 09:57:32,928 - backend - INFO - Starting queue processor background task
+2025-08-11 09:57:32,928 - backend - INFO - Starting queue processor background task
+2025-08-11 09:57:32,928 - app.services.queue_processor - INFO - Starting queue processor background task
+2025-08-11 09:57:32,933 - app.services.processing_queue - INFO - Server prod-cpu-fin-01-384735-25a45ca2 registered successfully
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/api/auth.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2025-08-11 09:57:58,635 - backend - INFO - Stopping queue processor background task
+2025-08-11 09:57:58,635 - backend - INFO - Stopping queue processor background task
+2025-08-11 09:57:58,635 - app.services.queue_processor - INFO - Stopping queue processor
+INFO:     Application shutdown complete.
+INFO:     Finished server process [384735]
+2025-08-11 09:57:59,280 - backend - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/backend.log
+2025-08-11 09:57:59,280 - backend - INFO - Environment: production
+2025-08-11 09:57:59,280 - backend - INFO - Log level: INFO
+2025-08-11 09:57:59,280 - backend - INFO - Console output: True
+2025-08-11 09:57:59,492 - app.db.database - INFO - Database engine configured with pool_size=10, max_overflow=20, pool_timeout=30s
+2025-08-11 09:57:59,554 - app.services.i18n_service - INFO - Loaded translations for en/emails
+2025-08-11 09:57:59,554 - app.services.i18n_service - INFO - Loaded translations for de/emails
+2025-08-11 09:57:59,602 - app.core.volume_storage - INFO - Ensured directory exists: /mnt/CPU-GPU/uploads
+2025-08-11 09:57:59,602 - app.core.volume_storage - INFO - Ensured directory exists: /mnt/CPU-GPU/results
+2025-08-11 09:57:59,603 - app.core.volume_storage - INFO - Ensured directory exists: /mnt/CPU-GPU/temp
+2025-08-11 09:57:59,605 - app.services.processing_queue - INFO - ProcessingQueueManager initialized: server_id=prod-cpu-fin-01-384752-a6ab6714, type=cpu
+2025-08-11 09:57:59,793 - app.services.invitation_service - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/app.services.invitation_service.log
+2025-08-11 09:57:59,793 - app.services.invitation_service - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/app.services.invitation_service.log
+2025-08-11 09:57:59,793 - app.services.invitation_service - INFO - Environment: production
+2025-08-11 09:57:59,793 - app.services.invitation_service - INFO - Environment: production
+2025-08-11 09:57:59,794 - app.services.invitation_service - INFO - Log level: INFO
+2025-08-11 09:57:59,794 - app.services.invitation_service - INFO - Log level: INFO
+2025-08-11 09:57:59,794 - app.services.invitation_service - INFO - Console output: True
+2025-08-11 09:57:59,794 - app.services.invitation_service - INFO - Console output: True
+2025-08-11 09:57:59,795 - app.api.invitations - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/app.api.invitations.log
+2025-08-11 09:57:59,795 - app.api.invitations - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/app.api.invitations.log
+2025-08-11 09:57:59,795 - app.api.invitations - INFO - Environment: production
+2025-08-11 09:57:59,795 - app.api.invitations - INFO - Environment: production
+2025-08-11 09:57:59,795 - app.api.invitations - INFO - Log level: INFO
+2025-08-11 09:57:59,795 - app.api.invitations - INFO - Log level: INFO
+2025-08-11 09:57:59,795 - app.api.invitations - INFO - Console output: True
+2025-08-11 09:57:59,795 - app.api.invitations - INFO - Console output: True
+2025-08-11 09:57:59,804 - app.services.queue_processor - INFO - Queue processor initialized - GPU URL: http://135.181.63.133:8001, Backend URL: http://135.181.63.224:8000
+2025-08-11 09:57:59,811 - backend - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/backend.log
+2025-08-11 09:57:59,811 - backend - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/backend.log
+2025-08-11 09:57:59,811 - backend - INFO - Environment: production
+2025-08-11 09:57:59,811 - backend - INFO - Environment: production
+2025-08-11 09:57:59,811 - backend - INFO - Log level: INFO
+2025-08-11 09:57:59,811 - backend - INFO - Log level: INFO
+2025-08-11 09:57:59,811 - backend - INFO - Console output: True
+2025-08-11 09:57:59,811 - backend - INFO - Console output: True
+INFO:     Started server process [384752]
+INFO:     Waiting for application startup.
+2025-08-11 09:57:59,930 - backend - INFO - Starting queue processor background task
+2025-08-11 09:57:59,930 - backend - INFO - Starting queue processor background task
+2025-08-11 09:57:59,930 - app.services.queue_processor - INFO - Starting queue processor background task
+2025-08-11 09:57:59,935 - app.services.processing_queue - INFO - Server prod-cpu-fin-01-384752-a6ab6714 registered successfully
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'app/api/auth.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2025-08-11 09:58:08,969 - backend - INFO - Stopping queue processor background task
+2025-08-11 09:58:08,969 - backend - INFO - Stopping queue processor background task
+2025-08-11 09:58:08,969 - app.services.queue_processor - INFO - Stopping queue processor
+INFO:     Application shutdown complete.
+INFO:     Finished server process [384752]
+2025-08-11 09:58:09,560 - backend - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/backend.log
+2025-08-11 09:58:09,560 - backend - INFO - Environment: production
+2025-08-11 09:58:09,560 - backend - INFO - Log level: INFO
+2025-08-11 09:58:09,560 - backend - INFO - Console output: True
+2025-08-11 09:58:09,780 - app.db.database - INFO - Database engine configured with pool_size=10, max_overflow=20, pool_timeout=30s
+2025-08-11 09:58:09,841 - app.services.i18n_service - INFO - Loaded translations for en/emails
+2025-08-11 09:58:09,841 - app.services.i18n_service - INFO - Loaded translations for de/emails
+2025-08-11 09:58:09,889 - app.core.volume_storage - INFO - Ensured directory exists: /mnt/CPU-GPU/uploads
+2025-08-11 09:58:09,889 - app.core.volume_storage - INFO - Ensured directory exists: /mnt/CPU-GPU/results
+2025-08-11 09:58:09,890 - app.core.volume_storage - INFO - Ensured directory exists: /mnt/CPU-GPU/temp
+2025-08-11 09:58:09,891 - app.services.processing_queue - INFO - ProcessingQueueManager initialized: server_id=prod-cpu-fin-01-384762-78582860, type=cpu
+2025-08-11 09:58:10,079 - app.services.invitation_service - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/app.services.invitation_service.log
+2025-08-11 09:58:10,079 - app.services.invitation_service - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/app.services.invitation_service.log
+2025-08-11 09:58:10,079 - app.services.invitation_service - INFO - Environment: production
+2025-08-11 09:58:10,079 - app.services.invitation_service - INFO - Environment: production
+2025-08-11 09:58:10,080 - app.services.invitation_service - INFO - Log level: INFO
+2025-08-11 09:58:10,080 - app.services.invitation_service - INFO - Log level: INFO
+2025-08-11 09:58:10,080 - app.services.invitation_service - INFO - Console output: True
+2025-08-11 09:58:10,080 - app.services.invitation_service - INFO - Console output: True
+2025-08-11 09:58:10,081 - app.api.invitations - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/app.api.invitations.log
+2025-08-11 09:58:10,081 - app.api.invitations - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/app.api.invitations.log
+2025-08-11 09:58:10,081 - app.api.invitations - INFO - Environment: production
+2025-08-11 09:58:10,081 - app.api.invitations - INFO - Environment: production
+2025-08-11 09:58:10,081 - app.api.invitations - INFO - Log level: INFO
+2025-08-11 09:58:10,081 - app.api.invitations - INFO - Log level: INFO
+2025-08-11 09:58:10,081 - app.api.invitations - INFO - Console output: True
+2025-08-11 09:58:10,081 - app.api.invitations - INFO - Console output: True
+2025-08-11 09:58:10,090 - app.services.queue_processor - INFO - Queue processor initialized - GPU URL: http://135.181.63.133:8001, Backend URL: http://135.181.63.224:8000
+2025-08-11 09:58:10,096 - backend - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/backend.log
+2025-08-11 09:58:10,096 - backend - INFO - Backend logging configured - writing to: /mnt/CPU-GPU/logs/backend.log
+2025-08-11 09:58:10,096 - backend - INFO - Environment: production
+2025-08-11 09:58:10,096 - backend - INFO - Environment: production
+2025-08-11 09:58:10,096 - backend - INFO - Log level: INFO
+2025-08-11 09:58:10,096 - backend - INFO - Log level: INFO
+2025-08-11 09:58:10,096 - backend - INFO - Console output: True
+2025-08-11 09:58:10,096 - backend - INFO - Console output: True
+INFO:     Started server process [384762]
+INFO:     Waiting for application startup.
+2025-08-11 09:58:10,213 - backend - INFO - Starting queue processor background task
+2025-08-11 09:58:10,213 - backend - INFO - Starting queue processor background task
+2025-08-11 09:58:10,213 - app.services.queue_processor - INFO - Starting queue processor background task
+2025-08-11 09:58:10,218 - app.services.processing_queue - INFO - Server prod-cpu-fin-01-384762-78582860 registered successfully
+INFO:     Application startup complete.

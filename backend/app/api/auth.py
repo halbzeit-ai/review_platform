@@ -378,18 +378,28 @@ async def delete_user(
     from ..api.projects import get_company_id_from_user
     company_id = get_company_id_from_user(user_to_delete)
     
-    # Find all pitch decks belonging to this user (by user_id OR company_id)
-    pitch_decks = db.execute(
-        text("SELECT id, file_name, file_path, results_file_path FROM pitch_decks WHERE user_id = :user_id OR company_id = :company_id"),
-        {"user_id": user_to_delete.id, "company_id": company_id}
+    # Find all projects and documents belonging to this user
+    # Get projects owned by this user
+    user_projects = db.execute(
+        text("SELECT id, project_name FROM projects WHERE owner_id = :user_id"),
+        {"user_id": user_to_delete.id}
     ).fetchall()
+    
+    # Get all documents from these projects
+    project_ids = [p[0] for p in user_projects]
+    documents = []
+    if project_ids:
+        documents = db.execute(
+            text("SELECT id, file_name, file_path, results_file_path FROM project_documents WHERE project_id = ANY(:project_ids)"),
+            {"project_ids": project_ids}
+        ).fetchall()
     
     deleted_files = []
     deleted_folders = []
     
-    # Delete all associated pitch decks and their files
-    for deck in pitch_decks:
-        deck_id, file_name, file_path, results_file_path = deck
+    # Delete all associated document files
+    for doc in documents:
+        doc_id, file_name, file_path, results_file_path = doc
         
         # Delete the PDF file
         if file_path:
@@ -423,8 +433,8 @@ async def delete_user(
         
         # Delete the analysis folder with slide images
         if file_name:
-            deck_name = os.path.splitext(file_name)[0]
-            analysis_folder = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id, "analysis", deck_name)
+            doc_name = os.path.splitext(file_name)[0]
+            analysis_folder = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id, "analysis", doc_name)
             
             if os.path.exists(analysis_folder):
                 try:
@@ -455,35 +465,44 @@ async def delete_user(
     
     print(f"[DEBUG] Deleting user {user_to_delete.id} with company_id {company_id}")
     
-    # 1. Delete old pitch deck system data
-    # Delete questions (if they exist)
-    db.execute(text("DELETE FROM questions WHERE review_id IN (SELECT id FROM reviews WHERE pitch_deck_id IN (SELECT id FROM pitch_decks WHERE user_id = :user_id OR company_id = :company_id))"), {"user_id": user_to_delete.id, "company_id": company_id})
+    # 1. Delete project system data
+    # Delete reviews associated with documents in user's projects
+    if project_ids:
+        db.execute(text("DELETE FROM reviews WHERE document_id IN (SELECT id FROM project_documents WHERE project_id = ANY(:project_ids))"), 
+                   {"project_ids": project_ids})
     
-    # Delete reviews (if they exist)
-    db.execute(text("DELETE FROM reviews WHERE pitch_deck_id IN (SELECT id FROM pitch_decks WHERE user_id = :user_id OR company_id = :company_id)"), {"user_id": user_to_delete.id, "company_id": company_id})
+    # Delete questions associated with documents in user's projects
+    if project_ids:
+        db.execute(text("DELETE FROM questions WHERE document_id IN (SELECT id FROM project_documents WHERE project_id = ANY(:project_ids))"), 
+                   {"project_ids": project_ids})
     
-    # Delete pitch decks
-    db.execute(text("DELETE FROM pitch_decks WHERE user_id = :user_id OR company_id = :company_id"), {"user_id": user_to_delete.id, "company_id": company_id})
+    # Delete project documents
+    if project_ids:
+        db.execute(text("DELETE FROM project_documents WHERE project_id = ANY(:project_ids)"), 
+                   {"project_ids": project_ids})
     
-    # 2. Delete project system data (new)
+    # Delete project stages
+    if project_ids:
+        db.execute(text("DELETE FROM project_stages WHERE project_id = ANY(:project_ids)"), 
+                   {"project_ids": project_ids})
+    
     # Delete project members where this user is a member
     db.execute(text("DELETE FROM project_members WHERE user_id = :user_id"), {"user_id": user_to_delete.id})
     
     # Delete project invitations where this user is involved (as inviter or invitee)
     db.execute(text("DELETE FROM project_invitations WHERE invited_by_id = :user_id OR accepted_by_id = :user_id"), {"user_id": user_to_delete.id})
     
-    # Update project_documents to remove user reference (don't delete documents, just unlink user)
-    db.execute(text("UPDATE project_documents SET uploaded_by = NULL WHERE uploaded_by = :user_id"), {"user_id": user_to_delete.id})
+    # Delete projects owned by this user
+    if project_ids:
+        db.execute(text("DELETE FROM projects WHERE id = ANY(:project_ids)"), 
+                   {"project_ids": project_ids})
     
-    # Update projects to remove user as owner (don't delete projects, just unlink owner)
-    db.execute(text("UPDATE projects SET owner_id = NULL WHERE owner_id = :user_id"), {"user_id": user_to_delete.id})
-    
-    # 3. Finally, delete the user
+    # 2. Finally, delete the user
     db.delete(user_to_delete)
     db.commit()
     
     print(f"[DEBUG] User deletion completed: {user_email}")
-    print(f"[DEBUG] Deleted {len(pitch_decks)} pitch decks")
+    print(f"[DEBUG] Deleted {len(user_projects)} projects with {len(documents)} documents")
     print(f"[DEBUG] Deleted {len(deleted_files)} files")
     print(f"[DEBUG] Deleted {len(deleted_folders)} folders")
     
@@ -492,7 +511,8 @@ async def delete_user(
         content={
             "message": "User and all associated projects deleted successfully",
             "deleted_email": user_email,
-            "deleted_projects": len(pitch_decks),
+            "deleted_projects": len(user_projects),
+            "deleted_documents": len(documents),
             "deleted_files": len(deleted_files),
             "deleted_folders": len(deleted_folders),
             "company_id": company_id
