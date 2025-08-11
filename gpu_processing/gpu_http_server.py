@@ -580,7 +580,7 @@ class GPUHTTPServer:
                         full_pdf_path = str(Path(config.mount_path) / file_path)
                         
                         # Run visual analysis only
-                        analyzer._analyze_visual_content(full_pdf_path, company_id="dojo")
+                        analyzer._analyze_visual_content(full_pdf_path, company_id="dojo", deck_id=deck_id)
                         
                         # Generate slide feedback after visual analysis
                         logger.info(f"Generating slide feedback for deck {deck_id}")

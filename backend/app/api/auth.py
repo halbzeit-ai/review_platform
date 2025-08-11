@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 import re
-from typing import List
+from typing import List, Optional
 from ..db.database import get_db
 from ..db.models import User
 from ..services.email_service import email_service
@@ -88,6 +88,9 @@ class RegisterData(BaseModel):
     password: str
     company_name: str
     role: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    preferred_language: str = "de"
 
 class InviteGPData(BaseModel):
     email: str
@@ -145,6 +148,8 @@ async def register(data: RegisterData, db: Session = Depends(get_db)):
         password_hash=pwd_context.hash(data.password),
         company_name=data.company_name,
         role=assigned_role,  # This will now correctly use 'gp' for first user
+        first_name=data.first_name,
+        last_name=data.last_name,
         preferred_language=data.preferred_language,
         is_verified=False  # Will be set to True after email verification
     )

@@ -22,6 +22,11 @@ BASE_URL="http://localhost:8000"
 
 # Security: Detect environment and warn if production
 detect_environment() {
+    # Skip warning if explicitly requested or if ALLOW_PRODUCTION is set
+    if [[ "$SKIP_PRODUCTION_WARNING" == "1" ]] || [[ "$ALLOW_PRODUCTION" == "1" ]]; then
+        return 0
+    fi
+    
     local env_result
     if [[ -x "$SCRIPT_DIR/detect-claude-environment.sh" ]]; then
         env_result=$("$SCRIPT_DIR/detect-claude-environment.sh" 2>/dev/null | head -1)
@@ -227,6 +232,366 @@ cmd_api() {
          }
 }
 
+# Register a new user
+cmd_register() {
+    local email="${1}"
+    local password="${2}"
+    local role="${3:-startup}"
+    local company_name="${4:-Test Company}"
+    local first_name="${5:-Test}"
+    local last_name="${6:-User}"
+    local language="${7:-en}"
+    
+    if [[ -z "$email" || -z "$password" ]]; then
+        log_error "Usage: register <email> <password> [role] [company_name] [first_name] [last_name] [language]"
+        echo "       Default role: startup"
+        echo "       Default company: 'Test Company'"
+        echo "       Default name: 'Test User'"
+        echo "       Default language: en"
+        return 1
+    fi
+    
+    log_section "User Registration"
+    log_info "Email: $email"
+    log_info "Role: $role"
+    log_info "Company: $company_name"
+    log_info "Name: $first_name $last_name"
+    log_info "Language: $language"
+    
+    local payload
+    payload=$(jq -n \
+        --arg email "$email" \
+        --arg password "$password" \
+        --arg role "$role" \
+        --arg company_name "$company_name" \
+        --arg first_name "$first_name" \
+        --arg last_name "$last_name" \
+        --arg preferred_language "$language" \
+        '{
+            email: $email,
+            password: $password,
+            role: $role,
+            company_name: $company_name,
+            first_name: $first_name,
+            last_name: $last_name,
+            preferred_language: $preferred_language
+        }')
+    
+    log_info "Sending registration request..."
+    local response
+    response=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/api/auth/register" \
+               -H "Content-Type: application/json" \
+               -d "$payload" 2>/dev/null)
+    
+    local http_code
+    http_code=$(echo "$response" | tail -n1)
+    local body
+    body=$(echo "$response" | sed '$d')
+    
+    if [[ "$http_code" == "200" || "$http_code" == "201" ]]; then
+        log_success "User registered successfully!"
+        if [[ -n "$body" ]]; then
+            echo "$body" | jq '.' 2>/dev/null || echo "$body"
+        fi
+        
+        # Show next steps
+        echo ""
+        log_info "Next steps:"
+        echo "  1. Check email for verification link (if email service is configured)"
+        echo "  2. Use: $0 login $role $email"
+    else
+        log_error "Registration failed (HTTP $http_code)"
+        if [[ -n "$body" ]]; then
+            echo "$body" | jq '.detail // .' 2>/dev/null || echo "$body"
+        fi
+        return 1
+    fi
+}
+
+# Promote user to GP role (requires database access)
+cmd_promote() {
+    local email="${1}"
+    local target_role="${2:-gp}"
+    
+    if [[ -z "$email" ]]; then
+        log_error "Usage: promote <email> [role]"
+        echo "       Default role: gp"
+        return 1
+    fi
+    
+    log_section "User Role Promotion"
+    log_info "Email: $email"
+    log_info "Target Role: $target_role"
+    
+    # Update user role in database
+    local result
+    result=$(sudo -u postgres psql review-platform -c "UPDATE users SET role = '$target_role' WHERE email = '$email';" 2>&1)
+    
+    if [[ $? -eq 0 && "$result" == "UPDATE 1" ]]; then
+        log_success "User $email promoted to $target_role"
+    else
+        log_error "Failed to promote user: $result"
+        return 1
+    fi
+}
+
+# Verify user email (requires database access)
+cmd_verify() {
+    local email="${1}"
+    
+    if [[ -z "$email" ]]; then
+        log_error "Usage: verify <email>"
+        return 1
+    fi
+    
+    log_section "User Email Verification"
+    log_info "Email: $email"
+    
+    # Update user verification status in database
+    local result
+    result=$(sudo -u postgres psql review-platform -c "UPDATE users SET is_verified = true WHERE email = '$email';" 2>&1)
+    
+    if [[ $? -eq 0 && "$result" == "UPDATE 1" ]]; then
+        log_success "User $email verified successfully"
+    else
+        log_error "Failed to verify user: $result"
+        return 1
+    fi
+}
+
+# Create project using authenticated API
+cmd_create_project() {
+    local project_name="${1}"
+    local funding_round="${2}"
+    local company_name="${3}"
+    local company_offering="${4}"
+    local output_format="${5}" # Optional: "project_id" to return only ID
+    
+    if [[ -z "$project_name" || -z "$funding_round" || -z "$company_name" || -z "$company_offering" ]]; then
+        log_error "Usage: create-project <project_name> <funding_round> <company_name> <company_offering> [output_format]"
+        echo "       output_format: 'project_id' to return only the project ID"
+        return 1
+    fi
+    
+    if [[ ! -f "$TOKEN_FILE" ]]; then
+        log_error "Not authenticated. Please login first."
+        return 1
+    fi
+    
+    local token
+    token=$(cat "$TOKEN_FILE" 2>/dev/null)
+    
+    log_section "Project Creation"
+    log_info "Project: $project_name"
+    log_info "Funding Round: $funding_round"
+    log_info "Company: $company_name"
+    log_info "Offering: $company_offering"
+    
+    local payload
+    payload=$(jq -n \
+        --arg project_name "$project_name" \
+        --arg funding_round "$funding_round" \
+        --arg company_name "$company_name" \
+        --arg company_offering "$company_offering" \
+        '{
+            project_name: $project_name,
+            funding_round: $funding_round,
+            company_name: $company_name,
+            company_offering: $company_offering
+        }')
+    
+    local response
+    response=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/api/projects/create" \
+               -H "Authorization: Bearer $token" \
+               -H "Content-Type: application/json" \
+               -d "$payload" 2>/dev/null)
+    
+    local http_code
+    http_code=$(echo "$response" | tail -n1)
+    local body
+    body=$(echo "$response" | sed '$d')
+    
+    if [[ "$http_code" == "200" || "$http_code" == "201" ]]; then
+        if [[ "$output_format" == "project_id" ]]; then
+            echo "$body" | jq -r '.project_id' 2>/dev/null || echo "ERROR"
+        else
+            log_success "Project created successfully!"
+            echo "$body" | jq '.' 2>/dev/null || echo "$body"
+        fi
+    else
+        log_error "Project creation failed (HTTP $http_code)"
+        if [[ -n "$body" ]]; then
+            echo "$body" | jq '.detail // .' 2>/dev/null || echo "$body"
+        fi
+        return 1
+    fi
+}
+
+# Invite user to project
+cmd_invite_to_project() {
+    local project_id="${1}"
+    local email="${2}"
+    local output_format="${3}" # Optional: "invitation_token" to return only token
+    
+    if [[ -z "$project_id" || -z "$email" ]]; then
+        log_error "Usage: invite-to-project <project_id> <email> [output_format]"
+        echo "       output_format: 'invitation_token' to return only the invitation token"
+        return 1
+    fi
+    
+    if [[ ! -f "$TOKEN_FILE" ]]; then
+        log_error "Not authenticated. Please login first."
+        return 1
+    fi
+    
+    local token
+    token=$(cat "$TOKEN_FILE" 2>/dev/null)
+    
+    log_section "Project Invitation"
+    log_info "Project ID: $project_id"
+    log_info "Email: $email"
+    
+    local payload
+    payload=$(jq -n --arg email "$email" '{emails: [$email]}')
+    
+    local response
+    response=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/api/projects/$project_id/invite" \
+               -H "Authorization: Bearer $token" \
+               -H "Content-Type: application/json" \
+               -d "$payload" 2>/dev/null)
+    
+    local http_code
+    http_code=$(echo "$response" | tail -n1)
+    local body
+    body=$(echo "$response" | sed '$d')
+    
+    if [[ "$http_code" == "200" || "$http_code" == "201" ]]; then
+        if [[ "$output_format" == "invitation_token" ]]; then
+            echo "$body" | jq -r '.[0].invitation_token' 2>/dev/null || echo "ERROR"
+        else
+            log_success "Invitation sent successfully!"
+            echo "$body" | jq '.' 2>/dev/null || echo "$body"
+        fi
+    else
+        log_error "Invitation failed (HTTP $http_code)"
+        if [[ -n "$body" ]]; then
+            echo "$body" | jq '.detail // .' 2>/dev/null || echo "$body"
+        fi
+        return 1
+    fi
+}
+
+# Accept invitation
+cmd_accept_invitation() {
+    local invitation_token="${1}"
+    local first_name="${2:-Test}"
+    local last_name="${3:-User}"
+    local company_name="${4:-Test Company}"
+    local password="${5:-RandomPass978}"
+    local language="${6:-en}"
+    
+    if [[ -z "$invitation_token" ]]; then
+        log_error "Usage: accept-invitation <token> [first_name] [last_name] [company_name] [password] [language]"
+        return 1
+    fi
+    
+    log_section "Invitation Acceptance"
+    log_info "Token: $invitation_token"
+    log_info "Name: $first_name $last_name"
+    log_info "Company: $company_name"
+    
+    local payload
+    payload=$(jq -n \
+        --arg first_name "$first_name" \
+        --arg last_name "$last_name" \
+        --arg company_name "$company_name" \
+        --arg password "$password" \
+        --arg preferred_language "$language" \
+        '{
+            first_name: $first_name,
+            last_name: $last_name,
+            company_name: $company_name,
+            password: $password,
+            preferred_language: $preferred_language
+        }')
+    
+    local response
+    response=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/api/invitation/$invitation_token/accept" \
+               -H "Content-Type: application/json" \
+               -d "$payload" 2>/dev/null)
+    
+    local http_code
+    http_code=$(echo "$response" | tail -n1)
+    local body
+    body=$(echo "$response" | sed '$d')
+    
+    if [[ "$http_code" == "200" || "$http_code" == "201" ]]; then
+        log_success "Invitation accepted successfully!"
+        echo "$body" | jq '.' 2>/dev/null || echo "$body"
+    else
+        log_error "Invitation acceptance failed (HTTP $http_code)"
+        if [[ -n "$body" ]]; then
+            echo "$body" | jq '.detail // .' 2>/dev/null || echo "$body"
+        fi
+        return 1
+    fi
+}
+
+# Run complete workflow test
+cmd_workflow_test() {
+    log_section "Complete Workflow Test"
+    
+    # Check if we can run database commands
+    if ! command -v sudo &> /dev/null || ! sudo -u postgres psql --version &> /dev/null; then
+        log_error "This test requires database access (sudo + PostgreSQL)"
+        return 1
+    fi
+    
+    log_info "Running end-to-end workflow test..."
+    
+    # Step 1: Register and prepare GP user
+    log_info "Step 1: Creating GP user..."
+    cmd_register "test-gp-workflow@example.com" "SecurePass907" "startup" "Test GP Firm" "Test" "GP" "en"
+    cmd_promote "test-gp-workflow@example.com" "gp"
+    cmd_verify "test-gp-workflow@example.com"
+    
+    # Step 2: Register and verify startup user
+    log_info "Step 2: Creating startup user..."
+    cmd_register "test-startup-workflow@example.com" "RandomPass978" "startup" "Test Startup Inc" "Test" "User" "en"
+    cmd_verify "test-startup-workflow@example.com"
+    
+    # Step 3: Login as GP and create project
+    log_info "Step 3: GP login and project creation..."
+    cmd_login "gp" "test-gp-workflow@example.com" <<< "SecurePass907"
+    local project_id
+    project_id=$(cmd_create_project "Workflow Test Project" "series_a" "Test Startup Inc" "AI workflow platform" "project_id")
+    
+    if [[ "$project_id" == "ERROR" || -z "$project_id" ]]; then
+        log_error "Failed to create project"
+        return 1
+    fi
+    
+    # Step 4: Invite startup user
+    log_info "Step 4: Inviting startup user..."
+    local invitation_token
+    invitation_token=$(cmd_invite_to_project "$project_id" "test-startup-workflow@example.com" "invitation_token")
+    
+    if [[ "$invitation_token" == "ERROR" || -z "$invitation_token" ]]; then
+        log_error "Failed to send invitation"
+        return 1
+    fi
+    
+    # Step 5: Accept invitation
+    log_info "Step 5: Accepting invitation..."
+    cmd_accept_invitation "$invitation_token" "Test" "User" "Test Startup Inc" "RandomPass978" "en"
+    
+    log_success "Complete workflow test PASSED!"
+    log_info "Project ID: $project_id"
+    log_info "Invitation Token: $invitation_token"
+    
+    return 0
+}
+
 # Show current user info
 cmd_whoami() {
     if [[ ! -f "$TOKEN_FILE" ]]; then
@@ -335,9 +700,24 @@ SETUP & CONFIGURATION:
   config                   - Show current configuration and test users
   
 AUTHENTICATION:
+  register <email> <password> [role] [company] [first_name] [last_name] [language]
+                           - Register a new user (defaults: startup, "Test Company", "Test User", en)
+  promote <email> [role]   - Promote user to GP role (requires database access, default: gp)
+  verify <email>           - Mark user as email verified (requires database access)
   login <role> <email>     - Authenticate using real credentials
   whoami                   - Show current user information
   logout                   - Logout and cleanup tokens
+
+PROJECT MANAGEMENT:
+  create-project <name> <funding_round> <company> <offering> [output_format]
+                           - Create a new project (requires GP authentication)
+  invite-to-project <project_id> <email> [output_format]
+                           - Invite user to project (requires GP authentication)
+  accept-invitation <token> [first_name] [last_name] [company] [password] [language]
+                           - Accept project invitation (defaults: "Test User", "Test Company", "RandomPass978", "en")
+
+TESTING:
+  workflow-test            - Run complete end-to-end workflow test
 
 API TESTING:
   api <METHOD> <endpoint> [options]  - Make authenticated API calls
@@ -375,10 +755,218 @@ EOF
 }
 
 # Main command dispatcher
+# Document upload function
+cmd_upload_document() {
+    local file_path="$1"
+    local output_field="$2"
+    
+    if [[ -z "$file_path" ]]; then
+        log_error "Usage: $0 upload-document <file_path> [output_field]"
+        echo "  file_path    - Path to PDF file to upload"
+        echo "  output_field - Field to extract from response (optional: document_id, task_id, file_path)"
+        return 1
+    fi
+    
+    if [[ ! -f "$file_path" ]]; then
+        log_error "File not found: $file_path"
+        return 1
+    fi
+    
+    # Check if logged in
+    if [[ ! -f "$TOKEN_FILE" ]]; then
+        log_error "Not logged in. Please login first."
+        return 1
+    fi
+    
+    local token
+    token=$(cat "$TOKEN_FILE" 2>/dev/null)
+    if [[ -z "$token" ]]; then
+        log_error "Invalid token file. Please login again."
+        return 1
+    fi
+    
+    log_info "Uploading document: $(basename "$file_path")"
+    
+    local response
+    response=$(curl -s -X POST "$BASE_URL/api/documents/upload" \
+               -H "Authorization: Bearer $token" \
+               -F "file=@$file_path" 2>/dev/null)
+    
+    if [[ $? -ne 0 ]]; then
+        log_error "Failed to upload document"
+        return 1
+    fi
+    
+    # Check for error in response
+    local error
+    error=$(echo "$response" | jq -r '.detail // empty' 2>/dev/null)
+    if [[ -n "$error" ]]; then
+        log_error "Upload failed: $error"
+        return 1
+    fi
+    
+    # Extract and display response
+    local message document_id task_id file_upload_path
+    message=$(echo "$response" | jq -r '.message // empty' 2>/dev/null)
+    document_id=$(echo "$response" | jq -r '.document_id // empty' 2>/dev/null)
+    task_id=$(echo "$response" | jq -r '.task_id // empty' 2>/dev/null)
+    file_upload_path=$(echo "$response" | jq -r '.file_path // empty' 2>/dev/null)
+    
+    if [[ -n "$message" ]]; then
+        log_success "$message"
+        echo "  Document ID: $document_id"
+        echo "  Task ID: $task_id"
+        echo "  File Path: $file_upload_path"
+        
+        # Return specific field if requested
+        case "$output_field" in
+            "document_id") echo "$document_id" ;;
+            "task_id") echo "$task_id" ;;
+            "file_path") echo "$file_upload_path" ;;
+            "") ;; # No output field requested
+        esac
+    else
+        log_error "Upload failed - invalid response"
+        echo "$response"
+        return 1
+    fi
+}
+
+# Document processing status check
+cmd_check_processing() {
+    local document_id="$1"
+    
+    if [[ -z "$document_id" ]]; then
+        log_error "Usage: $0 check-processing <document_id>"
+        return 1
+    fi
+    
+    log_info "Checking processing status for document $document_id"
+    
+    # Use debug API to check processing status
+    local response
+    response=$(curl -s "$BASE_URL/api/debug/deck/$document_id/status" 2>/dev/null)
+    
+    if [[ $? -eq 0 ]]; then
+        echo "$response" | jq '.' 2>/dev/null || echo "$response"
+    else
+        log_error "Failed to check processing status"
+        return 1
+    fi
+}
+
+# Create test PDF document
+cmd_create_test_pdf() {
+    local filename="${1:-test-document.pdf}"
+    local content="${2:-Test PDF Content for Document Upload Testing}"
+    
+    log_info "Creating test PDF: $filename"
+    
+    cat > "$filename" << 'EOF'
+%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/MediaBox [0 0 612 792]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 80
+>>
+stream
+BT
+/F1 24 Tf
+100 700 Td
+(Test PDF Content for Document Upload Testing) Tj
+ET
+endstream
+endobj
+xref
+0 5
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000206 00000 n 
+trailer
+<<
+/Size 5
+/Root 1 0 R
+>>
+startxref
+334
+%%EOF
+EOF
+    
+    log_success "Created test PDF: $filename"
+    echo "  Size: $(stat -c%s "$filename" 2>/dev/null || stat -f%z "$filename" 2>/dev/null) bytes"
+}
+
+# Complete document workflow test
+cmd_document_workflow_test() {
+    log_section "Document Workflow Test"
+    
+    # Check if logged in
+    if [[ ! -f "$TOKEN_FILE" ]]; then
+        log_error "Not logged in. Please run workflow-test first to setup complete environment."
+        return 1
+    fi
+    
+    # Create test PDF
+    local test_file="/tmp/auth-helper-test-doc.pdf"
+    cmd_create_test_pdf "$test_file"
+    
+    # Upload document
+    log_info "Testing document upload..."
+    local document_id
+    document_id=$(cmd_upload_document "$test_file" "document_id")
+    
+    if [[ -z "$document_id" ]]; then
+        log_error "Document upload failed"
+        return 1
+    fi
+    
+    log_success "Document uploaded successfully - ID: $document_id"
+    
+    # Check processing status
+    log_info "Checking initial processing status..."
+    cmd_check_processing "$document_id"
+    
+    # Wait a moment and check again
+    log_info "Waiting 5 seconds for processing to start..."
+    sleep 5
+    
+    log_info "Checking processing status after wait..."
+    cmd_check_processing "$document_id"
+    
+    # Cleanup
+    rm -f "$test_file"
+    
+    log_success "Document workflow test completed successfully!"
+    echo "  Document ID: $document_id"
+    echo "  Check processing progress with: $0 check-processing $document_id"
+}
+
 main() {
     # Always check dependencies for active commands
     case "${1:-help}" in
-        "setup"|"login"|"api"|"whoami"|"logout"|"config")
+        "setup"|"login"|"register"|"promote"|"verify"|"create-project"|"invite-to-project"|"accept-invitation"|"upload-document"|"check-processing"|"create-test-pdf"|"document-workflow-test"|"workflow-test"|"api"|"whoami"|"logout"|"config")
             check_dependencies
             ;;
     esac
@@ -390,6 +978,42 @@ main() {
         "login")
             detect_environment
             cmd_login "$2" "$3"
+            ;;
+        "register")
+            detect_environment
+            cmd_register "$2" "$3" "$4" "$5" "$6" "$7" "$8"
+            ;;
+        "promote")
+            cmd_promote "$2" "$3"
+            ;;
+        "verify")
+            cmd_verify "$2"
+            ;;
+        "create-project")
+            cmd_create_project "$2" "$3" "$4" "$5" "$6"
+            ;;
+        "invite-to-project")
+            cmd_invite_to_project "$2" "$3" "$4"
+            ;;
+        "accept-invitation")
+            cmd_accept_invitation "$2" "$3" "$4" "$5" "$6" "$7"
+            ;;
+        "upload-document")
+            cmd_upload_document "$2" "$3"
+            ;;
+        "check-processing")
+            cmd_check_processing "$2"
+            ;;
+        "create-test-pdf")
+            cmd_create_test_pdf "$2" "$3"
+            ;;
+        "document-workflow-test")
+            detect_environment
+            cmd_document_workflow_test
+            ;;
+        "workflow-test")
+            detect_environment
+            cmd_workflow_test
             ;;
         "api")
             shift
@@ -410,7 +1034,7 @@ main() {
         *)
             log_error "Unknown command: ${1:-help}"
             echo ""
-            log_info "Available commands: setup, config, login, logout, whoami, api"
+            log_info "Available commands: setup, config, register, promote, verify, create-project, invite-to-project, accept-invitation, upload-document, check-processing, create-test-pdf, document-workflow-test, workflow-test, login, logout, whoami, api"
             log_info "Run '$0 help' for detailed usage information."
             exit 1
             ;;

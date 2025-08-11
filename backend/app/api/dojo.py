@@ -533,7 +533,7 @@ async def delete_all_dojo_files(
                 for deck_id in dojo_deck_ids:
                     db.execute(text("""
                         DELETE FROM visual_analysis_cache 
-                        WHERE pitch_deck_id = :deck_id
+                        WHERE document_id = :deck_id
                     """), {"deck_id": deck_id})
                 logger.info(f"Cleared visual analysis cache for {len(dojo_deck_ids)} decks")
             except Exception as e:
@@ -821,7 +821,7 @@ async def create_extraction_sample(
                 # Use a subquery to get distinct deck IDs first, then join with main table
                 sample_deck_ids = db.execute(text("""
                     SELECT DISTINCT pd.id FROM pitch_decks pd
-                    INNER JOIN visual_analysis_cache vac ON pd.id = vac.pitch_deck_id
+                    INNER JOIN visual_analysis_cache vac ON pd.id = vac.document_id
                     WHERE pd.data_source = 'dojo'
                 """)).fetchall()
                 
@@ -851,7 +851,7 @@ async def create_extraction_sample(
         for deck in sample_decks:
             # Check if visual analysis is cached
             visual_cache_exists = db.execute(text(
-                "SELECT COUNT(*) FROM visual_analysis_cache WHERE pitch_deck_id = :deck_id"
+                "SELECT COUNT(*) FROM visual_analysis_cache WHERE document_id = :deck_id"
             ), {"deck_id": deck.id}).scalar()
             
             sample_data.append({
@@ -897,7 +897,7 @@ async def get_cached_decks_count(
         # Count decks with cached visual analysis
         cached_count = db.execute(text("""
             SELECT COUNT(DISTINCT pd.id) FROM pitch_decks pd
-            INNER JOIN visual_analysis_cache vac ON pd.id = vac.pitch_deck_id
+            INNER JOIN visual_analysis_cache vac ON pd.id = vac.document_id
             WHERE pd.data_source = 'dojo'
         """)).scalar()
         
@@ -1060,7 +1060,7 @@ async def run_visual_analysis_batch(
         
         for deck in decks:
             cache_exists = db.execute(text(
-                "SELECT id FROM visual_analysis_cache WHERE pitch_deck_id = :deck_id AND vision_model_used = :model AND prompt_used = :prompt"
+                "SELECT id FROM visual_analysis_cache WHERE document_id = :deck_id AND vision_model_used = :model AND prompt_used = :prompt"
             ), {"deck_id": deck.id, "model": request.vision_model, "prompt": analysis_prompt}).scalar()
             
             if cache_exists:
@@ -1135,7 +1135,7 @@ async def clear_visual_analysis_cache(
         deleted_count = 0
         for deck_id in request.deck_ids:
             result = db.execute(text(
-                "DELETE FROM visual_analysis_cache WHERE pitch_deck_id = :deck_id"
+                "DELETE FROM visual_analysis_cache WHERE document_id = :deck_id"
             ), {"deck_id": deck_id})
             deleted_count += result.rowcount
             logger.info(f"Cleared {result.rowcount} cache entries for deck {deck_id}")
@@ -1235,7 +1235,7 @@ async def test_offering_extraction(
         for deck in decks:
             if request.use_cached_visual:
                 cache_result = db.execute(text(
-                    "SELECT analysis_result_json FROM visual_analysis_cache WHERE pitch_deck_id = :deck_id ORDER BY created_at DESC LIMIT 1"
+                    "SELECT analysis_result_json FROM visual_analysis_cache WHERE document_id = :deck_id ORDER BY created_at DESC LIMIT 1"
                 ), {"deck_id": deck.id}).fetchone()
                 
                 if cache_result:
@@ -1318,7 +1318,7 @@ async def test_offering_extraction(
         
         # Save experiment to database and get the ID
         result = db.execute(text(
-            "INSERT INTO extraction_experiments (experiment_name, pitch_deck_ids, extraction_type, text_model_used, extraction_prompt, results_json, created_at) VALUES (:name, :deck_ids, :type, :model, :prompt, :results, CURRENT_TIMESTAMP) RETURNING id"
+            "INSERT INTO extraction_experiments (experiment_name, document_ids, extraction_type, text_model_used, extraction_prompt, results_json, created_at) VALUES (:name, :deck_ids, :type, :model, :prompt, :results, CURRENT_TIMESTAMP) RETURNING id"
         ), {
             "name": request.experiment_name,
             "deck_ids": request.deck_ids,
@@ -1440,7 +1440,7 @@ async def get_experiment_details(
         
         experiment = db.execute(text("""
             SELECT id, experiment_name, extraction_type, text_model_used, extraction_prompt, 
-                   created_at, results_json, pitch_deck_ids, classification_enabled, 
+                   created_at, results_json, document_ids, classification_enabled, 
                    classification_results_json, classification_completed_at, company_name_results_json, 
                    company_name_completed_at, funding_amount_results_json, funding_amount_completed_at,
                    deck_date_results_json, deck_date_completed_at
@@ -1458,7 +1458,7 @@ async def get_experiment_details(
         results_data = json.loads(experiment[6]) if experiment[6] else {}
         
         # Get deck information for the experiment
-        deck_ids_raw = experiment[7]  # pitch_deck_ids array from PostgreSQL
+        deck_ids_raw = experiment[7]  # document_ids array from PostgreSQL
         # Parse PostgreSQL array format {65,68,61,58,51,71,60,50,62,64} to Python list
         if isinstance(deck_ids_raw, str) and deck_ids_raw.startswith('{') and deck_ids_raw.endswith('}'):
             deck_ids = [int(x.strip()) for x in deck_ids_raw[1:-1].split(',') if x.strip()]
@@ -1476,7 +1476,7 @@ async def get_experiment_details(
                 cache_result = db.execute(text("""
                     SELECT analysis_result_json 
                     FROM visual_analysis_cache 
-                    WHERE pitch_deck_id = :deck_id
+                    WHERE document_id = :deck_id
                     ORDER BY created_at DESC
                     LIMIT 1
                 """), {"deck_id": deck.id}).fetchone()
@@ -1679,7 +1679,7 @@ async def enrich_experiment_with_classification(
         # Get the experiment
         experiment = db.execute(text("""
             SELECT id, experiment_name, extraction_type, text_model_used, 
-                   extraction_prompt, created_at, results_json, pitch_deck_ids,
+                   extraction_prompt, created_at, results_json, document_ids,
                    classification_enabled, classification_results_json,
                    classification_completed_at
             FROM extraction_experiments 
@@ -1948,7 +1948,7 @@ async def enrich_experiment_with_company_names(
         from ..services.gpu_http_client import gpu_http_client
         
         # Collect deck IDs for GPU processing
-        deck_ids_raw = experiment[7]  # pitch_deck_ids array from PostgreSQL
+        deck_ids_raw = experiment[7]  # document_ids array from PostgreSQL
         # Parse PostgreSQL array format {65,68,61,58,51,71,60,50,62,64} to Python list
         if isinstance(deck_ids_raw, str) and deck_ids_raw.startswith('{') and deck_ids_raw.endswith('}'):
             deck_ids = [int(x.strip()) for x in deck_ids_raw[1:-1].split(',') if x.strip()]
@@ -2127,7 +2127,7 @@ async def enrich_experiment_with_funding_amounts(
         from ..services.gpu_http_client import gpu_http_client
         
         # Collect deck IDs for GPU processing
-        deck_ids_raw = experiment[7]  # pitch_deck_ids array from PostgreSQL
+        deck_ids_raw = experiment[7]  # document_ids array from PostgreSQL
         # Parse PostgreSQL array format {65,68,61,58,51,71,60,50,62,64} to Python list
         if isinstance(deck_ids_raw, str) and deck_ids_raw.startswith('{') and deck_ids_raw.endswith('}'):
             deck_ids = [int(x.strip()) for x in deck_ids_raw[1:-1].split(',') if x.strip()]
@@ -2298,7 +2298,7 @@ async def enrich_experiment_with_deck_dates(
         from ..services.gpu_http_client import gpu_http_client
         
         # Collect deck IDs for GPU processing
-        deck_ids_raw = experiment[7]  # pitch_deck_ids array from PostgreSQL
+        deck_ids_raw = experiment[7]  # document_ids array from PostgreSQL
         # Parse PostgreSQL array format {65,68,61,58,51,71,60,50,62,64} to Python list
         if isinstance(deck_ids_raw, str) and deck_ids_raw.startswith('{') and deck_ids_raw.endswith('}'):
             deck_ids = [int(x.strip()) for x in deck_ids_raw[1:-1].split(',') if x.strip()]
@@ -2745,7 +2745,7 @@ async def cache_visual_analysis_from_gpu(
         
         # Cache the visual analysis result
         db.execute(text(
-            "INSERT INTO visual_analysis_cache (pitch_deck_id, analysis_result_json, vision_model_used, prompt_used) VALUES (:deck_id, :result, :model, :prompt) ON CONFLICT (pitch_deck_id, vision_model_used, prompt_used) DO UPDATE SET analysis_result_json = :result, created_at = CURRENT_TIMESTAMP"
+            "INSERT INTO visual_analysis_cache (document_id, analysis_result_json, vision_model_used, prompt_used) VALUES (:deck_id, :result, :model, :prompt) ON CONFLICT (document_id, vision_model_used, prompt_used) DO UPDATE SET analysis_result_json = :result, created_at = CURRENT_TIMESTAMP"
         ), {
             "deck_id": pitch_deck_id,
             "result": analysis_result_json,
@@ -2789,7 +2789,7 @@ async def get_cached_visual_analysis_for_gpu(
         for deck_id in deck_ids:
             try:
                 cache_result = db.execute(text(
-                    "SELECT analysis_result_json FROM visual_analysis_cache WHERE pitch_deck_id = :deck_id ORDER BY created_at DESC LIMIT 1"
+                    "SELECT analysis_result_json FROM visual_analysis_cache WHERE document_id = :deck_id ORDER BY created_at DESC LIMIT 1"
                 ), {"deck_id": deck_id}).fetchone()
                 
                 if cache_result:
@@ -2903,7 +2903,7 @@ async def process_visual_analysis_batch(deck_ids: List[int], vision_model: str):
                         deck_result = result.get("result", {})
                         if deck_result:
                             db.execute(text(
-                                "INSERT INTO visual_analysis_cache (pitch_deck_id, analysis_result_json, vision_model_used, prompt_used) VALUES (:deck_id, :result, :model, :prompt) ON CONFLICT (pitch_deck_id, vision_model_used, prompt_used) DO UPDATE SET analysis_result_json = :result, created_at = CURRENT_TIMESTAMP"
+                                "INSERT INTO visual_analysis_cache (document_id, analysis_result_json, vision_model_used, prompt_used) VALUES (:deck_id, :result, :model, :prompt) ON CONFLICT (document_id, vision_model_used, prompt_used) DO UPDATE SET analysis_result_json = :result, created_at = CURRENT_TIMESTAMP"
                             ), {
                                 "deck_id": deck_id,
                                 "result": json.dumps(deck_result),
@@ -3097,7 +3097,7 @@ async def save_extraction_experiment(
         query = text("""
             INSERT INTO extraction_experiments (
                 experiment_name, 
-                pitch_deck_ids, 
+                document_ids, 
                 extraction_type, 
                 text_model_used,
                 extraction_prompt,
@@ -3197,7 +3197,7 @@ async def add_classification_to_experiment(
         experiments = db.execute(text("""
             SELECT id, experiment_name, classification_results_json, classification_enabled
             FROM extraction_experiments 
-            WHERE pitch_deck_ids::text LIKE :deck_search
+            WHERE document_ids::text LIKE :deck_search
             ORDER BY id DESC
         """), {"deck_search": f"%{deck_id}%"}).fetchall()
         
@@ -3290,7 +3290,7 @@ async def add_template_results_to_deck(
         experiments = db.execute(text("""
             SELECT id, template_processing_results_json
             FROM extraction_experiments 
-            WHERE pitch_deck_ids::text LIKE :deck_search
+            WHERE document_ids::text LIKE :deck_search
         """), {"deck_search": f"%{deck_id}%"}).fetchall()
         
         updated_experiments = []

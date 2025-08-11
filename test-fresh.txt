@@ -1,0 +1,13 @@
+This is a test file for fresh clean slate testing.
+
+Testing the complete pipeline after:
+1. ✅ Fixing all pitch_deck_id references
+2. ✅ Creating document-based image endpoint
+3. ✅ Cleaning database completely
+4. 🧪 Now testing on clean slate
+
+Expected results:
+- Document upload should work
+- Processing should complete
+- New document-based image endpoint should serve correct images
+- Everything should use project_documents architecture

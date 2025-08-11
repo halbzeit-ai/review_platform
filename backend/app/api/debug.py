@@ -30,7 +30,7 @@ def get_specialized_analysis_debug(deck_id: int, db: Session = Depends(get_db)):
     
     try:
         # Check if deck exists
-        deck_check = db.execute(text("SELECT id, ai_extracted_startup_name FROM pitch_decks WHERE id = :deck_id"), {"deck_id": deck_id}).fetchone()
+        deck_check = db.execute(text("SELECT id, file_name FROM project_documents WHERE id = :deck_id"), {"deck_id": deck_id}).fetchone()
         
         if not deck_check:
             raise HTTPException(status_code=404, detail=f"Deck {deck_id} not found")
@@ -45,7 +45,7 @@ def get_specialized_analysis_debug(deck_id: int, db: Session = Depends(get_db)):
                 model_used,
                 created_at
             FROM specialized_analysis_results 
-            WHERE pitch_deck_id = :deck_id
+            WHERE document_id = :deck_id
             ORDER BY created_at DESC
         """), {"deck_id": deck_id}).fetchall()
         
@@ -85,26 +85,26 @@ def get_deck_status_debug(deck_id: int, db: Session = Depends(get_db)):
     
     try:
         # Check if deck exists
-        result = db.execute(text("SELECT id, ai_extracted_startup_name, processing_status, file_name FROM pitch_decks WHERE id = :deck_id"), {"deck_id": deck_id}).fetchone()
+        result = db.execute(text("SELECT id, file_name, processing_status, original_filename FROM project_documents WHERE id = :deck_id"), {"deck_id": deck_id}).fetchone()
         
         if not result:
             raise HTTPException(status_code=404, detail=f"Deck {deck_id} not found")
         
         # Get processing status from various tables
         processing_status = {
-            "deck_id": deck_id,
-            "startup_name": result[1] if len(result) > 1 and result[1] else "Unknown",
-            "processing_status": result[2] if len(result) > 2 else "unknown",
-            "file_name": result[3] if len(result) > 3 else "unknown",
+            "document_id": deck_id,
+            "file_name": result[1] if len(result) > 1 and result[1] else "unknown",
+            "processing_status": result[2] if len(result) > 2 else "unknown", 
+            "original_filename": result[3] if len(result) > 3 else "unknown",
             "exists": True,
             "tables": {}
         }
         
         # Check various processing tables with safer queries
         table_queries = {
-            "pitch_decks": "SELECT COUNT(*) FROM pitch_decks WHERE id = :deck_id",
-            "reviews": "SELECT COUNT(*) FROM reviews WHERE pitch_deck_id = :deck_id",
-            "documents": "SELECT COUNT(*) FROM documents WHERE pitch_deck_id = :deck_id"
+            "project_documents": "SELECT COUNT(*) FROM project_documents WHERE id = :deck_id",
+            "processing_queue": "SELECT COUNT(*) FROM processing_queue WHERE document_id = :deck_id",
+            "visual_analysis_cache": "SELECT COUNT(*) FROM visual_analysis_cache WHERE document_id = :deck_id"
         }
         
         for table_name, query in table_queries.items():
@@ -117,8 +117,8 @@ def get_deck_status_debug(deck_id: int, db: Session = Depends(get_db)):
         # Check extraction experiments with safe array query
         try:
             extraction_result = db.execute(
-                text("SELECT COUNT(*) FROM extraction_experiments WHERE :deck_id = ANY(pitch_deck_ids)"), 
-                {"deck_id": deck_id}
+                text("SELECT COUNT(*) FROM extraction_experiments WHERE document_ids LIKE :deck_pattern"), 
+                {"deck_pattern": f"%{deck_id}%"}
             ).fetchone()
             processing_status["tables"]["extraction_experiments"] = extraction_result[0] if extraction_result else 0
         except Exception as e:
@@ -224,7 +224,7 @@ async def debug_processing_queue_stats(db: Session = Depends(get_db)):
                 pq.created_at,
                 SUBSTRING(pq.last_error, 1, 200) as error_preview
             FROM processing_queue pq
-            JOIN pitch_decks pd ON pq.pitch_deck_id = pd.id
+            JOIN project_documents pd ON pq.document_id = pd.id
             WHERE pq.status = 'failed'
             ORDER BY pq.created_at DESC
             LIMIT 10
@@ -276,8 +276,8 @@ async def debug_deck_processing(deck_id: int, db: Session = Depends(get_db)):
                      ELSE 'No errors' 
                 END as error_preview
             FROM processing_queue pq
-            JOIN pitch_decks pd ON pq.pitch_deck_id = pd.id
-            WHERE pq.pitch_deck_id = :deck_id
+            JOIN project_documents pd ON pq.document_id = pd.id
+            WHERE pq.document_id = :deck_id
             ORDER BY pq.created_at DESC
         """), {"deck_id": deck_id}).fetchall()
         
@@ -291,7 +291,7 @@ async def debug_deck_processing(deck_id: int, db: Session = Depends(get_db)):
                 pp.created_at
             FROM processing_progress pp
             JOIN processing_queue pq ON pp.processing_queue_id = pq.id
-            WHERE pq.pitch_deck_id = :deck_id
+            WHERE pq.document_id = :deck_id
             ORDER BY pp.created_at DESC
             LIMIT 20
         """), {"deck_id": deck_id}).fetchall()
@@ -303,11 +303,11 @@ async def debug_deck_processing(deck_id: int, db: Session = Depends(get_db)):
                 COUNT(DISTINCT vac.id) as visual_cache_entries,
                 COUNT(DISTINCT r.id) as reviews,
                 COUNT(DISTINCT sf.id) as slide_feedback
-            FROM pitch_decks pd
-            LEFT JOIN specialized_analysis_results sar ON pd.id = sar.pitch_deck_id
-            LEFT JOIN visual_analysis_cache vac ON pd.id = vac.pitch_deck_id
-            LEFT JOIN reviews r ON pd.id = r.pitch_deck_id
-            LEFT JOIN slide_feedback sf ON pd.id = sf.pitch_deck_id
+            FROM project_documents pd
+            LEFT JOIN specialized_analysis_results sar ON pd.id = sar.document_id
+            LEFT JOIN visual_analysis_cache vac ON pd.id = vac.document_id
+            LEFT JOIN reviews r ON pd.id = r.document_id
+            LEFT JOIN slide_feedback sf ON pd.id = sf.document_id
             WHERE pd.id = :deck_id
         """), {"deck_id": deck_id}).fetchone()
         
@@ -336,7 +336,7 @@ async def debug_dojo_experiments(db: Session = Depends(get_db)):
                 COUNT(*) FILTER (WHERE processing_status = 'failed') as failed,
                 MAX(created_at) as latest_upload,
                 MIN(created_at) as earliest_upload
-            FROM pitch_decks WHERE data_source = 'dojo'
+            FROM project_documents WHERE data_source = 'dojo'
         """)).fetchone()
         
         # Active experiments
@@ -344,7 +344,7 @@ async def debug_dojo_experiments(db: Session = Depends(get_db)):
             SELECT 
                 experiment_name,
                 extraction_type, 
-                array_length(string_to_array(pitch_deck_ids, ','), 1) as deck_count,
+                array_length(string_to_array(document_ids, ','), 1) as deck_count,
                 text_model_used,
                 created_at,
                 CASE WHEN classification_results_json IS NOT NULL THEN true ELSE false END as has_classification,
@@ -364,7 +364,7 @@ async def debug_dojo_experiments(db: Session = Depends(get_db)):
                 MAX(vac.created_at) as latest_cache,
                 COUNT(DISTINCT pd.company_id) as unique_companies
             FROM visual_analysis_cache vac
-            JOIN pitch_decks pd ON vac.pitch_deck_id = pd.id
+            JOIN project_documents pd ON vac.document_id = pd.id
             WHERE pd.data_source = 'dojo'
             GROUP BY vac.vision_model_used
             ORDER BY cached_analyses DESC
@@ -504,23 +504,26 @@ async def debug_slide_images(deck_id: int, db: Session = Depends(get_db)):
     try:
         # Get deck info
         deck_info = db.execute(text("""
-            SELECT file_name, company_id, processing_status
-            FROM pitch_decks 
+            SELECT file_name, project_id, processing_status, original_filename
+            FROM project_documents 
             WHERE id = :deck_id
         """), {"deck_id": deck_id}).fetchone()
         
         if not deck_info:
             return {"error": f"Deck {deck_id} not found"}
         
-        file_name, company_id, processing_status = deck_info
-        deck_name = file_name.replace('.pdf', '') if file_name else f"deck_{deck_id}"
+        file_name, project_id, processing_status, original_filename = deck_info
+        # Use original_filename for deck name if available, otherwise file_name
+        deck_name = (original_filename or file_name or f"deck_{deck_id}").replace('.pdf', '')
         
         # Check possible slide image locations
         possible_locations = [
             f"/mnt/CPU-GPU/projects/dojo/analysis/{deck_name}",
-            f"/mnt/CPU-GPU/projects/{company_id}/analysis/{deck_name}",
+            f"/mnt/CPU-GPU/projects/{project_id}/analysis/{deck_name}" if project_id else None,
             f"/mnt/CPU-GPU/uploads/{deck_name}",
         ]
+        # Filter out None values
+        possible_locations = [loc for loc in possible_locations if loc is not None]
         
         slide_images = []
         for location in possible_locations:
@@ -543,8 +546,9 @@ async def debug_slide_images(deck_id: int, db: Session = Depends(get_db)):
         return {
             "deck_id": deck_id,
             "file_name": file_name,
+            "original_filename": original_filename,
             "deck_name": deck_name,
-            "company_id": company_id,
+            "project_id": project_id,
             "processing_status": processing_status,
             "slide_image_locations": slide_images,
             "timestamp": datetime.utcnow().isoformat()

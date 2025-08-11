@@ -1007,7 +1007,7 @@ class HealthcareTemplateAnalyzer:
         try:
             # Step 1: Convert PDF to images and analyze each page (skip if already have results)
             if not self.visual_analysis_results:
-                self._analyze_visual_content(pdf_path, company_id)
+                self._analyze_visual_content(pdf_path, company_id, deck_id)
             else:
                 logger.info(f"Using cached visual analysis results ({len(self.visual_analysis_results)} pages)")
             
@@ -1062,7 +1062,7 @@ class HealthcareTemplateAnalyzer:
             logger.error(f"Error in healthcare template analysis: {e}")
             raise
     
-    def _analyze_visual_content(self, pdf_path: str, company_id: str = None):
+    def _analyze_visual_content(self, pdf_path: str, company_id: str = None, deck_id: int = None):
         """Convert PDF to images and analyze each page with project-based storage"""
         logger.info("Converting PDF to images for visual analysis")
         
@@ -1070,10 +1070,14 @@ class HealthcareTemplateAnalyzer:
             # Get company and deck information
             if company_id:
                 # Use provided company_id
-                _, deck_name, deck_id = self._get_company_info_from_path(pdf_path)
+                _, deck_name, extracted_deck_id = self._get_company_info_from_path(pdf_path)
+                # Use provided deck_id if available, otherwise fall back to extracted
+                deck_id = deck_id if deck_id is not None else extracted_deck_id
             else:
                 # Fallback to extracting from path
-                company_id, deck_name, deck_id = self._get_company_info_from_path(pdf_path)
+                company_id, deck_name, extracted_deck_id = self._get_company_info_from_path(pdf_path)
+                # Use provided deck_id if available, otherwise fall back to extracted
+                deck_id = deck_id if deck_id is not None else extracted_deck_id
             
             # Create project directories
             analysis_path = self._create_project_directories(company_id, deck_name)
