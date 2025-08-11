@@ -973,7 +973,7 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                     })
                 
             except Exception as e:
-                logger.error(f"Error getting processing progress for document {document_id}: {e}"
+                logger.error(f"Error getting processing progress for document {document_id}: {e}")
                 return jsonify({
                     "success": False,
                     "error": str(e),
