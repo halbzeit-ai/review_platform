@@ -1194,9 +1194,9 @@ class HealthcareTemplateAnalyzer:
             
             # Insert or update slide feedback (include feedback_type in conflict resolution)
             cursor.execute("""
-                INSERT INTO slide_feedback (pitch_deck_id, slide_number, slide_filename, feedback_text, feedback_type, has_issues, created_at, updated_at)
+                INSERT INTO slide_feedback (document_id, slide_number, slide_filename, feedback_text, feedback_type, has_issues, created_at, updated_at)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (pitch_deck_id, slide_number, feedback_type) 
+                ON CONFLICT (document_id, slide_number, feedback_type) 
                 DO UPDATE SET 
                     feedback_text = EXCLUDED.feedback_text,
                     has_issues = EXCLUDED.has_issues,
