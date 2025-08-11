@@ -13,6 +13,7 @@ import json
 import os
 import logging
 import shutil
+import io
 from pathlib import Path
 
 from ..db.database import get_db
@@ -356,7 +357,7 @@ async def get_project_results(
         
         # Get deck information from project_documents - project-based approach
         project_doc_query = text("""
-        SELECT pd.id, pd.file_name, pd.file_path, p.company_id, u.email, pd.original_pitch_deck_id
+        SELECT pd.id, pd.file_name, pd.file_path, p.company_id, u.email
         FROM project_documents pd
         JOIN projects p ON pd.project_id = p.id
         LEFT JOIN users u ON pd.uploaded_by = u.id
@@ -372,7 +373,7 @@ async def get_project_results(
                 detail=f"Deck {deck_id} not found"
             )
         
-        deck_id_db, file_name, file_path, company_id, user_email, original_pitch_deck_id = deck_result
+        deck_id_db, file_name, file_path, company_id, user_email = deck_result
         
         # Access already verified by check_project_access() - no additional validation needed
         logger.info(f"Loading template processing results for deck {deck_id}")
@@ -382,15 +383,15 @@ async def get_project_results(
         
         # Load analysis results from extraction_experiments (modern approach)
         # Check if extraction experiments exist for this deck
-        # Use original_pitch_deck_id if available, otherwise use current deck_id
-        check_id = original_pitch_deck_id if original_pitch_deck_id else deck_id
+        # Use deck_id directly since original_pitch_deck_id doesn't exist in project_documents schema
+        check_id = deck_id
         
         # Check for template processing results (required for complete analysis)
         # CLEAN ARCHITECTURE: Search for document_id in extraction_experiments
         template_check = db.execute(text("""
             SELECT template_processing_results_json 
             FROM extraction_experiments 
-            WHERE pitch_deck_ids LIKE '%' || :deck_id || '%' 
+            WHERE document_ids LIKE '%' || :deck_id || '%' 
             AND template_processing_results_json IS NOT NULL
             ORDER BY created_at DESC
             LIMIT 1
@@ -411,13 +412,13 @@ async def get_project_results(
             logger.info(f"Loading template processing results for deck {deck_id}")
             
             # Get template processing results from extraction_experiments
-            # Use original_pitch_deck_id if available, otherwise use current deck_id
-            check_id = original_pitch_deck_id if original_pitch_deck_id else deck_id
+            # Use deck_id directly since original_pitch_deck_id doesn't exist in project_documents schema
+            check_id = deck_id
             
             template_query = text("""
                 SELECT template_processing_results_json
                 FROM extraction_experiments 
-                WHERE pitch_deck_ids LIKE '%' || :deck_id || '%' 
+                WHERE document_ids LIKE '%' || :deck_id || '%' 
                 AND template_processing_results_json IS NOT NULL
                 ORDER BY created_at DESC
                 LIMIT 1
@@ -736,7 +737,7 @@ async def get_project_uploads(
                 # First check for extraction experiment results
                 extraction_check = db.execute(text("""
                     SELECT 1 FROM extraction_experiments 
-                    WHERE pitch_deck_ids LIKE '%' || :deck_id || '%'
+                    WHERE document_ids LIKE '%' || :deck_id || '%'
                     AND results_json IS NOT NULL
                     LIMIT 1
                 """), {"deck_id": str(deck_id)}).fetchone()
@@ -808,31 +809,42 @@ async def get_project_uploads(
             detail="Failed to retrieve project uploads"
         )
 
-@router.get("/{project_id}/slide-image/{deck_name}/{slide_filename}")
-async def get_slide_image(
-    project_id: int,
-    deck_name: str,
+@router.get("/documents/{document_id}/slide-image/{slide_filename}")
+async def get_document_slide_image(
+    document_id: int,
     slide_filename: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Serve slide images from project storage"""
+    """Serve slide images for a specific document"""
     try:
-        # Check access permissions using unified access control
+        # Get document information and check access
+        document_query = text("""
+        SELECT pd.id, pd.file_name, pd.original_filename, pd.project_id, p.company_id 
+        FROM project_documents pd
+        JOIN projects p ON pd.project_id = p.id
+        WHERE pd.id = :document_id AND pd.is_active = TRUE AND p.is_active = TRUE
+        """)
+        
+        document_result = db.execute(document_query, {"document_id": document_id}).fetchone()
+        
+        if not document_result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Document {document_id} not found"
+            )
+        
+        doc_id, file_name, original_filename, project_id, company_id = document_result
+        
+        # Check project access permissions
         if not check_project_access(current_user, project_id, db):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You don't have access to this project"
+                detail="You don't have access to this document's project"
             )
         
-        # Get project information for company_id
-        project_query = text("""
-        SELECT p.company_id FROM projects p 
-        WHERE p.id = :project_id AND p.is_active = TRUE
-        """)
-        
-        project_result = db.execute(project_query, {"project_id": project_id}).fetchone()
-        company_id = project_result[0] if project_result else "unknown"
+        # Derive deck name from filename (remove extension)
+        deck_name = os.path.splitext(original_filename)[0] if original_filename else os.path.splitext(file_name)[0]
         
         # Construct image path - check multiple possible locations
         possible_paths = [
@@ -996,10 +1008,7 @@ async def delete_deck(
         SELECT pd.id, pd.file_name, pd.file_path, pd.results_file_path, u.email, u.company_name, 'pitch_decks' as source_table
         FROM pitch_decks pd
         JOIN users u ON pd.user_id = u.id
-        WHERE pd.id = :deck_id AND pd.id NOT IN (
-            SELECT original_pitch_deck_id FROM project_documents 
-            WHERE original_pitch_deck_id IS NOT NULL AND project_id = :project_id
-        )
+        WHERE pd.id = :deck_id
         """)
         
         deck_result = db.execute(deck_query, {"deck_id": deck_id, "project_id": project_id}).fetchone()
@@ -1216,29 +1225,51 @@ async def get_extraction_results(
         # Get user's company_id
         company_id = get_company_id_from_user(current_user)
         
-        # Query extraction results from user's project documents (clean architecture)
-        query = text("""
-            SELECT DISTINCT
-                pd.id as deck_id,
-                pd.file_name as deck_name,
-                ee.company_name_results_json,
-                ee.results_json,
-                ee.classification_results_json,
-                ee.funding_amount_results_json,
-                ee.deck_date_results_json,
-                ee.created_at as extracted_at
-            FROM project_documents pd
-            JOIN projects p ON pd.project_id = p.id
-            JOIN project_members pm ON p.id = pm.project_id
-            LEFT JOIN extraction_experiments ee ON pd.id::text = ANY(string_to_array(trim(both '{}' from ee.document_ids), ','))
-            WHERE pm.user_id = :user_id
-            AND pd.document_type = 'pitch_deck'
-            AND pd.is_active = TRUE
-            AND ee.id IS NOT NULL
-            ORDER BY ee.created_at DESC
-        """)
-        
-        results = db.execute(query, {"user_id": current_user.id}).fetchall()
+        # Query extraction results - GPs have access to all projects, members only to their projects
+        if current_user.role == 'gp':
+            # GPs have access to all projects
+            query = text("""
+                SELECT DISTINCT
+                    pd.id as deck_id,
+                    pd.file_name as deck_name,
+                    ee.company_name_results_json,
+                    ee.results_json,
+                    ee.classification_results_json,
+                    ee.funding_amount_results_json,
+                    ee.deck_date_results_json,
+                    ee.created_at as extracted_at
+                FROM project_documents pd
+                JOIN projects p ON pd.project_id = p.id
+                LEFT JOIN extraction_experiments ee ON pd.id::text = ANY(string_to_array(trim(both '{}' from ee.document_ids), ','))
+                WHERE pd.document_type = 'pitch_deck'
+                AND pd.is_active = TRUE
+                AND ee.id IS NOT NULL
+                ORDER BY ee.created_at DESC
+            """)
+            results = db.execute(query).fetchall()
+        else:
+            # Regular users only see their project documents
+            query = text("""
+                SELECT DISTINCT
+                    pd.id as deck_id,
+                    pd.file_name as deck_name,
+                    ee.company_name_results_json,
+                    ee.results_json,
+                    ee.classification_results_json,
+                    ee.funding_amount_results_json,
+                    ee.deck_date_results_json,
+                    ee.created_at as extracted_at
+                FROM project_documents pd
+                JOIN projects p ON pd.project_id = p.id
+                JOIN project_members pm ON p.id = pm.project_id
+                LEFT JOIN extraction_experiments ee ON pd.id::text = ANY(string_to_array(trim(both '{}' from ee.document_ids), ','))
+                WHERE pm.user_id = :user_id
+                AND pd.document_type = 'pitch_deck'
+                AND pd.is_active = TRUE
+                AND ee.id IS NOT NULL
+                ORDER BY ee.created_at DESC
+            """)
+            results = db.execute(query, {"user_id": current_user.id}).fetchall()
         
         # Group results by deck_id to consolidate multiple experiments for the same deck
         deck_results = {}
