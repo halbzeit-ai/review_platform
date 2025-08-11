@@ -694,8 +694,21 @@ async def update_profile(
     )
 
 @router.get("/company-info")
-async def get_company_info(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Get current user's company information and project routing information"""
+async def get_company_info(current_user: User = Depends(get_current_user)):
+    """Get current user's company information only (no routing logic)"""
+    
+    # Clean endpoint - only returns company information
+    from ..api.projects import get_company_id_from_user
+    company_id = get_company_id_from_user(current_user)
+    
+    return {
+        "company_name": current_user.company_name,
+        "company_id": company_id
+    }
+
+@router.get("/dashboard-info")
+async def get_dashboard_info(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get dashboard routing information for current user"""
     
     if current_user.role == "startup":
         # For startup users, find their project membership
@@ -703,7 +716,7 @@ async def get_company_info(current_user: User = Depends(get_current_user), db: S
         
         # Get the project they're a member of
         query = text("""
-            SELECT p.id, p.company_id, p.project_name 
+            SELECT p.id, p.project_name 
             FROM projects p
             JOIN project_members pm ON p.id = pm.project_id
             WHERE pm.user_id = :user_id AND p.is_active = TRUE
@@ -714,43 +727,31 @@ async def get_company_info(current_user: User = Depends(get_current_user), db: S
         result = db.execute(query, {"user_id": current_user.id}).fetchone()
         
         if result:
-            # Use project ID for routing instead of company ID
+            # User has project membership - route to project
             project_id = result[0]
-            company_id = result[1]
-            project_name = result[2]
-            company_name = current_user.company_name or project_name  # Fallback to project name
-            dashboard_path = f"/project/{project_id}"  # CRITICAL FIX: Use project_id
+            project_name = result[1]
+            dashboard_path = f"/project/{project_id}"
+            
+            return {
+                "dashboard_path": dashboard_path,
+                "project_id": project_id,
+                "project_name": project_name,
+                "user_type": "startup_with_project"
+            }
         else:
-            # Fallback to user-based company_id if no project membership
-            from ..api.projects import get_company_id_from_user
-            company_id = get_company_id_from_user(current_user)
-            company_name = current_user.company_name
-            project_id = None
-            # For users with no project membership, still use company_id as fallback
-            dashboard_path = f"/project/{company_id}"
+            # User has no project membership - route to general dashboard or error
+            return {
+                "dashboard_path": "/dashboard",  # Could be project creation page
+                "user_type": "startup_without_project",
+                "message": "No project membership found"
+            }
             
     else:
-        # For GPs, use standard logic
-        from ..api.projects import get_company_id_from_user
-        company_id = get_company_id_from_user(current_user)
-        company_name = current_user.company_name
-        project_id = None
-        dashboard_path = "/dashboard/gp"
-    
-    response_content = {
-        "company_name": company_name,
-        "company_id": company_id,
-        "dashboard_path": dashboard_path
-    }
-    
-    # Include project_id for startup users with project membership
-    if current_user.role == "startup" and project_id is not None:
-        response_content["project_id"] = project_id
-    
-    return JSONResponse(
-        status_code=200,
-        content=response_content
-    )
+        # For GPs, route to GP dashboard
+        return {
+            "dashboard_path": "/dashboard/gp",
+            "user_type": "gp"
+        }
 
 @router.get("/user-projects")
 async def get_user_projects(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

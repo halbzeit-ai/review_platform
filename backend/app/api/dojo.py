@@ -18,7 +18,8 @@ from datetime import datetime
 from sqlalchemy import func, text
 
 from ..db.database import get_db
-from ..db.models import User, PitchDeck
+from ..db.models import User, ProjectDocument, Project
+import json
 from .auth import get_current_user
 
 # Import for extraction testing functionality
@@ -71,11 +72,39 @@ def calculate_file_hash(file_path: str) -> str:
             sha256_hash.update(byte_block)
     return sha256_hash.hexdigest()
 
+def ensure_dojo_project(db: Session) -> int:
+    """Ensure the dojo project exists and return its ID"""
+    # Check if dojo project already exists
+    dojo_project = db.query(Project).filter(
+        Project.company_id == "dojo",
+        Project.project_name == "Dojo Testing Environment"
+    ).first()
+    
+    if not dojo_project:
+        # Create the dojo project
+        dojo_project = Project(
+            company_id="dojo",
+            project_name="Dojo Testing Environment", 
+            funding_round="testing",
+            funding_sought="N/A - Testing Environment",
+            company_offering="AI Testing and Training Data Collection",
+            is_test=True,
+            is_active=True
+        )
+        db.add(dojo_project)
+        db.commit()
+        db.refresh(dojo_project)
+        logger.info(f"Created dojo project with ID: {dojo_project.id}")
+    
+    return dojo_project.id
+
 def check_duplicate_file(db: Session, file_name: str, file_hash: str) -> Optional[int]:
-    """Check if file already exists by name or hash. Returns pitch_deck_id if found."""
-    existing = db.query(PitchDeck).filter(
-        PitchDeck.data_source == "dojo",
-        (PitchDeck.file_name == file_name) | (PitchDeck.file_hash == file_hash)
+    """Check if file already exists by name or hash. Returns document_id if found."""
+    dojo_project_id = ensure_dojo_project(db)
+    
+    existing = db.query(ProjectDocument).filter(
+        ProjectDocument.project_id == dojo_project_id,
+        (ProjectDocument.file_name == file_name) | (ProjectDocument.extracted_data.contains(f'"file_hash": "{file_hash}"'))
     ).first()
     return existing.id if existing else None
 
@@ -115,17 +144,28 @@ async def extract_dojo_zip_only(zip_file_path: str, uploaded_by: int, db: Sessio
                 final_path = os.path.join(DOJO_UPLOADS_PATH, unique_name)
                 shutil.move(pdf_path, final_path)
                 
-                # Create database record (ready for manual processing)
-                pitch_deck = PitchDeck(
-                    user_id=uploaded_by,
-                    company_id="dojo",
+                # Ensure dojo project exists
+                dojo_project_id = ensure_dojo_project(db)
+                
+                # Calculate file hash for duplicate detection
+                file_hash = calculate_file_hash(final_path)
+                
+                # Create database record using ProjectDocument (clean architecture)
+                document = ProjectDocument(
+                    project_id=dojo_project_id,
+                    document_type="pitch_deck",
                     file_name=original_name,
                     file_path=f"projects/dojo/uploads/{unique_name}",
-                    data_source="dojo",
-                    zip_filename=zip_filename,
-                    processing_status="pending"  # Ready for manual AI processing
+                    original_filename=original_name,
+                    uploaded_by=uploaded_by,
+                    processing_status="pending",  # Ready for manual AI processing
+                    extracted_data=json.dumps({
+                        "data_source": "dojo",
+                        "zip_filename": zip_filename,
+                        "file_hash": file_hash
+                    })
                 )
-                db.add(pitch_deck)
+                db.add(document)
                 processed_count += 1
                 
             except Exception as e:
@@ -365,22 +405,26 @@ async def list_dojo_files(
                 detail="Only GPs can view dojo training data"
             )
         
-        # Get all dojo files from database
-        dojo_files = db.query(PitchDeck).filter(
-            PitchDeck.data_source == "dojo"
-        ).order_by(PitchDeck.created_at.desc()).all()
+        # Get all dojo files from database (project-centric architecture)
+        dojo_project_id = ensure_dojo_project(db)
+        dojo_files = db.query(ProjectDocument).filter(
+            ProjectDocument.project_id == dojo_project_id
+        ).order_by(ProjectDocument.upload_date.desc()).all()
         
         files_data = []
         for file in dojo_files:
+            # Extract data from JSON structure
+            extracted_data = json.loads(file.extracted_data) if file.extracted_data else {}
+            
             files_data.append({
                 "id": file.id,
                 "filename": file.file_name,
                 "file_path": file.file_path,
                 "processing_status": file.processing_status,
-                "ai_extracted_startup_name": file.ai_extracted_startup_name,
-                "zip_filename": file.zip_filename,
-                "created_at": file.created_at.isoformat() if file.created_at else None,
-                "has_results": bool(file.ai_analysis_results)
+                "ai_extracted_startup_name": extracted_data.get("ai_extracted_startup_name"),
+                "zip_filename": extracted_data.get("zip_filename"),
+                "created_at": file.upload_date.isoformat() if file.upload_date else None,
+                "has_results": bool(file.analysis_results_path)
             })
         
         return {
@@ -413,10 +457,11 @@ async def delete_dojo_file(
                 detail="Only GPs can delete dojo training data"
             )
         
-        # Find the file
-        dojo_file = db.query(PitchDeck).filter(
-            PitchDeck.id == file_id,
-            PitchDeck.data_source == "dojo"
+        # Find the file in dojo project
+        dojo_project_id = ensure_dojo_project(db)
+        dojo_file = db.query(ProjectDocument).filter(
+            ProjectDocument.id == file_id,
+            ProjectDocument.project_id == dojo_project_id
         ).first()
         
         if not dojo_file:
@@ -467,8 +512,9 @@ async def delete_all_dojo_files(
             )
         
         # Find all dojo files
-        dojo_files = db.query(PitchDeck).filter(
-            PitchDeck.data_source == "dojo"
+        dojo_project_id = ensure_dojo_project(db)
+        dojo_files = db.query(ProjectDocument).filter(
+            ProjectDocument.project_id == dojo_project_id
         ).all()
         
         logger.info(f"Found {len(dojo_files)} dojo files to delete")
@@ -680,22 +726,23 @@ async def get_dojo_stats(
             )
         
         # Get counts using separate queries (SQLAlchemy compatibility)
-        total_files = db.query(PitchDeck).filter(PitchDeck.data_source == "dojo").count()
-        processed_files = db.query(PitchDeck).filter(
-            PitchDeck.data_source == "dojo",
-            PitchDeck.processing_status == 'completed'
+        dojo_project_id = ensure_dojo_project(db)
+        total_files = db.query(ProjectDocument).filter(ProjectDocument.project_id == dojo_project_id).count()
+        processed_files = db.query(ProjectDocument).filter(
+            ProjectDocument.project_id == dojo_project_id,
+            ProjectDocument.processing_status == 'completed'
         ).count()
-        pending_files = db.query(PitchDeck).filter(
-            PitchDeck.data_source == "dojo",
-            PitchDeck.processing_status == 'pending'
+        pending_files = db.query(ProjectDocument).filter(
+            ProjectDocument.project_id == dojo_project_id,
+            ProjectDocument.processing_status == 'pending'
         ).count()
-        failed_files = db.query(PitchDeck).filter(
-            PitchDeck.data_source == "dojo",
-            PitchDeck.processing_status == 'failed'
+        failed_files = db.query(ProjectDocument).filter(
+            ProjectDocument.project_id == dojo_project_id,
+            ProjectDocument.processing_status == 'failed'
         ).count()
         
         # Debug: Log actual records to understand the issue
-        all_dojo_files = db.query(PitchDeck).filter(PitchDeck.data_source == "dojo").all()
+        all_dojo_files = db.query(ProjectDocument).filter(ProjectDocument.project_id == dojo_project_id).all()
         logger.info(f"Debug dojo stats: Found {len(all_dojo_files)} dojo files")
         for file in all_dojo_files:
             logger.info(f"  File: {file.file_name} | Status: {file.processing_status} | ID: {file.id}")
@@ -759,11 +806,13 @@ async def create_extraction_sample(
             )
         
         # Get sample of dojo files - either existing IDs or random sample
+        dojo_project_id = ensure_dojo_project(db)
+        
         if request.existing_ids:
             # Re-check status for existing deck IDs
-            sample_decks = db.query(PitchDeck).filter(
-                PitchDeck.id.in_(request.existing_ids),
-                PitchDeck.data_source == "dojo"
+            sample_decks = db.query(ProjectDocument).filter(
+                ProjectDocument.id.in_(request.existing_ids),
+                ProjectDocument.project_id == dojo_project_id
             ).all()
         else:
             # Get random sample of dojo files
@@ -781,15 +830,15 @@ async def create_extraction_sample(
                     deck_ids = [row[0] for row in sample_deck_ids]
                     
                     # Now get random sample from these IDs using SQLAlchemy ORM
-                    sample_decks = db.query(PitchDeck).filter(
-                        PitchDeck.id.in_(deck_ids)
+                    sample_decks = db.query(ProjectDocument).filter(
+                        ProjectDocument.id.in_(deck_ids)
                     ).order_by(func.random()).limit(request.sample_size).all()
                 else:
                     sample_decks = []
             else:
                 # Get random sample from all dojo files
-                sample_decks = db.query(PitchDeck).filter(
-                    PitchDeck.data_source == "dojo"
+                sample_decks = db.query(ProjectDocument).filter(
+                    ProjectDocument.project_id == dojo_project_id
                 ).order_by(func.random()).limit(request.sample_size).all()
         
         if not sample_decks:
@@ -856,7 +905,7 @@ async def get_cached_decks_count(
         
         return {
             "cached_count": cached_count,
-            "total_dojo_decks": db.query(PitchDeck).filter(PitchDeck.data_source == "dojo").count()
+            "total_dojo_decks": db.query(ProjectDocument).filter(ProjectDocument.project_id == dojo_project_id).count()
         }
         
     except HTTPException:
@@ -994,9 +1043,9 @@ async def run_visual_analysis_batch(
                 )
         
         # Validate deck IDs exist and are dojo files
-        decks = db.query(PitchDeck).filter(
-            PitchDeck.id.in_(request.deck_ids),
-            PitchDeck.data_source == "dojo"
+        decks = db.query(ProjectDocument).filter(
+            ProjectDocument.id.in_(request.deck_ids),
+            ProjectDocument.project_id == dojo_project_id
         ).all()
         
         if len(decks) != len(request.deck_ids):
@@ -1071,9 +1120,9 @@ async def clear_visual_analysis_cache(
             )
         
         # Validate deck IDs exist and are dojo files
-        decks = db.query(PitchDeck).filter(
-            PitchDeck.id.in_(request.deck_ids),
-            PitchDeck.data_source == "dojo"
+        decks = db.query(ProjectDocument).filter(
+            ProjectDocument.id.in_(request.deck_ids),
+            ProjectDocument.project_id == dojo_project_id
         ).all()
         
         if len(decks) != len(request.deck_ids):
@@ -1167,9 +1216,9 @@ async def test_offering_extraction(
             )
         
         # Validate deck IDs exist and are dojo files
-        decks = db.query(PitchDeck).filter(
-            PitchDeck.id.in_(request.deck_ids),
-            PitchDeck.data_source == "dojo"
+        decks = db.query(ProjectDocument).filter(
+            ProjectDocument.id.in_(request.deck_ids),
+            ProjectDocument.project_id == dojo_project_id
         ).all()
         
         if len(decks) != len(request.deck_ids):
@@ -1417,7 +1466,7 @@ async def get_experiment_details(
             deck_ids = deck_ids_raw  # Already a list
         else:
             deck_ids = []
-        decks = db.query(PitchDeck).filter(PitchDeck.id.in_(deck_ids)).all()
+        decks = db.query(ProjectDocument).filter(ProjectDocument.id.in_(deck_ids)).all()
         deck_info = {}
         for deck in decks:
             # Extract page count from visual_analysis_cache
@@ -2387,9 +2436,9 @@ async def run_template_processing_batch(
             )
         
         # Validate deck IDs exist and are dojo files
-        decks = db.query(PitchDeck).filter(
-            PitchDeck.id.in_(deck_ids),
-            PitchDeck.data_source == "dojo"
+        decks = db.query(ProjectDocument).filter(
+            ProjectDocument.id.in_(deck_ids),
+            ProjectDocument.project_id == dojo_project_id
         ).all()
         
         if len(decks) != len(deck_ids):
@@ -2806,7 +2855,7 @@ async def process_visual_analysis_batch(deck_ids: List[int], vision_model: str):
             progress_tracker["step2"]["current_deck_start_time"] = None
             
             # Get deck information and file paths
-            decks = db.query(PitchDeck).filter(PitchDeck.id.in_(deck_ids)).all()
+            decks = db.query(ProjectDocument).filter(ProjectDocument.id.in_(deck_ids)).all()
             if not decks:
                 logger.error("No decks found for visual analysis batch")
                 progress_tracker["step2"]["status"] = "error"

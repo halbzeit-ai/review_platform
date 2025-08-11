@@ -30,7 +30,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { getProjectUploads, uploadPitchDeck, deleteDeck } from '../services/api';
 
-const ProjectUploads = ({ companyId, onUploadComplete }) => {
+const ProjectUploads = ({ projectId, onUploadComplete }) => {
   const { t } = useTranslation();
   const [uploads, setUploads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,19 +41,19 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
   const [uploadStatus, setUploadStatus] = useState(null);
   const [deleting, setDeleting] = useState(null);
 
-  // Track previous companyId to prevent unnecessary reloads
-  const prevCompanyIdRef = useRef();
+  // Track previous projectId to prevent unnecessary reloads
+  const prevProjectIdRef = useRef();
   
-  const loadUploads = useCallback(async (currentCompanyId) => {
-    if (!currentCompanyId) return;
+  const loadUploads = useCallback(async (currentProjectId) => {
+    if (!currentProjectId) return;
     
     try {
-      console.log('ProjectUploads - loadUploads called with companyId:', currentCompanyId);
+      console.log('ProjectUploads - loadUploads called with projectId:', currentProjectId);
       setLoading(true);
       setError(null);
       
       console.log('ProjectUploads - about to call getProjectUploads API...');
-      const response = await getProjectUploads(currentCompanyId);
+      const response = await getProjectUploads(currentProjectId);
       console.log('ProjectUploads - API response:', response);
       const uploadsData = response.data || response;
       console.log('ProjectUploads - processed uploadsData:', uploadsData);
@@ -68,18 +68,18 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
   }, []); // Empty dependency array to prevent recreating the function
   
   useEffect(() => {
-    console.log('ProjectUploads - companyId prop:', companyId, 'prev:', prevCompanyIdRef.current);
-    // Only load if companyId actually changed
-    if (companyId && companyId !== prevCompanyIdRef.current) {
-      console.log('ProjectUploads - companyId actually changed, calling loadUploads');
-      prevCompanyIdRef.current = companyId;
-      loadUploads(companyId); // Pass companyId as parameter instead of using closure
-    } else if (!companyId) {
-      console.log('ProjectUploads - no companyId provided, not loading uploads');
+    console.log('ProjectUploads - projectId prop:', projectId, 'prev:', prevProjectIdRef.current);
+    // Only load if projectId actually changed
+    if (projectId && projectId !== prevProjectIdRef.current) {
+      console.log('ProjectUploads - projectId actually changed, calling loadUploads');
+      prevProjectIdRef.current = projectId;
+      loadUploads(projectId); // Pass projectId as parameter instead of using closure
+    } else if (!projectId) {
+      console.log('ProjectUploads - no projectId provided, not loading uploads');
     } else {
-      console.log('ProjectUploads - companyId unchanged, skipping reload');
+      console.log('ProjectUploads - projectId unchanged, skipping reload');
     }
-  }, [companyId, loadUploads]);
+  }, [projectId, loadUploads]);
 
 
   const handleViewDetails = (upload) => {
@@ -128,7 +128,7 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
       });
       
       // Refresh the uploads list
-      loadUploads(companyId);
+      loadUploads(projectId);
       
       // Call callback if provided
       if (onUploadComplete) {
@@ -167,14 +167,16 @@ const ProjectUploads = ({ companyId, onUploadComplete }) => {
     setUploadStatus(null);
 
     try {
-      await deleteDeck(companyId, upload.id);
+      // TODO: Update delete endpoint to use project ID
+      // await deleteDeck(projectId, upload.id);
+      throw new Error('Delete functionality temporarily disabled during project ID migration');
       setUploadStatus({ 
         type: 'success', 
         message: `"${upload.filename}" deleted successfully!` 
       });
       
       // Refresh the uploads list
-      loadUploads(companyId);
+      loadUploads(projectId);
       
     } catch (error) {
       let errorMessage = 'Delete failed. Please try again.';

@@ -1674,7 +1674,7 @@ const DojoManagement = () => {
   };
 
   // Check if experiment has required extractions for adding companies
-  const canAddDojoCompanies = (experimentDetails) => {
+  const canAddDojoProjects = (experimentDetails) => {
     if (!experimentDetails || !experimentDetails.results) return false;
     
     // Check if experiment has classification, company offering, and company name extractions
@@ -1782,15 +1782,15 @@ const DojoManagement = () => {
     }
   };
 
-  // Add companies from experiment to projects database
-  const addDojoCompanies = async () => {
+  // Add projects from experiment to projects database
+  const addDojoProjects = async () => {
     if (!experimentDetails) return;
     
     try {
       const user = JSON.parse(localStorage.getItem('user'));
       const token = user?.token;
       
-      const response = await fetch('/api/dojo-experiments/add-companies', {
+      const response = await fetch('/api/dojo-experiments/add-projects', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -2847,7 +2847,7 @@ const DojoManagement = () => {
                 <Typography variant="body2">
                   <strong>Safety Notice:</strong> This cleanup operation only removes projects and project documents created from experiments. 
                   All experimental data (experiments, PDFs, results files) are preserved and you can regenerate projects 
-                  by running "Add Dojo Companies" again on any experiment.
+                  by running "Add Dojo Projects" again on any experiment.
                 </Typography>
               </Alert>
               
@@ -3159,7 +3159,7 @@ const DojoManagement = () => {
                 <Typography variant="body2">
                   <strong>Safety Notice:</strong> These cleanup operations only remove projects and project documents created from experiments. 
                   All experimental data (experiments, PDFs, results files) are preserved and you can regenerate projects 
-                  by running "Add Dojo Companies" again on any experiment.
+                  by running "Add Dojo Projects" again on any experiment.
                 </Typography>
               </Alert>
               
@@ -3564,10 +3564,10 @@ const DojoManagement = () => {
             </Button>
             <Button 
               variant="contained" 
-              disabled={!canAddDojoCompanies(experimentDetails)}
-              onClick={addDojoCompanies}
+              disabled={!canAddDojoProjects(experimentDetails)}
+              onClick={addDojoProjects}
             >
-              Add Dojo Companies
+              Add Dojo Projects
             </Button>
           </Box>
         </DialogActions>

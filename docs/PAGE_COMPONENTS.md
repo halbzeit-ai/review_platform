@@ -14,7 +14,7 @@ This document maps URLs, components, and functionality to help you quickly locat
 **Key Features**:
 - Step-by-step funding journey visualization
 - Progress tracking through funding stages
-- Integration with pitch deck analysis
+- Integration with project document analysis
 
 **Data Sources**:
 - `getMyProjects()` → `/api/projects/my-projects`
@@ -25,7 +25,7 @@ This document maps URLs, components, and functionality to help you quickly locat
 #### `/dojo` - DojoManagement.js
 **Purpose**: Advanced AI testing environment for GPs
 **Key Features**:
-- Manage extraction experiments with multiple decks
+- Manage extraction experiments with multiple project documents
 - Detailed classification results with confidence scores
 - Visual analysis caching and management
 - Template processing with custom prompts
@@ -49,6 +49,7 @@ classificationData.primary_sector, confidence_score
 - Experiment results not loading → Check GP role authentication
 - Classification chips missing → Check `primary_sector` vs `classification` field mapping  
 - Processing stuck → Check GPU server connectivity and processing queue
+- Document references failing → Verify project document IDs in experiments table
 
 #### `/gp` - GPDashboard.js
 **Purpose**: Overview dashboard for GP users
@@ -85,7 +86,7 @@ classificationData.primary_sector, confidence_score
 **Key Features**:
 - Startup vs GP registration flows
 - Email verification workflow
-- Company association
+- Project membership association
 
 ### `/change-password` - ChangePassword.js
 **Purpose**: Forced password change for invited users
@@ -194,16 +195,16 @@ File Input → uploadFile() → /api/projects/upload → Processing Queue → Re
 ## Finding Components by User Symptoms
 
 ### "I can't see my results"
-**Likely pages**: StartupDashboard.js, ProjectDashboard.js
-**Check**: API responses, authentication, data field mappings
+**Likely pages**: ProjectDashboard.js
+**Check**: API responses, authentication, data field mappings, project membership
 
 ### "Classification/sector not showing"
-**Likely pages**: StartupDashboard.js (basic), DojoManagement.js (detailed)
+**Likely pages**: ProjectDashboard.js (basic), DojoManagement.js (detailed)
 **Check**: Field name mappings (`classification` vs `primary_sector`)
 
 ### "Upload not working" 
-**Likely pages**: StartupDashboard.js, DojoManagement.js
-**Check**: File upload endpoints, processing queue, file size limits
+**Likely pages**: ProjectDashboard.js, DojoManagement.js
+**Check**: File upload endpoints, processing queue, file size limits, project permissions
 
 ### "Can't access admin features"
 **Likely pages**: Any GP-only route
@@ -245,10 +246,10 @@ grep -A5 -B5 "fieldname" frontend/src/pages/ComponentName.js
 
 ## Common Component Issues
 
-### StartupDashboard.js Issues
-- **Empty results**: Check `/api/projects/extraction-results` and user authentication
+### ProjectDashboard.js Issues
+- **Empty results**: Check `/api/projects/extraction-results` and user authentication, project membership
 - **Missing classification**: Check `classification` field in API response
-- **Upload failures**: Check backend processing queue and file validation
+- **Upload failures**: Check backend processing queue and file validation, project permissions
 
 ### DojoManagement.js Issues  
 - **Access denied**: Check GP role authentication

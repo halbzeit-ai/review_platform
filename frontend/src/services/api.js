@@ -151,8 +151,8 @@ export const getPipelineStages = () =>
   api.get('/pipeline/stages');
 
 // Project-based API
-export const getProjectDeckAnalysis = (companyId, deckId) =>
-  api.get(`/projects/${companyId}/deck-analysis/${deckId}`);
+export const getProjectDeckAnalysis = (projectId, deckId) =>
+  api.get(`/projects/${projectId}/deck-analysis/${deckId}`);
 
 export const getProjectResults = (projectId, deckId) =>
   api.get(`/projects/${projectId}/results/${deckId}`);
@@ -160,19 +160,22 @@ export const getProjectResults = (projectId, deckId) =>
 export const getProjectUploads = (projectId) =>
   api.get(`/projects/${projectId}/uploads`);
 
-export const getSlideImage = (companyId, deckName, slideFilename) =>
-  api.get(`/projects/${companyId}/slide-image/${deckName}/${slideFilename}`, {
+export const getSlideImage = (projectId, deckName, slideFilename) =>
+  api.get(`/projects/${projectId}/slide-image/${deckName}/${slideFilename}`, {
     responseType: 'blob'
   });
 
-export const deleteDeck = (companyId, deckId) =>
-  api.delete(`/projects/${companyId}/deck/${deckId}`);
+export const deleteDeck = (projectId, deckId) =>
+  api.delete(`/projects/${projectId}/deck/${deckId}`);
 
 export const cleanupOrphanedDecks = () =>
   api.delete('/decks/cleanup-orphaned');
 
 export const getCompanyInfo = () =>
   api.get('/auth/company-info');
+
+export const getDashboardInfo = () =>
+  api.get('/auth/dashboard-info');
 
 export const getUserProjects = () =>
   api.get('/auth/user-projects');

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from ..core.volume_storage import volume_storage
 from ..core.config import settings
-from ..db.models import User, PitchDeck
+from ..db.models import User, ProjectDocument
 from ..db.database import get_db
 from .auth import get_current_user
 import uuid
@@ -18,18 +18,29 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
-async def create_project_from_pitch_deck(pitch_deck: PitchDeck, db: Session):
+async def create_project_from_pitch_deck(pitch_deck: ProjectDocument, db: Session):
     """Create a project automatically from a successfully processed pitch deck"""
     try:
+        # Get company_id from the document's project (clean architecture)
+        project_query = db.execute(text("""
+            SELECT company_id FROM projects WHERE id = :project_id
+        """), {"project_id": pitch_deck.project_id}).fetchone()
+        
+        if not project_query:
+            logger.error(f"No project found for document {pitch_deck.id} with project_id {pitch_deck.project_id}")
+            return
+            
+        company_id = project_query[0]
+        
         # Check if project already exists for this company
         existing_project = db.execute(text("""
             SELECT id FROM projects 
             WHERE company_id = :company_id AND is_active = TRUE
             LIMIT 1
-        """), {"company_id": pitch_deck.company_id}).fetchone()
+        """), {"company_id": company_id}).fetchone()
         
         if existing_project:
-            logger.info(f"Project already exists for company {pitch_deck.company_id}, adding deck as document")
+            logger.info(f"Project already exists for company {company_id}, adding deck as document")
             project_id = existing_project[0]
         else:
             # Extract data from results file if available
@@ -114,7 +125,7 @@ async def create_project_from_pitch_deck(pitch_deck: PitchDeck, db: Session):
             "file_name": pitch_deck.file_name,
             "file_path": pitch_deck.file_path,
             "original_filename": pitch_deck.file_name,
-            "uploaded_by": pitch_deck.user_id,
+            "uploaded_by": pitch_deck.uploaded_by,
             "upload_date": datetime.utcnow()
         })
         
@@ -137,7 +148,7 @@ async def create_project_from_pitch_deck(pitch_deck: PitchDeck, db: Session):
                 "file_name": results_filename,
                 "file_path": pitch_deck.results_file_path,
                 "original_filename": results_filename,
-                "uploaded_by": pitch_deck.user_id,
+                "uploaded_by": pitch_deck.uploaded_by,
                 "upload_date": datetime.utcnow()
             })
             
@@ -161,7 +172,7 @@ async def trigger_gpu_processing(pitch_deck_id: int, file_path: str, company_id:
     db = SessionLocal()
     try:
         # Update status to processing
-        pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == pitch_deck_id).first()
+        pitch_deck = db.query(ProjectDocument).filter(ProjectDocument.id == pitch_deck_id).first()
         if pitch_deck:
             pitch_deck.processing_status = "processing"
             db.commit()
@@ -203,7 +214,7 @@ async def trigger_gpu_processing(pitch_deck_id: int, file_path: str, company_id:
         
         # Update status to failed on exception
         try:
-            pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == pitch_deck_id).first()
+            pitch_deck = db.query(ProjectDocument).filter(ProjectDocument.id == pitch_deck_id).first()
             if pitch_deck:
                 pitch_deck.processing_status = "failed"
                 db.commit()
@@ -238,11 +249,11 @@ async def upload_document(
             current_user.company_name
         )
         
-        # Create PitchDeck record in database
+        # Create ProjectDocument record in database
         # Use the same company_id generation logic as in projects.py
         from ..api.projects import get_company_id_from_user
         company_id = get_company_id_from_user(current_user)
-        pitch_deck = PitchDeck(
+        pitch_deck = ProjectDocument(
             user_id=current_user.id,
             company_id=company_id,
             file_name=file.filename,
@@ -276,14 +287,14 @@ async def get_processing_status(
     db: Session = Depends(get_db)
 ):
     """Get processing status for a pitch deck"""
-    pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == pitch_deck_id).first()
+    pitch_deck = db.query(ProjectDocument).filter(ProjectDocument.id == pitch_deck_id).first()
     if not pitch_deck:
         raise HTTPException(status_code=404, detail="Pitch deck not found")
     
     # Check if user owns this deck or is a GP
     from ..api.projects import get_company_id_from_user
     user_company_id = get_company_id_from_user(current_user)
-    if (pitch_deck.user_id != current_user.id and 
+    if (pitch_deck.uploaded_by != current_user.id and 
         pitch_deck.company_id != user_company_id and 
         current_user.role != "gp"):
         raise HTTPException(status_code=403, detail="Access denied")
@@ -303,14 +314,14 @@ async def get_processing_results(
     db: Session = Depends(get_db)
 ):
     """Get AI processing results for a pitch deck"""
-    pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == pitch_deck_id).first()
+    pitch_deck = db.query(ProjectDocument).filter(ProjectDocument.id == pitch_deck_id).first()
     if not pitch_deck:
         raise HTTPException(status_code=404, detail="Pitch deck not found")
     
     # Check if user owns this deck or is a GP
     from ..api.projects import get_company_id_from_user
     user_company_id = get_company_id_from_user(current_user)
-    if (pitch_deck.user_id != current_user.id and 
+    if (pitch_deck.uploaded_by != current_user.id and 
         pitch_deck.company_id != user_company_id and 
         current_user.role != "gp"):
         raise HTTPException(status_code=403, detail="Access denied")
@@ -429,12 +440,12 @@ async def get_processing_progress(
     """Get real-time processing progress for a pitch deck"""
     try:
         # Get pitch deck info
-        pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == pitch_deck_id).first()
+        pitch_deck = db.query(ProjectDocument).filter(ProjectDocument.id == pitch_deck_id).first()
         if not pitch_deck:
             raise HTTPException(status_code=404, detail="Pitch deck not found")
         
         # Check if user has access to this pitch deck
-        if current_user.role == "startup" and pitch_deck.user_id != current_user.id:
+        if current_user.role == "startup" and pitch_deck.uploaded_by != current_user.id:
             raise HTTPException(status_code=403, detail="Access denied")
         
         # Get progress from GPU server

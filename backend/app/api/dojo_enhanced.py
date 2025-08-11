@@ -10,7 +10,7 @@ import hashlib
 import uuid
 from typing import Dict, List, Optional, Tuple
 from sqlalchemy.orm import Session
-from ..db.models import PitchDeck
+from ..db.models import ProjectDocument, Project
 
 logger = logging.getLogger(__name__)
 
@@ -61,9 +61,9 @@ def calculate_file_hash(file_path: str) -> str:
 
 def check_duplicate_file(db: Session, file_name: str, file_hash: str) -> Optional[int]:
     """Check if file already exists by name or hash. Returns pitch_deck_id if found."""
-    existing = db.query(PitchDeck).filter(
-        PitchDeck.data_source == "dojo",
-        ((PitchDeck.file_name == file_name) | (PitchDeck.file_hash == file_hash))
+    existing = db.query(ProjectDocument).filter(
+        ProjectDocument.data_source == "dojo",
+        ((ProjectDocument.file_name == file_name) | (ProjectDocument.file_hash == file_hash))
     ).first()
     return existing.id if existing else None
 
@@ -141,7 +141,7 @@ async def extract_dojo_zip_enhanced(
                 shutil.move(pdf_path, final_path)
                 
                 # Create database record
-                pitch_deck = PitchDeck(
+                pitch_deck = ProjectDocument(
                     user_id=uploaded_by,
                     company_id="dojo",
                     file_name=original_name,

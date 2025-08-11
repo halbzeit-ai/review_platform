@@ -17,11 +17,11 @@ import ProjectResults from '../components/ProjectResults';
 const ProjectResultsPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { companyId, deckId } = useParams();
+  const { projectId, deckId } = useParams();
 
   const breadcrumbs = [
     { label: t('navigation.dashboard'), path: '/dashboard' },
-    { label: 'Project Dashboard', path: `/project/${companyId}` },
+    { label: 'Project Dashboard', path: `/project/${projectId}` },
     { label: 'Results', path: null }
   ];
 
@@ -31,7 +31,7 @@ const ProjectResultsPage = () => {
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
         <Button
           startIcon={<ArrowBackIcon />}
-          onClick={() => navigate(`/project/${companyId}`)}
+          onClick={() => navigate(`/project/${projectId}`)}
           sx={{ mr: 2 }}
         >
           Back to Project
@@ -74,7 +74,7 @@ const ProjectResultsPage = () => {
       </Breadcrumbs>
 
       {/* Results Component */}
-      <ProjectResults companyId={companyId} deckId={deckId} />
+      <ProjectResults projectId={projectId} deckId={deckId} />
     </Box>
   );
 };

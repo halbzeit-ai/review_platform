@@ -105,8 +105,8 @@ curl -s http://localhost/ | grep -o 'main\.[a-f0-9]*\.js'
 ./scripts/debug-api.sh health
 # Look for queue_size, failed_jobs, processing_errors
 
-# Step 2: Check specific deck status (1 minute)
-./scripts/debug-api.sh deck DECK_ID
+# Step 2: Check specific document status (1 minute)
+./scripts/debug-api.sh document DOCUMENT_ID
 # Shows processing status, file existence, table relationships
 
 # Step 3: Check recent logs (2 minutes)

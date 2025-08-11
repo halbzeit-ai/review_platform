@@ -15,7 +15,7 @@ from sqlalchemy import text
 
 from ..core.volume_storage import volume_storage
 from ..core.config import settings
-from ..db.models import User, PitchDeck
+from ..db.models import User, ProjectDocument, ProjectMember
 from ..db.database import get_db
 from ..services.processing_queue import processing_queue_manager, TaskPriority
 from .auth import get_current_user
@@ -42,10 +42,9 @@ async def upload_document_robust(
         if not volume_storage.is_volume_mounted():
             raise HTTPException(status_code=503, detail="Storage volume is not available")
         
-        # For project members, use the project's company_id instead of generating from user profile
-        # Check if user is a member of any project
+        # Get the project that the user belongs to (project-centric architecture)
         project_query = text("""
-            SELECT p.company_id, p.project_name
+            SELECT p.id, p.company_id, p.project_name
             FROM projects p
             JOIN project_members pm ON p.id = pm.project_id
             WHERE pm.user_id = :user_id AND p.is_active = TRUE
@@ -54,15 +53,11 @@ async def upload_document_robust(
         """)
         project_result = db.execute(project_query, {"user_id": current_user.id}).fetchone()
         
-        if project_result:
-            # User is a member of a project, use that project's company_id
-            company_id = project_result[0]
-            logger.info(f"User {current_user.email} uploading to project company_id: {company_id}")
-        else:
-            # Fallback to legacy behavior for users not in any project
-            from ..api.projects import get_company_id_from_user
-            company_id = get_company_id_from_user(current_user)
-            logger.info(f"User {current_user.email} using legacy company_id: {company_id}")
+        if not project_result:
+            raise HTTPException(status_code=403, detail="User must be a member of an active project to upload documents")
+        
+        project_id, company_id, project_name = project_result
+        logger.info(f"User {current_user.email} uploading to project {project_id} ({project_name}) with company_id: {company_id}")
         
         # Save file to shared volume
         file_path = volume_storage.save_upload(
@@ -71,16 +66,19 @@ async def upload_document_robust(
             current_user.company_name
         )
         
-        pitch_deck = PitchDeck(
-            user_id=current_user.id,
-            company_id=company_id,
+        # Create ProjectDocument - clean architecture
+        project_document = ProjectDocument(
+            project_id=project_id,
+            document_type="pitch_deck",
             file_name=file.filename,
             file_path=file_path,
-            processing_status="queued"  # Start as queued
+            original_filename=file.filename,
+            uploaded_by=current_user.id,
+            processing_status="queued"
         )
-        db.add(pitch_deck)
+        db.add(project_document)
         db.commit()
-        db.refresh(pitch_deck)
+        db.refresh(project_document)
         
         # Get user's template configuration (for GPs)
         template_config = {}
@@ -106,12 +104,14 @@ async def upload_document_robust(
             "generate_thumbnails": True,
             "generate_feedback": True,
             "user_id": current_user.id,
-            "upload_timestamp": pitch_deck.created_at.isoformat()
+            "upload_timestamp": project_document.upload_date.isoformat(),
+            "project_id": project_id  # Include project_id for new architecture
         }
         processing_options.update(template_config)  # Add template config if available
         
+        # Use project_document.id directly - clean architecture
         task_id = processing_queue_manager.add_task(
-            pitch_deck_id=pitch_deck.id,
+            document_id=project_document.id,
             file_path=file_path,
             company_id=company_id,
             task_type="pdf_analysis",
@@ -121,22 +121,22 @@ async def upload_document_robust(
         )
         
         if not task_id:
-            # Fallback to old processing if queue fails
-            logger.warning(f"Queue system failed for deck {pitch_deck.id}, falling back to direct processing")
-            pitch_deck.processing_status = "processing"
+            # Fallback to direct processing if queue fails
+            logger.warning(f"Queue system failed for document {project_document.id}, falling back to direct processing")
+            project_document.processing_status = "processing"
             db.commit()
             
-            # Trigger direct processing as fallback
-            from .documents import trigger_gpu_processing
-            import asyncio
-            asyncio.create_task(trigger_gpu_processing(pitch_deck.id, file_path, company_id))
+            # TODO: Update trigger_gpu_processing to work with project_documents
+            logger.error("Direct processing fallback not yet implemented for project_documents")
+            raise HTTPException(status_code=500, detail="Processing system temporarily unavailable")
         
         logger.info(f"Document uploaded: {file.filename} for user {current_user.email}, task_id: {task_id}")
         
         return {
             "message": "Document uploaded successfully",
             "filename": file.filename,
-            "pitch_deck_id": pitch_deck.id,
+            "document_id": project_document.id,
+            "project_id": project_id,
             "file_path": file_path,
             "processing_status": "queued",
             "task_id": task_id
@@ -155,14 +155,20 @@ async def get_processing_progress_robust(
 ):
     """Get processing progress with robust queue system"""
     try:
-        # Get pitch deck info
-        pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == pitch_deck_id).first()
-        if not pitch_deck:
-            raise HTTPException(status_code=404, detail="Pitch deck not found")
+        # Get document info from project_documents (clean architecture)
+        document = db.query(ProjectDocument).filter(ProjectDocument.id == pitch_deck_id).first()
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
         
-        # Check if user has access to this pitch deck
-        if current_user.role == "startup" and pitch_deck.user_id != current_user.id:
-            raise HTTPException(status_code=403, detail="Access denied")
+        # Check if user has access to this document (through project membership)
+        if current_user.role == "startup":
+            # Check project membership
+            project_member = db.query(ProjectMember).filter(
+                ProjectMember.project_id == document.project_id,
+                ProjectMember.user_id == current_user.id
+            ).first()
+            if not project_member:
+                raise HTTPException(status_code=403, detail="Access denied")
         
         # Get progress from queue system first
         queue_progress = processing_queue_manager.get_task_progress(pitch_deck_id, db)
@@ -171,18 +177,18 @@ async def get_processing_progress_robust(
             # Task is actively managed by queue system
             return {
                 "pitch_deck_id": pitch_deck_id,
-                "file_name": pitch_deck.file_name,
-                "processing_status": pitch_deck.processing_status,
+                "file_name": document.file_name,
+                "processing_status": document.processing_status,
                 "queue_progress": queue_progress,
                 "source": "queue_system",
-                "created_at": pitch_deck.created_at.isoformat() if pitch_deck.created_at else None
+                "created_at": document.upload_date.isoformat() if document.upload_date else None
             }
         
         # Fallback: check if completed or use legacy GPU progress
-        if pitch_deck.processing_status == "completed":
+        if document.processing_status == "completed":
             return {
                 "pitch_deck_id": pitch_deck_id,
-                "file_name": pitch_deck.file_name,
+                "file_name": document.file_name,
                 "processing_status": "completed",
                 "queue_progress": {
                     "progress_percentage": 100,
@@ -191,7 +197,7 @@ async def get_processing_progress_robust(
                     "status": "completed"
                 },
                 "source": "completed",
-                "created_at": pitch_deck.created_at.isoformat() if pitch_deck.created_at else None
+                "created_at": document.upload_date.isoformat() if document.upload_date else None
             }
         
         # Final fallback: try legacy GPU progress endpoint
@@ -201,11 +207,11 @@ async def get_processing_progress_robust(
             
             return {
                 "pitch_deck_id": pitch_deck_id,
-                "file_name": pitch_deck.file_name,
-                "processing_status": pitch_deck.processing_status,
+                "file_name": document.file_name,
+                "processing_status": document.processing_status,
                 "gpu_progress": gpu_progress,
                 "source": "legacy_gpu",
-                "created_at": pitch_deck.created_at.isoformat() if pitch_deck.created_at else None
+                "created_at": document.upload_date.isoformat() if document.upload_date else None
             }
         except Exception as gpu_error:
             logger.warning(f"GPU progress check failed for deck {pitch_deck_id}: {gpu_error}")
@@ -213,16 +219,16 @@ async def get_processing_progress_robust(
             # Return basic status if all else fails
             return {
                 "pitch_deck_id": pitch_deck_id,
-                "file_name": pitch_deck.file_name,
-                "processing_status": pitch_deck.processing_status,
+                "file_name": document.file_name,
+                "processing_status": document.processing_status,
                 "queue_progress": {
-                    "progress_percentage": 0 if pitch_deck.processing_status == "processing" else 100,
-                    "current_step": "Processing" if pitch_deck.processing_status == "processing" else "Unknown",
+                    "progress_percentage": 0 if document.processing_status == "processing" else 100,
+                    "current_step": "Processing" if document.processing_status == "processing" else "Unknown",
                     "message": "Status unknown - please check back later",
-                    "status": pitch_deck.processing_status
+                    "status": document.processing_status
                 },
                 "source": "database_only",
-                "created_at": pitch_deck.created_at.isoformat() if pitch_deck.created_at else None
+                "created_at": document.upload_date.isoformat() if document.upload_date else None
             }
         
     except HTTPException:
@@ -286,24 +292,4 @@ async def retry_failed_tasks(
         logger.error(f"Error retrying failed tasks: {e}")
         raise HTTPException(status_code=500, detail="Failed to retry failed tasks")
 
-# Keep legacy endpoints for backward compatibility
-from .documents import get_processing_results, get_document_thumbnail
-
-@router.get("/results/{pitch_deck_id}")
-async def get_processing_results_compat(
-    pitch_deck_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """Legacy compatibility endpoint"""
-    return await get_processing_results(pitch_deck_id, current_user, db)
-
-@router.get("/{document_id}/thumbnail/slide/{slide_number}")
-async def get_document_thumbnail_compat(
-    document_id: int,
-    slide_number: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Legacy compatibility endpoint"""
-    return await get_document_thumbnail(document_id, slide_number, db, current_user)
+# CLEAN ARCHITECTURE: Legacy compatibility endpoints removed - no backward compatibility needed

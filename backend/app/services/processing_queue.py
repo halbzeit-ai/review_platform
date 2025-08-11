@@ -40,7 +40,7 @@ class TaskPriority(Enum):
 class ProcessingTask:
     """Represents a processing task"""
     id: Optional[int]
-    pitch_deck_id: int
+    document_id: int  # Clean architecture - uses project_documents.id
     task_type: str
     status: TaskStatus
     priority: TaskPriority
@@ -126,7 +126,7 @@ class ProcessingQueueManager:
     
     def add_task(
         self, 
-        pitch_deck_id: int,
+        document_id: int,  # Renamed from pitch_deck_id for clean architecture
         file_path: str,
         company_id: str,
         task_type: str = "pdf_analysis",
@@ -143,34 +143,34 @@ class ProcessingQueueManager:
             should_close = False
             
         try:
-            # Check if task already exists for this pitch deck
+            # Check if task already exists for this document
             existing_check = text("""
                 SELECT id FROM processing_queue 
-                WHERE pitch_deck_id = :pitch_deck_id 
+                WHERE document_id = :document_id 
                 AND status IN ('queued', 'processing', 'retry')
                 LIMIT 1
             """)
             
-            existing = db.execute(existing_check, {"pitch_deck_id": pitch_deck_id}).fetchone()
+            existing = db.execute(existing_check, {"document_id": document_id}).fetchone()
             if existing:
-                logger.info(f"Task already exists for pitch deck {pitch_deck_id}: {existing[0]}")
+                logger.info(f"Task already exists for document {document_id}: {existing[0]}")
                 return existing[0]
             
             # Insert new task
             insert_query = text("""
                 INSERT INTO processing_queue (
-                    pitch_deck_id, task_type, status, priority,
+                    document_id, task_type, status, priority,
                     file_path, company_id, processing_options,
                     created_at
                 ) VALUES (
-                    :pitch_deck_id, :task_type, 'queued', :priority,
+                    :document_id, :task_type, 'queued', :priority,
                     :file_path, :company_id, :processing_options,
                     CURRENT_TIMESTAMP
                 ) RETURNING id
             """)
             
             result = db.execute(insert_query, {
-                "pitch_deck_id": pitch_deck_id,
+                "document_id": document_id,
                 "task_type": task_type,
                 "priority": priority.value,
                 "file_path": file_path,
@@ -180,23 +180,18 @@ class ProcessingQueueManager:
             
             task_id = result.fetchone()[0]
             
-            # Update pitch deck to reference this task
-            update_deck_query = text("""
-                UPDATE pitch_decks 
-                SET 
-                    current_processing_task_id = :task_id,
-                    processing_status = 'processing'
-                WHERE id = :pitch_deck_id
+            # Update project document to reference this task
+            update_doc_query = text("""
+                UPDATE project_documents 
+                SET processing_status = 'processing'
+                WHERE id = :document_id
             """)
             
-            db.execute(update_deck_query, {
-                "task_id": task_id,
-                "pitch_deck_id": pitch_deck_id
-            })
+            db.execute(update_doc_query, {"document_id": document_id})
             
             db.commit()
             
-            logger.info(f"Added processing task {task_id} for pitch deck {pitch_deck_id}")
+            logger.info(f"Added processing task {task_id} for document {document_id}")
             return task_id
             
         except Exception as e:
@@ -224,13 +219,13 @@ class ProcessingQueueManager:
                 return None
             
             logger.debug(f"Got result from get_next_processing_task: {result}")
-            task_id, pitch_deck_id, task_type, file_path, company_id, processing_options = result
+            task_id, document_id, task_type, file_path, company_id, processing_options = result
             logger.debug(f"processing_options type: {type(processing_options)}, value: {processing_options}")
             
             # Get full task details
             task_query = text("""
                 SELECT 
-                    id, pitch_deck_id, task_type, status, priority,
+                    id, document_id, task_type, status, priority,
                     file_path, company_id, processing_options,
                     progress_percentage, current_step, progress_message,
                     retry_count, max_retries, created_at, started_at,
@@ -260,7 +255,7 @@ class ProcessingQueueManager:
             logger.debug("About to create ProcessingTask object")
             return ProcessingTask(
                 id=task_row[0],
-                pitch_deck_id=task_row[1],
+                document_id=task_row[1],
                 task_type=task_row[2],
                 status=TaskStatus(task_row[3]),
                 priority=TaskPriority(task_row[4]),
@@ -376,8 +371,8 @@ class ProcessingQueueManager:
             if should_close:
                 db.close()
     
-    def get_task_progress(self, pitch_deck_id: int, db: Session) -> Optional[Dict[str, Any]]:
-        """Get current progress for a pitch deck"""
+    def get_task_progress(self, document_id: int, db: Session) -> Optional[Dict[str, Any]]:
+        """Get current progress for a document"""
         try:
             query = text("""
                 SELECT 
@@ -388,13 +383,13 @@ class ProcessingQueueManager:
                     pq.started_at,
                     pq.retry_count
                 FROM processing_queue pq
-                WHERE pq.pitch_deck_id = :pitch_deck_id
+                WHERE pq.document_id = :document_id
                 AND pq.status IN ('queued', 'processing', 'retry')
                 ORDER BY pq.created_at DESC
                 LIMIT 1
             """)
             
-            result = db.execute(query, {"pitch_deck_id": pitch_deck_id}).fetchone()
+            result = db.execute(query, {"document_id": document_id}).fetchone()
             
             if not result:
                 return None

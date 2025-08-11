@@ -56,7 +56,7 @@ projects:
 
 ### Access Control
 - **Project-based permissions**: Users access specific projects they're members of
-- **Company-based fallback**: Legacy compatibility for old data
+- **Project membership verification**: All access requires active project membership
 - **GP admin access**: Full access to all projects for management
 
 ### Membership Types  
@@ -161,21 +161,22 @@ Dojo experiments create test projects with:
 - **Mass deletion**: Filter and delete multiple test projects
 - **Data regeneration**: Recreate projects from experiment data
 
-## Migration from Legacy System
+## Clean Architecture System
 
-### Automatic Migration
-Legacy pitch decks are automatically converted to projects:
+### Project-Centric Design
+All data now flows through the project-centric architecture:
 ```sql
--- Migration creates:
-projects (from pitch_decks company_id)
-project_documents (referencing original pitch_deck)
-project_members (from pitch_deck owner)
+-- Core structure:
+projects (container for all related data)
+project_documents (all uploaded documents)
+project_members (user access control)
+project_stages (funding journey tracking)
 ```
 
-### Data Preservation
-- **Original data**: All legacy data preserved during migration  
-- **Backward compatibility**: Legacy endpoints continue to work
-- **Gradual transition**: Users can access both old and new interfaces
+### Data Structure
+- **Clean architecture**: All data uses project-centric model
+- **No legacy dependencies**: Removed pitch_decks table references
+- **Simplified access**: Single consistent interface for all operations
 
 ## Best Practices
 

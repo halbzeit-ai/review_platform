@@ -19,6 +19,7 @@ from ..db.database import get_db
 from ..db.models import User
 from .auth import get_current_user
 from ..core.config import settings
+from ..core.access_control import check_project_access, check_project_access_by_company_id
 
 logger = logging.getLogger(__name__)
 
@@ -108,26 +109,7 @@ def get_company_id_from_user(user: User) -> str:
         return re.sub(r'[^a-z0-9-]', '', re.sub(r'\s+', '-', user.company_name.lower()))
     return user.email.split('@')[0]
 
-def check_project_access(user: User, project_id: int, db: Session) -> bool:
-    """Check if user has access to the project"""
-    # Get project company_id
-    query = text("SELECT company_id FROM projects WHERE id = :project_id AND is_active = TRUE")
-    result = db.execute(query, {"project_id": project_id}).fetchone()
-    
-    if not result:
-        return False
-    
-    project_company_id = result[0]
-    
-    # Startups can only access their own company projects
-    if user.role == "startup":
-        return get_company_id_from_user(user) == project_company_id
-    
-    # GPs can access any company project
-    if user.role == "gp":
-        return True
-    
-    return False
+# Legacy function removed - now using unified access control from core.access_control
 
 # Company-level endpoints for managing multiple projects
 @router.get("/companies/{company_id}/projects", response_model=List[ProjectResponse])
@@ -646,10 +628,8 @@ async def get_my_projects(
                 detail="Only startup users can access their projects"
             )
         
-        # Get user's company ID
-        user_company_id = get_company_id_from_user(current_user)
-        
-        # Build query for user's projects
+        # Build query for user's projects using project membership (modern architecture)
+        # This supports the project-based system where users are explicitly added as members
         base_query = """
         SELECT p.id, p.company_id, p.project_name, p.funding_round, p.current_stage_id,
                p.funding_sought, p.healthcare_sector_id, p.company_offering, 
@@ -657,9 +637,10 @@ async def get_my_projects(
                COUNT(DISTINCT pd.id) as document_count,
                COUNT(DISTINCT pi.id) as interaction_count
         FROM projects p
+        INNER JOIN project_members pm ON p.id = pm.project_id
         LEFT JOIN project_documents pd ON p.id = pd.project_id AND pd.is_active = TRUE
         LEFT JOIN project_interactions pi ON p.id = pi.project_id AND pi.status = 'active'
-        WHERE p.is_active = TRUE AND p.company_id = :company_id
+        WHERE p.is_active = TRUE AND pm.user_id = :user_id
         GROUP BY p.id, p.company_id, p.project_name, p.funding_round, p.current_stage_id,
                  p.funding_sought, p.healthcare_sector_id, p.company_offering, 
                  p.project_metadata, p.is_active, p.created_at, p.updated_at
@@ -669,7 +650,7 @@ async def get_my_projects(
         
         query = text(base_query)
         results = db.execute(query, {
-            "company_id": user_company_id,
+            "user_id": current_user.id,
             "limit": limit, 
             "offset": offset
         }).fetchall()
@@ -728,20 +709,12 @@ async def get_project_decks(
                 detail="Project not found"
             )
         
-        # Check access permissions
-        # GPs can access any project, startups can only access their own
-        if current_user.role != "gp":
-            # Check if the user is a member of this project
-            member_check = db.execute(text("""
-                SELECT 1 FROM project_members 
-                WHERE project_id = :project_id AND user_id = :user_id
-            """), {"project_id": project_id, "user_id": current_user.id}).fetchone()
-            
-            if not member_check:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="You don't have access to this project"
-                )
+        # Check access permissions using unified access control
+        if not check_project_access(current_user, project_id, db):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have access to this project"
+            )
         
         # Get all project documents (pitch decks) for this project
         # Use LEFT JOIN with pitch_decks to get the correct deck ID for deck viewer

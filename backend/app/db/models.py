@@ -31,34 +31,19 @@ class User(Base):
     # Relationships
     owned_projects = relationship("Project", back_populates="owner", foreign_keys="Project.owner_id")
 
-class PitchDeck(Base):
-    __tablename__ = "pitch_decks"
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    company_id = Column(String, index=True)  # Company identifier for project-based access
-    file_name = Column(String)
-    file_path = Column(String)  # Relative path in shared volume
-    results_file_path = Column(String)  # Path to analysis results file
-    s3_url = Column(String)  # Legacy field, kept for compatibility
-    processing_status = Column(String, default="pending")  # pending, processing, completed, failed
-    ai_analysis_results = Column(Text, nullable=True)  # JSON string of AI analysis results
-    ai_extracted_startup_name = Column(String, nullable=True)  # AI-extracted startup name from pitch deck content
-    data_source = Column(String, default="startup")  # Source: 'startup' or 'dojo'
-    zip_filename = Column(String, nullable=True)  # Original ZIP filename for dojo files
-    current_processing_task_id = Column(Integer, ForeignKey("processing_queue.id"), nullable=True)  # Reference to current processing task
-    created_at = Column(DateTime, default=datetime.utcnow)
-    user = relationship("User")
-    current_processing_task = relationship("ProcessingQueue", foreign_keys=[current_processing_task_id], post_update=True)
+# CLEAN ARCHITECTURE: Using ProjectDocument for all document types including dojo
 
 class Review(Base):
     __tablename__ = "reviews"
     id = Column(Integer, primary_key=True, index=True)
-    pitch_deck_id = Column(Integer, ForeignKey("pitch_decks.id"))
+    document_id = Column(Integer, ForeignKey("project_documents.id", ondelete="CASCADE"))
     review_data = Column(Text)
     s3_review_url = Column(String)
     status = Column(String)  # "pending", "in_review", "completed"
     created_at = Column(DateTime, default=datetime.utcnow)
-    pitch_deck = relationship("PitchDeck")
+    
+    # Relationships
+    document = relationship("ProjectDocument")
 
 class Question(Base):
     __tablename__ = "questions"
@@ -114,20 +99,6 @@ class Project(Base):
     interactions = relationship("ProjectInteraction", back_populates="project")
     current_stage = relationship("ProjectStage", foreign_keys=[current_stage_id], post_update=True)
 
-class ProjectProgress(Base):
-    __tablename__ = "project_progress"
-    project_id = Column(Integer, primary_key=True)  # Use project_id as primary key for SQLAlchemy
-    company_id = Column(String)
-    project_name = Column(String)
-    funding_round = Column(String)
-    total_stages = Column(Integer)
-    completed_stages = Column(Integer)
-    active_stages = Column(Integer)
-    pending_stages = Column(Integer)
-    completion_percentage = Column(Numeric)
-    current_stage_name = Column(String)
-    current_stage_order = Column(Integer)
-
 class ProjectStage(Base):
     __tablename__ = "project_stages"
     id = Column(Integer, primary_key=True, index=True)
@@ -157,7 +128,6 @@ class ProjectDocument(Base):
     processing_status = Column(String, default="pending")  # pending, processing, completed, failed
     extracted_data = Column(Text, nullable=True)  # JSON for document-specific extractions
     analysis_results_path = Column(String, nullable=True)  # Path to analysis results file
-    reference_pitch_deck_id = Column(Integer, ForeignKey("pitch_decks.id"), nullable=True)  # Link to legacy pitch deck data
     uploaded_by = Column(Integer, ForeignKey("users.id"))
     upload_date = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
@@ -165,7 +135,6 @@ class ProjectDocument(Base):
     # Relationships
     project = relationship("Project", back_populates="documents")
     uploader = relationship("User")
-    reference_pitch_deck = relationship("PitchDeck")
 
 class ProjectInteraction(Base):
     __tablename__ = "project_interactions"
@@ -199,14 +168,14 @@ class PipelinePrompt(Base):
 class VisualAnalysisCache(Base):
     __tablename__ = "visual_analysis_cache"
     id = Column(Integer, primary_key=True, index=True)
-    pitch_deck_id = Column(Integer, ForeignKey("pitch_decks.id", ondelete="CASCADE"), nullable=False, index=True)
+    document_id = Column(Integer, ForeignKey("project_documents.id", ondelete="CASCADE"), nullable=False, index=True)
     analysis_result_json = Column(Text, nullable=False)  # Store full visual analysis JSON
     vision_model_used = Column(String(255), nullable=False)  # e.g., "gemma3:12b"
     prompt_used = Column(Text, nullable=False)  # Store the prompt used for visual analysis
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     
     # Relationships
-    pitch_deck = relationship("PitchDeck")
+    project_document = relationship("ProjectDocument")
 
 class ExtractionExperiment(Base):
     __tablename__ = "extraction_experiments"
@@ -266,7 +235,7 @@ class ChapterAnalysisResult(Base):
     __tablename__ = "chapter_analysis_results"
     
     id = Column(Integer, primary_key=True, index=True)
-    pitch_deck_id = Column(Integer, ForeignKey("pitch_decks.id"), nullable=False, index=True)
+    document_id = Column(Integer, ForeignKey("project_documents.id", ondelete="CASCADE"), nullable=False, index=True)
     chapter_id = Column(Integer, nullable=False, index=True)
     chapter_response = Column(Text)
     average_score = Column(Numeric)
@@ -275,6 +244,9 @@ class ChapterAnalysisResult(Base):
     answered_questions = Column(Integer)
     processing_time = Column(Numeric)
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    document = relationship("ProjectDocument")
 
 class ChapterQuestion(Base):
     __tablename__ = "chapter_questions"
@@ -371,7 +343,7 @@ class QuestionAnalysisResult(Base):
     __tablename__ = "question_analysis_results"
     
     id = Column(Integer, primary_key=True, index=True)
-    pitch_deck_id = Column(Integer, ForeignKey("pitch_decks.id"), nullable=False, index=True)
+    document_id = Column(Integer, ForeignKey("project_documents.id", ondelete="CASCADE"), nullable=False, index=True)
     question_id = Column(Integer, nullable=False, index=True)
     raw_response = Column(Text)
     structured_response = Column(Text)
@@ -381,12 +353,15 @@ class QuestionAnalysisResult(Base):
     model_used = Column(String(100))
     prompt_used = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    document = relationship("ProjectDocument")
 
 class SpecializedAnalysisResult(Base):
     __tablename__ = "specialized_analysis_results"
     
     id = Column(Integer, primary_key=True, index=True)
-    pitch_deck_id = Column(Integer, ForeignKey("pitch_decks.id"), nullable=False, index=True)
+    document_id = Column(Integer, ForeignKey("project_documents.id", ondelete="CASCADE"), nullable=False, index=True)
     analysis_type = Column(String(100), nullable=False)
     analysis_result = Column(Text)
     structured_result = Column(Text)
@@ -394,6 +369,9 @@ class SpecializedAnalysisResult(Base):
     model_used = Column(String(100))
     processing_time = Column(Numeric)
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    document = relationship("ProjectDocument")
 
 class StageTemplate(Base):
     __tablename__ = "stage_templates"
@@ -414,7 +392,7 @@ class StartupClassification(Base):
     __tablename__ = "startup_classifications"
     
     id = Column(Integer, primary_key=True, index=True)
-    pitch_deck_id = Column(Integer, ForeignKey("pitch_decks.id"), nullable=False, index=True)
+    document_id = Column(Integer, ForeignKey("project_documents.id", ondelete="CASCADE"), nullable=False, index=True)
     company_offering = Column(Text, nullable=False)
     primary_sector_id = Column(Integer, ForeignKey("healthcare_sectors.id"), index=True)
     subcategory = Column(String(255))
@@ -427,6 +405,11 @@ class StartupClassification(Base):
     manual_override_reason = Column(Text)
     classified_by = Column(String(255))
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    document = relationship("ProjectDocument")
+    primary_sector = relationship("HealthcareSector", foreign_keys=[primary_sector_id])
+    secondary_sector = relationship("HealthcareSector", foreign_keys=[secondary_sector_id])
 
 class TemplateChapter(Base):
     __tablename__ = "template_chapters"
@@ -451,7 +434,7 @@ class TemplatePerformance(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     template_id = Column(Integer, ForeignKey("analysis_templates.id"), nullable=False, index=True)
-    pitch_deck_id = Column(Integer, ForeignKey("pitch_decks.id"), nullable=False, index=True)
+    document_id = Column(Integer, ForeignKey("project_documents.id", ondelete="CASCADE"), nullable=False, index=True)
     total_processing_time = Column(Numeric)
     successful_questions = Column(Integer)
     failed_questions = Column(Integer)
@@ -459,6 +442,10 @@ class TemplatePerformance(Base):
     gp_rating = Column(Integer)
     gp_feedback = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    template = relationship("AnalysisTemplate")
+    document = relationship("ProjectDocument")
 
 class TestProject(Base):
     __tablename__ = "test_projects"
@@ -516,7 +503,7 @@ class SlideFeedback(Base):
     __tablename__ = "slide_feedback"
     
     id = Column(Integer, primary_key=True, index=True)
-    pitch_deck_id = Column(Integer, ForeignKey("pitch_decks.id", ondelete="CASCADE"), nullable=False, index=True)
+    document_id = Column(Integer, ForeignKey("project_documents.id", ondelete="CASCADE"), nullable=False, index=True)
     slide_number = Column(Integer, nullable=False)
     slide_filename = Column(String(255), nullable=False)
     feedback_text = Column(Text)
@@ -526,17 +513,17 @@ class SlideFeedback(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    pitch_deck = relationship("PitchDeck", backref="slide_feedback")
+    document = relationship("ProjectDocument", backref="slide_feedback")
     
     # Unique constraint
-    __table_args__ = (UniqueConstraint('pitch_deck_id', 'slide_number'),)
+    __table_args__ = (UniqueConstraint('document_id', 'slide_number'),)
 
 
 class ProcessingQueue(Base):
     __tablename__ = "processing_queue"
     
     id = Column(Integer, primary_key=True, index=True)
-    pitch_deck_id = Column(Integer, ForeignKey("pitch_decks.id", ondelete="CASCADE"), nullable=False, index=True)
+    document_id = Column(Integer, ForeignKey("project_documents.id", ondelete="CASCADE"), nullable=False, index=True)
     task_type = Column(String(50), nullable=False, default="pdf_analysis")
     status = Column(String(20), nullable=False, default="queued")  # queued, processing, completed, failed, retry
     priority = Column(Integer, nullable=False, default=1)  # 1=normal, 2=high, 3=urgent
@@ -573,7 +560,7 @@ class ProcessingQueue(Base):
     processing_metadata = Column(postgresql.JSONB, default={})
     
     # Relationships
-    pitch_deck = relationship("PitchDeck", foreign_keys=[pitch_deck_id], backref="processing_tasks")
+    project_document = relationship("ProjectDocument", foreign_keys=[document_id], backref="processing_tasks")
     progress_steps = relationship("ProcessingProgress", back_populates="processing_task", cascade="all, delete-orphan")
     dependent_tasks = relationship("TaskDependency", foreign_keys="TaskDependency.depends_on_task_id", back_populates="depends_on_task")
     dependency_tasks = relationship("TaskDependency", foreign_keys="TaskDependency.dependent_task_id", back_populates="dependent_task")
@@ -581,7 +568,7 @@ class ProcessingQueue(Base):
     # Indexes for efficient queue processing
     __table_args__ = (
         Index('idx_processing_queue_status_priority', 'status', 'priority', 'created_at'),
-        Index('idx_processing_queue_pitch_deck', 'pitch_deck_id'),
+        Index('idx_processing_queue_document', 'document_id'),
         Index('idx_processing_queue_retry', 'status', 'next_retry_at'),
         Index('idx_processing_queue_lock', 'locked_by', 'lock_expires_at'),
     )

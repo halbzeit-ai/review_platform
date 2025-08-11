@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..db.database import get_db
-from ..db.models import User, PitchDeck
+from ..db.models import User, ProjectDocument
 from .auth import get_current_user
 from ..core.config import settings
 import os
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/decks", tags=["decks"])
 
-def check_visual_analysis_completed(deck: PitchDeck) -> bool:
+def check_visual_analysis_completed(deck: ProjectDocument) -> bool:
     """Check if visual analysis is completed for a deck"""
     visual_analysis_completed = False
     
@@ -57,7 +57,7 @@ def get_decks(db: Session = Depends(get_db), current_user: User = Depends(get_cu
     """Get pitch decks based on user role"""
     if current_user.role == "gp":
         # GPs can see all pitch decks
-        decks = db.query(PitchDeck).all()
+        decks = db.query(ProjectDocument).all()
     else:
         # Startups can only see their own pitch decks
         # Use the same company_id generation logic as in projects.py
@@ -65,9 +65,8 @@ def get_decks(db: Session = Depends(get_db), current_user: User = Depends(get_cu
         user_company_id = get_company_id_from_user(current_user)
         print(f"[DEBUG] User {current_user.email} (ID: {current_user.id}) looking for decks with company_id: {user_company_id}")
         
-        decks = db.query(PitchDeck).filter(
-            (PitchDeck.company_id == user_company_id) | 
-            (PitchDeck.user_id == current_user.id)
+        decks = db.query(ProjectDocument).filter(
+            ProjectDocument.uploaded_by == current_user.id
         ).all()
         
         print(f"[DEBUG] Found {len(decks)} decks for user {current_user.email}")
@@ -123,7 +122,7 @@ def get_decks(db: Session = Depends(get_db), current_user: User = Depends(get_cu
 @router.get("/{deck_id}")
 def get_deck(deck_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Get a specific pitch deck"""
-    deck = db.query(PitchDeck).filter(PitchDeck.id == deck_id).first()
+    deck = db.query(ProjectDocument).filter(ProjectDocument.id == deck_id).first()
     if not deck:
         raise HTTPException(status_code=404, detail="Pitch deck not found")
     
@@ -144,7 +143,7 @@ def cleanup_orphaned_decks(db: Session = Depends(get_db), current_user: User = D
         raise HTTPException(status_code=403, detail="Only GPs can cleanup orphaned records")
     
     # Find all pitch decks with non-existent user_ids
-    all_decks = db.query(PitchDeck).all()
+    all_decks = db.query(ProjectDocument).all()
     orphaned_decks = []
     
     for deck in all_decks:

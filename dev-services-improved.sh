@@ -7,12 +7,42 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Configuration
+# Detect environment
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENVIRONMENT=$(${SCRIPT_DIR}/scripts/detect-claude-environment.sh | head -1)
+
+# Environment-aware configuration
+case "$ENVIRONMENT" in
+    "dev_cpu")
+        PROJECT_ROOT="/opt/review-platform"
+        EXTERNAL_IP="65.108.32.143"
+        BACKEND_LOG="/opt/review-platform/backend/backend.log"
+        FRONTEND_LOG="/opt/review-platform/frontend/frontend.log"
+        ;;
+    "prod_cpu")
+        PROJECT_ROOT="/opt/review-platform"
+        EXTERNAL_IP="135.181.63.224"
+        BACKEND_LOG="/opt/review-platform/backend/backend.log"
+        FRONTEND_LOG="/opt/review-platform/frontend/frontend.log"
+        ;;
+    *)
+        # Default/local setup
+        PROJECT_ROOT="/opt/review-platform"
+        EXTERNAL_IP="localhost"
+        BACKEND_LOG="./backend.log"
+        FRONTEND_LOG="./frontend.log"
+        ;;
+esac
+
+# Common configuration
 BACKEND_PORT=8000
 FRONTEND_PORT=3000
-EXTERNAL_IP=65.108.32.143
-BACKEND_LOG=/opt/review-platform-dev/backend/backend.log
-FRONTEND_LOG=/opt/review-platform-dev/frontend/frontend.log
+BACKEND_DIR="${PROJECT_ROOT}/backend"
+FRONTEND_DIR="${PROJECT_ROOT}/frontend"
+
+echo -e "${BLUE}🌍 Environment: ${ENVIRONMENT}${NC}"
+echo -e "${BLUE}📁 Project root: ${PROJECT_ROOT}${NC}"
+echo -e "${BLUE}🌐 External IP: ${EXTERNAL_IP}${NC}"
 
 # Function to check if backend has auto-reload enabled
 check_backend_reload() {
@@ -38,13 +68,13 @@ case "$1" in
                 echo -e "${YELLOW}⚠️  Backend running without auto-reload. Restarting...${NC}"
                 kill -9 $BACKEND_PID
                 sleep 2
-                cd /opt/review-platform-dev/backend
+                cd "$BACKEND_DIR"
                 nohup uvicorn app.main:app --host 0.0.0.0 --port $BACKEND_PORT --reload > $BACKEND_LOG 2>&1 &
                 echo -e "${GREEN}✅ Backend restarted with auto-reload${NC}"
             fi
         else
             echo -e "${BLUE}Starting backend...${NC}"
-            cd /opt/review-platform-dev/backend
+            cd "$BACKEND_DIR"
             nohup uvicorn app.main:app --host 0.0.0.0 --port $BACKEND_PORT --reload > $BACKEND_LOG 2>&1 &
             echo -e "${GREEN}✅ Backend started with auto-reload on port $BACKEND_PORT${NC}"
         fi
@@ -55,7 +85,7 @@ case "$1" in
             echo -e "${GREEN}✅ Frontend already running on port $FRONTEND_PORT${NC}"
         else
             echo -e "${BLUE}Starting frontend...${NC}"
-            cd /opt/review-platform-dev/frontend
+            cd "$FRONTEND_DIR"
             DANGEROUSLY_DISABLE_HOST_CHECK=true nohup npm start > $FRONTEND_LOG 2>&1 &
             echo -e "${GREEN}✅ Frontend started on port $FRONTEND_PORT${NC}"
         fi
@@ -93,7 +123,7 @@ case "$1" in
                 kill -9 $BACKEND_PID
                 sleep 2
             fi
-            cd /opt/review-platform-dev/backend
+            cd "$BACKEND_DIR"
             nohup uvicorn app.main:app --host 0.0.0.0 --port $BACKEND_PORT --reload > $BACKEND_LOG 2>&1 &
             echo -e "${GREEN}✅ Backend restarted with auto-reload${NC}"
         elif [ "$2" == "frontend" ] || [ "$2" == "fe" ]; then
@@ -103,7 +133,7 @@ case "$1" in
                 kill -9 $FRONTEND_PID
                 sleep 2
             fi
-            cd /opt/review-platform-dev/frontend
+            cd "$FRONTEND_DIR"
             DANGEROUSLY_DISABLE_HOST_CHECK=true nohup npm start > $FRONTEND_LOG 2>&1 &
             echo -e "${GREEN}✅ Frontend restarted${NC}"
         else

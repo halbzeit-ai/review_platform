@@ -6,6 +6,7 @@ import asyncio
 import logging
 import httpx
 import json
+import time
 from datetime import datetime
 from typing import Optional
 
@@ -84,7 +85,7 @@ class QueueProcessor:
                 db.commit()  # Commit the get_next_task transaction
                 return
             
-            logger.info(f"Processing task {task.id} for pitch deck {task.pitch_deck_id}")
+            logger.info(f"Processing task {task.id} for document {task.document_id}")
             
             # Update progress
             processing_queue_manager.update_task_progress(
@@ -133,7 +134,7 @@ class QueueProcessor:
             
             request_data = {
                 "task_id": task.id,
-                "pitch_deck_id": task.pitch_deck_id,
+                "document_id": task.document_id,  # Renamed from pitch_deck_id
                 "file_path": full_file_path,
                 "company_id": task.company_id,
                 "callback_url": f"{self.backend_url}/api/internal/update-deck-results",
@@ -229,14 +230,14 @@ class QueueProcessor:
                 db
             )
             
-            # Also update pitch deck status
+            # Also update project document status
             from sqlalchemy import text
             db.execute(text(
-                "UPDATE pitch_decks SET processing_status = 'completed' WHERE id = :pitch_deck_id"
-            ), {"pitch_deck_id": task.pitch_deck_id})
+                "UPDATE project_documents SET processing_status = 'completed' WHERE id = :document_id"
+            ), {"document_id": task.document_id})
             db.commit()
             
-            logger.info(f"Task {task.id} marked as completed in both processing_queue and pitch_decks")
+            logger.info(f"Task {task.id} marked as completed in both processing_queue and project_documents")
             return True
             
         except Exception as e:
@@ -246,11 +247,11 @@ class QueueProcessor:
     async def update_progress(self, pitch_deck_id: int, percentage: int, step: str, message: str, db: Session):
         """Update processing progress via internal API"""
         try:
-            # Get task ID from pitch_deck_id
+            # Get task ID from document_id
             from sqlalchemy import text
             result = db.execute(text(
-                "SELECT id FROM processing_queue WHERE pitch_deck_id = :pitch_deck_id AND status = 'processing'"
-            ), {"pitch_deck_id": pitch_deck_id}).fetchone()
+                "SELECT id FROM processing_queue WHERE document_id = :document_id AND status = 'processing'"
+            ), {"document_id": pitch_deck_id}).fetchone()  # Note: pitch_deck_id param name kept for API compatibility
             
             if result:
                 task_id = result[0]
@@ -276,11 +277,11 @@ class QueueProcessor:
                 db
             )
             
-            # Also update the pitch deck status
+            # Also update the project document status
             from sqlalchemy import text
             db.execute(text(
-                "UPDATE pitch_decks SET processing_status = 'failed' WHERE id = :pitch_deck_id"
-            ), {"pitch_deck_id": task.pitch_deck_id})
+                "UPDATE project_documents SET processing_status = 'failed' WHERE id = :document_id"
+            ), {"document_id": task.document_id})
             db.commit()
             
             logger.info(f"Task {task.id} marked as failed with error: {error_message}")
@@ -426,16 +427,60 @@ class QueueProcessor:
                             if deck_result['deck_id'] == task.pitch_deck_id and deck_result.get('success'):
                                 template_analysis = deck_result.get('template_analysis', {})
                                 
-                                # Save template analysis results as JSON to pitch_decks table
-                                from sqlalchemy import text
-                                db.execute(text(
-                                    "UPDATE pitch_decks SET ai_analysis_results = :results WHERE id = :deck_id"
-                                ), {
-                                    "results": json.dumps(template_analysis),
-                                    "deck_id": task.pitch_deck_id
-                                })
+                                # CRITICAL: Save to extraction_experiments table for startup access (modern architecture)
+                                # This is required for the "View Results" button to become active
+                                experiment_name = f"startup_upload_deck_{task.pitch_deck_id}_{int(time.time())}"
+                                
+                                # Prepare template processing data in the format expected by frontend
+                                template_processing_data = {
+                                    "template_analysis": template_analysis,
+                                    "template_used": deck_result.get("template_used", {}),
+                                    "chapter_analysis": deck_result.get("chapter_analysis", {}),
+                                    "specialized_analysis": deck_result.get("specialized_analysis", {}), 
+                                    "scientific_hypotheses": deck_result.get("scientific_hypotheses", {}),
+                                    "overall_score": deck_result.get("overall_score", 0.0),
+                                    "report_chapters": deck_result.get("report_chapters", {}),
+                                    "report_scores": deck_result.get("report_scores", {}),
+                                    "startup_name": deck_result.get("startup_name"),
+                                    "funding_amount": deck_result.get("funding_amount"),
+                                    "deck_date": deck_result.get("deck_date"),
+                                    "processing_metadata": deck_result.get("processing_metadata", {})
+                                }
+                                
+                                # Update or insert into extraction_experiments (works with both pitch_decks and project_documents)
+                                existing_experiment = db.execute(text("""
+                                    SELECT id FROM extraction_experiments 
+                                    WHERE pitch_deck_ids LIKE '%' || :deck_id || '%'
+                                    ORDER BY created_at DESC LIMIT 1
+                                """), {"deck_id": str(task.pitch_deck_id)}).fetchone()
+                                
+                                if existing_experiment:
+                                    # Update existing experiment with template processing results
+                                    db.execute(text("""
+                                        UPDATE extraction_experiments 
+                                        SET template_processing_results_json = :results
+                                        WHERE id = :experiment_id
+                                    """), {
+                                        "results": json.dumps(template_processing_data),
+                                        "experiment_id": existing_experiment[0]
+                                    })
+                                    logger.info(f"Updated extraction experiment {existing_experiment[0]} with template results for deck {task.pitch_deck_id}")
+                                else:
+                                    # Create new experiment if none exists
+                                    db.execute(text("""
+                                        INSERT INTO extraction_experiments 
+                                        (experiment_name, pitch_deck_ids, results_json, template_processing_results_json)
+                                        VALUES (:experiment_name, :pitch_deck_ids, :results_json, :template_processing_results)
+                                    """), {
+                                        "experiment_name": experiment_name,
+                                        "pitch_deck_ids": [task.pitch_deck_id],
+                                        "results_json": "{}",  # Empty extraction results
+                                        "template_processing_results": json.dumps(template_processing_data)
+                                    })
+                                    logger.info(f"Created new extraction experiment for deck {task.pitch_deck_id} with template results")
+                                
                                 db.commit()
-                                logger.info(f"Saved template analysis results for deck {task.pitch_deck_id}")
+                                logger.info(f"Saved template analysis results for deck {task.pitch_deck_id} to extraction_experiments table")
                                 break
                     
                     return True

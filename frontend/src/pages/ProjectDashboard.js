@@ -61,7 +61,7 @@ const TabPanel = ({ children, value, index }) => (
 const ProjectDashboard = () => {
   const { t } = useTranslation('dashboard');
   const navigate = useNavigate();
-  const { companyId, projectId } = useParams();
+  const { projectId } = useParams();
   const [searchParams] = useSearchParams();
   
   // Determine if this is GP admin view
@@ -79,6 +79,7 @@ const ProjectDashboard = () => {
   const [projectDecks, setProjectDecks] = useState([]);
   const [selectedDeck, setSelectedDeck] = useState(null);
   const [actualCompanyId, setActualCompanyId] = useState(null);
+  const [actualProjectId, setActualProjectId] = useState(null);
   const [progressData, setProgressData] = useState({});
   const [progressIntervals, setProgressIntervals] = useState({});
   const [extractionResults, setExtractionResults] = useState([]);
@@ -100,7 +101,7 @@ const ProjectDashboard = () => {
     loadProjectData();
     loadFundingData();
     fetchExtractionResults();
-  }, [companyId, projectId]);
+  }, [projectId]);
 
   // Cleanup intervals on unmount
   useEffect(() => {
@@ -126,37 +127,18 @@ const ProjectDashboard = () => {
       let displayId;
       let projectName;
       
-      if (isAdminView && projectId) {
-        // GP Admin view: get decks for specific project
+      if (projectId) {
+        // Both admin and regular startup views now use project ID
         decksResponse = await getProjectDecks(projectId);
         const responseData = decksResponse.data || decksResponse;
         projectName = responseData.project_name || 'Unknown Project';
         displayId = projectName;
-        // Set the actual company ID for uploads functionality
+        // Set the actual company ID for uploads functionality (still needed for uploads)
         console.log('Setting actualCompanyId to:', responseData.company_id);
         setActualCompanyId(responseData.company_id);
-      } else if (companyId) {
-        // Regular startup view: get user's own project decks
-        // First, get the user's project to get the project ID
-        const projectsResponse = await getMyProjects();
-        const projects = projectsResponse.data || [];
-        const userProject = projects.find(p => p.company_id === companyId);
-        
-        if (userProject) {
-          // Use the project-based API with the project ID
-          decksResponse = await getProjectDecks(userProject.id);
-          const responseData = decksResponse.data || decksResponse;
-          displayId = `Project: ${companyId}`;
-          setActualCompanyId(companyId);
-        } else {
-          // Fallback if no project found
-          console.warn('No project found for company:', companyId);
-          decksResponse = { data: { decks: [] } };
-          displayId = `Project: ${companyId}`;
-          setActualCompanyId(companyId);
-        }
+        setActualProjectId(parseInt(projectId));
       } else {
-        throw new Error('No valid project identifier found');
+        throw new Error('No project ID found');
       }
       
       const decksData = decksResponse.data || decksResponse;
@@ -186,7 +168,7 @@ const ProjectDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [isAdminView, projectId, companyId]); // Removed 't' dependency to prevent infinite recreations
+  }, [isAdminView, projectId]); // Removed 't' dependency to prevent infinite recreations
 
   // Function to refresh project data (can be called after upload)
   const refreshProjectData = useCallback(() => {
@@ -304,8 +286,8 @@ const ProjectDashboard = () => {
   };
 
   const handleViewDeckAnalysis = (deck) => {
-    const targetCompanyId = isAdminView ? deck.company_id : companyId;
-    navigate(`/project/${targetCompanyId}/deck-viewer/${deck.id}`);
+    // Both views now use project ID for consistent routing
+    navigate(`/project/${projectId}/deck-viewer/${deck.id}`);
   };
 
   const handleViewResults = (deck) => {
@@ -313,18 +295,19 @@ const ProjectDashboard = () => {
       isAdminView,
       pathname: window.location.pathname,
       deckId: deck.id,
-      companyId
+      projectId,
+      actualProjectId
     });
     
-    if (isAdminView) {
-      // In admin view (GP impersonating startup), use startup results page
-      console.log('Navigating to startup results page:', `/results/${deck.id}`);
-      navigate(`/results/${deck.id}`);
-    } else {
-      // Regular startup view uses project results page
-      console.log('Navigating to project results page:', `/project/${companyId}/results/${deck.id}`);
-      navigate(`/project/${companyId}/results/${deck.id}`);
+    // Use project ID for the new unified API routes
+    if (!actualProjectId) {
+      console.error('No project ID available for results navigation');
+      return;
     }
+    
+    const resultsPath = `/project/${actualProjectId}/results/${deck.id}`;
+    console.log('Navigating to project results page:', resultsPath);
+    navigate(resultsPath);
   };
 
   // Extraction results functions
@@ -346,7 +329,7 @@ const ProjectDashboard = () => {
     try {
       setJourneyLoading(true);
       
-      console.log('Loading funding data for companyId:', companyId, 'projectId:', projectId, 'isAdminView:', isAdminView);
+      console.log('Loading funding data for projectId:', projectId, 'isAdminView:', isAdminView);
       
       let projectsData = [];
       let matchingProject = null;
@@ -357,18 +340,18 @@ const ProjectDashboard = () => {
         projectsData = projectsResponse.data || [];
         console.log('All projects response:', projectsData);
         
-        // Find the project by projectId (not companyId)
+        // Find the project by projectId
         matchingProject = projectsData.find(p => p.id === parseInt(projectId));
         console.log('Matching project found by ID:', matchingProject);
-      } else if (companyId) {
+      } else if (projectId) {
         // Regular startup view: get user's own projects
         const projectsResponse = await getMyProjects();
         projectsData = projectsResponse.data || [];
         console.log('My projects response:', projectsData);
         
-        // Find the project matching this company ID
-        matchingProject = projectsData.find(p => p.company_id === companyId);
-        console.log('Matching project found by company ID:', matchingProject);
+        // Find the project matching this project ID
+        matchingProject = projectsData.find(p => p.id === parseInt(projectId));
+        console.log('Matching project found by project ID:', matchingProject);
       }
       
       setProjects(projectsData);
@@ -382,7 +365,7 @@ const ProjectDashboard = () => {
         console.log('Journey response:', journeyResponse.data);
         setProjectJourney(journeyResponse.data);
       } else {
-        console.log('No matching project found. Available projects:', projectsData.map(p => ({id: p.id, company_id: p.company_id})));
+        console.log('No matching project found. Available projects:', projectsData.map(p => ({id: p.id, project_name: p.project_name})));
       }
     } catch (err) {
       console.error('Error loading funding data:', err);
@@ -662,10 +645,10 @@ const ProjectDashboard = () => {
 
   // FIXED: Stable finalCompanyId - only changes when the actual result value changes
   const finalCompanyId = useMemo(() => {
-    const result = actualCompanyId || companyId;
-    console.log('finalCompanyId computed:', result, 'from actualCompanyId:', actualCompanyId, 'companyId:', companyId);
+    const result = actualCompanyId;
+    console.log('finalCompanyId computed:', result, 'from actualCompanyId:', actualCompanyId);
     return result;
-  }, [actualCompanyId || companyId]); // Depend on the result, not the inputs
+  }, [actualCompanyId]); // Depend on the result, not the inputs
 
   const FundingJourneyContent = () => {
     if (journeyLoading) {
@@ -871,7 +854,7 @@ const ProjectDashboard = () => {
             </Box>
           ) : (
             <ProjectUploads 
-              companyId={finalCompanyId} 
+              projectId={actualProjectId} 
               onUploadComplete={refreshProjectData} 
             />
           )}

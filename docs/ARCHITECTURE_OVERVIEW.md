@@ -130,7 +130,8 @@ Backend Structure:
 │   ├── auth.py - Authentication endpoints
 │   ├── projects.py - Project and extraction management
 │   ├── dojo.py - Advanced AI testing and experiments
-│   ├── documents.py - Document upload and processing
+│   ├── documents_robust.py - Document upload and processing
+│   ├── project_management.py - Project member management
 │   └── debug.py - Internal debugging tools
 │
 ├── Core Services (/app/services/)
@@ -193,7 +194,7 @@ GPU Processing Architecture:
    Frontend Polling → Results Display
 
 2. Data Storage Locations:
-   ┌─ Raw Files: /mnt/*/uploads/[company_id]/[filename]
+   ┌─ Raw Files: /mnt/*/uploads/[project_id]/[filename]
    ├─ Results: /mnt/*/results/[processing_id]/
    ├─ Cache: visual_analysis_cache table
    └─ Final Data: extraction_experiments table
@@ -204,15 +205,17 @@ GPU Processing Architecture:
 ```sql
 -- Core Entities
 users (authentication, roles)
-├── companies (startup organizations)
-│   └── pitch_decks (uploaded documents)
-│       ├── reviews (GP feedback)
-│       └── extraction_experiments (AI results)
-│           ├── results_json (offering extraction)
-│           ├── classification_results_json (sector classification)
-│           ├── company_name_results_json (company name extraction)
-│           ├── funding_amount_results_json (funding extraction)
-│           └── deck_date_results_json (date extraction)
+├── projects (project containers for all documents)
+│   ├── project_members (user-project relationships)
+│   ├── project_documents (uploaded documents)
+│   │   ├── reviews (GP feedback)
+│   │   └── extraction_experiments (AI results)
+│   │       ├── results_json (offering extraction)
+│   │       ├── classification_results_json (sector classification)
+│   │       ├── company_name_results_json (company name extraction)
+│   │       ├── funding_amount_results_json (funding extraction)
+│   │       └── deck_date_results_json (date extraction)
+│   └── project_stages (funding journey stages)
 
 -- Supporting Systems
 ├── visual_analysis_cache (PDF page analysis)
@@ -230,10 +233,10 @@ users (authentication, roles)
 ```
 Role Hierarchy:
 ├── startup
-│   ├── Upload pitch decks
-│   ├── View own extraction results
-│   ├── Access funding journey
-│   └── Manage company profile
+│   ├── Upload documents to projects
+│   ├── View project documents and results
+│   ├── Access project funding journey
+│   └── Collaborate with project members
 │
 └── gp (General Partner)
     ├── All startup permissions
@@ -398,7 +401,8 @@ Encryption:
 
 Access Controls:
 ├── Role-based permissions (startup/gp)
-├── Company-level data isolation
+├── Project-based data isolation
+├── Project membership verification
 ├── API endpoint protection
 └── Database row-level security
 ```

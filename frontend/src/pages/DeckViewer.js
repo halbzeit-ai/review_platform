@@ -118,7 +118,7 @@ const FeedbackBubble = ({ feedbackItem }) => {
 };
 
 // Slide Feedback Display Component
-const SlideFeedbackDisplay = ({ slideNumber, feedback, loading = false, companyId, deckId, currentUser, onFeedbackAdded }) => {
+const SlideFeedbackDisplay = ({ slideNumber, feedback, loading = false, projectId, deckId, currentUser, onFeedbackAdded }) => {
   const { t } = useTranslation(['deckViewer', 'common']);
   const [showAddFeedback, setShowAddFeedback] = useState(false);
   const [newFeedback, setNewFeedback] = useState('');
@@ -149,7 +149,7 @@ const SlideFeedbackDisplay = ({ slideNumber, feedback, loading = false, companyI
         feedback_type: currentUser?.role === 'gp' ? 'gp_feedback' : 'startup_feedback'
       };
       
-      await addManualFeedback(companyId, deckId, slideNumber, feedbackData);
+      await addManualFeedback(projectId, deckId, slideNumber, feedbackData);
       
       setNewFeedback('');
       setShowAddFeedback(false);
@@ -264,7 +264,7 @@ const SlideFeedbackDisplay = ({ slideNumber, feedback, loading = false, companyI
 const DeckViewer = () => {
   const { t } = useTranslation(['deckViewer', 'common']);
   const navigate = useNavigate();
-  const { companyId, deckId } = useParams();
+  const { projectId, deckId } = useParams();
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -282,13 +282,13 @@ const DeckViewer = () => {
   
   const [breadcrumbs, setBreadcrumbs] = useState([
     { label: t('common:navigation.dashboard'), path: '/dashboard' },
-    { label: t('navigation.projectDashboard'), path: `/project/${companyId}` },
+    { label: t('navigation.projectDashboard'), path: `/project/${projectId}` },
     { label: t('title'), path: null }
   ]);
 
   useEffect(() => {
     loadDeckAnalysis();
-  }, [companyId, deckId]);
+  }, [projectId, deckId]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -311,7 +311,7 @@ const DeckViewer = () => {
       setLoading(true);
       setError(null);
       
-      const response = await getProjectDeckAnalysis(companyId, deckId);
+      const response = await getProjectDeckAnalysis(projectId, deckId);
       const analysisData = response.data || response;
       
       setDeckAnalysis(analysisData);
@@ -320,7 +320,7 @@ const DeckViewer = () => {
       // Update breadcrumbs
       setBreadcrumbs([
         { label: t('common:navigation.dashboard'), path: '/dashboard' },
-        { label: t('navigation.projectDashboard'), path: `/project/${companyId}` },
+        { label: t('navigation.projectDashboard'), path: `/project/${projectId}` },
         { label: `${t('title')}: ${analysisData.deck_name}`, path: null }
       ]);
       
@@ -356,7 +356,7 @@ const DeckViewer = () => {
           const deckName = `Agaton_Seed_Presentation_2025vF`; // TODO: Get from slide data or deck info
           
           // Use authenticated endpoint
-          const response = await api.get(`/projects/${companyId}/slide-image/${deckName}/${filename}`, {
+          const response = await api.get(`/projects/${projectId}/slide-image/${deckName}/${filename}`, {
             responseType: 'blob'
           });
           
@@ -374,7 +374,7 @@ const DeckViewer = () => {
               const deckName = pathParts[pathParts.length - 2];
               const filename = pathParts[pathParts.length - 1];
               
-              const response = await api.get(`/projects/${companyId}/slide-image/${deckName}/${filename}`, {
+              const response = await api.get(`/projects/${projectId}/slide-image/${deckName}/${filename}`, {
                 responseType: 'blob'
               });
               
@@ -397,7 +397,7 @@ const DeckViewer = () => {
       setFeedbackLoading(true);
       
       // Use authenticated endpoint
-      const response = await getSlideFeedback(companyId, deckId);
+      const response = await getSlideFeedback(projectId, deckId);
       const feedbackData = response.data || response;
       
       // feedbackData.feedback is already keyed by slide number
@@ -523,7 +523,7 @@ const DeckViewer = () => {
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
-        <Button onClick={() => navigate(`/project/${companyId}`)}>
+        <Button onClick={() => navigate(`/project/${projectId}`)}>
           {t('navigation.backToProject')}
         </Button>
       </Box>
@@ -536,7 +536,7 @@ const DeckViewer = () => {
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
         <Button
           startIcon={<ArrowBackIcon />}
-          onClick={() => navigate(`/project/${companyId}`)}
+          onClick={() => navigate(`/project/${projectId}`)}
           sx={{ mr: 2 }}
         >
           {t('navigation.backToProject')}
@@ -586,7 +586,7 @@ const DeckViewer = () => {
               {deckAnalysis?.deck_name}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {t('slideInfo.slideCount', { count: slides.length })} • {t('slideInfo.company')}: {companyId}
+              {t('slideInfo.slideCount', { count: slides.length })} • {t('slideInfo.project')}: {projectId}
             </Typography>
           </Box>
           
@@ -743,7 +743,7 @@ const DeckViewer = () => {
                   slideNumber={currentSlideData.page_number}
                   feedback={slideFeedback[currentSlideData.page_number]}
                   loading={feedbackLoading}
-                  companyId={companyId}
+                  projectId={projectId}
                   deckId={deckId}
                   currentUser={JSON.parse(localStorage.getItem('user'))}
                   onFeedbackAdded={loadSlideFeedback}

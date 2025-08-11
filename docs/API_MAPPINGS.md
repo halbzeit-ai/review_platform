@@ -41,8 +41,8 @@ Frontend Components
 ```
 Database: company_name_results_json
 ├── [].company_name_extraction → Frontend: company_name
-├── pitch_decks.ai_extracted_startup_name → Frontend: company_name (fallback)
-└── pitch_decks.file_name → Frontend: deck_name
+├── project_documents.extracted_data.ai_extracted_startup_name → Frontend: company_name (fallback)
+└── project_documents.file_name → Frontend: deck_name
 ```
 
 ### Company Offering Extraction
@@ -50,7 +50,7 @@ Database: company_name_results_json
 ```
 Database: results_json  
 ├── [].offering_extraction → Frontend: company_offering
-├── [].deck_id → Frontend: deck_id
+├── [].document_id → Frontend: document_id
 └── [].processing_status → Frontend: status
 ```
 
@@ -85,19 +85,19 @@ Database: visual_analysis_cache.analysis_result_json
 ## API Endpoint Data Contracts
 
 ### `/api/projects/extraction-results`
-**Used by**: StartupDashboard.js
+**Used by**: StartupDashboard.js, ProjectDashboard.js
 **Authentication**: Required (Bearer token)
-**Returns**: Array of extraction results for user's decks
+**Returns**: Array of extraction results for user's project documents
 
 ```typescript
 interface ExtractionResult {
-  deck_id: number;
-  deck_name: string;           // from pitch_decks.file_name
+  document_id: number;
+  document_name: string;       // from project_documents.file_name
   company_name?: string;       // from company_name_results_json
   company_offering?: string;   // from results_json
   classification?: string;     // from classification_results_json.primary_sector
   funding_amount?: string;     // from funding_amount_results_json
-  deck_date?: string;         // from deck_date_results_json  
+  document_date?: string;      // from deck_date_results_json  
   extracted_at: string;       // from extraction_experiments.created_at
 }
 ```
@@ -111,15 +111,15 @@ interface ExtractionResult {
 interface ExperimentDetails {
   id: number;
   experiment_name: string;
-  pitch_deck_ids: number[];
+  document_ids: number[];
   results: Array<{
-    deck_id: number;
+    document_id: number;
     offering_extraction: string;
     primary_sector?: string;        // from classification_results_json
     confidence_score?: number;      // from classification_results_json  
     classification_reasoning?: string; // from classification_results_json
     secondary_sector?: string;      // from classification_results_json
-    deck_info: {
+    document_info: {
       filename: string;
       company_name?: string;
       page_count?: number;
@@ -128,7 +128,7 @@ interface ExperimentDetails {
   classification_results: any[];
   company_name_results: any[];
   funding_amount_results: any[];
-  deck_date_results: any[];
+  document_date_results: any[];
 }
 ```
 
@@ -154,18 +154,18 @@ interface ClassificationResult {
 ### Key Tables and Relationships
 
 ```sql
--- Pitch decks (user uploads)
-pitch_decks
-├── id (referenced everywhere as deck_id)
+-- Project documents (user uploads)
+project_documents  
+├── id (referenced everywhere as document_id)
+├── project_id (links to project)
 ├── file_name → Frontend: deck_name
-├── ai_extracted_startup_name → Frontend: company_name (fallback)
-├── company_id (links to user's company)
+├── extracted_data (JSON with ai_extracted_startup_name, etc.)
 └── processing_status → Frontend: status
 
 -- Extraction experiments (AI processing results) 
 extraction_experiments
 ├── id (experiment identifier)
-├── pitch_deck_ids (PostgreSQL array of deck IDs)
+├── pitch_deck_ids (PostgreSQL array of document IDs - legacy field name for compatibility)
 ├── results_json (company offering extractions)
 ├── classification_results_json (sector classifications)
 ├── company_name_results_json (company name extractions)
@@ -175,7 +175,7 @@ extraction_experiments
 
 -- Visual analysis cache (PDF page analysis)
 visual_analysis_cache  
-├── pitch_deck_id (links to pitch_decks.id)
+├── document_id (links to project_documents.id)
 ├── analysis_result_json (page-by-page analysis)
 ├── vision_model_used
 └── created_at
@@ -205,7 +205,7 @@ visual_analysis_cache
 ```bash
 # View raw database content:
 ./scripts/debug-api.sh table extraction_experiments
-./scripts/debug-api.sh deck DECK_ID
+./scripts/debug-api.sh document DOCUMENT_ID
 ```
 
 ### 2. Test API Response
@@ -234,6 +234,8 @@ grep -A10 -B5 "field_name" backend/app/api/endpoint.py
 echo "3. Frontend usage:"
 grep -n "field_name" frontend/src/pages/Component.js
 ```
+
+**Note**: Use `./scripts/debug-api.sh document DOCUMENT_ID` instead of `deck DECK_ID` for current architecture
 
 ## Field Mapping Checklist
 

@@ -1,4 +1,5 @@
 
-from . import auth, decks, reviews, questions
+# CLEAN ARCHITECTURE: Import only active API modules (legacy modules archived)
+from . import auth
 
-__all__ = ['auth', 'decks', 'reviews', 'questions']
+__all__ = ['auth']

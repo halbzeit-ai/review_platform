@@ -15,6 +15,7 @@ import logging
 from ..db.database import get_db
 from ..db.models import User
 from .auth import get_current_user
+from ..core.access_control import check_project_access
 
 logger = logging.getLogger(__name__)
 
@@ -75,27 +76,7 @@ class CreateStageTemplateRequest(BaseModel):
     estimated_duration_days: Optional[int] = None
     stage_metadata: Optional[Dict[str, Any]] = {}
 
-def check_project_access(user: User, project_id: int, db: Session) -> bool:
-    """Check if user has access to the project"""
-    query = text("SELECT company_id FROM projects WHERE id = :project_id AND is_active = TRUE")
-    result = db.execute(query, {"project_id": project_id}).fetchone()
-    
-    if not result:
-        return False
-    
-    project_company_id = result[0]
-    
-    if user.role == "startup":
-        if user.company_name:
-            import re
-            user_company_id = re.sub(r'[^a-z0-9-]', '', re.sub(r'\s+', '-', user.company_name.lower()))
-        else:
-            user_company_id = user.email.split('@')[0]
-        return user_company_id == project_company_id
-    elif user.role == "gp":
-        return True
-    
-    return False
+# Legacy function removed - now using unified access control from core.access_control
 
 # Stage Templates Management (GP only)
 @router.get("/templates", response_model=List[StageTemplateResponse])
@@ -269,11 +250,11 @@ async def get_project_journey(
         estimated_completion_date = None
         
         for row in stages_result:
-            stage_id, proj_id, template_id, stage_name, stage_code, stage_order, status, metadata, started_at, completed_at, created_at, est_duration = row
+            stage_id, proj_id, template_id, stage_name, stage_code, stage_order, stage_status, metadata, started_at, completed_at, created_at, est_duration = row
             
             # Calculate estimated completion for pending/active stages
             estimated_completion = None
-            if status in ['pending', 'active'] and est_duration:
+            if stage_status in ['pending', 'active'] and est_duration:
                 base_date = started_at if started_at else datetime.utcnow()
                 estimated_completion = base_date + timedelta(days=est_duration)
                 
@@ -288,7 +269,7 @@ async def get_project_journey(
                 stage_name=stage_name,
                 stage_code=stage_code,
                 stage_order=stage_order,
-                status=status,
+                status=stage_status,
                 stage_metadata=metadata if isinstance(metadata, dict) else (json.loads(metadata) if metadata else {}),
                 started_at=started_at,
                 completed_at=completed_at,

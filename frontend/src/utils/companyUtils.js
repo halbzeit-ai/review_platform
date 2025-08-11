@@ -1,14 +1,33 @@
-import { getCompanyInfo, getUserProjects } from '../services/api';
+import { getCompanyInfo, getDashboardInfo, getUserProjects } from '../services/api';
 
 /**
  * Get the routing information for the current user
- * For startup users, this returns project ID routing instead of company ID
+ * Uses clean API separation: company info vs dashboard routing
  * @returns {Promise<{companyId: string, dashboardPath: string, companyName: string, projectId?: number}>}
  */
 export const getCurrentUserCompanyInfo = async () => {
   try {
-    const response = await getCompanyInfo();
-    return response.data;
+    // Get dashboard routing information (clean API)
+    const dashboardResponse = await getDashboardInfo();
+    const dashboardData = dashboardResponse.data;
+    
+    if (dashboardData.user_type === "startup_with_project") {
+      // For startup users with project membership - use project ID routing
+      return {
+        dashboard_path: dashboardData.dashboard_path,
+        project_id: dashboardData.project_id,
+        project_name: dashboardData.project_name,
+        company_id: null, // Not needed for project routing
+        company_name: dashboardData.project_name // Use project name as display name
+      };
+    } else {
+      // For GPs or startup users without projects - use standard routing
+      return {
+        dashboard_path: dashboardData.dashboard_path,
+        user_type: dashboardData.user_type,
+        message: dashboardData.message
+      };
+    }
   } catch (error) {
     console.error('Failed to get company info from backend:', error);
     

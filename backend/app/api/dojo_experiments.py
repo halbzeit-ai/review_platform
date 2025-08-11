@@ -403,19 +403,19 @@ class AddDojoCompaniesResponse(BaseModel):
     projects_created: int
     companies_created: List[str]
 
-@router.post("/add-companies", response_model=AddDojoCompaniesResponse)
-async def add_dojo_companies_from_experiment(
+@router.post("/add-projects", response_model=AddDojoCompaniesResponse)  # Keep response model for compatibility
+async def add_dojo_projects_from_experiment(
     request: AddDojoCompaniesRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Add companies from a dojo experiment to the projects database"""
+    """Add projects from a dojo experiment to the projects database"""
     try:
         # Check if user is GP
         if current_user.role != "gp":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only GPs can add companies from experiments"
+                detail="Only GPs can add projects from experiments"
             )
         
         # Get the experiment details

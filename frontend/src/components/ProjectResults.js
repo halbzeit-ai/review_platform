@@ -35,24 +35,24 @@ import { getProjectResults } from '../services/api';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
 import { formatMarkdownText } from '../utils/markdownFormatter';
 
-const ProjectResults = ({ companyId, deckId }) => {
+const ProjectResults = ({ projectId, deckId }) => {
   const { t } = useTranslation('review');
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (companyId && deckId) {
+    if (projectId && deckId) {
       fetchResults();
     }
-  }, [companyId, deckId]);
+  }, [projectId, deckId]);
 
   const fetchResults = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await getProjectResults(companyId, deckId);
+      const response = await getProjectResults(projectId, deckId);
       const resultsData = response.data || response;
       
       setResults(resultsData);

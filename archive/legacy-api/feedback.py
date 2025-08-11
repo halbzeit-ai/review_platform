@@ -10,7 +10,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
 from ..db.database import get_db
-from ..db.models import User, SlideFeedback, PitchDeck, Project
+from ..db.models import User, SlideFeedback, ProjectDocument, Project
 from ..api.auth import get_current_user
 
 class ManualFeedbackRequest(BaseModel):

@@ -4,7 +4,8 @@ from contextlib import asynccontextmanager
 import asyncio
 from .core.config import settings
 from .core.logging_config import setup_shared_logging
-from .api import auth, decks, reviews, questions, documents, documents_robust, config, healthcare_templates, pipeline, projects, internal, dojo, project_management, project_stages, dojo_experiments, funding_stages, invitations, feedback, debug
+from .api import auth, documents_robust, config, healthcare_templates, pipeline, projects, internal, dojo, project_management, project_stages, dojo_experiments, funding_stages, invitations, debug
+# CLEAN ARCHITECTURE: Removed legacy API modules (decks, reviews, questions, documents, feedback) - archived in /archive/legacy-api/
 from .db.models import Base
 from .db.database import engine
 from .services.queue_processor import queue_processor
@@ -48,11 +49,8 @@ app.add_middleware(
 
 # Include routers
 app.include_router(auth.router, prefix=settings.API_V1_STR)
-app.include_router(decks.router, prefix=settings.API_V1_STR)
-app.include_router(reviews.router, prefix=settings.API_V1_STR)
-app.include_router(questions.router, prefix=settings.API_V1_STR)
-app.include_router(documents.router, prefix=settings.API_V1_STR)
-app.include_router(documents_robust.router, prefix=f"{settings.API_V1_STR}/robust")
+# CLEAN ARCHITECTURE: Use documents_robust.router at the main /documents endpoint instead of legacy documents.router
+app.include_router(documents_robust.router, prefix=settings.API_V1_STR)  # Now at /api/documents instead of /api/robust/documents
 app.include_router(config.router, prefix=settings.API_V1_STR)
 app.include_router(healthcare_templates.router, prefix=settings.API_V1_STR)
 app.include_router(pipeline.router, prefix=settings.API_V1_STR)
@@ -64,7 +62,7 @@ app.include_router(project_stages.router, prefix=settings.API_V1_STR)
 app.include_router(dojo_experiments.router, prefix=settings.API_V1_STR)
 app.include_router(funding_stages.router, prefix=settings.API_V1_STR)
 app.include_router(invitations.router, prefix=settings.API_V1_STR)
-app.include_router(feedback.router, prefix=settings.API_V1_STR)
+# CLEAN ARCHITECTURE: feedback.router archived as legacy
 app.include_router(debug.router, prefix=f"{settings.API_V1_STR}/debug")
 
 @app.get("/")

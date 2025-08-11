@@ -140,6 +140,44 @@ This is a startup review platform with a Python FastAPI backend and React fronte
 - **GPU Access**: Both dev_gpu and prod_gpu connect to their respective CPU databases remotely
 - **Legacy**: SQLite for development (`backend/sql_app.db`) - deprecated
 
+## Database and Model Synchronization
+
+**IMPORTANT**: Keep database and models.py in sync to avoid deployment issues.
+
+### Quick Sync Check
+```bash
+# Check if database and models.py are in sync
+./scripts/db-sync-simple.sh
+
+# Expected output if in sync:
+# ✅ Database and models.py are IN SYNC!
+# ✅ All foreign keys are valid
+```
+
+### Database Management Tools
+```bash
+# Comprehensive database management
+./scripts/db-management.sh check       # Check sync status
+./scripts/db-management.sh orphans     # List tables without models
+./scripts/db-management.sh validate-fk # Validate foreign keys
+./scripts/db-management.sh create-model <table_name> # Generate model from table
+
+# Pre-commit hook (automatically checks sync before commits)
+# Already installed at .git/hooks/pre-commit
+```
+
+### Common Sync Issues and Solutions
+1. **Table only in database**: Either add model to models.py or drop table
+2. **Table only in models.py**: Run migration to create table or remove unused model
+3. **Column mismatch**: Update model or run migration
+4. **Example**: ProjectProgress model was defined but never used - removed it
+
+### Best Practices
+- Always run sync check before deployment
+- Remove unused models to keep codebase clean
+- Keep table names consistent (snake_case)
+- Document any intentional mismatches
+
 ## Development Commands
 
 ### Quick Service Management (Recommended for Claude)
@@ -185,7 +223,7 @@ sudo -u postgres psql review-platform
 ./scripts/debug-api.sh health                       # System health check
 ./scripts/debug-api.sh env                          # Environment configuration  
 ./scripts/debug-api.sh tables                       # List all database tables
-./scripts/debug-api.sh table pitch_decks            # Table structure & sample data
+./scripts/debug-api.sh table project_documents     # Table structure & sample data
 ./scripts/debug-api.sh models                       # AI model configuration
 ./scripts/debug-api.sh prompts                      # All pipeline prompts
 ./scripts/debug-api.sh prompts offering_extraction  # Specific prompt stage
@@ -194,10 +232,10 @@ sudo -u postgres psql review-platform
 #### 🔧 PROCESSING & DOCUMENTS  
 ```bash
 ./scripts/debug-api.sh processing                   # Overall processing queue analysis
-./scripts/debug-api.sh processing 152               # Specific deck processing details
+./scripts/debug-api.sh processing 152               # Specific document processing details
 ./scripts/debug-api.sh queue                        # Queue health & failed tasks
-./scripts/debug-api.sh deck 152                     # Deck status (API endpoint)
-./scripts/debug-api.sh specialized 152              # Specialized analysis results
+./scripts/debug-api.sh document 152                  # Document status (API endpoint)
+./scripts/debug-api.sh specialized 152              # Specialized analysis results for document
 ```
 
 #### 🏗️ PROJECTS & USERS
@@ -255,6 +293,48 @@ GET /api/debug/models/config                   # AI model configuration
 - ✅ **Healthcare Templates**: Performance, sectors, customizations
 - ✅ **System Configuration**: Models, prompts, environment settings
 - ✅ **Cross-System Analysis**: Relationships between users, projects, and data
+
+### Secure Authentication Helper: auth-helper.sh ⭐ NEW ⭐
+
+**SECURE API TESTING**: For cases where you need to test authenticated endpoints safely.
+
+```bash
+# SETUP (One-time)
+./scripts/auth-helper.sh setup                    # Initialize secure config
+./scripts/auth-helper.sh config                   # Show configuration
+
+# AUTHENTICATION (Uses real login endpoints - no backdoors)
+./scripts/auth-helper.sh login startup user@example.com   # Login as startup user
+./scripts/auth-helper.sh login gp gp@example.com         # Login as GP
+./scripts/auth-helper.sh whoami                          # Show current user
+
+# AUTHENTICATED API TESTING
+./scripts/auth-helper.sh api GET /api/projects/my-projects          # User's projects
+./scripts/auth-helper.sh api GET /api/projects/extraction-results   # User's results
+./scripts/auth-helper.sh api POST /api/projects/upload -F file=@doc.pdf  # File upload
+./scripts/auth-helper.sh logout                                     # Clean logout
+```
+
+**Security Features**:
+- ✅ **No Backdoors**: Uses legitimate authentication endpoints only
+- ✅ **Real Credentials**: Requires actual user passwords from secure config
+- ✅ **Production Warnings**: Detects production environment and warns
+- ✅ **Secure Storage**: Tokens stored with proper permissions (chmod 600)
+- ✅ **Automatic Cleanup**: Tokens removed on logout
+- ✅ **Role Validation**: Ensures user role matches config
+
+**Configuration**:
+```bash
+# Add test users to /opt/review-platform/scripts/test-users.conf:
+testuser@startup.com:SecurePassword123:startup
+testgp@halbzeit.ai:GPPassword456:gp
+```
+
+**When to Use**: 
+- ✅ Testing user-specific endpoints that require authentication
+- ✅ Debugging file upload workflows 
+- ✅ Testing project member access
+- ❌ **Still prefer debug-api.sh for system-level debugging** (no auth required)
 
 ## Claude Development Helper Script: Comprehensive Toolkit ⭐
 
@@ -991,13 +1071,13 @@ grep -A5 -B5 "Starting\|Failed to start" /mnt/CPU-GPU/logs/*.log       # Product
 # (Returns: {"detail": "Not authenticated"})
 
 # Use this: 
-./scripts/debug-api.sh deck 143
-# ✅ Gets full deck status, processing info, and table relationships immediately
+./scripts/debug-api.sh document 143
+# ✅ Gets full document status, processing info, and table relationships immediately
 
 # Quick investigation workflow:
 ./scripts/debug-api.sh health        # 1. Check system health
 ./scripts/debug-api.sh tables        # 2. See available tables  
-./scripts/debug-api.sh deck 143      # 3. Check specific deck
+./scripts/debug-api.sh document 143   # 3. Check specific document
 ./scripts/debug-api.sh table reviews # 4. Investigate table structure if needed
 ```
 
@@ -1010,7 +1090,7 @@ grep -A5 -B5 "Starting\|Failed to start" /mnt/CPU-GPU/logs/*.log       # Product
 ### Database Schema Investigation
 ```bash
 # NEW: Use debug tools instead of manual SQL
-./scripts/debug-api.sh table pitch_decks    # Get full table info + samples
+./scripts/debug-api.sh table project_documents # Get full table info + samples
 ./scripts/debug-api.sh tables               # List all available tables
 
 # OLD: Manual SQL (use only when debug tools aren't sufficient)
@@ -1069,7 +1149,7 @@ curl -s "http://65.108.32.143:3000" | grep -o "<title>.*</title>"
 5. **Verification**: Check `/openapi.json` for endpoint registration
 
 ### Error Investigation Process (UPDATED WORKFLOW)
-1. **Use debug tools first**: `./scripts/debug-api.sh health` and `./scripts/debug-api.sh deck <id>`
+1. **Use debug tools first**: `./scripts/debug-api.sh health` and `./scripts/debug-api.sh document <id>`
 2. **Check HTTP status**: 404 (not found) vs 500 (server error) vs 401 (auth)  
 3. **Backend logs**: Look for SQL errors and stack traces
 4. **Frontend console**: Check for JavaScript errors
@@ -1090,7 +1170,7 @@ curl -s "http://65.108.32.143:3000" | grep -o "<title>.*</title>"
 **I now have powerful debug tools that make me more effective at troubleshooting issues:**
 
 ### What I Can Do Efficiently:
-✅ **Investigate deck processing issues** without authentication barriers
+✅ **Investigate document processing issues** without authentication barriers
 ✅ **Check database table existence and structure** instantly
 ✅ **Get sample data** from any table for analysis
 ✅ **Verify system health** comprehensively
@@ -1099,15 +1179,15 @@ curl -s "http://65.108.32.143:3000" | grep -o "<title>.*</title>"
 
 ### My Debugging Workflow:
 1. **Start with system health**: `./scripts/debug-api.sh health`
-2. **Check specific deck issues**: `./scripts/debug-api.sh deck <id>` 
+2. **Check specific document issues**: `./scripts/debug-api.sh document <id>` 
 3. **Investigate database structure**: `./scripts/debug-api.sh table <name>`
 4. **Verify environment config**: `./scripts/debug-api.sh env`
 5. **Only then** resort to manual SQL or authenticated API calls
 
 ### Example Scenarios I Handle Better:
-- **"Error fetching progress for deck 143"** → `./scripts/debug-api.sh deck 143` shows processing status, table relationships, and file info
+- **"Error fetching progress for document 143"** → `./scripts/debug-api.sh document 143` shows processing status, table relationships, and file info
 - **"Does table X exist?"** → `./scripts/debug-api.sh tables` lists all tables instantly
-- **"What columns does pitch_decks have?"** → `./scripts/debug-api.sh table pitch_decks` shows structure + samples
+- **"What columns does project_documents have?"** → `./scripts/debug-api.sh table project_documents` shows structure + samples
 - **"Is the backend healthy?"** → `./scripts/debug-api.sh health` shows comprehensive system status
 
 ### Key Advantage:

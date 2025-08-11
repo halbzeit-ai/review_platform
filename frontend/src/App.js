@@ -63,9 +63,9 @@ function App() {
           <Route path="/config" element={<ConfigPage />} />
           <Route path="/templates" element={<TemplateManagement />} />
           <Route path="/dojo" element={<DojoManagement />} />
-          <Route path="/project/:companyId" element={<ProjectDashboard />} />
-          <Route path="/project/:companyId/deck-viewer/:deckId" element={<DeckViewer />} />
-          <Route path="/project/:companyId/results/:deckId" element={<ProjectResultsPage />} />
+          <Route path="/project/:projectId" element={<ProjectDashboard />} />
+          <Route path="/project/:projectId/deck-viewer/:deckId" element={<DeckViewer />} />
+          <Route path="/project/:projectId/results/:deckId" element={<ProjectResultsPage />} />
           <Route path="/funding-journey" element={<StartupJourney />} />
           <Route path="/funding-journey/:projectId" element={<StartupJourney />} />
           <Route path="/admin/project/:projectId/startup-view" element={<ProjectDashboard />} />

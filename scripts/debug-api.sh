@@ -76,10 +76,10 @@ Usage: $0 [command] [options]
   prompts [stage]              - Show pipeline prompts (all stages or specific)
 
 🔧 PROCESSING & DOCUMENTS:
-  processing [deck_id]         - Processing queue analysis (optionally for specific deck)
+  processing [document_id]     - Processing queue analysis (optionally for specific document)
   queue                        - Processing queue health and statistics
-  deck <id>                    - Get deck status and processing info
-  specialized <id>             - Get specialized analysis results for deck
+  document <id>                - Get document status and processing info
+  specialized <id>             - Get specialized analysis results for document
 
 🏗️ PROJECTS & USERS:
   project <id>                 - Analyze project data and relationships
@@ -108,7 +108,7 @@ Usage: $0 [command] [options]
 
 Examples:
   $0 health                           # System health check
-  $0 processing 143                   # Check deck 143 processing details
+  $0 processing 143                   # Check document 143 processing details
   $0 queue                            # Processing queue health
   $0 project-docs 31                  # Analyze project 31 document pipeline
   $0 invitations user@startup.com     # Check user's invitations
@@ -139,28 +139,28 @@ cmd_health() {
     api_call "/health-detailed" "Comprehensive system health"
 }
 
-cmd_deck() {
-    local deck_id=$1
-    if [[ -z "$deck_id" ]]; then
-        log_error "Please provide a deck ID"
-        echo "Usage: $0 deck <deck_id>"
+cmd_document() {
+    local document_id=$1
+    if [[ -z "$document_id" ]]; then
+        log_error "Please provide a document ID"
+        echo "Usage: $0 document <document_id>"
         exit 1
     fi
     
-    log_section "Deck Status Check"
-    api_call "/deck/$deck_id/status" "Deck $deck_id processing status"
+    log_section "Document Status Check"
+    api_call "/deck/$document_id/status" "Document $document_id processing status (using legacy endpoint)"
 }
 
 cmd_specialized() {
-    local deck_id=$1
-    if [[ -z "$deck_id" ]]; then
-        log_error "Please provide a deck ID"
-        echo "Usage: $0 specialized <deck_id>"
+    local document_id=$1
+    if [[ -z "$document_id" ]]; then
+        log_error "Please provide a document ID"
+        echo "Usage: $0 specialized <document_id>"
         exit 1
     fi
     
     log_section "Specialized Analysis Results"
-    api_call "/deck/$deck_id/specialized-analysis" "Specialized analysis for deck $deck_id (clinical_validation, regulatory_pathway, scientific_hypothesis)"
+    api_call "/deck/$document_id/specialized-analysis" "Specialized analysis for document $document_id (clinical_validation, regulatory_pathway, scientific_hypothesis)"
 }
 
 cmd_tables() {
@@ -383,7 +383,7 @@ cmd_orphans() {
 
 # NEW: Processing Queue Analysis
 cmd_processing() {
-    local deck_id=$1
+    local document_id=$1
     log_section "Document Processing Analysis"
     
     echo -e "\n${YELLOW}📄 Processing Queue Status${NC}"
@@ -398,8 +398,8 @@ cmd_processing() {
     ORDER BY count DESC;
     " 2>/dev/null || log_error "Database connection failed"
     
-    if [[ -n "$deck_id" ]]; then
-        echo -e "\n${YELLOW}🔍 Deck $deck_id Processing Details${NC}"
+    if [[ -n "$document_id" ]]; then
+        echo -e "\n${YELLOW}🔍 Document $document_id Processing Details${NC}"
         psql -h localhost -U review_user -d review-platform -c "
         SELECT 
             pq.status, 
@@ -411,15 +411,15 @@ cmd_processing() {
             pq.started_at, 
             pq.completed_at,
             pd.file_name, 
-            pd.processing_status as deck_status,
+            pd.processing_status as document_status,
             CASE WHEN pq.last_error IS NOT NULL THEN SUBSTRING(pq.last_error, 1, 100) || '...' ELSE 'No errors' END as error_preview
         FROM processing_queue pq
-        JOIN pitch_decks pd ON pq.pitch_deck_id = pd.id
-        WHERE pq.pitch_deck_id = $deck_id
+        LEFT JOIN project_documents pd ON pq.document_id = pd.id
+        WHERE pq.document_id = $document_id
         ORDER BY pq.created_at DESC;
-        " 2>/dev/null || log_error "Failed to get deck processing details"
+        " 2>/dev/null || log_error "Failed to get document processing details"
         
-        echo -e "\n${YELLOW}📊 Processing Steps for Deck $deck_id${NC}"
+        echo -e "\n${YELLOW}📊 Processing Steps for Document $document_id${NC}"
         psql -h localhost -U review_user -d review-platform -c "
         SELECT 
             pp.step_name,
@@ -429,7 +429,7 @@ cmd_processing() {
             pp.created_at
         FROM processing_progress pp
         JOIN processing_queue pq ON pp.processing_queue_id = pq.id
-        WHERE pq.pitch_deck_id = $deck_id
+        WHERE pq.document_id = $document_id
         ORDER BY pp.created_at DESC
         LIMIT 10;
         " 2>/dev/null || true
@@ -444,7 +444,7 @@ cmd_processing() {
             pq.created_at,
             CASE WHEN pq.last_error IS NOT NULL THEN '❌' ELSE '✅' END as has_errors
         FROM processing_queue pq
-        JOIN pitch_decks pd ON pq.pitch_deck_id = pd.id
+        LEFT JOIN project_documents pd ON pq.document_id = pd.id
         ORDER BY pq.created_at DESC
         LIMIT 15;
         " 2>/dev/null || true
@@ -475,7 +475,7 @@ cmd_queue() {
         pq.created_at,
         SUBSTRING(pq.last_error, 1, 100) || '...' as error_preview
     FROM processing_queue pq
-    JOIN pitch_decks pd ON pq.pitch_deck_id = pd.id
+    LEFT JOIN project_documents pd ON pq.document_id = pd.id
     WHERE pq.status = 'failed'
     ORDER BY pq.created_at DESC
     LIMIT 10;
@@ -520,7 +520,7 @@ cmd_project_docs() {
         pq.created_at as queued_at,
         CASE WHEN pq.last_error IS NOT NULL THEN '❌' ELSE '✅' END as has_errors
     FROM project_documents pd
-    LEFT JOIN processing_queue pq ON pd.reference_pitch_deck_id = pq.pitch_deck_id
+    LEFT JOIN processing_queue pq ON pd.id = pq.document_id
     WHERE pd.project_id = $project_id
     ORDER BY pd.upload_date DESC;
     " 2>/dev/null || log_error "Failed to get project documents"
@@ -650,27 +650,30 @@ cmd_dojo() {
             echo -e "\n${YELLOW}📊 Dojo Statistics${NC}"
             psql -h localhost -U review_user -d review-platform -c "
             SELECT 
-                COUNT(*) as total_dojo_decks,
-                COUNT(DISTINCT company_id) as unique_companies,
-                COUNT(*) FILTER (WHERE processing_status = 'completed') as processed,
-                COUNT(*) FILTER (WHERE processing_status = 'pending') as pending,
-                COUNT(*) FILTER (WHERE processing_status = 'failed') as failed,
-                MAX(created_at) as latest_upload,
-                MIN(created_at) as earliest_upload
-            FROM pitch_decks WHERE data_source = 'dojo';
+                COUNT(*) as total_dojo_documents,
+                COUNT(DISTINCT p.company_id) as unique_companies,
+                COUNT(*) FILTER (WHERE pd.processing_status = 'completed') as processed,
+                COUNT(*) FILTER (WHERE pd.processing_status = 'pending') as pending,
+                COUNT(*) FILTER (WHERE pd.processing_status = 'failed') as failed,
+                MAX(pd.upload_date) as latest_upload,
+                MIN(pd.upload_date) as earliest_upload
+            FROM project_documents pd
+            LEFT JOIN projects p ON pd.project_id = p.id
+            WHERE p.is_test = true OR p.company_id ILIKE '%dojo%';
             " 2>/dev/null || log_error "Database connection failed"
             
             echo -e "\n${YELLOW}🏢 Top Dojo Companies${NC}"
             psql -h localhost -U review_user -d review-platform -c "
             SELECT 
-                company_id,
-                COUNT(*) as deck_count,
-                COUNT(*) FILTER (WHERE processing_status = 'completed') as processed_count,
-                STRING_AGG(DISTINCT ai_extracted_startup_name, ', ') as startup_names
-            FROM pitch_decks 
-            WHERE data_source = 'dojo'
-            GROUP BY company_id
-            ORDER BY deck_count DESC
+                p.company_id,
+                COUNT(*) as document_count,
+                COUNT(*) FILTER (WHERE pd.processing_status = 'completed') as processed_count,
+                STRING_AGG(DISTINCT p.project_name, ', ') as project_names
+            FROM project_documents pd
+            LEFT JOIN projects p ON pd.project_id = p.id
+            WHERE p.is_test = true OR p.company_id ILIKE '%dojo%'
+            GROUP BY p.company_id
+            ORDER BY document_count DESC
             LIMIT 10;
             " 2>/dev/null || true
             ;;
@@ -713,10 +716,11 @@ cmd_dojo() {
                 vac.vision_model_used, 
                 COUNT(*) as cached_analyses,
                 MAX(vac.created_at) as latest_cache,
-                COUNT(DISTINCT pd.company_id) as unique_companies
+                COUNT(DISTINCT p.company_id) as unique_companies
             FROM visual_analysis_cache vac
-            JOIN pitch_decks pd ON vac.pitch_deck_id = pd.id
-            WHERE pd.data_source = 'dojo'
+            LEFT JOIN project_documents pd ON vac.document_id = pd.id
+            LEFT JOIN projects p ON pd.project_id = p.id
+            WHERE p.is_test = true OR p.company_id ILIKE '%dojo%'
             GROUP BY vac.vision_model_used
             ORDER BY cached_analyses DESC;
             " 2>/dev/null || log_error "Database connection failed"
@@ -725,14 +729,15 @@ cmd_dojo() {
             psql -h localhost -U review_user -d review-platform -c "
             SELECT 
                 pd.processing_status,
-                COUNT(pd.id) as total_decks,
+                COUNT(pd.id) as total_documents,
                 COUNT(vac.id) as cached_analyses,
                 ROUND(COUNT(vac.id)::DECIMAL / COUNT(pd.id) * 100, 1) as cache_percentage
-            FROM pitch_decks pd
-            LEFT JOIN visual_analysis_cache vac ON pd.id = vac.pitch_deck_id
-            WHERE pd.data_source = 'dojo'
+            FROM project_documents pd
+            LEFT JOIN projects p ON pd.project_id = p.id
+            LEFT JOIN visual_analysis_cache vac ON pd.id = vac.document_id
+            WHERE p.is_test = true OR p.company_id ILIKE '%dojo%'
             GROUP BY pd.processing_status
-            ORDER BY total_decks DESC;
+            ORDER BY total_documents DESC;
             " 2>/dev/null || true
             ;;
             
@@ -762,10 +767,12 @@ cmd_dojo() {
             echo -e "\n${YELLOW}🧹 Cleanup Analysis${NC}"
             psql -h localhost -U review_user -d review-platform -c "
             SELECT 
-                'Dojo Pitch Decks' as data_type,
+                'Dojo Project Documents' as data_type,
                 COUNT(*) as count,
-                ROUND(AVG(EXTRACT(EPOCH FROM (NOW() - created_at))/86400), 1) as avg_age_days
-            FROM pitch_decks WHERE data_source = 'dojo'
+                ROUND(AVG(EXTRACT(EPOCH FROM (NOW() - pd.upload_date))/86400), 1) as avg_age_days
+            FROM project_documents pd
+            LEFT JOIN projects p ON pd.project_id = p.id
+            WHERE p.is_test = true OR p.company_id ILIKE '%dojo%'
             UNION ALL
             SELECT 
                 'Test Projects' as data_type,
@@ -787,8 +794,9 @@ cmd_dojo() {
                 COUNT(*) as entries,
                 ROUND(SUM(LENGTH(analysis_result_json))/1024.0/1024.0, 2) as size_mb
             FROM visual_analysis_cache vac
-            JOIN pitch_decks pd ON vac.pitch_deck_id = pd.id
-            WHERE pd.data_source = 'dojo'
+            LEFT JOIN project_documents pd ON vac.document_id = pd.id
+            LEFT JOIN projects p ON pd.project_id = p.id
+            WHERE p.is_test = true OR p.company_id ILIKE '%dojo%'
             UNION ALL
             SELECT 
                 'Extraction Results' as cache_type,
@@ -1038,10 +1046,10 @@ cmd_all() {
     # Template system
     cmd_templates list
     
-    # Sample deck checks
-    log_section "Sample Deck Checks"
-    for deck_id in 140 143 144; do
-        api_call "/deck/$deck_id/status" "Deck $deck_id status" || true
+    # Sample document checks
+    log_section "Sample Document Checks"
+    for document_id in 140 143 144; do
+        api_call "/deck/$document_id/status" "Document $document_id status (using legacy endpoint)" || true
     done
     
     log_section "Debug Report Complete"
@@ -1054,8 +1062,12 @@ case "${1:-help}" in
     "health")
         cmd_health
         ;;
+    "document")
+        cmd_document "$2"
+        ;;
     "deck")
-        cmd_deck "$2"
+        # Legacy support - redirect to document command
+        cmd_document "$2"
         ;;
     "specialized")
         cmd_specialized "$2"
@@ -1122,7 +1134,7 @@ case "${1:-help}" in
         echo ""
         echo "Available commands:"
         echo "System: health, env, tables, table, models, prompts"
-        echo "Processing: processing, queue, deck, specialized"
+        echo "Processing: processing, queue, document, specialized"
         echo "Projects: project, project-docs, user, invitations, deletion, orphans"
         echo "Dojo: dojo [stats|experiments|cache|projects|cleanup]"
         echo "Templates: templates [list|performance|sectors|customizations]"
