@@ -184,40 +184,40 @@ class QueueProcessor:
             progress_callback_url = f"{self.backend_url}/api/internal/update-processing-progress"
             
             # Phase 1: Visual Analysis (10% -> 30%)
-            logger.info(f"Phase 1: Starting visual analysis for deck {task.pitch_deck_id}")
-            await self.update_progress(task.pitch_deck_id, 10, "Visual Analysis", "Analyzing slides and extracting content", db)
+            logger.info(f"Phase 1: Starting visual analysis for document {task.document_id}")
+            await self.update_progress(task.document_id, 10, "Visual Analysis", "Analyzing slides and extracting content", db)
             
             visual_success = await self.run_visual_analysis_phase(task, full_file_path, db)
             if not visual_success:
-                logger.error(f"Visual analysis failed for deck {task.pitch_deck_id} - failing task")
+                logger.error(f"Visual analysis failed for document {task.document_id} - failing task")
                 await self.fail_task_with_error(task, "Visual analysis failed - could not process slides", db)
                 return False
                 
-            await self.update_progress(task.pitch_deck_id, 30, "Visual Analysis Complete", "Slides analyzed, starting extraction", db)
+            await self.update_progress(task.document_id, 30, "Visual Analysis Complete", "Slides analyzed, starting extraction", db)
             
             # Phase 2: Extraction (30% -> 60%)
-            logger.info(f"Phase 2: Starting extraction for deck {task.pitch_deck_id}")
-            await self.update_progress(task.pitch_deck_id, 40, "Data Extraction", "Extracting company details and classification", db)
+            logger.info(f"Phase 2: Starting extraction for document {task.document_id}")
+            await self.update_progress(task.document_id, 40, "Data Extraction", "Extracting company details and classification", db)
             
             extraction_success = await self.run_extraction_phase(task, db)
             if not extraction_success:
-                logger.error(f"Extraction failed for deck {task.pitch_deck_id} - failing task")
+                logger.error(f"Extraction failed for document {task.document_id} - failing task")
                 await self.fail_task_with_error(task, "Data extraction failed - could not extract company details", db)
                 return False
                 
-            await self.update_progress(task.pitch_deck_id, 60, "Extraction Complete", "Company data extracted, starting template analysis", db)
+            await self.update_progress(task.document_id, 60, "Extraction Complete", "Company data extracted, starting template analysis", db)
             
             # Phase 3: Template Analysis (60% -> 95%)
-            logger.info(f"Phase 3: Starting template analysis for deck {task.pitch_deck_id}")
-            await self.update_progress(task.pitch_deck_id, 70, "Template Analysis", "Running AI analysis with healthcare templates", db)
+            logger.info(f"Phase 3: Starting template analysis for document {task.document_id}")
+            await self.update_progress(task.document_id, 70, "Template Analysis", "Running AI analysis with healthcare templates", db)
             
             template_success = await self.run_template_analysis_phase(task, progress_callback_url, db)
             if not template_success:
-                logger.error(f"Template analysis failed for deck {task.pitch_deck_id} - failing task")
+                logger.error(f"Template analysis failed for document {task.document_id} - failing task")
                 await self.fail_task_with_error(task, "Template analysis failed - could not complete AI analysis", db)
                 return False
                 
-            await self.update_progress(task.pitch_deck_id, 95, "Analysis Complete", "Finalizing results", db)
+            await self.update_progress(task.document_id, 95, "Analysis Complete", "Finalizing results", db)
             
             # CRITICAL: Manually complete the task since template processing doesn't send final callback
             logger.info(f"Split processing completed successfully for task {task.id} - marking as completed")
@@ -244,14 +244,14 @@ class QueueProcessor:
             logger.error(f"Error in split processing for task {task.id}: {e}", exc_info=True)
             return False
     
-    async def update_progress(self, pitch_deck_id: int, percentage: int, step: str, message: str, db: Session):
+    async def update_progress(self, document_id: int, percentage: int, step: str, message: str, db: Session):
         """Update processing progress via internal API"""
         try:
             # Get task ID from document_id
             from sqlalchemy import text
             result = db.execute(text(
                 "SELECT id FROM processing_queue WHERE document_id = :document_id AND status = 'processing'"
-            ), {"document_id": pitch_deck_id}).fetchone()  # Note: pitch_deck_id param name kept for API compatibility
+            ), {"document_id": document_id}).fetchone()
             
             if result:
                 task_id = result[0]
@@ -259,14 +259,14 @@ class QueueProcessor:
                     task_id, percentage, step, message, db
                 )
             else:
-                logger.warning(f"No processing task found for deck {pitch_deck_id}")
+                logger.warning(f"No processing task found for document {document_id}")
         except Exception as e:
-            logger.error(f"Error updating progress for deck {pitch_deck_id}: {e}")
+            logger.error(f"Error updating progress for document {document_id}: {e}")
     
     async def fail_task_with_error(self, task: ProcessingTask, error_message: str, db: Session):
         """Mark task as failed with clear error message"""
         try:
-            logger.error(f"Failing task {task.id} for deck {task.pitch_deck_id}: {error_message}")
+            logger.error(f"Failing task {task.id} for document {task.document_id}: {error_message}")
             
             processing_queue_manager.complete_task(
                 task.id, 
@@ -306,13 +306,13 @@ class QueueProcessor:
             
             # The visual analysis batch API expects deck_ids, file_paths, vision_model, and analysis_prompt
             request_data = {
-                "deck_ids": [task.pitch_deck_id],
+                "deck_ids": [task.document_id],
                 "file_paths": [full_file_path],
                 "vision_model": vision_model  # CRITICAL: Send database-configured model
                 # analysis_prompt will be loaded by GPU from database
             }
             
-            logger.info(f"Visual analysis request: deck_id={task.pitch_deck_id}, file_path={full_file_path}")
+            logger.info(f"Visual analysis request: deck_id={task.document_id}, file_path={full_file_path}")
             logger.info(f"Request data being sent: {json.dumps(request_data, indent=2)}")
             
             async with httpx.AsyncClient(timeout=300.0) as client:
@@ -324,7 +324,15 @@ class QueueProcessor:
                 
                 if response.status_code == 200:
                     result = response.json()
-                    logger.info(f"Visual analysis completed for deck {task.pitch_deck_id}")
+                    logger.info(f"Visual analysis completed for document {task.document_id}")
+                    
+                    # STEP 4a: Generate slide feedback immediately after visual analysis
+                    feedback_success = await self.generate_slide_feedback(task.document_id, db)
+                    if feedback_success:
+                        logger.info(f"Slide feedback generated for document {task.document_id}")
+                    else:
+                        logger.warning(f"Slide feedback generation failed for document {task.document_id}, but continuing...")
+                    
                     return True
                 else:
                     logger.error(f"Visual analysis failed: {response.status_code} - {response.text}")
@@ -333,16 +341,119 @@ class QueueProcessor:
         except Exception as e:
             logger.error(f"Error in visual analysis phase: {e}")
             return False
+
+    async def generate_slide_feedback(self, document_id: int, db: Session) -> bool:
+        """Generate slide feedback using slide_feedback prompt from visual analysis results"""
+        try:
+            from sqlalchemy import text
+            from ..db.models import SlideFeedback
+            import json
+            
+            # Get visual analysis results
+            visual_cache = db.execute(text("""
+                SELECT analysis_result_json FROM visual_analysis_cache 
+                WHERE document_id = :document_id
+                ORDER BY created_at DESC
+                LIMIT 1
+            """), {"document_id": document_id}).fetchone()
+            
+            if not visual_cache or not visual_cache[0]:
+                logger.error(f"No visual analysis found for document {document_id}")
+                return False
+            
+            visual_data = json.loads(visual_cache[0])
+            slides = visual_data.get('visual_analysis_results', [])
+            
+            # Get slide feedback prompt
+            feedback_prompt = db.execute(text(
+                "SELECT prompt_text FROM pipeline_prompts WHERE stage_name = 'slide_feedback' AND is_active = true LIMIT 1"
+            )).scalar()
+            
+            if not feedback_prompt:
+                logger.error("No slide_feedback prompt found in database")
+                return False
+            
+            # Generate feedback for each slide using GPU
+            for slide in slides:
+                slide_num = slide.get('page_number', 1)
+                slide_description = slide.get('description', '')
+                slide_image_path = slide.get('slide_image_path', '')
+                
+                # Format prompt with slide content
+                formatted_prompt = feedback_prompt.replace('{slide_description}', slide_description)
+                formatted_prompt = formatted_prompt.replace('{slide_number}', str(slide_num))
+                
+                # Call GPU for feedback generation
+                feedback_text = await self.call_gpu_for_feedback(formatted_prompt, slide_description, db)
+                
+                if feedback_text:
+                    # Save feedback to database
+                    feedback_entry = SlideFeedback(
+                        document_id=document_id,
+                        slide_number=slide_num,
+                        slide_filename=slide_image_path,
+                        feedback_text=feedback_text,
+                        feedback_type='ai_analysis'
+                    )
+                    db.add(feedback_entry)
+                    logger.info(f"Generated feedback for slide {slide_num} of document {document_id}")
+                else:
+                    logger.warning(f"Failed to generate feedback for slide {slide_num} of document {document_id}")
+            
+            db.commit()
+            logger.info(f"Completed slide feedback generation for document {document_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error generating slide feedback for document {document_id}: {e}")
+            db.rollback()
+            return False
+
+    async def call_gpu_for_feedback(self, prompt: str, slide_description: str, db: Session) -> str:
+        """Call GPU to generate feedback text"""
+        try:
+            # Get text model for feedback generation
+            from sqlalchemy import text
+            text_model = db.execute(text(
+                "SELECT model_name FROM model_configs WHERE model_type = 'text' AND is_active = true LIMIT 1"
+            )).scalar()
+            
+            if not text_model:
+                text_model = "llama3:70b"  # Fallback
+            
+            request_data = {
+                "model": text_model,
+                "prompt": prompt,
+                "stream": False
+            }
+            
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.post(
+                    f"{self.gpu_url}/api/generate",  # Direct Ollama endpoint
+                    json=request_data,
+                    headers={"Content-Type": "application/json"}
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    return result.get('response', '').strip()
+                else:
+                    logger.error(f"GPU feedback generation failed: {response.status_code} - {response.text}")
+                    return ""
+                    
+        except Exception as e:
+            logger.error(f"Error calling GPU for feedback: {e}")
+            return ""
     
     async def run_extraction_phase(self, task: ProcessingTask, db: Session) -> bool:
         """Run extraction phase (company offering, classification, etc.)"""
         try:
-            logger.info(f"Running Dojo Step 3 extractions for deck {task.pitch_deck_id}")
+            logger.info(f"Running Dojo Step 3 extractions for document {task.document_id}")
             
             # Prepare request for extraction
             request_data = {
-                "deck_ids": [task.pitch_deck_id],
-                "experiment_name": f"extraction_deck_{task.pitch_deck_id}",
+                "deck_ids": [task.document_id],
+                "experiment_name": f"extraction_deck_{task.document_id}",
                 "extraction_type": "all",  # Run all extractions
                 "text_model": "gemma3:12b",
                 "processing_options": {
@@ -353,7 +464,7 @@ class QueueProcessor:
                 }
             }
             
-            logger.info(f"Calling GPU extraction endpoint for deck {task.pitch_deck_id}")
+            logger.info(f"Calling GPU extraction endpoint for document {task.document_id}")
             
             async with httpx.AsyncClient(timeout=120.0) as client:
                 response = await client.post(
@@ -364,12 +475,12 @@ class QueueProcessor:
                 
                 if response.status_code == 200:
                     result = response.json()
-                    logger.info(f"Extraction completed: offering, classification, company name, funding, date for deck {task.pitch_deck_id}")
+                    logger.info(f"Extraction completed: offering, classification, company name, funding, date for document {task.document_id}")
                     
                     # Save extraction results if needed
                     if result.get('success'):
                         # The results are stored in the extraction_experiments table by the GPU
-                        logger.info(f"Extraction phase completed successfully for deck {task.pitch_deck_id}")
+                        logger.info(f"Extraction phase completed successfully for document {task.document_id}")
                         return True
                     else:
                         logger.error(f"Extraction failed: {result.get('error')}")
@@ -391,7 +502,7 @@ class QueueProcessor:
             # Determine template to use
             if processing_options.get('use_single_template') and processing_options.get('selected_template_id'):
                 template_id = processing_options['selected_template_id']
-                logger.info(f"Using GP override template {template_id} for deck {task.pitch_deck_id}")
+                logger.info(f"Using GP override template {template_id} for document {task.document_id}")
             else:
                 # Get default template from database
                 from sqlalchemy import text
@@ -399,10 +510,10 @@ class QueueProcessor:
                     "SELECT id FROM analysis_templates WHERE is_default = true LIMIT 1"
                 )).scalar()
                 template_id = default_template_id or 5  # Fallback to template 5 if no default
-                logger.info(f"Using default template {template_id} for deck {task.pitch_deck_id}")
+                logger.info(f"Using default template {template_id} for document {task.document_id}")
             
             request_data = {
-                "deck_ids": [task.pitch_deck_id],
+                "deck_ids": [task.document_id],
                 "template_id": template_id,  # Always include template_id  
                 "processing_options": {
                     "generate_thumbnails": True,
@@ -419,17 +530,17 @@ class QueueProcessor:
                 
                 if response.status_code == 200:
                     result = response.json()
-                    logger.info(f"Template analysis completed for deck {task.pitch_deck_id}")
+                    logger.info(f"Template analysis completed for document {task.document_id}")
                     
                     # Save the results to the database
                     if result.get('success') and result.get('results'):
-                        for deck_result in result['results']:
-                            if deck_result['deck_id'] == task.pitch_deck_id and deck_result.get('success'):
+                        for document_result in result['results']:
+                            if deck_result['deck_id'] == task.document_id and deck_result.get('success'):
                                 template_analysis = deck_result.get('template_analysis', {})
                                 
                                 # CRITICAL: Save to extraction_experiments table for startup access (modern architecture)
                                 # This is required for the "View Results" button to become active
-                                experiment_name = f"startup_upload_deck_{task.pitch_deck_id}_{int(time.time())}"
+                                experiment_name = f"startup_upload_deck_{task.document_id}_{int(time.time())}"
                                 
                                 # Prepare template processing data in the format expected by frontend
                                 template_processing_data = {
@@ -452,7 +563,7 @@ class QueueProcessor:
                                     SELECT id FROM extraction_experiments 
                                     WHERE pitch_deck_ids LIKE '%' || :deck_id || '%'
                                     ORDER BY created_at DESC LIMIT 1
-                                """), {"deck_id": str(task.pitch_deck_id)}).fetchone()
+                                """), {"deck_id": str(task.document_id)}).fetchone()
                                 
                                 if existing_experiment:
                                     # Update existing experiment with template processing results
@@ -464,7 +575,7 @@ class QueueProcessor:
                                         "results": json.dumps(template_processing_data),
                                         "experiment_id": existing_experiment[0]
                                     })
-                                    logger.info(f"Updated extraction experiment {existing_experiment[0]} with template results for deck {task.pitch_deck_id}")
+                                    logger.info(f"Updated extraction experiment {existing_experiment[0]} with template results for document {task.document_id}")
                                 else:
                                     # Create new experiment if none exists
                                     db.execute(text("""
@@ -473,14 +584,14 @@ class QueueProcessor:
                                         VALUES (:experiment_name, :pitch_deck_ids, :results_json, :template_processing_results)
                                     """), {
                                         "experiment_name": experiment_name,
-                                        "pitch_deck_ids": [task.pitch_deck_id],
+                                        "pitch_deck_ids": [task.document_id],
                                         "results_json": "{}",  # Empty extraction results
                                         "template_processing_results": json.dumps(template_processing_data)
                                     })
-                                    logger.info(f"Created new extraction experiment for deck {task.pitch_deck_id} with template results")
+                                    logger.info(f"Created new extraction experiment for document {task.document_id} with template results")
                                 
                                 db.commit()
-                                logger.info(f"Saved template analysis results for deck {task.pitch_deck_id} to extraction_experiments table")
+                                logger.info(f"Saved template analysis results for document {task.document_id} to extraction_experiments table")
                                 break
                     
                     return True
