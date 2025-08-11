@@ -401,13 +401,86 @@ async def get_project_results(
             # Use template processing results
             results_file_path = f"template_processed_{deck_id}"
         else:
-            # Template processing is required - no fallback to partial results
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Analysis not yet complete. Template processing is still in progress."
-            )
+            # No template processing - check for partial results (visual analysis + extraction)
+            visual_check = db.execute(text("""
+                SELECT 1 FROM visual_analysis_cache 
+                WHERE document_id = :deck_id
+                LIMIT 1
+            """), {"deck_id": deck_id}).fetchone()
+            
+            extraction_check = db.execute(text("""
+                SELECT 1 FROM extraction_experiments 
+                WHERE document_ids LIKE '%' || :deck_id || '%'
+                AND (results_json IS NOT NULL OR company_name_results_json IS NOT NULL)
+                LIMIT 1
+            """), {"deck_id": str(deck_id)}).fetchone()
+            
+            if visual_check or extraction_check:
+                # Return partial results from available data sources
+                results_file_path = f"partial_results_{deck_id}"
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="No analysis data available for this document."
+                )
         
-        # Check if this is a template processing marker
+        # Check processing type and handle accordingly
+        if results_file_path.startswith("partial_results"):
+            # Partial results - visual analysis and/or extraction only
+            logger.info(f"Loading partial results for deck {deck_id} (visual analysis + extraction)")
+            
+            # Get visual analysis results
+            visual_query = text("""
+                SELECT analysis_result_json FROM visual_analysis_cache 
+                WHERE document_id = :deck_id
+                ORDER BY created_at DESC
+                LIMIT 1
+            """)
+            visual_result = db.execute(visual_query, {"deck_id": deck_id}).fetchone()
+            
+            # Get extraction results
+            extraction_query = text("""
+                SELECT results_json, company_name_results_json, classification_results_json,
+                       funding_amount_results_json, deck_date_results_json
+                FROM extraction_experiments 
+                WHERE document_ids LIKE '%' || :deck_id || '%'
+                ORDER BY created_at DESC
+                LIMIT 1
+            """)
+            extraction_result = db.execute(extraction_query, {"deck_id": str(deck_id)}).fetchone()
+            
+            # Build partial results response
+            slides = []
+            if visual_result and visual_result[0]:
+                visual_data = json.loads(visual_result[0])
+                slides = visual_data.get('visual_analysis_results', [])
+            
+            # Convert slides format for frontend
+            formatted_slides = []
+            for i, slide_data in enumerate(slides):
+                formatted_slides.append(SlideAnalysis(
+                    slide_number=i + 1,
+                    score=0,  # No scores in partial results
+                    feedback="Visual analysis completed. Template analysis pending.",
+                    description=str(slide_data),
+                    deck_name=file_name
+                ))
+            
+            return DeckAnalysisResponse(
+                deck_id=deck_id,
+                deck_name=file_name,
+                company_id=company_id,
+                total_slides=len(formatted_slides),
+                slides=formatted_slides,
+                processing_metadata={
+                    "status": "partial",
+                    "visual_analysis": bool(visual_result),
+                    "extraction": bool(extraction_result),
+                    "template_processing": False
+                }
+            )
+            
+        # Check if this is a template processing marker  
         if results_file_path.startswith("template_processed"):
             logger.info(f"Loading template processing results for deck {deck_id}")
             
