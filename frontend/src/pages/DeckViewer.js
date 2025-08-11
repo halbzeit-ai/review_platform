@@ -353,10 +353,17 @@ const DeckViewer = () => {
         try {
           // Use standard slide naming pattern
           const filename = `slide_${slide.page_number}.jpg`;
-          const deckName = `Agaton_Seed_Presentation_2025vF`; // TODO: Get from slide data or deck info
+          // Extract deck name from slide_image_path or use fallback
+          let deckName = 'test-pitch-deck'; // Default for current test case
+          if (slide.slide_image_path) {
+            const pathParts = slide.slide_image_path.split('/');
+            if (pathParts.length >= 2) {
+              deckName = pathParts[pathParts.length - 2]; // Get parent folder name
+            }
+          }
           
-          // Use authenticated endpoint
-          const response = await api.get(`/projects/${projectId}/slide-image/${deckName}/${filename}`, {
+          // Use correct document-based endpoint  
+          const response = await api.get(`/projects/documents/${deckId}/slide-image/${filename}`, {
             responseType: 'blob'
           });
           
@@ -374,7 +381,7 @@ const DeckViewer = () => {
               const deckName = pathParts[pathParts.length - 2];
               const filename = pathParts[pathParts.length - 1];
               
-              const response = await api.get(`/projects/${projectId}/slide-image/${deckName}/${filename}`, {
+              const response = await api.get(`/projects/documents/${deckId}/slide-image/${filename}`, {
                 responseType: 'blob'
               });
               
