@@ -4,7 +4,9 @@
       "Bash(grep:*)",
       "Bash(git add:*)",
       "Bash(./scripts/debug-api.sh:*)",
-      "Bash(./scripts/build-frontend.sh:*)"
+      "Bash(./scripts/build-frontend.sh:*)",
+      "Bash(nginx:*)",
+      "Bash(/opt/review-platform/venv/bin/python:*)"
     ],
     "deny": []
   }

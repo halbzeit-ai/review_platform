@@ -245,7 +245,7 @@ class PDFProcessor:
         Path(marker_path).touch()
         logger.info(f"Created completion marker: {marker_path}")
     
-    def save_specialized_analysis(self, pitch_deck_id: int, specialized_analysis: Dict[str, Any]) -> bool:
+    def save_specialized_analysis(self, document_id: int, specialized_analysis: Dict[str, Any]) -> bool:
         """Save specialized analysis results to backend database"""
         try:
             # Filter out empty or None values
@@ -255,12 +255,12 @@ class PDFProcessor:
             }
             
             if not filtered_analysis:
-                logger.info(f"No specialized analysis to save for deck {pitch_deck_id}")
+                logger.info(f"No specialized analysis to save for deck {document_id}")
                 return True
             
             endpoint = f"{self.backend_url}/api/internal/save-specialized-analysis"
             payload = {
-                "pitch_deck_id": pitch_deck_id,
+                "document_id": document_id,
                 "specialized_analysis": filtered_analysis
             }
             
@@ -274,7 +274,7 @@ class PDFProcessor:
             return True
             
         except Exception as e:
-            logger.error(f"❌ Error saving specialized analysis for deck {pitch_deck_id}: {e}")
+            logger.error(f"❌ Error saving specialized analysis for deck {document_id}: {e}")
             return False
 
 

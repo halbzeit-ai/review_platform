@@ -246,9 +246,10 @@ class HealthcareTemplateAnalyzer:
                 conn = psycopg2.connect(self.database_url)
                 cursor = conn.cursor()
                 cursor.execute("""
-                    SELECT pd.id, u.company_name, u.email 
-                    FROM pitch_decks pd 
-                    JOIN users u ON pd.user_id = u.id 
+                    SELECT pd.id, p.company_name, u.email 
+                    FROM project_documents pd 
+                    JOIN projects p ON pd.project_id = p.id
+                    JOIN users u ON pd.uploaded_by = u.id 
                     WHERE pd.file_path LIKE %s
                 """, (f"%{filename}%",))
                 result = cursor.fetchone()

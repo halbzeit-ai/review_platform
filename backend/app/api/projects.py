@@ -458,11 +458,10 @@ async def get_project_results(
             # Convert slides format for frontend
             formatted_slides = []
             for i, slide_data in enumerate(slides):
-                formatted_slides.append(SlideAnalysis(
-                    slide_number=i + 1,
-                    score=0,  # No scores in partial results
-                    feedback="Visual analysis completed. Template analysis pending.",
-                    description=str(slide_data),
+                formatted_slides.append(SlideAnalysisResponse(
+                    page_number=i + 1,
+                    slide_image_path=slide_data.get('slide_image_path', ''),
+                    description=slide_data.get('description', str(slide_data)),
                     deck_name=file_name
                 ))
             

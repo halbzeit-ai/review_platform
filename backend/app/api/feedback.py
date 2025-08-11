@@ -68,8 +68,8 @@ async def get_slide_feedback(
     return JSONResponse(
         status_code=200,
         content={
-            "deck_id": deck_id,
-            "company_id": company_id,
+            "document_id": document_id,
+            "project_id": project_id,
             "total_slides": len(set(f.slide_number for f in feedback_list)),
             "total_feedback_entries": len(feedback_list),
             "feedback": feedback_by_slide

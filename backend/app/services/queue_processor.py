@@ -376,15 +376,13 @@ class QueueProcessor:
             # Generate feedback for each slide using GPU
             for slide in slides:
                 slide_num = slide.get('page_number', 1)
-                slide_description = slide.get('description', '')
                 slide_image_path = slide.get('slide_image_path', '')
                 
-                # Format prompt with slide content
-                formatted_prompt = feedback_prompt.replace('{slide_description}', slide_description)
-                formatted_prompt = formatted_prompt.replace('{slide_number}', str(slide_num))
+                # Format prompt for image-based analysis
+                formatted_prompt = feedback_prompt.replace('{slide_number}', str(slide_num))
                 
-                # Call GPU for feedback generation
-                feedback_text = await self.call_gpu_for_feedback(formatted_prompt, slide_description, db)
+                # Call GPU for image-based feedback generation
+                feedback_text = await self.call_gpu_for_feedback(formatted_prompt, slide_image_path, db)
                 
                 if feedback_text:
                     # Save feedback to database
@@ -409,40 +407,70 @@ class QueueProcessor:
             db.rollback()
             return False
 
-    async def call_gpu_for_feedback(self, prompt: str, slide_description: str, db: Session) -> str:
-        """Call GPU to generate feedback text"""
+    async def call_gpu_for_feedback(self, prompt: str, slide_image_path: str, db: Session) -> str:
+        """Call GPU to generate feedback text using vision model on slide image"""
         try:
-            # Get text model for feedback generation
             from sqlalchemy import text
-            text_model = db.execute(text(
-                "SELECT model_name FROM model_configs WHERE model_type = 'text' AND is_active = true LIMIT 1"
+            import os
+            
+            # Get vision model for image-based feedback generation - same as visual analysis
+            vision_model = db.execute(text(
+                "SELECT model_name FROM model_configs WHERE model_type = 'vision' AND is_active = true LIMIT 1"
             )).scalar()
             
-            if not text_model:
-                text_model = "llama3:70b"  # Fallback
+            if not vision_model:
+                logger.error("No active vision model configured in database for feedback generation")
+                return ""
+                
+            logger.info(f"Using database-configured vision model for feedback: {vision_model}")
             
+            # Construct full path to slide image
+            if not slide_image_path:
+                logger.error("No slide image path provided for feedback generation")
+                return ""
+                
+            # Use shared filesystem path
+            from ..core.config import settings
+            full_image_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, slide_image_path.lstrip('/'))
+            
+            if not os.path.exists(full_image_path):
+                logger.error(f"Slide image not found: {full_image_path}")
+                return ""
+            
+            # Call GPU vision analysis endpoint for single image
             request_data = {
-                "model": text_model,
+                "images": [full_image_path],
                 "prompt": prompt,
-                "stream": False
+                "model": vision_model,
+                "options": {
+                    "num_ctx": 32768,  # Increased context size for better feedback generation
+                    "temperature": 0.3
+                }
             }
             
-            async with httpx.AsyncClient(timeout=60.0) as client:
+            async with httpx.AsyncClient(timeout=120.0) as client:  # Longer timeout for vision processing
                 response = await client.post(
-                    f"{self.gpu_url}/api/generate",  # Direct Ollama endpoint
+                    f"{self.gpu_url}/analyze-images",  # GPU vision endpoint
                     json=request_data,
                     headers={"Content-Type": "application/json"}
                 )
                 
                 if response.status_code == 200:
                     result = response.json()
-                    return result.get('response', '').strip()
+                    # Extract feedback text from vision analysis results
+                    if "results" in result and isinstance(result["results"], list) and len(result["results"]) > 0:
+                        return result["results"][0].get("analysis", "").strip()
+                    elif "analysis" in result:
+                        return result.get("analysis", "").strip()
+                    else:
+                        logger.warning(f"Unexpected response format from GPU vision analysis: {result}")
+                        return ""
                 else:
-                    logger.error(f"GPU feedback generation failed: {response.status_code} - {response.text}")
+                    logger.error(f"GPU vision feedback generation failed: {response.status_code} - {response.text}")
                     return ""
                     
         except Exception as e:
-            logger.error(f"Error calling GPU for feedback: {e}")
+            logger.error(f"Error calling GPU for vision-based feedback: {e}")
             return ""
     
     async def run_extraction_phase(self, task: ProcessingTask, db: Session) -> bool:

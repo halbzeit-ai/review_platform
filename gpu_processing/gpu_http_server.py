@@ -259,7 +259,7 @@ class GPUHTTPServer:
                 
                 # Extract required fields
                 file_path = data.get('file_path')
-                pitch_deck_id = data.get('pitch_deck_id')
+                document_id = data.get('document_id', data.get('pitch_deck_id'))
                 company_id = data.get('company_id')
                 
                 if not file_path:
@@ -269,10 +269,10 @@ class GPUHTTPServer:
                         "timestamp": datetime.now().isoformat()
                     }), 400
                 
-                if not pitch_deck_id:
+                if not document_id:
                     return jsonify({
                         "success": False,
-                        "error": "pitch_deck_id is required",
+                        "error": "document_id is required",
                         "timestamp": datetime.now().isoformat()
                     }), 400
                 
@@ -283,7 +283,7 @@ class GPUHTTPServer:
                         "timestamp": datetime.now().isoformat()
                     }), 400
                 
-                logger.info(f"Processing PDF: {file_path} for pitch deck {pitch_deck_id}")
+                logger.info(f"Processing PDF: {file_path} for document {document_id}")
                 
                 # Process the PDF using the existing PDFProcessor
                 results = self.pdf_processor.process_pdf(file_path, company_id)
@@ -291,7 +291,7 @@ class GPUHTTPServer:
                 # Save results to shared filesystem (using backend-expected naming pattern)
                 import time
                 timestamp = int(time.time())
-                results_filename = f"job_{pitch_deck_id}_{timestamp}_results.json"
+                results_filename = f"job_{document_id}_{timestamp}_results.json"
                 results_path = config.results_path / results_filename
                 
                 # Ensure results directory exists
@@ -304,17 +304,17 @@ class GPUHTTPServer:
                 logger.info(f"PDF processing completed successfully. Results saved to: {results_path}")
                 
                 # Update database with results file path
-                self._update_database_with_results(pitch_deck_id, results_filename)
+                self._update_database_with_results(document_id, results_filename)
                 
                 # Save specialized analysis to database
                 specialized_analysis = results.get("specialized_analysis", {})
                 if specialized_analysis:
-                    self._save_specialized_analysis(pitch_deck_id, specialized_analysis)
+                    self._save_specialized_analysis(document_id, specialized_analysis)
                 else:
-                    logger.info(f"No specialized analysis found for deck {pitch_deck_id}")
+                    logger.info(f"No specialized analysis found for deck {document_id}")
                 
                 # Save template processing results to extraction_experiments for startup access
-                self._save_template_processing_results(pitch_deck_id, results)
+                self._save_template_processing_results(document_id, results)
                 
                 return jsonify({
                     "success": True,
@@ -924,11 +924,11 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                     "timestamp": datetime.now().isoformat()
                 }), 500
         
-        @self.app.route('/api/processing-progress/<int:pitch_deck_id>', methods=['GET'])
-        def get_processing_progress(pitch_deck_id: int):
+        @self.app.route('/api/processing-progress/<int:document_id>', methods=['GET'])
+        def get_processing_progress(document_id: int):
             """Get processing progress for a specific pitch deck"""
             try:
-                logger.info(f"Getting processing progress for pitch deck {pitch_deck_id}")
+                logger.info(f"Getting processing progress for document {document_id}")
                 
                 # For now, we'll implement a basic progress tracking system
                 # In a real implementation, this would track actual processing stages
@@ -941,7 +941,7 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                 from pathlib import Path
                 
                 # Check for results file
-                results_pattern = f"job_{pitch_deck_id}_*_results.json"
+                results_pattern = f"job_{document_id}_*_results.json"
                 results_dir = config.results_path
                 import glob
                 result_files = glob.glob(str(results_dir / results_pattern))
@@ -973,7 +973,7 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                     })
                 
             except Exception as e:
-                logger.error(f"Error getting processing progress for pitch deck {pitch_deck_id}: {e}")
+                logger.error(f"Error getting processing progress for document {document_id}: {e}"
                 return jsonify({
                     "success": False,
                     "error": str(e),
@@ -1089,10 +1089,8 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                             cursor = conn.cursor()
                             
                             cursor.execute("""
-                                SELECT file_path FROM pitch_decks WHERE id = %s
-                                UNION
-                                SELECT file_path FROM project_documents WHERE id = %s AND document_type = 'pitch_deck'
-                            """, (deck_id, deck_id))
+                                SELECT file_path FROM project_documents WHERE id = %s
+                            """, (deck_id,))
                             
                             result = cursor.fetchone()
                             cursor.close()
@@ -1593,7 +1591,7 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
             
             # Prepare the cache data
             cache_data = {
-                "pitch_deck_id": deck_id,
+                "document_id": deck_id,
                 "analysis_result_json": json.dumps(visual_results),
                 "vision_model_used": vision_model,
                 "prompt_used": analysis_prompt
@@ -1614,7 +1612,7 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
         except Exception as e:
             logger.error(f"Error caching visual analysis via HTTP for deck {deck_id}: {e}")
     
-    def _update_database_with_results(self, pitch_deck_id: int, results_filename: str):
+    def _update_database_with_results(self, document_id: int, results_filename: str):
         """Update the database via HTTP request to the production server"""
         try:
             import requests
@@ -1623,7 +1621,7 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
             
             # Prepare the update data
             update_data = {
-                "pitch_deck_id": pitch_deck_id,
+                "document_id": document_id,
                 "results_file_path": f"results/{results_filename}",
                 "processing_status": "completed"
             }
@@ -1636,14 +1634,14 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
             )
             
             if response.status_code == 200:
-                logger.info(f"Updated database via HTTP: deck {pitch_deck_id} -> results/{results_filename}")
+                logger.info(f"Updated database via HTTP: deck {document_id} -> results/{results_filename}")
             else:
                 logger.error(f"Failed to update database via HTTP: {response.status_code} - {response.text}")
             
         except Exception as e:
-            logger.error(f"Error updating database via HTTP for deck {pitch_deck_id}: {e}")
+            logger.error(f"Error updating database via HTTP for deck {document_id}: {e}")
     
-    def _save_specialized_analysis(self, pitch_deck_id: int, specialized_analysis: dict):
+    def _save_specialized_analysis(self, document_id: int, specialized_analysis: dict):
         """Save specialized analysis results to database via HTTP request"""
         try:
             import requests
@@ -1655,14 +1653,14 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
             }
             
             if not filtered_analysis:
-                logger.info(f"No specialized analysis to save for deck {pitch_deck_id}")
+                logger.info(f"No specialized analysis to save for deck {document_id}")
                 return
             
-            logger.info(f"💾 Saving specialized analysis for deck {pitch_deck_id}: {list(filtered_analysis.keys())}")
+            logger.info(f"💾 Saving specialized analysis for deck {document_id}: {list(filtered_analysis.keys())}")
             
             # Prepare the specialized analysis data
             analysis_data = {
-                "pitch_deck_id": pitch_deck_id,
+                "document_id": document_id,
                 "specialized_analysis": filtered_analysis
             }
             
@@ -1681,9 +1679,9 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                 logger.error(f"❌ Failed to save specialized analysis: {response.status_code} - {response.text}")
             
         except Exception as e:
-            logger.error(f"❌ Error saving specialized analysis for deck {pitch_deck_id}: {e}")
+            logger.error(f"❌ Error saving specialized analysis for deck {document_id}: {e}")
     
-    def _save_template_processing_results(self, pitch_deck_id: int, results: dict):
+    def _save_template_processing_results(self, document_id: int, results: dict):
         """Save template processing results to extraction_experiments table for startup access"""
         try:
             import requests
@@ -1696,13 +1694,13 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
             scientific_hypotheses = results.get("scientific_hypotheses", {})
             
             if not chapter_analysis and not specialized_analysis and not scientific_hypotheses:
-                logger.info(f"No template processing results to save for deck {pitch_deck_id}")
+                logger.info(f"No template processing results to save for deck {document_id}")
                 return
             
-            logger.info(f"💾 Saving template processing results for deck {pitch_deck_id}")
+            logger.info(f"💾 Saving template processing results for deck {document_id}")
             
             # Create experiment name for startup upload
-            experiment_name = f"startup_upload_deck_{pitch_deck_id}_{int(time.time())}"
+            experiment_name = f"startup_upload_deck_{document_id}_{int(time.time())}"
             
             # Prepare template processing data
             template_processing_data = {
@@ -1725,19 +1723,19 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
             response = requests.post(f"{backend_url}/api/internal/save-template-processing", 
                 json={
                     "experiment_name": experiment_name,
-                    "pitch_deck_id": pitch_deck_id,
+                    "document_id": document_id,
                     "template_processing_results": template_processing_data
                 },
                 timeout=30
             )
             
             if response.status_code == 200:
-                logger.info(f"✅ Successfully saved template processing results for deck {pitch_deck_id}")
+                logger.info(f"✅ Successfully saved template processing results for deck {document_id}")
             else:
-                logger.error(f"❌ Failed to save template processing results for deck {pitch_deck_id}: {response.status_code} {response.text}")
+                logger.error(f"❌ Failed to save template processing results for deck {document_id}: {response.status_code} {response.text}")
                 
         except Exception as e:
-            logger.error(f"❌ Error saving template processing results for deck {pitch_deck_id}: {e}")
+            logger.error(f"❌ Error saving template processing results for deck {document_id}: {e}")
     
     def _format_template_analysis_for_storage(self, results: dict) -> str:
         """Format template analysis as text for compatibility"""
