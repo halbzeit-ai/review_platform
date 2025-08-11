@@ -1151,6 +1151,16 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                                 # Extract the formatted template analysis
                                 template_analysis = self._format_template_analysis(analysis_results)
                                 
+                                # Save specialized analysis to database (same as /api/process-pdf endpoint)
+                                specialized_analysis = analysis_results.get("specialized_analysis", {})
+                                if specialized_analysis:
+                                    self._save_specialized_analysis(deck_id, specialized_analysis)
+                                else:
+                                    logger.info(f"No specialized analysis found for deck {deck_id}")
+                                
+                                # Save template processing results to extraction_experiments for startup access
+                                self._save_template_processing_results(deck_id, analysis_results)
+                                
                             else:
                                 logger.error(f"Could not find PDF path for deck {deck_id}")
                                 template_analysis = "Error: Could not find PDF file for analysis"
