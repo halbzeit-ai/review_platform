@@ -15,6 +15,7 @@ import logging
 from ..db.database import get_db
 from ..db.models import User
 from .auth import get_current_user
+from ..core.access_control import check_project_access  # Use centralized access control
 
 logger = logging.getLogger(__name__)
 
@@ -47,33 +48,8 @@ class StageProgressRequest(BaseModel):
     status: str  # active, completed, skipped
     completion_notes: Optional[str] = None
 
-def check_project_access(user: User, project_id: int, db: Session) -> bool:
-    """Check if user has access to the project"""
-    # Get project company_id
-    query = text("SELECT company_id FROM projects WHERE id = :project_id AND is_active = TRUE")
-    result = db.execute(query, {"project_id": project_id}).fetchone()
-    
-    if not result:
-        return False
-    
-    project_company_id = result[0]
-    
-    # Extract company_id from user
-    if user.company_name:
-        import re
-        user_company_id = re.sub(r'[^a-z0-9-]', '', re.sub(r'\s+', '-', user.company_name.lower()))
-    else:
-        user_company_id = user.email.split('@')[0]
-    
-    # Startups can only access their own company projects
-    if user.role == "startup":
-        return user_company_id == project_company_id
-    
-    # GPs can access any company project
-    if user.role == "gp":
-        return True
-    
-    return False
+# REMOVED: Old check_project_access function that used company_id matching
+# Now using centralized access control from ..core.access_control
 
 @router.get("/projects/{project_id}/stages", response_model=List[ProjectStageResponse])
 async def get_project_stages(
