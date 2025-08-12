@@ -1163,7 +1163,7 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                                     "classification": analysis_results.get("classification", {}),
                                     "funding_amount": analysis_results.get("funding_amount", ""),
                                     "deck_date": analysis_results.get("deck_date", ""),
-                                    "company_name": analysis_results.get("company_name", ""),
+                                    "company_name": analysis_results.get("startup_name", ""),  # Fix: analyzer returns startup_name
                                     "model_used": analysis_results.get("text_model_used", "auto")
                                 }
                                 self._save_extraction_results(deck_id, extraction_data)

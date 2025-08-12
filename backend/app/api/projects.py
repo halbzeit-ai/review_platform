@@ -14,6 +14,7 @@ import os
 import logging
 import shutil
 import io
+import re
 from pathlib import Path
 
 from ..db.database import get_db
@@ -23,6 +24,42 @@ from ..core.config import settings
 from ..core.access_control import check_project_access_by_company_id, check_project_access
 
 logger = logging.getLogger(__name__)
+
+def parse_chapter_scores_from_text(template_analysis: str) -> Dict[str, float]:
+    """Parse chapter scores from template_analysis text containing embedded scores like **Chapter Score: 4.5/7**"""
+    chapter_scores = {}
+    
+    # Map chapter titles to keys the frontend expects
+    chapter_mapping = {
+        "Problem Analysis": "problem_analysis", 
+        "Solution Approach": "solution_approach",
+        "Product Market Fit": "product_market_fit",
+        "Monetization": "monetization",
+        "Financials": "financials", 
+        "Use of Funds": "use_of_funds",
+        "Organization": "organization"
+    }
+    
+    # Split by chapters (##)
+    chapters = re.split(r'##\s+', template_analysis)
+    
+    for chapter in chapters:
+        if not chapter.strip():
+            continue
+            
+        # Extract chapter name (first line)
+        lines = chapter.split('\n')
+        chapter_name = lines[0].strip() if lines else ""
+        
+        # Look for chapter score pattern: **Chapter Score: X.X/7**
+        chapter_score_match = re.search(r'\*\*Chapter Score:\s*(\d+(?:\.\d+)?)/7\*\*', chapter)
+        if chapter_score_match and chapter_name in chapter_mapping:
+            score = float(chapter_score_match.group(1))
+            key = chapter_mapping[chapter_name]
+            chapter_scores[key] = score
+            logger.debug(f"Parsed chapter score: {chapter_name} -> {key} = {score}")
+    
+    return chapter_scores
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -346,16 +383,16 @@ async def get_project_results(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get analysis results for a specific deck"""
+    """Get analysis results for a specific deck - DATABASE-FIRST APPROACH"""
     try:
-        # Check access permissions using unified access control
+        # Check access permissions
         if not check_project_access(current_user, project_id, db):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You don't have access to this project"
             )
         
-        # Get deck information from project_documents - project-based approach
+        # Get deck information from project_documents
         project_doc_query = text("""
         SELECT pd.id, pd.file_name, pd.file_path, p.company_id, u.email
         FROM project_documents pd
@@ -374,341 +411,157 @@ async def get_project_results(
             )
         
         deck_id_db, file_name, file_path, company_id, user_email = deck_result
+        logger.info(f"Loading database-first results for deck {deck_id}")
         
-        # Access already verified by check_project_access() - no additional validation needed
-        logger.info(f"Loading template processing results for deck {deck_id}")
+        # DATABASE-FIRST: Load all data from database tables
         
-        # Since we're querying project_documents, set source for later use
-        source = 'project_documents'
-        
-        # Load analysis results from extraction_experiments (modern approach)
-        # Check if extraction experiments exist for this deck
-        # Use deck_id directly since original_pitch_deck_id doesn't exist in project_documents schema
-        check_id = deck_id
-        
-        # Check for template processing results (required for complete analysis)
-        # CLEAN ARCHITECTURE: Search for document_id in extraction_experiments
-        template_check = db.execute(text("""
-            SELECT template_processing_results_json 
+        # 1. Get template processing results
+        template_query = text("""
+            SELECT template_processing_results_json
             FROM extraction_experiments 
             WHERE document_ids LIKE '%' || :deck_id || '%' 
             AND template_processing_results_json IS NOT NULL
             ORDER BY created_at DESC
             LIMIT 1
-        """), {"deck_id": str(check_id)}).fetchone()
+        """)
+        template_result = db.execute(template_query, {"deck_id": str(deck_id)}).fetchone()
         
-        if template_check:
-            # Use template processing results
-            results_file_path = f"template_processed_{deck_id}"
-        else:
-            # No template processing - check for partial results (visual analysis + extraction)
-            visual_check = db.execute(text("""
-                SELECT 1 FROM visual_analysis_cache 
-                WHERE document_id = :deck_id
-                LIMIT 1
-            """), {"deck_id": deck_id}).fetchone()
+        # 2. Get extraction results (company_offering, classification, etc.)
+        extraction_query = text("""
+            SELECT results_json
+            FROM extraction_experiments 
+            WHERE document_ids LIKE '%' || :deck_id || '%' 
+            AND results_json IS NOT NULL
+            ORDER BY created_at DESC
+            LIMIT 1
+        """)
+        extraction_result = db.execute(extraction_query, {"deck_id": str(deck_id)}).fetchone()
+        
+        # 3. Get specialized analysis results
+        specialized_analysis_query = text("""
+            SELECT analysis_type, analysis_result 
+            FROM specialized_analysis_results 
+            WHERE document_id = :deck_id
+        """)
+        specialized_results = db.execute(specialized_analysis_query, {"deck_id": deck_id}).fetchall()
+        
+        # 4. Get visual analysis (if needed for partial results)
+        visual_query = text("""
+            SELECT analysis_result_json FROM visual_analysis_cache 
+            WHERE document_id = :deck_id
+            ORDER BY created_at DESC
+            LIMIT 1
+        """)
+        visual_result = db.execute(visual_query, {"deck_id": deck_id}).fetchone()
+        
+        # Build complete results from database
+        results_data = {}
+        
+        # Add template processing results if available
+        if template_result and template_result[0]:
+            try:
+                template_data = json.loads(template_result[0])
+                template_analysis = template_data.get("template_analysis", "")
+                
+                # Extract chapter scores from structured chapter_analysis if available
+                chapter_scores = template_data.get("chapter_scores", {})
+                chapter_analysis = template_data.get("chapter_analysis", {})
+                
+                if not chapter_scores and chapter_analysis:
+                    # Extract scores from structured chapter_analysis 
+                    chapter_scores = {}
+                    for chapter_key, chapter_data in chapter_analysis.items():
+                        if isinstance(chapter_data, dict) and "average_score" in chapter_data:
+                            chapter_scores[chapter_key] = chapter_data["average_score"]
+                
+                # Fallback: parse from template_analysis text if no structured data
+                if not chapter_scores and template_analysis:
+                    chapter_scores = parse_chapter_scores_from_text(template_analysis)
+                
+                # Calculate overall score from chapter scores
+                overall_score = 0.0
+                if chapter_scores:
+                    overall_score = sum(chapter_scores.values()) / len(chapter_scores)
+                
+                results_data.update({
+                    "template_analysis": template_analysis,
+                    "template_used": template_data.get("template_used", "Unknown"),
+                    "processed_at": template_data.get("processed_at"),
+                    "thumbnails": template_data.get("thumbnails", []),
+                    "chapter_analysis": template_data.get("chapter_analysis", {}),
+                    "chapter_scores": chapter_scores,
+                    "overall_score": round(overall_score, 2),
+                    "processing_metadata": template_data.get("processing_metadata", {}),
+                })
+                logger.info(f"Added template processing results for deck {deck_id}, parsed {len(chapter_scores)} chapter scores")
+            except Exception as e:
+                logger.warning(f"Failed to parse template results: {e}")
+        
+        # Add extraction results if available
+        if extraction_result and extraction_result[0]:
+            try:
+                extraction_data = json.loads(extraction_result[0])
+                deck_data = extraction_data.get(str(deck_id), {})
+                if deck_data:
+                    results_data.update({
+                        "company_offering": deck_data.get("company_offering", ""),
+                        "company_name": deck_data.get("company_name", ""),
+                        "classification": deck_data.get("classification", {}),
+                        "funding_amount": deck_data.get("funding_amount", ""),
+                        "deck_date": deck_data.get("deck_date", "")
+                    })
+                    logger.info(f"Added extraction results for deck {deck_id}")
+            except Exception as e:
+                logger.warning(f"Failed to parse extraction results: {e}")
+        
+        # Add specialized analysis if available
+        if specialized_results:
+            specialized_analysis = {}
+            for analysis_type, analysis_result in specialized_results:
+                specialized_analysis[analysis_type] = analysis_result
+            results_data["specialized_analysis"] = specialized_analysis
+            logger.info(f"Added {len(specialized_results)} specialized analysis results for deck {deck_id}")
+        
+        # Check if we have enough data to return results
+        has_template = bool(template_result)
+        has_extraction = bool(extraction_result) 
+        has_specialized = bool(specialized_results)
+        has_visual = bool(visual_result)
+        
+        if not (has_template or has_extraction or has_specialized or has_visual):
+            # FALLBACK: Try file-based approach for legacy data
+            if file_path and os.path.exists(file_path):
+                logger.info(f"No database results found, falling back to file: {file_path}")
+                try:
+                    with open(file_path, 'r') as f:
+                        file_data = json.load(f)
+                    results_data.update(file_data)
+                    
+                    # Still add database specialized analysis even for file-based results
+                    if specialized_results:
+                        specialized_analysis = {}
+                        for analysis_type, analysis_result in specialized_results:
+                            specialized_analysis[analysis_type] = analysis_result
+                        results_data["specialized_analysis"] = specialized_analysis
+                        
+                except Exception as e:
+                    logger.warning(f"Failed to load file results: {e}")
             
-            extraction_check = db.execute(text("""
-                SELECT 1 FROM extraction_experiments 
-                WHERE document_ids LIKE '%' || :deck_id || '%'
-                AND (results_json IS NOT NULL OR company_name_results_json IS NOT NULL)
-                LIMIT 1
-            """), {"deck_id": str(deck_id)}).fetchone()
-            
-            if visual_check or extraction_check:
-                # Return partial results from available data sources
-                results_file_path = f"partial_results_{deck_id}"
-            else:
+            if not results_data:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="No analysis data available for this document."
                 )
         
-        # Check processing type and handle accordingly
-        if results_file_path.startswith("partial_results"):
-            # Partial results - visual analysis and/or extraction only
-            logger.info(f"Loading partial results for deck {deck_id} (visual analysis + extraction)")
-            
-            # Get visual analysis results
-            visual_query = text("""
-                SELECT analysis_result_json FROM visual_analysis_cache 
-                WHERE document_id = :deck_id
-                ORDER BY created_at DESC
-                LIMIT 1
-            """)
-            visual_result = db.execute(visual_query, {"deck_id": deck_id}).fetchone()
-            
-            # Get extraction results
-            extraction_query = text("""
-                SELECT results_json, company_name_results_json, classification_results_json,
-                       funding_amount_results_json, deck_date_results_json
-                FROM extraction_experiments 
-                WHERE document_ids LIKE '%' || :deck_id || '%'
-                ORDER BY created_at DESC
-                LIMIT 1
-            """)
-            extraction_result = db.execute(extraction_query, {"deck_id": str(deck_id)}).fetchone()
-            
-            # Build partial results response
-            slides = []
-            if visual_result and visual_result[0]:
-                visual_data = json.loads(visual_result[0])
-                slides = visual_data.get('visual_analysis_results', [])
-            
-            # Convert slides format for frontend
-            formatted_slides = []
-            for i, slide_data in enumerate(slides):
-                formatted_slides.append(SlideAnalysisResponse(
-                    page_number=i + 1,
-                    slide_image_path=slide_data.get('slide_image_path', ''),
-                    description=slide_data.get('description', str(slide_data)),
-                    deck_name=file_name
-                ))
-            
-            return DeckAnalysisResponse(
-                deck_id=deck_id,
-                deck_name=file_name,
-                company_id=company_id,
-                total_slides=len(formatted_slides),
-                slides=formatted_slides,
-                processing_metadata={
-                    "status": "partial",
-                    "visual_analysis": bool(visual_result),
-                    "extraction": bool(extraction_result),
-                    "template_processing": False
-                }
-            )
-            
-        # Check if this is a template processing marker  
-        if results_file_path.startswith("template_processed"):
-            logger.info(f"Loading template processing results for deck {deck_id}")
-            
-            # Get template processing results from extraction_experiments
-            # Use deck_id directly since original_pitch_deck_id doesn't exist in project_documents schema
-            check_id = deck_id
-            
-            template_query = text("""
-                SELECT template_processing_results_json
-                FROM extraction_experiments 
-                WHERE document_ids LIKE '%' || :deck_id || '%' 
-                AND template_processing_results_json IS NOT NULL
-                ORDER BY created_at DESC
-                LIMIT 1
-            """)
-            
-            template_result = db.execute(template_query, {"deck_id": str(check_id)}).fetchone()
-            
-            if not template_result or not template_result[0]:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Template processing results not found for this deck"
-                )
-            
-            # Parse template processing data
-            template_data = json.loads(template_result[0])
-            
-            # Check if we need to fetch from extraction_experiments (progressive delivery results)
-            original_deck_id = template_result[1] if len(template_result) > 1 else deck_id
-            if template_data.get("template_analysis") == "No chapter analysis available.":
-                # Try to get progressive delivery results from extraction_experiments
-                experiment_query = text("""
-                    SELECT template_processing_results_json 
-                    FROM extraction_experiments 
-                    WHERE :deck_id = ANY(string_to_array(trim(both '{}' from pitch_deck_ids), ',')::int[])
-                    AND template_processing_results_json IS NOT NULL
-                    ORDER BY created_at DESC 
-                    LIMIT 1
-                """)
-                
-                experiment_result = db.execute(experiment_query, {"deck_id": original_deck_id}).fetchone()
-                
-                if experiment_result and experiment_result[0]:
-                    try:
-                        experiment_data = json.loads(experiment_result[0])
-                        # Extract results for this specific deck from the experiment data
-                        deck_results = experiment_data.get("results", [])
-                        
-                        for deck_entry in deck_results:
-                            if deck_entry.get("deck_id") == original_deck_id:
-                                # Found progressive delivery results for this deck
-                                chapters_data = deck_entry.get("chapters", {})
-                                if chapters_data:
-                                    # Format chapters into template_analysis
-                                    analysis_parts = []
-                                    for chapter_name, chapter_content in chapters_data.items():
-                                        # Format chapter with its questions and scores
-                                        chapter_text = f"## {chapter_name}\n\n"
-                                        if isinstance(chapter_content, dict):
-                                            # Add chapter description if available
-                                            if chapter_content.get("description"):
-                                                chapter_text += f"**{chapter_content['description']}**\n\n"
-                                            
-                                            # Add questions and responses
-                                            questions = chapter_content.get("questions", [])
-                                            if questions:
-                                                for q in questions:
-                                                    chapter_text += f"**{q.get('question_text', 'Question')}**\n"
-                                                    if q.get('response'):
-                                                        chapter_text += f"{q['response']}\n"
-                                                    else:
-                                                        chapter_text += "No response provided.\n"
-                                                    chapter_text += f"*Score: {q.get('score', 'N/A')}/7*\n\n"
-                                            
-                                            # Add overall chapter score
-                                            if chapter_content.get("weighted_score"):
-                                                chapter_text += f"**Chapter Score: {chapter_content['weighted_score']:.1f}/7**\n"
-                                        else:
-                                            chapter_text += str(chapter_content)
-                                        
-                                        analysis_parts.append(chapter_text)
-                                    
-                                    template_data = {
-                                        "template_analysis": "\n\n".join(analysis_parts),
-                                        "template_used": deck_entry.get("template_used", "Healthcare Template"),
-                                        "processed_at": deck_entry.get("processed_at"),
-                                        "thumbnail_path": deck_entry.get("thumbnail_path"),
-                                        "slide_images": deck_entry.get("slide_images", [])
-                                    }
-                                break
-                    except (json.JSONDecodeError, KeyError) as e:
-                        logger.warning(f"Failed to parse experiment results for deck {original_deck_id}: {e}")
-            
-            # For dojo projects, return structured data for startup-compatible display
-            if source == 'project_documents':
-                # Return the full template data as-is (startup-compatible JSON structure)
-                if isinstance(template_data, dict) and ("chapter_analysis" in template_data or "report_chapters" in template_data):
-                    # This is new startup-compatible format - return as-is
-                    template_data["analysis_metadata"] = {
-                        "source": "dojo_template_processing",
-                        "deck_id": deck_id,
-                        "original_deck_id": template_result[1] if len(template_result) > 1 else deck_id
-                    }
-                    return template_data
-                else:
-                    # Legacy format - convert to startup-compatible format
-                    return {
-                        "template_analysis": template_data.get("template_analysis", ""),
-                        "template_used": template_data.get("template_used", "Unknown"),
-                        "processed_at": template_data.get("processed_at"),
-                        "thumbnail_path": template_data.get("thumbnail_path"),
-                        "slide_images": template_data.get("slide_images", []),
-                        "analysis_metadata": {
-                            "source": "dojo_template_processing",
-                            "deck_id": deck_id,
-                            "original_deck_id": template_result[1] if len(template_result) > 1 else deck_id
-                        }
-                    }
-            
-            # Format results for frontend consumption - return the raw template analysis
-            return {
-                "template_analysis": template_data.get("template_analysis", ""),
-                "template_used": template_data.get("template_used", "Unknown"),
-                "processed_at": template_data.get("processed_at"),
-                "thumbnails": template_data.get("thumbnails", []),
-                "analysis_metadata": {
-                    "source": "template_processing",
-                    "deck_id": deck_id
-                }
-            }
-        
-        # Check if this is a dojo experiment marker
-        elif results_file_path.startswith("dojo_experiment:"):
-            logger.info(f"Loading dojo experiment results for deck {deck_id}")
-            experiment_id = results_file_path.split("dojo_experiment:")[1]
-            
-            # Get template processing results from database
-            experiment_query = text("""
-                SELECT template_processing_results_json, experiment_name 
-                FROM extraction_experiments 
-                WHERE id = :experiment_id
-            """)
-            
-            experiment_result = db.execute(experiment_query, {"experiment_id": experiment_id}).fetchone()
-            
-            if not experiment_result or not experiment_result[0]:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Template processing results not found for this dojo experiment"
-                )
-            
-            # Parse template processing data
-            template_processing_data = json.loads(experiment_result[0])
-            
-            # Find results for this specific deck
-            deck_results = None
-            if template_processing_data.get("template_processing_results"):
-                for result in template_processing_data["template_processing_results"]:
-                    if result.get("deck_id") == deck_id:
-                        deck_results = result
-                        break
-            
-            if not deck_results:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Template processing results not found for this deck"
-                )
-            
-            # Format results for frontend consumption - return structured data for startup-compatible display
-            if isinstance(deck_results, dict) and ("chapter_analysis" in deck_results or "report_chapters" in deck_results):
-                # This is new startup-compatible format - return as-is
-                deck_results["analysis_metadata"] = {
-                    "source": "dojo_experiment",
-                    "experiment_id": experiment_id,
-                    "processed_at": template_processing_data.get("processed_at")
-                }
-                results_data = deck_results
-            else:
-                # Legacy format - return as template_analysis
-                results_data = {
-                    "experiment_name": experiment_result[1],
-                    "template_used": deck_results.get("template_used"),
-                    "template_analysis": deck_results.get("template_analysis"),
-                    "thumbnail_path": deck_results.get("thumbnail_path"),
-                    "slide_images": deck_results.get("slide_images", []),
-                    "analysis_metadata": {
-                        "source": "dojo_experiment",
-                        "experiment_id": experiment_id,
-                        "processed_at": template_processing_data.get("processed_at")
-                    }
-                }
-            
-            logger.info(f"Loaded dojo experiment results for deck {deck_id} from experiment {experiment_id}")
-            return results_data
-        
-        # Handle regular file-based results
-        if results_file_path.startswith('/'):
-            results_full_path = results_file_path
-        else:
-            results_full_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, results_file_path)
-        
-        if not os.path.exists(results_full_path):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Analysis results file not found"
-            )
-        
-        # Load and return the results JSON
-        with open(results_full_path, 'r') as f:
-            results_data = json.load(f)
-        
-        # Load specialized analysis results from database
-        specialized_analysis_query = text("""
-            SELECT analysis_type, analysis_result 
-            FROM specialized_analysis_results 
-            WHERE pitch_deck_id = :deck_id
-        """)
-        specialized_results = db.execute(specialized_analysis_query, {"deck_id": deck_id}).fetchall()
-        
-        # Add specialized analysis to results
-        if specialized_results:
-            specialized_analysis = {}
-            for analysis_type, analysis_result in specialized_results:
-                specialized_analysis[analysis_type] = analysis_result
-            
-            results_data["specialized_analysis"] = specialized_analysis
-            logger.info(f"Added {len(specialized_results)} specialized analysis results for deck {deck_id}")
-        else:
-            logger.info(f"No specialized analysis found for deck {deck_id}")
+        # Add metadata
+        results_data["analysis_metadata"] = {
+            "source": "database_first",
+            "deck_id": deck_id,
+            "has_template_processing": has_template,
+            "has_extraction_results": has_extraction,
+            "has_specialized_analysis": has_specialized,
+            "has_visual_analysis": has_visual
+        }
         
         # Remove visual_analysis_results from this endpoint (it's in deck-analysis)
         if "visual_analysis_results" in results_data:
@@ -722,7 +575,7 @@ async def get_project_results(
         logger.error(f"Error getting project results for project {project_id}, deck {deck_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve project results"
+            detail=f"Failed to get project results: {str(e)}"
         )
 
 @router.get("/{project_id}/uploads", response_model=ProjectUploadsResponse)
@@ -1297,25 +1150,21 @@ async def get_extraction_results(
         # Get user's company_id
         company_id = get_company_id_from_user(current_user)
         
-        # Query extraction results - GPs have access to all projects, members only to their projects
+        # Query extraction results using unified results_json field - GPs have access to all projects, members only to their projects
         if current_user.role == 'gp':
             # GPs have access to all projects
             query = text("""
                 SELECT DISTINCT
                     pd.id as deck_id,
                     pd.file_name as deck_name,
-                    ee.company_name_results_json,
                     ee.results_json,
-                    ee.classification_results_json,
-                    ee.funding_amount_results_json,
-                    ee.deck_date_results_json,
                     ee.created_at as extracted_at
                 FROM project_documents pd
                 JOIN projects p ON pd.project_id = p.id
-                LEFT JOIN extraction_experiments ee ON pd.id::text = ANY(string_to_array(trim(both '{}' from ee.document_ids), ','))
+                LEFT JOIN extraction_experiments ee ON ee.document_ids LIKE '%' || pd.id::text || '%'
                 WHERE pd.document_type = 'pitch_deck'
                 AND pd.is_active = TRUE
-                AND ee.id IS NOT NULL
+                AND ee.results_json IS NOT NULL
                 ORDER BY ee.created_at DESC
             """)
             results = db.execute(query).fetchall()
@@ -1325,20 +1174,16 @@ async def get_extraction_results(
                 SELECT DISTINCT
                     pd.id as deck_id,
                     pd.file_name as deck_name,
-                    ee.company_name_results_json,
                     ee.results_json,
-                    ee.classification_results_json,
-                    ee.funding_amount_results_json,
-                    ee.deck_date_results_json,
                     ee.created_at as extracted_at
                 FROM project_documents pd
                 JOIN projects p ON pd.project_id = p.id
                 JOIN project_members pm ON p.id = pm.project_id
-                LEFT JOIN extraction_experiments ee ON pd.id::text = ANY(string_to_array(trim(both '{}' from ee.document_ids), ','))
+                LEFT JOIN extraction_experiments ee ON ee.document_ids LIKE '%' || pd.id::text || '%'
                 WHERE pm.user_id = :user_id
                 AND pd.document_type = 'pitch_deck'
                 AND pd.is_active = TRUE
-                AND ee.id IS NOT NULL
+                AND ee.results_json IS NOT NULL
                 ORDER BY ee.created_at DESC
             """)
             results = db.execute(query, {"user_id": current_user.id}).fetchall()
@@ -1347,131 +1192,50 @@ async def get_extraction_results(
         deck_results = {}
         
         for row in results:
-            # Parse JSON results to extract data for this specific deck
-            company_name = None
-            company_offering = None
-            classification = None
-            funding_amount = None
-            deck_date = None
+            deck_id = row.deck_id
             
-            # Parse company name results
-            if row.company_name_results_json:
-                try:
-                    name_data = json.loads(row.company_name_results_json)
-                    # Handle both formats: direct array or wrapped in extraction_results
-                    if isinstance(name_data, list):
-                        results_array = name_data
-                    else:
-                        results_array = name_data.get("extraction_results", [])
-                    
-                    # Find result for this specific deck
-                    for result in results_array:
-                        if result.get("deck_id") == row.deck_id:
-                            company_name = result.get("company_name_extraction", "").strip()
-                            break
-                except:
-                    pass
-            
-            # Parse company offering results
+            # Parse unified results_json (format: {deck_id: {company_offering: "...", classification: {...}, ...}})
             if row.results_json:
                 try:
-                    offering_data = json.loads(row.results_json)
-                    # Handle both formats: direct array or wrapped in extraction_results
-                    if isinstance(offering_data, list):
-                        results_array = offering_data
-                    else:
-                        results_array = offering_data.get("extraction_results", [])
+                    results_data = json.loads(row.results_json)
+                    deck_data = results_data.get(str(deck_id), {})
                     
-                    # Find result for this specific deck
-                    for result in results_array:
-                        if result.get("deck_id") == row.deck_id:
-                            company_offering = result.get("offering_extraction", "").strip()
-                            break
-                except:
-                    pass
-            
-            # Parse classification results
-            if row.classification_results_json:
-                try:
-                    class_data = json.loads(row.classification_results_json)
-                    # Handle both formats: direct array or wrapped in classification_results
-                    if isinstance(class_data, list):
-                        results_array = class_data
-                    else:
-                        results_array = class_data.get("classification_results", [])
-                    
-                    # Find result for this specific deck
-                    for result in results_array:
-                        if result.get("deck_id") == row.deck_id:
-                            class_result = result.get("classification_result", {})
-                            if isinstance(class_result, dict):
-                                # Use primary_sector instead of sector
-                                classification = class_result.get("primary_sector", class_result.get("sector", ""))
-                            break
-                except:
-                    pass
-            
-            # Parse funding amount results
-            if row.funding_amount_results_json:
-                try:
-                    funding_data = json.loads(row.funding_amount_results_json)
-                    # Handle both formats: direct array or wrapped in extraction_results
-                    if isinstance(funding_data, list):
-                        results_array = funding_data
-                    else:
-                        results_array = funding_data.get("extraction_results", [])
-                    
-                    # Find result for this specific deck
-                    for result in results_array:
-                        if result.get("deck_id") == row.deck_id:
-                            funding_amount = result.get("funding_amount_extraction", "").strip()
-                            break
-                except:
-                    pass
-            
-            # Parse deck date results
-            if row.deck_date_results_json:
-                try:
-                    date_data = json.loads(row.deck_date_results_json)
-                    # Handle both formats: direct array or wrapped in extraction_results
-                    if isinstance(date_data, list):
-                        results_array = date_data
-                    else:
-                        results_array = date_data.get("extraction_results", [])
-                    
-                    # Find result for this specific deck  
-                    for result in results_array:
-                        if result.get("deck_id") == row.deck_id:
-                            deck_date = result.get("deck_date_extraction", "").strip()
-                            break
-                except:
-                    pass
-            
-            # Consolidate results by deck_id
-            deck_id = row.deck_id
-            if deck_id not in deck_results:
-                deck_results[deck_id] = {
-                    'deck_id': deck_id,
-                    'deck_name': row.deck_name,
-                    'company_name': None,
-                    'company_offering': None,
-                    'classification': None,
-                    'funding_amount': None,
-                    'deck_date': None,
-                    'extracted_at': row.extracted_at
-                }
-            
-            # Update with any non-empty values (latest experiments take precedence)
-            if company_name:
-                deck_results[deck_id]['company_name'] = company_name
-            if company_offering:
-                deck_results[deck_id]['company_offering'] = company_offering
-            if classification:
-                deck_results[deck_id]['classification'] = classification
-            if funding_amount:
-                deck_results[deck_id]['funding_amount'] = funding_amount
-            if deck_date:
-                deck_results[deck_id]['deck_date'] = deck_date
+                    if deck_data:
+                        # Extract classification string from nested structure
+                        classification_obj = deck_data.get("classification", {})
+                        classification = ""
+                        if isinstance(classification_obj, dict):
+                            classification = classification_obj.get("primary_sector", classification_obj.get("sector", ""))
+                        elif isinstance(classification_obj, str):
+                            classification = classification_obj
+                        
+                        # Initialize or update deck results
+                        if deck_id not in deck_results:
+                            deck_results[deck_id] = {
+                                'deck_id': deck_id,
+                                'deck_name': row.deck_name,
+                                'company_name': deck_data.get("company_name", "").strip(),
+                                'company_offering': deck_data.get("company_offering", "").strip(),
+                                'classification': classification,
+                                'funding_amount': deck_data.get("funding_amount", "").strip(),
+                                'deck_date': deck_data.get("deck_date", "").strip(),
+                                'extracted_at': row.extracted_at
+                            }
+                        else:
+                            # Update with latest data if available
+                            if deck_data.get("company_name"):
+                                deck_results[deck_id]['company_name'] = deck_data.get("company_name", "").strip()
+                            if deck_data.get("company_offering"):
+                                deck_results[deck_id]['company_offering'] = deck_data.get("company_offering", "").strip()
+                            if classification:
+                                deck_results[deck_id]['classification'] = classification
+                            if deck_data.get("funding_amount"):
+                                deck_results[deck_id]['funding_amount'] = deck_data.get("funding_amount", "").strip()
+                            if deck_data.get("deck_date"):
+                                deck_results[deck_id]['deck_date'] = deck_data.get("deck_date", "").strip()
+                except Exception as e:
+                    logger.warning(f"Failed to parse extraction results for deck {deck_id}: {e}")
+                    continue
         
         # Convert consolidated results to final format
         extraction_results = []

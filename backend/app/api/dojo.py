@@ -2724,15 +2724,15 @@ async def cache_visual_analysis_from_gpu(
 ):
     """Internal endpoint for GPU to cache visual analysis results immediately"""
     try:
-        pitch_deck_id = request.get("pitch_deck_id")
+        document_id = request.get("document_id") or request.get("pitch_deck_id")  # Support both for compatibility
         analysis_result_json = request.get("analysis_result_json")
         vision_model_used = request.get("vision_model_used")
         prompt_used = request.get("prompt_used")
         
-        if not pitch_deck_id:
+        if not document_id:
             return {
                 "success": False,
-                "error": "pitch_deck_id is required"
+                "error": "document_id or pitch_deck_id is required"
             }
         
         if not analysis_result_json:
@@ -2741,13 +2741,13 @@ async def cache_visual_analysis_from_gpu(
                 "error": "analysis_result_json is required"
             }
         
-        logger.info(f"GPU caching visual analysis for deck {pitch_deck_id}")
+        logger.info(f"GPU caching visual analysis for document {document_id}")
         
         # Cache the visual analysis result
         db.execute(text(
             "INSERT INTO visual_analysis_cache (document_id, analysis_result_json, vision_model_used, prompt_used) VALUES (:deck_id, :result, :model, :prompt) ON CONFLICT (document_id, vision_model_used, prompt_used) DO UPDATE SET analysis_result_json = :result, created_at = CURRENT_TIMESTAMP"
         ), {
-            "deck_id": pitch_deck_id,
+            "deck_id": document_id,
             "result": analysis_result_json,
             "model": vision_model_used,
             "prompt": prompt_used
@@ -2755,11 +2755,11 @@ async def cache_visual_analysis_from_gpu(
         
         db.commit()
         
-        logger.info(f"Successfully cached visual analysis for deck {pitch_deck_id}")
+        logger.info(f"Successfully cached visual analysis for document {document_id}")
         
         return {
             "success": True,
-            "message": f"Cached visual analysis for deck {pitch_deck_id}"
+            "message": f"Cached visual analysis for document {document_id}"
         }
         
     except Exception as e:

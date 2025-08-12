@@ -46,7 +46,7 @@ async def update_deck_results(
         # Update the project_documents table
         update_query = text("""
             UPDATE project_documents 
-            SET results_file_path = :results_file_path, processing_status = :processing_status
+            SET analysis_results_path = :results_file_path, processing_status = :processing_status
             WHERE id = :document_id
         """)
         
@@ -63,7 +63,6 @@ async def update_deck_results(
             UPDATE processing_queue 
             SET status = :queue_status, 
                 completed_at = CURRENT_TIMESTAMP,
-                results_file_path = :results_file_path,
                 progress_percentage = 100,
                 current_step = 'Analysis Complete',
                 progress_message = 'PDF analysis completed successfully'
@@ -76,7 +75,6 @@ async def update_deck_results(
         
         queue_result = db.execute(queue_update_query, {
             "queue_status": queue_status,
-            "results_file_path": request.results_file_path,
             "document_id": request.document_id
         })
         
