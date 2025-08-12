@@ -205,9 +205,9 @@ const ProjectResults = ({ projectId, deckId }) => {
           <CardContent>
             <Box sx={{ p: 2, bgcolor: 'success.50', borderRadius: 1 }}>
               <Typography variant="body2" color="success.main">
-                <strong>{t('results.healthcareClassification')}:</strong> {results.classification.sector || 'Healthcare'} 
-                {results.classification.confidence && (
-                  <span> ({t('results.confidence')}: {Math.round(results.classification.confidence * 100)}%)</span>
+                <strong>{t('results.healthcareClassification')}:</strong> {results.classification.primary_sector || results.classification.sector || 'Other'} 
+                {(results.classification.confidence_score || results.classification.confidence) && (
+                  <span> ({t('results.confidence')}: {Math.round((results.classification.confidence_score || results.classification.confidence) * 100)}%)</span>
                 )}
               </Typography>
             </Box>

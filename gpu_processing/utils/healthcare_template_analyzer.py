@@ -410,11 +410,12 @@ class HealthcareTemplateAnalyzer:
             
             Available healthcare sectors:
             {chr(10).join(sector_descriptions)}
+            - other: For startups that don't fit into any of the above healthcare categories
             
             Company Offering: {company_offering}
             
             Analyze the offering and determine:
-            1. Primary healthcare sector (use the exact sector name from the list above)
+            1. Primary healthcare sector (use the exact sector name from the list above, or "other" if none fit)
             2. Confidence score (0.0 to 1.0)
             3. Brief reasoning for the classification
             4. Any secondary sector if applicable
@@ -457,9 +458,8 @@ class HealthcareTemplateAnalyzer:
                         recommended_template = template_id
                         break
                 
-                # Add recommended template and subcategory
+                # Add recommended template
                 classification_result['recommended_template'] = recommended_template
-                classification_result['subcategory'] = classification_result.get('primary_sector', 'General Healthcare')
                 
                 logger.info(f"Local classification completed: {classification_result['primary_sector']} "
                            f"(confidence: {classification_result.get('confidence_score', 0):.2f})")
@@ -501,14 +501,29 @@ class HealthcareTemplateAnalyzer:
         logger.warning("Using fallback classification")
         
         # Ultimate fallback
+        # Try to get the 'other' sector's template ID
+        try:
+            conn = psycopg2.connect(self.database_url)
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT hs.id, at.id as template_id 
+                FROM healthcare_sectors hs 
+                LEFT JOIN analysis_templates at ON hs.id = at.healthcare_sector_id 
+                WHERE hs.name = 'other'
+            """)
+            result = cursor.fetchone()
+            conn.close()
+            recommended_template = result[1] if result else None
+        except:
+            recommended_template = None
+            
         return {
-            "primary_sector": "consumer_health",
-            "subcategory": "Health Optimization Tools",
+            "primary_sector": "other",
             "confidence_score": 0.3,
             "reasoning": "Fallback classification - unable to access healthcare sectors from database",
             "secondary_sector": None,
             "keywords_matched": [],
-            "recommended_template": None
+            "recommended_template": recommended_template
         }
     
     def _load_template_config(self, template_id: Optional[int] = None) -> Dict[str, Any]:
@@ -630,10 +645,10 @@ class HealthcareTemplateAnalyzer:
             return self._get_fallback_template_config()
     
     def _load_template_config_with_fallback(self, template_id: Optional[int] = None) -> Dict[str, Any]:
-        """Load template configuration with fallback to Standard Seven-Chapter Review if template is empty"""
+        """Load template configuration with fallback to 'other' sector template if template is empty"""
         if not template_id:
-            logger.warning("No template ID provided, using Standard Seven-Chapter Review as fallback")
-            return self._load_template_config(9)  # Standard Seven-Chapter Review template ID
+            logger.warning("No template ID provided, using 'other' sector template as fallback")
+            return self._get_other_sector_template()  # Get template for 'other' sector
         
         try:
             # First, try to load the requested template
@@ -641,8 +656,8 @@ class HealthcareTemplateAnalyzer:
             
             # Check if the template has any chapters
             if not template_config.get("chapters") or len(template_config["chapters"]) == 0:
-                logger.warning(f"Template {template_id} has no chapters, falling back to Standard Seven-Chapter Review")
-                return self._load_template_config(9)  # Standard Seven-Chapter Review template ID
+                logger.warning(f"Template {template_id} has no chapters, falling back to 'other' sector template")
+                return self._get_other_sector_template()  # Get template for 'other' sector
             
             # Check if any chapter has questions
             has_questions = False
@@ -652,16 +667,43 @@ class HealthcareTemplateAnalyzer:
                     break
             
             if not has_questions:
-                logger.warning(f"Template {template_id} has no questions in any chapter, falling back to Standard Seven-Chapter Review")
-                return self._load_template_config(9)  # Standard Seven-Chapter Review template ID
+                logger.warning(f"Template {template_id} has no questions in any chapter, falling back to 'other' sector template")
+                return self._get_other_sector_template()  # Get template for 'other' sector
             
             logger.info(f"Using template {template_id} with {len(template_config['chapters'])} chapters")
             return template_config
             
         except Exception as e:
             logger.error(f"Error loading template {template_id} with fallback: {e}")
-            logger.info("Falling back to Standard Seven-Chapter Review template")
-            return self._load_template_config(9)  # Standard Seven-Chapter Review template ID
+            logger.info("Falling back to 'other' sector template")
+            return self._get_other_sector_template()  # Get template for 'other' sector
+    
+    def _get_other_sector_template(self) -> Dict[str, Any]:
+        """Get template associated with 'other' sector"""
+        try:
+            # Find the 'other' sector and get its template
+            conn = psycopg2.connect(self.database_url)
+            cursor = conn.cursor()
+            
+            # Get the 'other' sector ID
+            cursor.execute("SELECT id FROM healthcare_sectors WHERE name = 'other'")
+            sector_result = cursor.fetchone()
+            
+            if sector_result:
+                sector_id = sector_result[0]
+                # Get template for 'other' sector
+                template_id = self._get_template_for_sector(sector_id)
+                if template_id:
+                    conn.close()
+                    return self._load_template_config(template_id)
+            
+            conn.close()
+            logger.warning("Could not find 'other' sector template, using hardcoded fallback")
+            return self._get_fallback_template_config()
+            
+        except Exception as e:
+            logger.error(f"Error getting 'other' sector template: {e}")
+            return self._get_fallback_template_config()
     
     def _get_fallback_template_config(self) -> Dict[str, Any]:
         """Comprehensive fallback template configuration based on standard pitch deck analysis"""

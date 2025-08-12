@@ -1201,13 +1201,8 @@ async def get_extraction_results(
                     deck_data = results_data.get(str(deck_id), {})
                     
                     if deck_data:
-                        # Extract classification string from nested structure
+                        # Keep the full classification object for detailed display
                         classification_obj = deck_data.get("classification", {})
-                        classification = ""
-                        if isinstance(classification_obj, dict):
-                            classification = classification_obj.get("primary_sector", classification_obj.get("sector", ""))
-                        elif isinstance(classification_obj, str):
-                            classification = classification_obj
                         
                         # Initialize or update deck results
                         if deck_id not in deck_results:
@@ -1216,7 +1211,7 @@ async def get_extraction_results(
                                 'deck_name': row.deck_name,
                                 'company_name': deck_data.get("company_name", "").strip(),
                                 'company_offering': deck_data.get("company_offering", "").strip(),
-                                'classification': classification,
+                                'classification': classification_obj,  # Send full object, not just primary_sector
                                 'funding_amount': deck_data.get("funding_amount", "").strip(),
                                 'deck_date': deck_data.get("deck_date", "").strip(),
                                 'extracted_at': row.extracted_at

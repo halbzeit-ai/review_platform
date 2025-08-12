@@ -901,7 +901,11 @@ const ProjectDashboard = () => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                           <Category sx={{ fontSize: 16, color: 'secondary.main' }} />
                           <Typography variant="body2">
-                            <strong>Sector:</strong> {result.classification}
+                            <strong>Primary Sector:</strong> {typeof result.classification === 'object' ? 
+                              result.classification.primary_sector : result.classification}
+                            {typeof result.classification === 'object' && result.classification.secondary_sector && (
+                              <span> | <strong>Secondary:</strong> {result.classification.secondary_sector}</span>
+                            )}
                           </Typography>
                         </Box>
                       )}

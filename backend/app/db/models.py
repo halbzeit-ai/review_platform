@@ -395,7 +395,7 @@ class StartupClassification(Base):
     document_id = Column(Integer, ForeignKey("project_documents.id", ondelete="CASCADE"), nullable=False, index=True)
     company_offering = Column(Text, nullable=False)
     primary_sector_id = Column(Integer, ForeignKey("healthcare_sectors.id"), index=True)
-    subcategory = Column(String(255))
+    # subcategory = Column(String(255))  # Removed: subcategory was redundant with primary_sector
     confidence_score = Column(Numeric)
     classification_reasoning = Column(Text)
     secondary_sector_id = Column(Integer, ForeignKey("healthcare_sectors.id"), index=True)
