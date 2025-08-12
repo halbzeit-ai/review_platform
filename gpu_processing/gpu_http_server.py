@@ -1151,15 +1151,32 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                                 # Extract the formatted template analysis
                                 template_analysis = self._format_template_analysis(analysis_results)
                                 
-                                # Save specialized analysis to database (same as /api/process-pdf endpoint)
+                                # Call all four save functions in proper sequence
+                                
+                                # 1. Save visual analysis and feedback (already cached during analysis)
+                                visual_results = analysis_results.get("visual_analysis_results", [])
+                                self._save_visual_analysis_and_feedback(deck_id, visual_results)
+                                
+                                # 2. Save extraction results (company_offering, classification, etc.)
+                                extraction_data = {
+                                    "company_offering": analysis_results.get("company_offering", ""),
+                                    "classification": analysis_results.get("classification", {}),
+                                    "funding_amount": analysis_results.get("funding_amount", ""),
+                                    "deck_date": analysis_results.get("deck_date", ""),
+                                    "company_name": analysis_results.get("company_name", ""),
+                                    "model_used": analysis_results.get("text_model_used", "auto")
+                                }
+                                self._save_extraction_results(deck_id, extraction_data)
+                                
+                                # 3. Save template processing results only
+                                self._save_template_processing_only(deck_id, analysis_results)
+                                
+                                # 4. Save specialized analysis (regulatory, clinical, scientific)
                                 specialized_analysis = analysis_results.get("specialized_analysis", {})
                                 if specialized_analysis:
                                     self._save_specialized_analysis(deck_id, specialized_analysis)
                                 else:
                                     logger.info(f"No specialized analysis found for deck {deck_id}")
-                                
-                                # Save template processing results to extraction_experiments for startup access
-                                self._save_template_processing_results(deck_id, analysis_results)
                                 
                             else:
                                 logger.error(f"Could not find PDF path for deck {deck_id}")
@@ -1651,8 +1668,142 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
         except Exception as e:
             logger.error(f"Error updating database via HTTP for deck {document_id}: {e}")
     
+    def _save_visual_analysis_and_feedback(self, document_id: int, visual_analysis_results: list):
+        """Save Function 1: Visual analysis results and slide feedback
+        This includes slide descriptions and AI-generated feedback for each slide."""
+        try:
+            import requests
+            
+            if not visual_analysis_results:
+                logger.info(f"No visual analysis to save for document {document_id}")
+                return
+            
+            logger.info(f"💾 [1/4] Saving visual analysis and feedback for document {document_id} ({len(visual_analysis_results)} slides)")
+            
+            # The visual analysis is already cached via _cache_visual_analysis_result
+            # This function ensures it's properly saved for retrieval
+            # Visual analysis includes: slide_image_path, description, feedback
+            
+            # For now, visual analysis is cached separately
+            # In future, we may want to save it to a dedicated table
+            logger.info(f"✅ Visual analysis already cached for document {document_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Error saving visual analysis for document {document_id}: {e}")
+            return False
+    
+    def _save_extraction_results(self, document_id: int, extraction_data: dict):
+        """Save Function 2: Extraction experiment results
+        This includes: company_offering, classification, funding_sought, deck_date, company_name"""
+        try:
+            import requests
+            import json
+            import time
+            
+            # Essential extraction fields
+            essential_fields = ['company_offering', 'classification', 'funding_amount', 'deck_date', 'company_name']
+            
+            # Check if we have any extraction data
+            has_data = any(extraction_data.get(field) for field in essential_fields)
+            
+            if not has_data:
+                logger.info(f"No extraction results to save for document {document_id}")
+                return False
+            
+            logger.info(f"💾 [2/4] Saving extraction results for document {document_id}")
+            
+            # Create experiment name
+            experiment_name = f"extraction_deck_{document_id}"
+            
+            # Prepare extraction data - ensure all fields are present
+            extraction_results = {
+                str(document_id): {
+                    "company_offering": extraction_data.get('company_offering', ''),
+                    "classification": extraction_data.get('classification', {}),
+                    "funding_amount": extraction_data.get('funding_amount', ''),
+                    "deck_date": extraction_data.get('deck_date', ''),
+                    "company_name": extraction_data.get('company_name', '')
+                }
+            }
+            
+            # Save to extraction_experiments table
+            response = requests.post(
+                f"{self.backend_url}/api/internal/save-extraction-results",
+                json={
+                    "experiment_name": experiment_name,
+                    "document_ids": [document_id],
+                    "extraction_results": extraction_results,
+                    "extraction_type": "startup_upload",
+                    "text_model_used": extraction_data.get('model_used', 'auto')
+                },
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                logger.info(f"✅ [2/4] Successfully saved extraction results for document {document_id}")
+                return True
+            else:
+                logger.error(f"❌ Failed to save extraction results: {response.status_code} - {response.text}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Error saving extraction results for document {document_id}: {e}")
+            return False
+    
+    def _save_template_processing_only(self, document_id: int, template_results: dict):
+        """Save Function 3: Template processing results only
+        This includes: chapter_analysis, question_analysis, overall_score, template_used"""
+        try:
+            import requests
+            import json
+            
+            # Check if we have template processing results
+            chapter_analysis = template_results.get("chapter_analysis", {})
+            
+            if not chapter_analysis:
+                logger.info(f"No template processing results to save for document {document_id}")
+                return False
+            
+            logger.info(f"💾 [3/4] Saving template processing results for document {document_id}")
+            
+            # Prepare template-specific data (excluding special analyses)
+            template_data = {
+                "template_analysis": self._format_template_analysis_for_storage(template_results),
+                "template_used": template_results.get("template_used", {}),
+                "chapter_analysis": chapter_analysis,
+                "question_analysis": template_results.get("question_analysis", {}),
+                "overall_score": template_results.get("overall_score", 0.0),
+                "report_chapters": template_results.get("report_chapters", {}),
+                "report_scores": template_results.get("report_scores", {}),
+                "processing_metadata": template_results.get("processing_metadata", {})
+            }
+            
+            # Save template processing to extraction_experiments
+            response = requests.post(
+                f"{self.backend_url}/api/internal/save-template-processing",
+                json={
+                    "experiment_name": f"template_deck_{document_id}",
+                    "document_id": document_id,
+                    "template_processing_results": template_data
+                },
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                logger.info(f"✅ [3/4] Successfully saved template processing for document {document_id}")
+                return True
+            else:
+                logger.error(f"❌ Failed to save template processing: {response.status_code} - {response.text}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Error saving template processing for document {document_id}: {e}")
+            return False
+    
     def _save_specialized_analysis(self, document_id: int, specialized_analysis: dict):
-        """Save specialized analysis results to database via HTTP request"""
+        """Save Function 4: Special analyses (regulatory, clinical, scientific)
+        This is independent of template and can be toggled based on business model"""
         try:
             import requests
             
@@ -1663,10 +1814,10 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
             }
             
             if not filtered_analysis:
-                logger.info(f"No specialized analysis to save for deck {document_id}")
-                return
+                logger.info(f"No specialized analysis to save for document {document_id}")
+                return False
             
-            logger.info(f"💾 Saving specialized analysis for deck {document_id}: {list(filtered_analysis.keys())}")
+            logger.info(f"💾 [4/4] Saving specialized analysis for document {document_id}: {list(filtered_analysis.keys())}")
             
             # Prepare the specialized analysis data
             analysis_data = {
@@ -1684,68 +1835,16 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
             if response.status_code == 200:
                 result = response.json()
                 saved_analyses = result.get('saved_analyses', [])
-                logger.info(f"✅ Successfully saved specialized analysis: {saved_analyses}")
+                logger.info(f"✅ [4/4] Successfully saved specialized analysis: {saved_analyses}")
+                return True
             else:
                 logger.error(f"❌ Failed to save specialized analysis: {response.status_code} - {response.text}")
+                return False
             
         except Exception as e:
-            logger.error(f"❌ Error saving specialized analysis for deck {document_id}: {e}")
+            logger.error(f"❌ Error saving specialized analysis for document {document_id}: {e}")
+            return False
     
-    def _save_template_processing_results(self, document_id: int, results: dict):
-        """Save template processing results to extraction_experiments table for startup access"""
-        try:
-            import requests
-            import json
-            import time
-            
-            # Check if we have template processing results
-            chapter_analysis = results.get("chapter_analysis", {})
-            specialized_analysis = results.get("specialized_analysis", {})
-            scientific_hypotheses = results.get("scientific_hypotheses", {})
-            
-            if not chapter_analysis and not specialized_analysis and not scientific_hypotheses:
-                logger.info(f"No template processing results to save for deck {document_id}")
-                return
-            
-            logger.info(f"💾 Saving template processing results for deck {document_id}")
-            
-            # Create experiment name for startup upload
-            experiment_name = f"startup_upload_deck_{document_id}_{int(time.time())}"
-            
-            # Prepare template processing data
-            template_processing_data = {
-                "template_analysis": self._format_template_analysis_for_storage(results),
-                "template_used": results.get("template_used", {}),
-                "chapter_analysis": chapter_analysis,
-                "specialized_analysis": specialized_analysis,
-                "scientific_hypotheses": scientific_hypotheses,
-                "overall_score": results.get("overall_score", 0.0),
-                "report_chapters": results.get("report_chapters", {}),
-                "report_scores": results.get("report_scores", {}),
-                "startup_name": results.get("startup_name"),
-                "funding_amount": results.get("funding_amount"),
-                "deck_date": results.get("deck_date"),
-                "processing_metadata": results.get("processing_metadata", {})
-            }
-            
-            # Call backend to save/update extraction experiment with template processing results
-            backend_url = self.backend_url
-            response = requests.post(f"{backend_url}/api/internal/save-template-processing", 
-                json={
-                    "experiment_name": experiment_name,
-                    "document_id": document_id,
-                    "template_processing_results": template_processing_data
-                },
-                timeout=30
-            )
-            
-            if response.status_code == 200:
-                logger.info(f"✅ Successfully saved template processing results for deck {document_id}")
-            else:
-                logger.error(f"❌ Failed to save template processing results for deck {document_id}: {response.status_code} {response.text}")
-                
-        except Exception as e:
-            logger.error(f"❌ Error saving template processing results for deck {document_id}: {e}")
     
     def _format_template_analysis_for_storage(self, results: dict) -> str:
         """Format template analysis as text for compatibility"""

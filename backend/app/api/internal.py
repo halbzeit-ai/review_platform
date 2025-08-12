@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/internal", tags=["internal"])
 
 class DeckResultsUpdateRequest(BaseModel):
-    pitch_deck_id: int
+    document_id: int
     results_file_path: str
     processing_status: str
 
@@ -26,37 +26,37 @@ async def update_deck_results(
 ):
     """Internal endpoint for GPU processing to update deck results"""
     try:
-        logger.info(f"🔍 DEBUG: Received update request for deck {request.pitch_deck_id}")
+        logger.info(f"🔍 DEBUG: Received update request for document {request.document_id}")
         logger.info(f"🔍 DEBUG: Results file: {request.results_file_path}")
         logger.info(f"🔍 DEBUG: Status: {request.processing_status}")
         
-        # Check if the deck exists first
-        check_query = text("SELECT id, file_name FROM pitch_decks WHERE id = :pitch_deck_id")
-        check_result = db.execute(check_query, {"pitch_deck_id": request.pitch_deck_id})
+        # Check if the document exists first
+        check_query = text("SELECT id, file_name FROM project_documents WHERE id = :document_id")
+        check_result = db.execute(check_query, {"document_id": request.document_id})
         deck = check_result.fetchone()
         
         if deck:
-            logger.info(f"🔍 DEBUG: Found deck {deck[0]}: {deck[1]}")
+            logger.info(f"🔍 DEBUG: Found document {deck[0]}: {deck[1]}")
         else:
-            logger.error(f"🔍 DEBUG: No deck found with ID {request.pitch_deck_id}")
-            # List all existing decks for debugging
-            all_decks = db.execute(text("SELECT id, file_name FROM pitch_decks ORDER BY id")).fetchall()
-            logger.error(f"🔍 DEBUG: Available decks: {[(d[0], d[1]) for d in all_decks]}")
+            logger.error(f"🔍 DEBUG: No document found with ID {request.document_id}")
+            # List all existing documents for debugging
+            all_docs = db.execute(text("SELECT id, file_name FROM project_documents ORDER BY id")).fetchall()
+            logger.error(f"🔍 DEBUG: Available documents: {[(d[0], d[1]) for d in all_docs]}")
         
-        # Update the pitch_decks table
+        # Update the project_documents table
         update_query = text("""
-            UPDATE pitch_decks 
+            UPDATE project_documents 
             SET results_file_path = :results_file_path, processing_status = :processing_status
-            WHERE id = :pitch_deck_id
+            WHERE id = :document_id
         """)
         
         result = db.execute(update_query, {
             "results_file_path": request.results_file_path,
             "processing_status": request.processing_status,
-            "pitch_deck_id": request.pitch_deck_id
+            "document_id": request.document_id
         })
         
-        logger.info(f"🔍 DEBUG: Pitch decks update affected {result.rowcount} rows")
+        logger.info(f"🔍 DEBUG: Project documents update affected {result.rowcount} rows")
         
         # CRITICAL FIX: Also update the processing_queue table
         queue_update_query = text("""
@@ -67,7 +67,7 @@ async def update_deck_results(
                 progress_percentage = 100,
                 current_step = 'Analysis Complete',
                 progress_message = 'PDF analysis completed successfully'
-            WHERE pitch_deck_id = :pitch_deck_id 
+            WHERE document_id = :document_id 
             AND status = 'processing'
         """)
         
@@ -77,7 +77,7 @@ async def update_deck_results(
         queue_result = db.execute(queue_update_query, {
             "queue_status": queue_status,
             "results_file_path": request.results_file_path,
-            "pitch_deck_id": request.pitch_deck_id
+            "document_id": request.document_id
         })
         
         logger.info(f"🔍 DEBUG: Processing queue update affected {queue_result.rowcount} rows")
@@ -87,15 +87,15 @@ async def update_deck_results(
         if result.rowcount == 0:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Pitch deck {request.pitch_deck_id} not found"
+                detail=f"Document {request.document_id} not found"
             )
         
-        logger.info(f"Updated deck {request.pitch_deck_id}: {request.results_file_path} -> {request.processing_status}")
+        logger.info(f"Updated document {request.document_id}: {request.results_file_path} -> {request.processing_status}")
         
         return {
             "success": True,
-            "message": f"Updated deck {request.pitch_deck_id} successfully",
-            "pitch_deck_id": request.pitch_deck_id,
+            "message": f"Updated document {request.document_id} successfully",
+            "document_id": request.document_id,
             "results_file_path": request.results_file_path,
             "processing_status": request.processing_status
         }
@@ -110,7 +110,7 @@ async def update_deck_results(
         )
 
 class ProcessingProgressUpdateRequest(BaseModel):
-    pitch_deck_id: int
+    document_id: int
     progress_percentage: int
     current_step: str
     progress_message: str
@@ -123,7 +123,7 @@ async def update_processing_progress(
 ):
     """Internal endpoint for GPU to send incremental progress updates during processing"""
     try:
-        logger.info(f"📊 Progress update for deck {request.pitch_deck_id}: {request.progress_percentage}% - {request.current_step}")
+        logger.info(f"📊 Progress update for document {request.document_id}: {request.progress_percentage}% - {request.current_step}")
         
         # Update the processing_queue table with incremental progress
         progress_query = text("""
@@ -131,7 +131,7 @@ async def update_processing_progress(
             SET progress_percentage = :progress_percentage,
                 current_step = :current_step,
                 progress_message = :progress_message
-            WHERE pitch_deck_id = :pitch_deck_id 
+            WHERE document_id = :document_id 
             AND status = 'processing'
         """)
         
@@ -139,19 +139,19 @@ async def update_processing_progress(
             "progress_percentage": request.progress_percentage,
             "current_step": request.current_step,
             "progress_message": request.progress_message,
-            "pitch_deck_id": request.pitch_deck_id
+            "document_id": request.document_id
         })
         
         db.commit()
         logger.info(f"📊 Progress update applied to {result.rowcount} queue entries")
         
         if result.rowcount == 0:
-            logger.warning(f"📊 No processing queue entry found for deck {request.pitch_deck_id}")
+            logger.warning(f"📊 No processing queue entry found for document {request.document_id}")
         
         return {
             "success": True,
-            "message": f"Progress updated for deck {request.pitch_deck_id}",
-            "pitch_deck_id": request.pitch_deck_id,
+            "message": f"Progress updated for document {request.document_id}",
+            "document_id": request.document_id,
             "progress_percentage": request.progress_percentage,
             "current_step": request.current_step
         }
@@ -164,7 +164,7 @@ async def update_processing_progress(
         )
 
 class SpecializedAnalysisRequest(BaseModel):
-    pitch_deck_id: int
+    document_id: int
     specialized_analysis: dict  # e.g. {"clinical_validation": "...", "regulatory_pathway": "...", "scientific_hypothesis": "..."}
 
 @router.post("/save-specialized-analysis")
@@ -174,11 +174,11 @@ async def save_specialized_analysis(
 ):
     """Internal endpoint for GPU to save specialized analysis results"""
     try:
-        logger.info(f"💾 Saving specialized analysis for deck {request.pitch_deck_id}")
+        logger.info(f"💾 Saving specialized analysis for document {request.document_id}")
         
-        # First, delete any existing specialized analysis for this deck
-        delete_query = text("DELETE FROM specialized_analysis_results WHERE pitch_deck_id = :pitch_deck_id")
-        db.execute(delete_query, {"pitch_deck_id": request.pitch_deck_id})
+        # First, delete any existing specialized analysis for this document
+        delete_query = text("DELETE FROM specialized_analysis_results WHERE document_id = :document_id")
+        db.execute(delete_query, {"document_id": request.document_id})
         
         # Save each specialized analysis result
         saved_analyses = []
@@ -186,25 +186,25 @@ async def save_specialized_analysis(
             if analysis_result and analysis_result.strip():  # Only save non-empty results
                 insert_query = text("""
                     INSERT INTO specialized_analysis_results 
-                    (pitch_deck_id, analysis_type, analysis_result, created_at) 
-                    VALUES (:pitch_deck_id, :analysis_type, :analysis_result, NOW())
+                    (document_id, analysis_type, analysis_result, created_at) 
+                    VALUES (:document_id, :analysis_type, :analysis_result, NOW())
                 """)
                 
                 db.execute(insert_query, {
-                    "pitch_deck_id": request.pitch_deck_id,
+                    "document_id": request.document_id,
                     "analysis_type": analysis_type,
                     "analysis_result": analysis_result
                 })
                 
                 saved_analyses.append(analysis_type)
-                logger.info(f"✅ Saved {analysis_type} analysis for deck {request.pitch_deck_id}")
+                logger.info(f"✅ Saved {analysis_type} analysis for document {request.document_id}")
         
         db.commit()
         
         return {
             "success": True,
-            "message": f"Saved {len(saved_analyses)} specialized analyses for deck {request.pitch_deck_id}",
-            "pitch_deck_id": request.pitch_deck_id,
+            "message": f"Saved {len(saved_analyses)} specialized analyses for document {request.document_id}",
+            "document_id": request.document_id,
             "saved_analyses": saved_analyses
         }
         
@@ -216,9 +216,108 @@ async def save_specialized_analysis(
             detail=f"Failed to save specialized analysis: {str(e)}"
         )
 
+class ExtractionResultsRequest(BaseModel):
+    experiment_name: str
+    document_ids: list
+    extraction_results: dict  # {document_id: {company_offering, classification, funding_amount, deck_date, company_name}}
+    extraction_type: str
+    text_model_used: str
+
+@router.post("/save-extraction-results")
+async def save_extraction_results(
+    request: ExtractionResultsRequest,
+    db: Session = Depends(get_db)
+):
+    """Internal endpoint for GPU to save extraction experiment results"""
+    try:
+        logger.info(f"💾 Saving extraction results for documents {request.document_ids}")
+        
+        import json
+        
+        # Check if there's an existing extraction experiment for these documents
+        doc_ids_str = ','.join(map(str, request.document_ids))
+        existing_query = text("""
+            SELECT id FROM extraction_experiments 
+            WHERE document_ids = :document_ids
+            ORDER BY created_at DESC
+            LIMIT 1
+        """)
+        existing_result = db.execute(existing_query, {"document_ids": doc_ids_str}).fetchone()
+        
+        if existing_result:
+            # Update existing experiment
+            experiment_id = existing_result[0]
+            logger.info(f"Updating existing extraction experiment {experiment_id}")
+            
+            update_query = text("""
+                UPDATE extraction_experiments 
+                SET results_json = :results_json,
+                    extraction_type = :extraction_type,
+                    text_model_used = :text_model_used
+                WHERE id = :experiment_id
+            """)
+            
+            db.execute(update_query, {
+                "results_json": json.dumps(request.extraction_results),
+                "extraction_type": request.extraction_type,
+                "text_model_used": request.text_model_used,
+                "experiment_id": experiment_id
+            })
+            
+        else:
+            # Create new extraction experiment
+            logger.info(f"Creating new extraction experiment for documents {request.document_ids}")
+            
+            insert_query = text("""
+                INSERT INTO extraction_experiments (
+                    experiment_name,
+                    document_ids,
+                    extraction_type,
+                    text_model_used,
+                    extraction_prompt,
+                    results_json,
+                    created_at
+                ) VALUES (
+                    :experiment_name,
+                    :document_ids,
+                    :extraction_type,
+                    :text_model_used,
+                    'Automatic extraction for startup upload',
+                    :results_json,
+                    NOW()
+                )
+            """)
+            
+            db.execute(insert_query, {
+                "experiment_name": request.experiment_name,
+                "document_ids": doc_ids_str,
+                "extraction_type": request.extraction_type,
+                "text_model_used": request.text_model_used,
+                "results_json": json.dumps(request.extraction_results)
+            })
+        
+        db.commit()
+        
+        logger.info(f"✅ Successfully saved extraction results for documents {request.document_ids}")
+        
+        return {
+            "success": True,
+            "message": f"Extraction results saved for {len(request.document_ids)} documents",
+            "document_ids": request.document_ids,
+            "experiment_name": request.experiment_name
+        }
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Error saving extraction results: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to save extraction results: {str(e)}"
+        )
+
 class TemplateProcessingRequest(BaseModel):
     experiment_name: str
-    pitch_deck_id: int
+    document_id: int
     template_processing_results: dict
 
 @router.post("/save-template-processing")
@@ -228,18 +327,18 @@ async def save_template_processing(
 ):
     """Internal endpoint for GPU to save template processing results for startup uploads"""
     try:
-        logger.info(f"💾 Saving template processing results for deck {request.pitch_deck_id}")
+        logger.info(f"💾 Saving template processing results for document {request.document_id}")
         
         import json
         
-        # First check if there's an existing extraction experiment for this deck
+        # First check if there's an existing extraction experiment for this document
         existing_query = text("""
             SELECT id FROM extraction_experiments 
-            WHERE pitch_deck_ids LIKE '%' || :deck_id || '%'
+            WHERE document_ids LIKE '%' || :document_id || '%'
             ORDER BY created_at DESC
             LIMIT 1
         """)
-        existing_result = db.execute(existing_query, {"deck_id": str(request.pitch_deck_id)}).fetchone()
+        existing_result = db.execute(existing_query, {"document_id": str(request.document_id)}).fetchone()
         
         if existing_result:
             # Update existing experiment with template processing results
@@ -260,12 +359,12 @@ async def save_template_processing(
             
         else:
             # Create new extraction experiment entry
-            logger.info(f"Creating new extraction experiment for deck {request.pitch_deck_id}")
+            logger.info(f"Creating new extraction experiment for document {request.document_id}")
             
             insert_query = text("""
                 INSERT INTO extraction_experiments (
                     experiment_name, 
-                    pitch_deck_ids, 
+                    document_ids, 
                     extraction_type,
                     text_model_used,
                     extraction_prompt,
@@ -275,7 +374,7 @@ async def save_template_processing(
                     created_at
                 ) VALUES (
                     :experiment_name,
-                    :pitch_deck_ids,
+                    :document_ids,
                     'startup_upload',
                     'auto',
                     'Automatic startup upload processing',
@@ -288,18 +387,18 @@ async def save_template_processing(
             
             db.execute(insert_query, {
                 "experiment_name": request.experiment_name,
-                "pitch_deck_ids": f"{{{request.pitch_deck_id}}}",  # PostgreSQL array format
+                "document_ids": f"{request.document_id}",  # Simple text format
                 "template_results": json.dumps(request.template_processing_results)
             })
         
         db.commit()
         
-        logger.info(f"✅ Successfully saved template processing results for deck {request.pitch_deck_id}")
+        logger.info(f"✅ Successfully saved template processing results for document {request.document_id}")
         
         return {
             "success": True,
-            "message": f"Template processing results saved for deck {request.pitch_deck_id}",
-            "pitch_deck_id": request.pitch_deck_id,
+            "message": f"Template processing results saved for document {request.document_id}",
+            "document_id": request.document_id,
             "experiment_name": request.experiment_name
         }
         
