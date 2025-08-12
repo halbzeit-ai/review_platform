@@ -61,6 +61,9 @@ class ModelConfig(Base):
     model_name = Column(String, index=True)
     model_type = Column(String, index=True)  # 'vision', 'text', 'scoring', 'science'
     is_active = Column(Boolean, default=False)
+    max_context_window = Column(Integer, default=4096)  # Maximum context window for this model
+    recommended_context_window = Column(Integer, default=4096)  # Recommended context window for optimal performance
+    context_window_notes = Column(Text, nullable=True)  # Notes about context window usage
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

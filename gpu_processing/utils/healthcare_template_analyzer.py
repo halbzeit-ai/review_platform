@@ -125,38 +125,68 @@ class HealthcareTemplateAnalyzer:
         self.project_root = os.path.join(os.getenv('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/CPU-GPU'), 'projects')
     
     def _get_model_options(self) -> dict:
-        """Get appropriate generation options based on the model type"""
-        # Determine the most restrictive model to use for base options
-        models_to_check = [self.text_model, self.vision_model, self.scoring_model]
+        """Get appropriate generation options based on database-stored model specifications"""
+        # Get context windows from database for each model
+        models_to_check = [
+            (self.text_model, 'text'),
+            (self.vision_model, 'vision'), 
+            (self.scoring_model, 'scoring')
+        ]
         
-        # Default options for large models (production-grade)
+        min_context_window = 32768  # Default safe value
+        model_context_info = {}
+        
+        try:
+            conn = psycopg2.connect(self.database_url)
+            cursor = conn.cursor()
+            
+            for model_name, model_type in models_to_check:
+                cursor.execute("""
+                    SELECT model_name, model_type, max_context_window, recommended_context_window, context_window_notes
+                    FROM model_configs 
+                    WHERE model_name = %s AND model_type = %s AND is_active = true
+                """, (model_name, model_type))
+                
+                result = cursor.fetchone()
+                if result:
+                    _, _, max_ctx, recommended_ctx, notes = result
+                    model_context_info[f"{model_name}_{model_type}"] = {
+                        'max_context_window': max_ctx,
+                        'recommended_context_window': recommended_ctx,
+                        'notes': notes
+                    }
+                    # Use the smallest recommended context window across all models
+                    if recommended_ctx < min_context_window:
+                        min_context_window = recommended_ctx
+                        logger.info(f"🔧 Model {model_name} ({model_type}) limits context to {recommended_ctx} tokens")
+                else:
+                    logger.warning(f"⚠️  Model {model_name} ({model_type}) not found in database, using default 4096 tokens")
+                    min_context_window = min(min_context_window, 4096)
+            
+            cursor.close()
+            conn.close()
+            
+        except Exception as e:
+            logger.error(f"Failed to get context windows from database: {e}")
+            logger.info("Falling back to safe default of 16384 tokens")
+            min_context_window = 16384
+        
+        # Log the context window decision
+        logger.info(f"🎯 Context Window Analysis:")
+        for model_key, info in model_context_info.items():
+            logger.info(f"   📊 {model_key}: {info['recommended_context_window']}/{info['max_context_window']} tokens - {info['notes']}")
+        logger.info(f"   🎯 Selected context window: {min_context_window} tokens")
+        
+        # Build options with database-driven context window
         options = {
-            'num_ctx': 32768,     # Large context for production models
-            'num_predict': 4096,  # Long output capability for detailed analysis
+            'num_ctx': min_context_window,
+            'num_predict': min(4096, min_context_window // 4),  # Use 1/4 of context for output, capped at 4096
             'temperature': 0.3,
             'top_p': 0.9,
             'top_k': 40,
-            'repeat_penalty': 1.1
+            'repeat_penalty': 1.1,
+            'stop': ['\n\n\n', '###', 'END']
         }
-        
-        # Check if any model is a smaller/mini model and adjust accordingly
-        for model in models_to_check:
-            if any(term in model.lower() for term in ['mini', '1.5b', '2b', '3b', 'small']) and 'gemma3:12b' not in model.lower():
-                logger.info(f"🔧 Detected smaller model ({model}), using conservative parameters")
-                options.update({
-                    'num_ctx': 8192,      # Increased context for template analysis
-                    'num_predict': 2048,  # Longer output for detailed responses
-                    'temperature': 0.3,
-                    'top_p': 0.8,         # More focused sampling
-                    'top_k': 20,          # Fewer candidate tokens
-                    'repeat_penalty': 1.15,  # Higher penalty to prevent loops
-                    'stop': ['\n\n\n', '###', 'END'],  # Add stop sequences
-                })
-                break
-        
-        # Add common stop sequences to prevent runaway generation
-        if 'stop' not in options:
-            options['stop'] = ['\n\n\n', '###', 'END']
         
         return options
     
