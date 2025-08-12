@@ -1056,10 +1056,13 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                         
                         filename = deck_visual_data.get('filename', f'deck_{deck_id}')
                         
-                        # Check if we should use the healthcare template analyzer for chapter-by-chapter analysis
+                        # Check if we should use the healthcare template analyzer
+                        # Use it for: 1) template-based analysis, or 2) extraction-only mode
                         logger.info(f"DEBUG: template_info = {template_info}")
-                        logger.info(f"DEBUG: template_info.get('id') = {template_info.get('id') if template_info else 'template_info is None'}")
-                        use_chapter_analysis = template_info and template_info.get('id') is not None
+                        logger.info(f"DEBUG: processing_options = {processing_options}")
+                        logger.info(f"DEBUG: extraction_only = {processing_options.get('extraction_only', False) if processing_options else False}")
+                        
+                        use_chapter_analysis = (template_info and template_info.get('id') is not None) or (processing_options and processing_options.get('extraction_only', False))
                         logger.info(f"DEBUG: use_chapter_analysis = {use_chapter_analysis}")
                         
                         if use_chapter_analysis:
@@ -1106,21 +1109,29 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                                 analyzer = HealthcareTemplateAnalyzer()
                                 
                                 # The analyzer will load the template from database using template_id
-                                # We need to set the template config before calling analyze_pdf
+                                # We need to set the template config before calling analyze_pdf (unless extraction_only)
                                 try:
-                                    # Load template configuration
-                                    logger.info(f"DEBUG: Loading template {template_info['id']} for deck {deck_id}")
-                                    template_config = analyzer._load_template_from_database(template_info['id'])
-                                    logger.info(f"DEBUG: Template config result: {template_config is not None}")
-                                    
-                                    if not template_config:
-                                        logger.error(f"Failed to load template {template_info['id']} from database")
-                                        raise ValueError(f"Template {template_info['id']} not found in database")
-                                    
-                                    # Set the template config on the analyzer
-                                    analyzer.template_config = template_config
-                                    logger.info(f"DEBUG: Set analyzer.template_config = {analyzer.template_config is not None}")
-                                    logger.info(f"Loaded template '{template_config.get('name', 'Unknown')}' for deck {deck_id}")
+                                    if processing_options and processing_options.get('extraction_only', False):
+                                        # In extraction_only mode, we don't need a template
+                                        logger.info(f"Extraction-only mode: skipping template loading for deck {deck_id}")
+                                        analyzer.template_config = None
+                                    elif template_info and template_info.get('id'):
+                                        # Load template configuration
+                                        logger.info(f"DEBUG: Loading template {template_info['id']} for deck {deck_id}")
+                                        template_config = analyzer._load_template_from_database(template_info['id'])
+                                        logger.info(f"DEBUG: Template config result: {template_config is not None}")
+                                        
+                                        if not template_config:
+                                            logger.error(f"Failed to load template {template_info['id']} from database")
+                                            raise ValueError(f"Template {template_info['id']} not found in database")
+                                        
+                                        # Set the template config on the analyzer
+                                        analyzer.template_config = template_config
+                                        logger.info(f"DEBUG: Set analyzer.template_config = {analyzer.template_config is not None}")
+                                        logger.info(f"Loaded template '{template_config.get('name', 'Unknown')}' for deck {deck_id}")
+                                    else:
+                                        logger.warning(f"No template specified and not in extraction_only mode for deck {deck_id}")
+                                        analyzer.template_config = None
                                     
                                     # Also need to set the visual analysis results from cache
                                     if 'visual_analysis_results' in deck_visual_data:
