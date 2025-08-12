@@ -1211,12 +1211,12 @@ class HealthcareTemplateAnalyzer:
             raise
     
     def _generate_slide_feedback(self):
-        """Generate AI feedback for each slide based on visual analysis"""
+        """Generate AI feedback for each slide by analyzing images directly (IMAGE-to-TEXT)"""
         if not self.visual_analysis_results:
             logger.warning("No visual analysis results available for slide feedback generation")
             return
             
-        logger.info(f"🔍 Generating slide feedback for {len(self.visual_analysis_results)} slides")
+        logger.info(f"🔍 Generating slide feedback for {len(self.visual_analysis_results)} slides using direct image analysis")
         
         # Get slide feedback prompt
         try:
@@ -1228,29 +1228,46 @@ class HealthcareTemplateAnalyzer:
         for slide_data in self.visual_analysis_results:
             try:
                 slide_number = slide_data['page_number']
-                slide_description = slide_data['description']
+                slide_image_path = slide_data.get('slide_image_path')
                 deck_id = slide_data.get('deck_id')
                 
                 if not deck_id:
                     logger.warning(f"No deck_id found for slide {slide_number}, skipping feedback generation")
                     continue
+                    
+                if not slide_image_path:
+                    logger.warning(f"No image path found for slide {slide_number}, skipping feedback generation")
+                    continue
                 
-                logger.info(f"📝 Generating feedback for slide {slide_number}")
+                # Construct full path to slide image
+                full_image_path = os.path.join(os.getenv('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/CPU-GPU'), "projects", slide_image_path)
                 
-                # Format the prompt with slide description
-                formatted_prompt = slide_feedback_prompt.replace("{slide_description}", slide_description)
+                if not os.path.exists(full_image_path):
+                    logger.warning(f"Slide image not found at {full_image_path}, skipping feedback generation")
+                    continue
                 
-                # Generate feedback using text model
-                feedback_response = self._safe_ollama_generate(
-                    model=self.text_model,
-                    prompt=formatted_prompt,
-                    options={"temperature": 0.7}
+                logger.info(f"📝 Generating feedback for slide {slide_number} using image: {full_image_path}")
+                
+                # Load and convert image to bytes for vision model
+                try:
+                    from PIL import Image
+                    image = Image.open(full_image_path)
+                    image_bytes = image_to_byte_array(image)
+                except Exception as e:
+                    logger.error(f"Failed to load image {full_image_path}: {e}")
+                    continue
+                
+                # Generate feedback using vision model directly on the image
+                feedback_response = get_information_for_image(
+                    image_bytes=image_bytes,
+                    prompt=slide_feedback_prompt,
+                    model=self.vision_model  # Use vision model for image analysis
                 )
                 
-                feedback_text = feedback_response.get('response', '').strip()
+                feedback_text = feedback_response.strip() if feedback_response else ""
                 
                 # Determine if slide has issues or is OK
-                has_issues = feedback_text.upper() != "SLIDE_OK"
+                has_issues = feedback_text.upper() != "SLIDE_OK" and len(feedback_text) > 10
                 
                 # Store feedback in database
                 self._store_slide_feedback(
@@ -1267,7 +1284,7 @@ class HealthcareTemplateAnalyzer:
                 logger.error(f"Error generating feedback for slide {slide_data.get('page_number', 'unknown')}: {e}")
                 continue
                 
-        logger.info("🎯 Slide feedback generation completed")
+        logger.info("🎯 Slide feedback generation completed using direct image analysis")
     
     def _store_slide_feedback(self, deck_id: int, slide_number: int, slide_filename: str, feedback_text: str = None, has_issues: bool = False):
         """Store slide feedback in the database"""
