@@ -1762,8 +1762,10 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
             response = requests.post(
                 f"{self.backend_url}/api/internal/update-deck-results",
                 json={
-                    "deck_id": document_id,
+                    "document_id": document_id,  # Changed from deck_id to document_id
                     "extraction_results": extraction_results[str(document_id)],
+                    "results_file_path": "",  # Required field but not used for extraction
+                    "processing_status": "completed",  # Required field
                     "extraction_type": "startup_upload",
                     "text_model_used": extraction_data.get('model_used', 'auto')
                 },
