@@ -141,11 +141,11 @@ class HealthcareTemplateAnalyzer:
         
         # Check if any model is a smaller/mini model and adjust accordingly
         for model in models_to_check:
-            if any(term in model.lower() for term in ['mini', '3:mini', '2b', 'small']):
+            if any(term in model.lower() for term in ['mini', '1.5b', '2b', '3b', 'small']) and 'gemma3:12b' not in model.lower():
                 logger.info(f"🔧 Detected smaller model ({model}), using conservative parameters")
                 options.update({
-                    'num_ctx': 4096,      # Much smaller context for mini models
-                    'num_predict': 1024,  # Shorter output limit
+                    'num_ctx': 8192,      # Increased context for template analysis
+                    'num_predict': 2048,  # Longer output for detailed responses
                     'temperature': 0.3,
                     'top_p': 0.8,         # More focused sampling
                     'top_k': 20,          # Fewer candidate tokens
