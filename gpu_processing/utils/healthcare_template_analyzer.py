@@ -1932,6 +1932,7 @@ class HealthcareTemplateAnalyzer:
                 "classification_confidence": self.classification_result.get("confidence_score", 0.0) if self.classification_result else 0.0,
                 "template_id": self.template_config.get("template", {}).get("id") if self.template_config else None
             }
+        }
     
     def run_specialized_analysis_only(self, visual_analysis_results, extraction_data=None):
         """Run ONLY specialized analysis (regulatory, clinical, scientific) - separate from template processing"""
