@@ -996,6 +996,7 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                 template_info = data.get('template_info')
                 generate_thumbnails = data.get('generate_thumbnails', True)
                 progress_callback_url = data.get('progress_callback_url')
+                processing_options = data.get('processing_options', {})
                 
                 # Validation
                 if not deck_ids:
@@ -1140,38 +1141,57 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                                     logger.error(f"Template config error traceback: {traceback.format_exc()}")
                                     raise
                                 
-                                # Run the analysis with progress callback 
+                                # Run the analysis with progress callback and processing options
                                 analysis_results = analyzer.analyze_pdf(
                                     full_pdf_path, 
                                     company_id="dojo",
                                     progress_callback=progress_callback,
-                                    deck_id=deck_id
+                                    deck_id=deck_id,
+                                    processing_options=processing_options
                                 )
                                 
                                 # Extract the formatted template analysis
                                 template_analysis = self._format_template_analysis(analysis_results)
                                 
-                                # Call all four save functions in proper sequence
+                                # Call save functions based on processing mode
                                 
-                                # 1. Save visual analysis and feedback (already cached during analysis)
-                                visual_results = analysis_results.get("visual_analysis_results", [])
-                                self._save_visual_analysis_and_feedback(deck_id, visual_results)
-                                
-                                # 2. Save extraction results (company_offering, classification, etc.)
-                                extraction_data = {
-                                    "company_offering": analysis_results.get("company_offering", ""),
-                                    "classification": analysis_results.get("classification", {}),
-                                    "funding_amount": analysis_results.get("funding_amount", ""),
-                                    "deck_date": analysis_results.get("deck_date", ""),
-                                    "company_name": analysis_results.get("startup_name", ""),  # Fix: analyzer returns startup_name
-                                    "model_used": analysis_results.get("text_model_used", "auto")
-                                }
-                                self._save_extraction_results(deck_id, extraction_data)
-                                
-                                # 3. Save template processing results only
-                                self._save_template_processing_only(deck_id, analysis_results)
-                                
-                                # 4. Save specialized analysis (regulatory, clinical, scientific)
+                                if processing_options and processing_options.get('extraction_only', False):
+                                    # In extraction_only mode, only save extraction results
+                                    logger.info("Extraction-only mode: saving only extraction results")
+                                    
+                                    # 2. Save extraction results (company_offering, classification, etc.)
+                                    extraction_data = {
+                                        "company_offering": analysis_results.get("company_offering", ""),
+                                        "classification": analysis_results.get("classification", {}),
+                                        "funding_amount": analysis_results.get("funding_amount", ""),
+                                        "deck_date": analysis_results.get("deck_date", ""),
+                                        "company_name": analysis_results.get("startup_name", ""),  # Fix: analyzer returns startup_name
+                                        "model_used": analysis_results.get("text_model_used", "auto")
+                                    }
+                                    self._save_extraction_results(deck_id, extraction_data)
+                                    
+                                else:
+                                    # Normal mode: save all four types of results
+                                    
+                                    # 1. Save visual analysis and feedback (already cached during analysis)
+                                    visual_results = analysis_results.get("visual_analysis_results", [])
+                                    self._save_visual_analysis_and_feedback(deck_id, visual_results)
+                                    
+                                    # 2. Save extraction results (company_offering, classification, etc.)
+                                    extraction_data = {
+                                        "company_offering": analysis_results.get("company_offering", ""),
+                                        "classification": analysis_results.get("classification", {}),
+                                        "funding_amount": analysis_results.get("funding_amount", ""),
+                                        "deck_date": analysis_results.get("deck_date", ""),
+                                        "company_name": analysis_results.get("startup_name", ""),  # Fix: analyzer returns startup_name
+                                        "model_used": analysis_results.get("text_model_used", "auto")
+                                    }
+                                    self._save_extraction_results(deck_id, extraction_data)
+                                    
+                                    # 3. Save template processing results only
+                                    self._save_template_processing_only(deck_id, analysis_results)
+                                    
+                                    # 4. Save specialized analysis (regulatory, clinical, scientific)
                                 specialized_analysis = analysis_results.get("specialized_analysis", {})
                                 if specialized_analysis:
                                     self._save_specialized_analysis(deck_id, specialized_analysis)

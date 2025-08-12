@@ -1048,11 +1048,14 @@ class HealthcareTemplateAnalyzer:
                     logger.info(f"Template selection: Classification mode - using recommended template_id={template_id}")
                     self.template_config = self._load_template_config_with_fallback(template_id)
             
-            # Step 5: Execute template-based analysis
-            self._execute_template_analysis()
-            
-            # Step 6: Generate specialized analysis
-            self._generate_specialized_analysis()
+            # Step 5: Execute template-based analysis (skip if only extraction requested)
+            if not (processing_options and processing_options.get('extraction_only', False)):
+                self._execute_template_analysis()
+                
+                # Step 6: Generate specialized analysis
+                self._generate_specialized_analysis()
+            else:
+                logger.info("Skipping template and specialized analysis (extraction_only mode)")
             
             processing_time = time.time() - start_time
             logger.info(f"Healthcare template analysis completed in {processing_time:.2f} seconds")
