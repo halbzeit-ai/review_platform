@@ -1758,13 +1758,12 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                 }
             }
             
-            # Save to extraction_experiments table
+            # Save to main project_documents table
             response = requests.post(
-                f"{self.backend_url}/api/internal/save-extraction-results",
+                f"{self.backend_url}/api/internal/update-deck-results",
                 json={
-                    "experiment_name": experiment_name,
-                    "document_ids": [document_id],
-                    "extraction_results": extraction_results,
+                    "deck_id": document_id,
+                    "extraction_results": extraction_results[str(document_id)],
                     "extraction_type": "startup_upload",
                     "text_model_used": extraction_data.get('model_used', 'auto')
                 },

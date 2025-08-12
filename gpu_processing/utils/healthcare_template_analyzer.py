@@ -992,7 +992,9 @@ class HealthcareTemplateAnalyzer:
         logger.info(f"   📝 Text Model (offering extraction, name extraction, classification, chapters, questions, specialized analysis): {self.text_model}")
         logger.info(f"   🎯 Scoring Model (question scoring): {self.scoring_model}")
         
-        # Clear state from previous analysis sessions
+        # Clear state from previous analysis sessions (but preserve cached visual analysis if provided)
+        cached_visual_results = self.visual_analysis_results if self.visual_analysis_results else []
+        
         self.visual_analysis_results = []
         self.company_offering = ""
         self.startup_name = None
@@ -1003,7 +1005,12 @@ class HealthcareTemplateAnalyzer:
         self.chapter_results = {}
         self.question_results = {}
         
-        logger.info("Cleared previous analysis state")
+        # Restore cached visual analysis if it was provided
+        if cached_visual_results:
+            self.visual_analysis_results = cached_visual_results
+            logger.info(f"Preserved cached visual analysis results ({len(cached_visual_results)} pages)")
+        else:
+            logger.info("Cleared previous analysis state")
         
         try:
             # Step 1: Convert PDF to images and analyze each page (skip if already have results)
@@ -1012,8 +1019,11 @@ class HealthcareTemplateAnalyzer:
             else:
                 logger.info(f"Using cached visual analysis results ({len(self.visual_analysis_results)} pages)")
             
-            # Step 1.5: Generate slide feedback based on visual analysis
-            self._generate_slide_feedback()
+            # Step 1.5: Generate slide feedback based on visual analysis (skip in extraction_only mode)
+            if not (processing_options and processing_options.get('extraction_only', False)):
+                self._generate_slide_feedback()
+            else:
+                logger.info("Skipping slide feedback generation (extraction_only mode)")
             
             # Step 2: Generate company offering summary
             if not self.company_offering:
