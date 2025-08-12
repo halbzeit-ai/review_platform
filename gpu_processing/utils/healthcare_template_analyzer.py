@@ -1932,4 +1932,43 @@ class HealthcareTemplateAnalyzer:
                 "classification_confidence": self.classification_result.get("confidence_score", 0.0) if self.classification_result else 0.0,
                 "template_id": self.template_config.get("template", {}).get("id") if self.template_config else None
             }
-        }
+    
+    def run_specialized_analysis_only(self, visual_analysis_results, extraction_data=None):
+        """Run ONLY specialized analysis (regulatory, clinical, scientific) - separate from template processing"""
+        try:
+            logger.info("🔬 Starting specialized analysis only")
+            
+            # Initialize the analyzer with visual data
+            self.visual_analysis_results = visual_analysis_results
+            
+            # Set extraction data if provided
+            if extraction_data:
+                self.company_offering = extraction_data.get("company_offering", "")
+                self.startup_name = extraction_data.get("company_name", "")
+                self.funding_amount = extraction_data.get("funding_amount", "")
+                self.deck_date = extraction_data.get("deck_date", "")
+                self.classification_result = extraction_data.get("classification", {})
+            
+            # Load a default template for specialized analysis configuration
+            # We need the template config to know which specialized analyses to run
+            self._load_template_config(5)  # Use default template ID 5
+            
+            if not self.template_config:
+                logger.error("Could not load template configuration for specialized analysis")
+                return {}
+            
+            # Initialize specialized analysis results storage
+            self.specialized_analysis = {}
+            
+            # Run specialized analysis
+            self._generate_specialized_analysis()
+            
+            logger.info(f"✅ Completed specialized analysis: {list(self.specialized_analysis.keys())}")
+            
+            return self.specialized_analysis
+            
+        except Exception as e:
+            logger.error(f"❌ Error in specialized analysis: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return {}

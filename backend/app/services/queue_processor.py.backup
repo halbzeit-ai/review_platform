@@ -217,15 +217,6 @@ class QueueProcessor:
                 await self.fail_task_with_error(task, "Template analysis failed - could not complete AI analysis", db)
                 return False
                 
-            # Phase 4: Specialized Analysis (80% -> 95%)
-            logger.info(f"Phase 4: Starting specialized analysis for document {task.document_id}")
-            await self.update_progress(task.document_id, 80, "Specialized Analysis", "Running regulatory, clinical, and scientific analysis", db)
-            
-            specialized_success = await self.run_specialized_analysis_phase(task, progress_callback_url, db)
-            if not specialized_success:
-                logger.warning(f"Specialized analysis failed for document {task.document_id} - continuing (not critical)")
-                # Don't fail the whole task if specialized analysis fails - it's optional
-                
             await self.update_progress(task.document_id, 95, "Analysis Complete", "Finalizing results", db)
             
             # CRITICAL: Manually complete the task since template processing doesn't send final callback
@@ -569,14 +560,64 @@ class QueueProcessor:
                     result = response.json()
                     logger.info(f"Template analysis completed for document {task.document_id}")
                     
-                    # GPU handles all saving via internal endpoints (/save-template-processing)
+                    # GPU handles all saving via internal endpoints (/save-template-processing and /save-specialized-analysis)
                     # Queue processor just needs to check if GPU processing was successful
                     if result.get('success'):
-                        logger.info(f"✅ GPU successfully completed template processing for document {task.document_id}")
-                        return True
-                    else:
-                        logger.error(f"❌ GPU template processing failed for document {task.document_id}")
-                        return False
+                        logger.info(f"✅ GPU successfully completed template and specialized analysis for document {task.document_id}")
+                        
+                        # Complete the task - GPU has already saved results via internal endpoints
+                        await self.complete_task(task.id, db)
+                    
+                    return True
+                                    "template_analysis": template_analysis,
+                                    "template_used": document_result.get("template_used", {}),
+                                    "chapter_analysis": document_result.get("chapter_analysis", {}),
+                                    "specialized_analysis": document_result.get("specialized_analysis", {}), 
+                                    "scientific_hypotheses": document_result.get("scientific_hypotheses", {}),
+                                    "overall_score": document_result.get("overall_score", 0.0),
+                                    "report_chapters": document_result.get("report_chapters", {}),
+                                    "report_scores": document_result.get("report_scores", {}),
+                                    "startup_name": document_result.get("startup_name"),
+                                    "funding_amount": document_result.get("funding_amount"),
+                                    "deck_date": document_result.get("deck_date"),
+                                    "processing_metadata": document_result.get("processing_metadata", {})
+                                }
+                                
+                                # Update or insert into extraction_experiments (works with both pitch_decks and project_documents)
+                                existing_experiment = db.execute(text("""
+                                    SELECT id FROM extraction_experiments 
+                                    WHERE pitch_deck_ids LIKE '%' || :deck_id || '%'
+                                    ORDER BY created_at DESC LIMIT 1
+                                """), {"deck_id": str(task.document_id)}).fetchone()
+                                
+                                if existing_experiment:
+                                    # Update existing experiment with template processing results
+                                    db.execute(text("""
+                                        UPDATE extraction_experiments 
+                                        SET template_processing_results_json = :results
+                                        WHERE id = :experiment_id
+                                    """), {
+                                        "results": json.dumps(template_processing_data),
+                                        "experiment_id": existing_experiment[0]
+                                    })
+                                    logger.info(f"Updated extraction experiment {existing_experiment[0]} with template results for document {task.document_id}")
+                                else:
+                                    # Create new experiment if none exists
+                                    db.execute(text("""
+                                        INSERT INTO extraction_experiments 
+                                        (experiment_name, pitch_deck_ids, results_json, template_processing_results_json)
+                                        VALUES (:experiment_name, :pitch_deck_ids, :results_json, :template_processing_results)
+                                    """), {
+                                        "experiment_name": experiment_name,
+                                        "pitch_deck_ids": [task.document_id],
+                                        "results_json": "{}",  # Empty extraction results
+                                        "template_processing_results": json.dumps(template_processing_data)
+                                    })
+                                    logger.info(f"Created new extraction experiment for document {task.document_id} with template results")
+                                
+                                db.commit()
+                                logger.info(f"Saved template analysis results for document {task.document_id} to extraction_experiments table")
+                                break
                     
                     return True
                 else:
@@ -585,46 +626,6 @@ class QueueProcessor:
                     
         except Exception as e:
             logger.error(f"Error in template analysis phase: {e}")
-            return False
-
-    async def run_specialized_analysis_phase(self, task: ProcessingTask, progress_callback_url: str, db: Session) -> bool:
-        """Run specialized analysis phase (regulatory, clinical, scientific) - separate from template processing"""
-        try:
-            logger.info(f"Starting specialized analysis phase for document {task.document_id}")
-            
-            request_data = {
-                "deck_ids": [task.document_id],
-                "processing_options": {
-                    "generate_thumbnails": False,  # Not needed for specialized analysis
-                    "callback_url": f"{self.backend_url}/api/internal/update-deck-results"
-                }
-            }
-            
-            async with httpx.AsyncClient(timeout=600.0) as client:  # Longer timeout for specialized analysis
-                response = await client.post(
-                    f"{self.gpu_url}/api/run-specialized-analysis-only",
-                    json=request_data,
-                    headers={"Content-Type": "application/json"}
-                )
-                
-                if response.status_code == 200:
-                    result = response.json()
-                    logger.info(f"Specialized analysis completed for document {task.document_id}")
-                    
-                    # GPU handles all saving via internal endpoints (/save-specialized-analysis)
-                    # Queue processor just needs to check if GPU processing was successful
-                    if result.get('success'):
-                        logger.info(f"✅ GPU successfully completed specialized analysis for document {task.document_id}")
-                        return True
-                    else:
-                        logger.error(f"❌ GPU specialized analysis failed for document {task.document_id}")
-                        return False
-                else:
-                    logger.error(f"Specialized analysis failed: {response.status_code} - {response.text}")
-                    return False
-                    
-        except Exception as e:
-            logger.error(f"Error in specialized analysis phase: {e}")
             return False
 
 # Global queue processor instance

@@ -465,61 +465,85 @@ async def delete_user(
         except Exception as e:
             print(f"[WARNING] Could not delete project directory {project_dir}: {e}")
     
-    # Delete all database records related to this user
-    # Delete in correct order to avoid foreign key constraint violations
+    # Handle project ownership transfer (PRESERVE PROJECTS FOR DATA RETENTION)
+    print(f"[DEBUG] Handling project ownership for user {user_to_delete.id} with company_id {company_id}")
     
-    print(f"[DEBUG] Deleting user {user_to_delete.id} with company_id {company_id}")
-    
-    # 1. Delete project system data
-    # Delete reviews associated with documents in user's projects
+    # BUSINESS RULE: Don't delete projects - transfer ownership to preserve data and insights
     if project_ids:
-        db.execute(text("DELETE FROM reviews WHERE document_id IN (SELECT id FROM project_documents WHERE project_id = ANY(:project_ids))"), 
-                   {"project_ids": project_ids})
+        print(f"[DEBUG] Transferring ownership of {len(project_ids)} projects back to inviting GPs")
+        
+        # For each project owned by this user, find the original inviting GP and transfer ownership
+        for project_id in project_ids:
+            # Find the GP who originally invited this user to this project
+            gp_query = text("""
+                SELECT invited_by_id 
+                FROM project_invitations 
+                WHERE project_id = :project_id 
+                  AND accepted_by_id = :user_id 
+                  AND status = 'accepted'
+                ORDER BY created_at ASC 
+                LIMIT 1
+            """)
+            
+            gp_result = db.execute(gp_query, {
+                "project_id": project_id, 
+                "user_id": user_to_delete.id
+            }).fetchone()
+            
+            if gp_result:
+                new_owner_id = gp_result[0]
+                # Transfer project ownership back to the inviting GP
+                db.execute(text("UPDATE projects SET owner_id = :new_owner_id WHERE id = :project_id"), {
+                    "new_owner_id": new_owner_id,
+                    "project_id": project_id
+                })
+                print(f"[DEBUG] Transferred project {project_id} ownership to GP {new_owner_id}")
+            else:
+                print(f"[WARNING] Could not find inviting GP for project {project_id}, keeping current ownership")
     
-    # Delete questions associated with documents in user's projects
-    if project_ids:
-        db.execute(text("DELETE FROM questions WHERE document_id IN (SELECT id FROM project_documents WHERE project_id = ANY(:project_ids))"), 
-                   {"project_ids": project_ids})
-    
-    # Delete project documents
-    if project_ids:
-        db.execute(text("DELETE FROM project_documents WHERE project_id = ANY(:project_ids)"), 
-                   {"project_ids": project_ids})
-    
-    # Delete project stages
-    if project_ids:
-        db.execute(text("DELETE FROM project_stages WHERE project_id = ANY(:project_ids)"), 
-                   {"project_ids": project_ids})
-    
-    # Delete project members where this user is a member
+    # Remove user from project memberships (but preserve projects and data)
+    print(f"[DEBUG] Removing user {user_to_delete.id} from project memberships")
     db.execute(text("DELETE FROM project_members WHERE user_id = :user_id"), {"user_id": user_to_delete.id})
     
-    # Delete project invitations where this user is involved (as inviter or invitee)
-    db.execute(text("DELETE FROM project_invitations WHERE invited_by_id = :user_id OR accepted_by_id = :user_id"), {"user_id": user_to_delete.id})
+    # Update project_invitations to mark user as removed (preserve email for re-invitation)
+    print(f"[DEBUG] Marking invitations as user_removed for re-invitation capability")
+    db.execute(text("""
+        UPDATE project_invitations 
+        SET status = 'user_removed' 
+        WHERE accepted_by_id = :user_id AND status = 'accepted'
+    """), {"user_id": user_to_delete.id})
     
-    # Delete projects owned by this user
-    if project_ids:
-        db.execute(text("DELETE FROM projects WHERE id = ANY(:project_ids)"), 
-                   {"project_ids": project_ids})
+    # Handle documents uploaded by this user - set uploaded_by to NULL but preserve documents
+    print(f"[DEBUG] Preserving documents uploaded by user {user_to_delete.id} (setting uploaded_by to NULL)")
+    db.execute(text("UPDATE project_documents SET uploaded_by = NULL WHERE uploaded_by = :user_id"), 
+               {"user_id": user_to_delete.id})
+    
+    # Clean up invitation records where user was the inviter (but preserve the email history)
+    print(f"[DEBUG] Handling invitations sent by user {user_to_delete.id}")
+    db.execute(text("""
+        UPDATE project_invitations 
+        SET invited_by_id = NULL 
+        WHERE invited_by_id = :user_id
+    """), {"user_id": user_to_delete.id})
     
     # 2. Finally, delete the user
     db.delete(user_to_delete)
     db.commit()
     
     print(f"[DEBUG] User deletion completed: {user_email}")
-    print(f"[DEBUG] Deleted {len(user_projects)} projects with {len(documents)} documents")
-    print(f"[DEBUG] Deleted {len(deleted_files)} files")
-    print(f"[DEBUG] Deleted {len(deleted_folders)} folders")
+    print(f"[DEBUG] Projects preserved: {len(user_projects)}, ownership transferred to GPs")
+    print(f"[DEBUG] Documents preserved in projects, uploaded_by set to NULL")
+    print(f"[DEBUG] User removed from memberships, marked as 'user_removed' for re-invitation")
     
     return JSONResponse(
         status_code=200,
         content={
-            "message": "User and all associated projects deleted successfully",
+            "message": "User deleted successfully, projects preserved with ownership transferred to GPs",
             "deleted_email": user_email,
-            "deleted_projects": len(user_projects),
-            "deleted_documents": len(documents),
-            "deleted_files": len(deleted_files),
-            "deleted_folders": len(deleted_folders),
+            "preserved_projects": len(user_projects),
+            "preserved_documents": len(documents),
+            "ownership_transferred": True,
+            "re_invitation_capable": True,
             "company_id": company_id
         }
     )

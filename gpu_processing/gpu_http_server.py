@@ -511,6 +511,137 @@ class GPUHTTPServer:
                     "timestamp": datetime.now().isoformat()
                 }), 500
         
+        @self.app.route('/api/run-specialized-analysis-only', methods=['POST'])
+        def run_specialized_analysis_only():
+            """Run specialized analysis (regulatory, clinical, scientific) using cached visual analysis and extraction results"""
+            try:
+                data = request.get_json()
+                if not data:
+                    return jsonify({
+                        "success": False,
+                        "error": "No JSON data provided",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                deck_ids = data.get('deck_ids', [])
+                text_model = data.get('text_model')
+                
+                if not deck_ids:
+                    return jsonify({
+                        "success": False,
+                        "error": "deck_ids is required",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                logger.info(f"Starting specialized analysis for {len(deck_ids)} decks")
+                if text_model:
+                    logger.info(f"Using specified text model: {text_model}")
+                else:
+                    logger.info("No text model specified, using default")
+                
+                # Get cached visual analysis for all decks at once
+                cached_analysis = self._get_cached_visual_analysis(deck_ids)
+                
+                # Process each deck
+                batch_results = []
+                
+                for deck_id in deck_ids:
+                    try:
+                        # Check if we have cached visual analysis for this deck
+                        if deck_id not in cached_analysis:
+                            logger.error(f"No cached visual analysis found for deck {deck_id}")
+                            batch_results.append({
+                                "deck_id": deck_id,
+                                "success": False,
+                                "error": "No cached visual analysis found"
+                            })
+                            continue
+                        
+                        deck_visual_data = cached_analysis[deck_id]
+                        
+                        if not deck_visual_data or 'visual_analysis_results' not in deck_visual_data:
+                            logger.error(f"No visual analysis results in cached data for deck {deck_id}")
+                            batch_results.append({
+                                "deck_id": deck_id,
+                                "success": False,
+                                "error": "No visual analysis results found"
+                            })
+                            continue
+                        
+                        # Get extraction results (offering, name, classification, etc.) from database
+                        extraction_data = self._get_extraction_results_for_deck(deck_id)
+                        
+                        if not extraction_data:
+                            logger.warning(f"No extraction results found for deck {deck_id} - proceeding with visual analysis only")
+                            extraction_data = {}  # Empty dict to avoid errors
+                        
+                        # Create analyzer for specialized analysis
+                        from utils.healthcare_template_analyzer import HealthcareTemplateAnalyzer
+                        
+                        if text_model:
+                            analyzer = HealthcareTemplateAnalyzer(text_model_override=text_model, scoring_model_override=text_model)
+                            logger.info(f"🔧 Creating analyzer with text model for deck {deck_id}: {text_model}")
+                        else:
+                            analyzer = HealthcareTemplateAnalyzer()
+                            logger.info(f"🔧 Creating analyzer with default models for deck {deck_id}")
+                        
+                        # Run ONLY specialized analysis
+                        logger.info(f"🔍 Running specialized analysis for deck {deck_id}")
+                        specialized_results = analyzer.run_specialized_analysis_only(
+                            deck_visual_data['visual_analysis_results'],
+                            extraction_data
+                        )
+                        
+                        # Save specialized analysis results
+                        if specialized_results:
+                            success = self._save_specialized_analysis(deck_id, specialized_results)
+                            if success:
+                                batch_results.append({
+                                    "deck_id": deck_id,
+                                    "success": True,
+                                    "specialized_analysis": specialized_results
+                                })
+                                logger.info(f"✅ Successfully completed specialized analysis for deck {deck_id}")
+                            else:
+                                batch_results.append({
+                                    "deck_id": deck_id,
+                                    "success": False,
+                                    "error": "Failed to save specialized analysis results"
+                                })
+                        else:
+                            batch_results.append({
+                                "deck_id": deck_id,
+                                "success": False,
+                                "error": "No specialized analysis results generated"
+                            })
+                        
+                    except Exception as e:
+                        logger.error(f"Error processing specialized analysis for deck {deck_id}: {e}")
+                        import traceback
+                        logger.error(traceback.format_exc())
+                        batch_results.append({
+                            "deck_id": deck_id,
+                            "success": False,
+                            "error": str(e)
+                        })
+                
+                return jsonify({
+                    "success": True,
+                    "message": f"Specialized analysis completed for {len(batch_results)} decks",
+                    "results": batch_results,
+                    "timestamp": datetime.now().isoformat()
+                })
+                
+            except Exception as e:
+                logger.error(f"Error in specialized analysis: {e}")
+                import traceback
+                logger.error(traceback.format_exc())
+                return jsonify({
+                    "success": False,
+                    "error": str(e),
+                    "timestamp": datetime.now().isoformat()
+                }), 500
+        
         @self.app.route('/api/run-visual-analysis-batch', methods=['POST'])
         def run_visual_analysis_batch():
             """Run visual analysis batch for extraction testing"""
@@ -1199,15 +1330,8 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                                     }
                                     self._save_extraction_results(deck_id, extraction_data)
                                     
-                                    # 3. Save template processing results only
+                                    # 3. Save template processing results only (specialized analysis now separate)
                                     self._save_template_processing_only(deck_id, analysis_results)
-                                    
-                                    # 4. Save specialized analysis (regulatory, clinical, scientific)
-                                specialized_analysis = analysis_results.get("specialized_analysis", {})
-                                if specialized_analysis:
-                                    self._save_specialized_analysis(deck_id, specialized_analysis)
-                                else:
-                                    logger.info(f"No specialized analysis found for deck {deck_id}")
                                 
                             else:
                                 logger.error(f"Could not find PDF path for deck {deck_id}")

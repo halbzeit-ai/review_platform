@@ -501,8 +501,65 @@ async def get_project_results(
         if extraction_result and extraction_result[0]:
             try:
                 extraction_data = json.loads(extraction_result[0])
+                
+                # Handle both new format (arrays) and legacy format (keyed by deck_id)
                 deck_data = extraction_data.get(str(deck_id), {})
-                if deck_data:
+                
+                # New format: data is in arrays keyed by extraction type
+                if not deck_data and any(key in extraction_data for key in ["offering_extraction", "company_names", "classification", "funding_amounts", "deck_dates"]):
+                    # Extract data from array format for this specific deck_id
+                    company_offering = ""
+                    company_name = ""
+                    classification = {}
+                    funding_amount = ""
+                    deck_date = ""
+                    
+                    # Extract offering
+                    if "offering_extraction" in extraction_data:
+                        for item in extraction_data["offering_extraction"]:
+                            if item.get("deck_id") == deck_id:
+                                company_offering = item.get("offering_extraction", "")
+                                break
+                    
+                    # Extract company name
+                    if "company_names" in extraction_data:
+                        for item in extraction_data["company_names"]:
+                            if item.get("deck_id") == deck_id:
+                                company_name = item.get("company_name_extraction", "")
+                                break
+                    
+                    # Extract classification
+                    if "classification" in extraction_data:
+                        for item in extraction_data["classification"]:
+                            if item.get("deck_id") == deck_id:
+                                classification = item.get("classification_result", {})
+                                break
+                    
+                    # Extract funding amount
+                    if "funding_amounts" in extraction_data:
+                        for item in extraction_data["funding_amounts"]:
+                            if item.get("deck_id") == deck_id:
+                                funding_amount = item.get("funding_amount_extraction", "")
+                                break
+                    
+                    # Extract deck date
+                    if "deck_dates" in extraction_data:
+                        for item in extraction_data["deck_dates"]:
+                            if item.get("deck_id") == deck_id:
+                                deck_date = item.get("deck_date_extraction", "")
+                                break
+                    
+                    results_data.update({
+                        "company_offering": company_offering,
+                        "company_name": company_name,
+                        "classification": classification,  # Keep full classification object
+                        "funding_amount": funding_amount,
+                        "deck_date": deck_date
+                    })
+                    logger.info(f"Added extraction results for deck {deck_id} (array format)")
+                
+                # Legacy format: data is keyed by deck_id
+                elif deck_data:
                     results_data.update({
                         "company_offering": deck_data.get("company_offering", ""),
                         "company_name": deck_data.get("company_name", ""),
@@ -510,7 +567,8 @@ async def get_project_results(
                         "funding_amount": deck_data.get("funding_amount", ""),
                         "deck_date": deck_data.get("deck_date", "")
                     })
-                    logger.info(f"Added extraction results for deck {deck_id}")
+                    logger.info(f"Added extraction results for deck {deck_id} (legacy format)")
+                    
             except Exception as e:
                 logger.warning(f"Failed to parse extraction results: {e}")
         
@@ -1133,7 +1191,7 @@ class ExtractionResult(BaseModel):
     deck_name: str
     company_name: Optional[str] = None
     company_offering: Optional[str] = None
-    classification: Optional[str] = None
+    classification: Optional[dict] = None  # Changed to dict to include full classification object
     funding_amount: Optional[str] = None
     deck_date: Optional[str] = None
     extracted_at: Optional[datetime] = None
@@ -1194,13 +1252,69 @@ async def get_extraction_results(
         for row in results:
             deck_id = row.deck_id
             
-            # Parse unified results_json (format: {deck_id: {company_offering: "...", classification: {...}, ...}})
+            # Parse unified results_json - handle both new array format and legacy keyed format
             if row.results_json:
                 try:
                     results_data = json.loads(row.results_json)
+                    
+                    # Try legacy format first (keyed by deck_id)
                     deck_data = results_data.get(str(deck_id), {})
                     
-                    if deck_data:
+                    # If legacy format failed, try new array format
+                    if not deck_data and any(key in results_data for key in ["offering_extraction", "company_names", "classification", "funding_amounts", "deck_dates"]):
+                        # Extract data from array format for this specific deck_id
+                        company_offering = ""
+                        company_name = ""
+                        classification_obj = {}
+                        funding_amount = ""
+                        deck_date = ""
+                        
+                        # Extract offering
+                        if "offering_extraction" in results_data:
+                            for item in results_data["offering_extraction"]:
+                                if item.get("deck_id") == deck_id:
+                                    company_offering = item.get("offering_extraction", "").strip()
+                                    break
+                        
+                        # Extract company name
+                        if "company_names" in results_data:
+                            for item in results_data["company_names"]:
+                                if item.get("deck_id") == deck_id:
+                                    company_name = item.get("company_name_extraction", "").strip()
+                                    break
+                        
+                        # Extract classification
+                        if "classification" in results_data:
+                            for item in results_data["classification"]:
+                                if item.get("deck_id") == deck_id:
+                                    classification_obj = item.get("classification_result", {})
+                                    break
+                        
+                        # Extract funding amount
+                        if "funding_amounts" in results_data:
+                            for item in results_data["funding_amounts"]:
+                                if item.get("deck_id") == deck_id:
+                                    funding_amount = item.get("funding_amount_extraction", "").strip()
+                                    break
+                        
+                        # Extract deck date
+                        if "deck_dates" in results_data:
+                            for item in results_data["deck_dates"]:
+                                if item.get("deck_id") == deck_id:
+                                    deck_date = item.get("deck_date_extraction", "").strip()
+                                    break
+                        
+                        # Create deck_data structure for array format
+                        deck_data = {
+                            "company_name": company_name,
+                            "company_offering": company_offering,
+                            "classification": classification_obj,
+                            "funding_amount": funding_amount,
+                            "deck_date": deck_date
+                        }
+                    
+                    if deck_data and any([deck_data.get("company_name"), deck_data.get("company_offering"), 
+                                         deck_data.get("classification"), deck_data.get("funding_amount"), deck_data.get("deck_date")]):
                         # Keep the full classification object for detailed display
                         classification_obj = deck_data.get("classification", {})
                         
@@ -1211,7 +1325,7 @@ async def get_extraction_results(
                                 'deck_name': row.deck_name,
                                 'company_name': deck_data.get("company_name", "").strip(),
                                 'company_offering': deck_data.get("company_offering", "").strip(),
-                                'classification': classification_obj,  # Send full object, not just primary_sector
+                                'classification': classification_obj,  # Send full classification object
                                 'funding_amount': deck_data.get("funding_amount", "").strip(),
                                 'deck_date': deck_data.get("deck_date", "").strip(),
                                 'extracted_at': row.extracted_at
@@ -1222,8 +1336,8 @@ async def get_extraction_results(
                                 deck_results[deck_id]['company_name'] = deck_data.get("company_name", "").strip()
                             if deck_data.get("company_offering"):
                                 deck_results[deck_id]['company_offering'] = deck_data.get("company_offering", "").strip()
-                            if classification:
-                                deck_results[deck_id]['classification'] = classification
+                            if classification_obj:
+                                deck_results[deck_id]['classification'] = classification_obj  # Send full classification object
                             if deck_data.get("funding_amount"):
                                 deck_results[deck_id]['funding_amount'] = deck_data.get("funding_amount", "").strip()
                             if deck_data.get("deck_date"):

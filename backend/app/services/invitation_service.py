@@ -157,6 +157,9 @@ def accept_invitation(
     invitation.accepted_at = datetime.utcnow()
     invitation.accepted_by_id = user.id
     
+    # BUSINESS RULE: GP remains owner initially, ownership transfers only when user leaves
+    # This preserves data retention capability - GP can always re-invite users
+    
     # Add user as project member
     member = ProjectMember(
         project_id=invitation.project_id,
