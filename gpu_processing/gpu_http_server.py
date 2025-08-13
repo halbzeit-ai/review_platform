@@ -476,13 +476,27 @@ class GPUHTTPServer:
                             "template_results": analyzer.chapter_results
                         })
                         
-                        batch_results.append({
-                            "deck_id": deck_id,
-                            "success": True,
-                            "template_analysis": template_analysis
+                        # Save template processing results
+                        save_success = self._save_template_processing_only(deck_id, {
+                            "chapter_analysis": analyzer.chapter_results,
+                            "overall_score": analyzer.overall_score if hasattr(analyzer, 'overall_score') else 0.0,
+                            "template_used": template_name
                         })
                         
-                        logger.info(f"Completed template processing for deck {deck_id}")
+                        if save_success:
+                            batch_results.append({
+                                "deck_id": deck_id,
+                                "success": True,
+                                "template_analysis": template_analysis
+                            })
+                            logger.info(f"✅ Completed and saved template processing for deck {deck_id}")
+                        else:
+                            batch_results.append({
+                                "deck_id": deck_id,
+                                "success": False,
+                                "error": "Failed to save template processing results"
+                            })
+                            logger.error(f"❌ Failed to save template processing for deck {deck_id}")
                         
                     except Exception as e:
                         logger.error(f"Error processing deck {deck_id}: {e}")
