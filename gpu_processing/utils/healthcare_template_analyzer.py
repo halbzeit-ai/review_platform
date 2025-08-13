@@ -1240,7 +1240,7 @@ class HealthcareTemplateAnalyzer:
                     continue
                 
                 # Construct full path to slide image
-                full_image_path = os.path.join(os.getenv('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/CPU-GPU'), "projects", slide_image_path)
+                full_image_path = os.path.join(os.getenv('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/CPU-GPU'), slide_image_path)
                 
                 if not os.path.exists(full_image_path):
                     logger.warning(f"Slide image not found at {full_image_path}, skipping feedback generation")
