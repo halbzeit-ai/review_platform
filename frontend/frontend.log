@@ -65,3 +65,15 @@ src/pages/ProjectDashboard.js
   Line 647:9:  'finalCompanyId' is assigned a value but never used                                                                                          no-unused-vars
 
 webpack compiled with 1 warning
+Proxy error: Could not proxy request /robots.txt from 135.181.63.224:3000 to http://65.108.32.168:8000.
+See https://nodejs.org/api/errors.html#errors_common_system_errors for more information (ECONNREFUSED).
+
+Proxy error: Could not proxy request /login from 135.181.63.224:3000 to http://65.108.32.168:8000.
+See https://nodejs.org/api/errors.html#errors_common_system_errors for more information (ECONNREFUSED).
+
+Proxy error: Could not proxy request /favicon.ico from 135.181.63.224:3000 to http://65.108.32.168:8000.
+See https://nodejs.org/api/errors.html#errors_common_system_errors for more information (ECONNREFUSED).
+
+Proxy error: Could not proxy request /security.txt from 135.181.63.224:3000 to http://65.108.32.168:8000.
+See https://nodejs.org/api/errors.html#errors_common_system_errors for more information (ECONNREFUSED).
+

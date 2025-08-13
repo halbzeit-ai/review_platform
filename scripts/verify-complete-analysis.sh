@@ -108,16 +108,26 @@ verify_document_analysis() {
     local extraction_count=$(db_query "SELECT COUNT(*) FROM extraction_experiments WHERE document_ids LIKE '%$document_id%';" | xargs)
     
     if [ "$extraction_count" -gt 0 ]; then
-        # Check extraction completeness
+        # Check extraction completeness (updated JSON structure)
         local extraction_data=$(db_query "
             SELECT 
-                CASE WHEN results_json::json->'$document_id'->>'company_offering' != '' THEN '✅' ELSE '❌' END as offering,
-                CASE WHEN results_json::json->'$document_id'->'classification' IS NOT NULL THEN '✅' ELSE '❌' END as classification,
-                CASE WHEN results_json::json->'$document_id'->>'company_name' != '' THEN '✅' ELSE '❌' END as company_name,
-                CASE WHEN results_json::json->'$document_id'->>'funding_amount' != '' THEN '✅' ELSE '❌' END as funding_amount,
-                CASE WHEN results_json::json->'$document_id'->>'deck_date' != '' THEN '✅' ELSE '❌' END as deck_date
+                CASE WHEN json_extract_path_text(results_json::json, 'offering_extraction', '0', 'offering_extraction') != '' 
+                     AND json_extract_path_text(results_json::json, 'offering_extraction', '0', 'offering_extraction') IS NOT NULL 
+                     THEN '✅' ELSE '❌' END as offering,
+                CASE WHEN json_extract_path_text(results_json::json, 'classification', '0', 'classification_result') != '' 
+                     AND json_extract_path_text(results_json::json, 'classification', '0', 'classification_result') IS NOT NULL 
+                     THEN '✅' ELSE '❌' END as classification,
+                CASE WHEN json_extract_path_text(results_json::json, 'company_names', '0', 'company_name_extraction') != '' 
+                     AND json_extract_path_text(results_json::json, 'company_names', '0', 'company_name_extraction') IS NOT NULL 
+                     THEN '✅' ELSE '❌' END as company_name,
+                CASE WHEN json_extract_path_text(results_json::json, 'funding_amounts', '0', 'funding_amount_extraction') != '' 
+                     AND json_extract_path_text(results_json::json, 'funding_amounts', '0', 'funding_amount_extraction') IS NOT NULL 
+                     THEN '✅' ELSE '❌' END as funding_amount,
+                CASE WHEN json_extract_path_text(results_json::json, 'deck_dates', '0', 'deck_date_extraction') != '' 
+                     AND json_extract_path_text(results_json::json, 'deck_dates', '0', 'deck_date_extraction') IS NOT NULL 
+                     THEN '✅' ELSE '❌' END as deck_date
             FROM extraction_experiments 
-            WHERE document_ids LIKE '%$document_id%' 
+            WHERE CAST(document_ids AS TEXT) LIKE '%$document_id%' 
             ORDER BY created_at DESC 
             LIMIT 1;
         ")
@@ -182,10 +192,12 @@ verify_document_analysis() {
     # PHASE 4: SPECIALIZED ANALYSIS VERIFICATION
     # ==============================================================================
     
+    # Initialize specialized_count for all phases (used in recommendations)
+    local specialized_count=$(db_query "SELECT COUNT(*) FROM specialized_analysis_results WHERE document_id = $document_id;" | xargs)
+    
     if [ "$expected_phases" == "all" ]; then
         log_info "Phase 4: Specialized Analysis Verification"
         
-        local specialized_count=$(db_query "SELECT COUNT(*) FROM specialized_analysis_results WHERE document_id = $document_id;" | xargs)
         local specialized_types=$(db_query "
             SELECT DISTINCT analysis_type 
             FROM specialized_analysis_results 

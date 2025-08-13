@@ -6,7 +6,8 @@
       "Bash(./scripts/debug-api.sh:*)",
       "Bash(./scripts/build-frontend.sh:*)",
       "Bash(nginx:*)",
-      "Bash(/opt/review-platform/venv/bin/python:*)"
+      "Bash(/opt/review-platform/venv/bin/python:*)",
+      "Bash(./scripts/verify-complete-analysis.sh:*)"
     ],
     "deny": []
   }
