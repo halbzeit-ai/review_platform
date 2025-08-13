@@ -304,12 +304,16 @@ async def get_deck_analysis(
             # Look for slide images to create basic slide structure
             deck_name = os.path.splitext(os.path.basename(file_path))[0]
             filesystem_deck_name = deck_name.replace(' ', '_')
-            dojo_analysis_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis")
+            # Look for slide images in company analysis directory
+            analysis_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects")
             
-            if os.path.exists(dojo_analysis_path):
-                for dir_name in os.listdir(dojo_analysis_path):
-                    if deck_name in dir_name or filesystem_deck_name in dir_name:
-                        dir_path = os.path.join(dojo_analysis_path, dir_name)
+            if os.path.exists(analysis_path):
+                # Check if this company has analysis data
+                company_analysis_path = os.path.join(analysis_path, "analysis")
+                if os.path.exists(company_analysis_path):
+                    for dir_name in os.listdir(company_analysis_path):
+                        if deck_name in dir_name or filesystem_deck_name in dir_name:
+                            dir_path = os.path.join(company_analysis_path, dir_name)
                         if os.path.exists(dir_path):
                             slide_files = sorted([f for f in os.listdir(dir_path) if f.startswith('slide_') and f.endswith(('.jpg', '.png'))])
                             
@@ -747,9 +751,7 @@ async def get_project_uploads(
                     
                     # Check multiple possible locations for slide images
                     possible_slide_dirs = [
-                        # Dojo structure (most common)
-                        os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis", deck_name),
-                        # Company-specific structure  
+                        # Standard company-based structure
                         os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id, "analysis", deck_name),
                     ]
                     
@@ -831,9 +833,7 @@ async def get_document_slide_image(
         
         # Construct image path - check multiple possible locations
         possible_paths = [
-            # Dojo structure (most likely)
-            os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis", deck_name, slide_filename),
-            # Company-based structure (fallback)
+            # Standard company-based structure
             os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id, "analysis", deck_name, slide_filename),
         ]
         
@@ -847,12 +847,16 @@ async def get_document_slide_image(
         
         if not image_path:
             # Try to find the image in any directory that contains the deck name
-            dojo_analysis_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis")
-            if os.path.exists(dojo_analysis_path):
-                logger.info(f"Searching in dojo analysis directories for deck containing: {deck_name}")
-                for dir_name in os.listdir(dojo_analysis_path):
-                    if deck_name in dir_name:
-                        potential_path = os.path.join(dojo_analysis_path, dir_name, slide_filename)
+            # Search through company analysis directories
+            projects_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects")
+            if os.path.exists(projects_path):
+                logger.info(f"Searching in company analysis directories for deck containing: {deck_name}")
+                for company_dir in os.listdir(projects_path):
+                    analysis_dir = os.path.join(projects_path, company_dir, "analysis")
+                    if os.path.exists(analysis_dir):
+                        for deck_dir in os.listdir(analysis_dir):
+                            if deck_name in deck_dir:
+                                potential_path = os.path.join(analysis_dir, deck_dir, slide_filename)
                         logger.info(f"Checking potential path: {potential_path}")
                         if os.path.exists(potential_path):
                             image_path = potential_path
@@ -934,9 +938,9 @@ async def get_document_slide_image(
                 logger.error(f"No valid path found for slide {slide_filename} in deck {deck_name}")
                 
                 # List what directories are actually available
-                dojo_analysis_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", "dojo", "analysis")
-                if os.path.exists(dojo_analysis_path):
-                    available_dirs = os.listdir(dojo_analysis_path)
+                projects_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects")
+                if os.path.exists(projects_path):
+                    available_dirs = os.listdir(projects_path)
                     logger.error(f"Available analysis directories: {available_dirs}")
             
             raise HTTPException(
@@ -1043,7 +1047,7 @@ async def delete_deck(
                 except Exception as e:
                     logger.warning(f"Could not delete results file {results_full_path}: {e}")
         
-        # Delete the analysis folder with slide images (project-based structure)
+        # Delete the analysis folder with slide images
         analysis_folder = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "projects", company_id, "analysis", file_name)
         if os.path.exists(analysis_folder):
             try:

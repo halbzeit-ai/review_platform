@@ -121,10 +121,9 @@ class HealthcareTemplateAnalyzer:
         logger.info(f"📝 Loaded image_analysis_prompt: {self.image_analysis_prompt[:100]}...")
         logger.info(f"📝 Loaded startup_name_extraction_prompt: {self.startup_name_extraction_prompt[:100]}...")
         
-        # Storage root - use 'projects' for dojo/test data, direct mount for regular startups
+        # Storage root - all company data goes under projects directory
         shared_path = os.getenv('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/CPU-GPU')
-        # For now, always use direct mount path to match the database storage pattern
-        self.project_root = shared_path
+        self.project_root = os.path.join(shared_path, 'projects')
     
     def _get_model_options(self) -> dict:
         """Get appropriate generation options based on database-stored model specifications"""
@@ -1197,7 +1196,7 @@ class HealthcareTemplateAnalyzer:
                 # Store analysis with image path reference (structured format)
                 page_analysis_data = {
                     "page_number": page_number + 1,
-                    "slide_image_path": os.path.join("analysis", deck_name, slide_filename),  # Relative path
+                    "slide_image_path": os.path.join(company_id, "analysis", deck_name, slide_filename),  # Full relative path with company_id
                     "description": page_analysis,
                     "company_id": company_id,
                     "deck_name": deck_name,
