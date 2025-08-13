@@ -1058,6 +1058,265 @@ cmd_all() {
 }
 
 # Parse command line arguments
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DOCUMENT REPROCESSING COMMANDS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+cmd_clean_results() {
+    local document_id=$1
+    
+    if [ -z "$document_id" ]; then
+        log_error "Document ID required"
+        echo "Usage: $0 clean-results <document_id>"
+        exit 1
+    fi
+    
+    print_header "Cleaning Processing Results for Document $document_id"
+    
+    log_info "⚠️  WARNING: This will delete all processing results for document $document_id"
+    echo "This includes:"
+    echo "  - Visual analysis cache"
+    echo "  - Extraction experiments"
+    echo "  - Specialized analysis results"
+    echo "  - Processing queue entries"
+    echo ""
+    read -p "Are you sure you want to continue? (y/N): " confirm
+    
+    if [ "$confirm" != "y" ] && [ "$confirm" != "Y" ]; then
+        log_warning "Operation cancelled"
+        exit 0
+    fi
+    
+    # Clean visual analysis cache
+    log_info "Cleaning visual analysis cache..."
+    sudo -u postgres psql -d review-platform -c "DELETE FROM visual_analysis_cache WHERE document_id = $document_id;" 2>/dev/null
+    
+    # Clean extraction experiments
+    log_info "Cleaning extraction experiments..."
+    sudo -u postgres psql -d review-platform -c "DELETE FROM extraction_experiments WHERE document_ids LIKE '%$document_id%';" 2>/dev/null
+    
+    # Clean specialized analysis
+    log_info "Cleaning specialized analysis results..."
+    sudo -u postgres psql -d review-platform -c "DELETE FROM specialized_analysis_results WHERE document_id = $document_id;" 2>/dev/null
+    
+    # Clean processing queue
+    log_info "Cleaning processing queue entries..."
+    sudo -u postgres psql -d review-platform -c "DELETE FROM processing_queue WHERE document_id = $document_id;" 2>/dev/null
+    
+    # Clean slide feedback
+    log_info "Cleaning slide feedback..."
+    sudo -u postgres psql -d review-platform -c "DELETE FROM slide_feedback WHERE document_id = $document_id;" 2>/dev/null
+    
+    log_success "✅ All processing results cleaned for document $document_id"
+}
+
+cmd_reprocess() {
+    local document_id=$1
+    
+    if [ -z "$document_id" ]; then
+        log_error "Document ID required"
+        echo "Usage: $0 reprocess <document_id>"
+        exit 1
+    fi
+    
+    print_header "Reprocessing Document $document_id"
+    
+    # Step 1: Get document info
+    log_info "Step 1: Retrieving document information..."
+    local doc_info=$(sudo -u postgres psql -d review-platform -t -c "
+        SELECT pd.file_name, pd.file_path, pd.project_id, p.company_name
+        FROM project_documents pd
+        JOIN projects p ON pd.project_id = p.id
+        WHERE pd.id = $document_id;
+    " 2>/dev/null)
+    
+    if [ -z "$doc_info" ]; then
+        log_error "Document $document_id not found"
+        exit 1
+    fi
+    
+    IFS='|' read -r file_name file_path project_id company_name <<< "$doc_info"
+    file_name=$(echo "$file_name" | xargs)
+    file_path=$(echo "$file_path" | xargs)
+    project_id=$(echo "$project_id" | xargs)
+    company_name=$(echo "$company_name" | xargs)
+    
+    echo "📄 File: $file_name"
+    echo "📁 Path: $file_path"
+    echo "🏢 Project: $project_id ($company_name)"
+    echo ""
+    
+    # Step 2: Clean existing results
+    log_info "Step 2: Cleaning existing results..."
+    
+    # Clean without prompting
+    sudo -u postgres psql -d review-platform -c "DELETE FROM visual_analysis_cache WHERE document_id = $document_id;" 2>/dev/null
+    sudo -u postgres psql -d review-platform -c "DELETE FROM extraction_experiments WHERE document_ids LIKE '%$document_id%';" 2>/dev/null
+    sudo -u postgres psql -d review-platform -c "DELETE FROM specialized_analysis_results WHERE document_id = $document_id;" 2>/dev/null
+    sudo -u postgres psql -d review-platform -c "DELETE FROM slide_feedback WHERE document_id = $document_id;" 2>/dev/null
+    
+    # Clean failed/pending processing queue entries
+    sudo -u postgres psql -d review-platform -c "DELETE FROM processing_queue WHERE document_id = $document_id AND status != 'processing';" 2>/dev/null
+    
+    log_success "✅ Existing results cleaned"
+    
+    # Step 3: Trigger processing directly via GPU
+    log_info "Step 3: Triggering 4-step processing workflow..."
+    
+    # Get GPU server URL
+    local gpu_url="http://135.181.63.133:8001"
+    local backend_url="http://135.181.63.224:8000"
+    local shared_path="/mnt/CPU-GPU"
+    
+    # Phase 1: Visual Analysis
+    log_info "📊 Phase 1/4: Visual Analysis..."
+    local visual_response=$(curl -s -X POST "$gpu_url/api/run-visual-analysis-batch" \
+        -H "Content-Type: application/json" \
+        -d "{
+            \"deck_ids\": [$document_id],
+            \"file_paths\": [\"$shared_path/$file_path\"],
+            \"vision_model\": \"gemma3:27b\"
+        }")
+    
+    if echo "$visual_response" | grep -q '"success":true'; then
+        log_success "✅ Visual analysis completed"
+    else
+        log_error "❌ Visual analysis failed"
+        echo "$visual_response" | jq .
+        exit 1
+    fi
+    
+    # Phase 2: Data Extraction
+    log_info "📊 Phase 2/4: Data Extraction..."
+    local extraction_response=$(curl -s -X POST "$gpu_url/api/run-extraction-experiment" \
+        -H "Content-Type: application/json" \
+        -d "{
+            \"deck_ids\": [$document_id],
+            \"experiment_name\": \"reprocess_$document_id\",
+            \"extraction_type\": \"all\",
+            \"text_model\": \"qwen3:30b\",
+            \"processing_options\": {
+                \"do_classification\": true,
+                \"extract_company_name\": true,
+                \"extract_funding_amount\": true,
+                \"extract_deck_date\": true
+            }
+        }")
+    
+    if echo "$extraction_response" | grep -q '"success":true'; then
+        log_success "✅ Data extraction completed"
+    else
+        log_error "❌ Data extraction failed"
+        echo "$extraction_response" | jq .
+        exit 1
+    fi
+    
+    # Phase 3: Template Processing
+    log_info "📊 Phase 3/4: Template Processing..."
+    local template_response=$(curl -s -X POST "$gpu_url/api/run-template-processing-only" \
+        -H "Content-Type: application/json" \
+        -d "{
+            \"deck_ids\": [$document_id],
+            \"template_id\": 5,
+            \"processing_options\": {
+                \"generate_thumbnails\": true,
+                \"callback_url\": \"$backend_url/api/internal/update-deck-results\"
+            }
+        }")
+    
+    if echo "$template_response" | grep -q '"success":true'; then
+        log_success "✅ Template processing completed"
+    else
+        log_error "❌ Template processing failed"
+        echo "$template_response" | jq .
+        exit 1
+    fi
+    
+    # Phase 4: Specialized Analysis
+    log_info "📊 Phase 4/4: Specialized Analysis..."
+    local specialized_response=$(curl -s -X POST "$gpu_url/api/run-specialized-analysis-only" \
+        -H "Content-Type: application/json" \
+        -d "{
+            \"deck_ids\": [$document_id],
+            \"processing_options\": {
+                \"generate_thumbnails\": false,
+                \"callback_url\": \"$backend_url/api/internal/update-deck-results\"
+            }
+        }")
+    
+    if echo "$specialized_response" | grep -q '"success":true'; then
+        log_success "✅ Specialized analysis completed"
+    else
+        log_error "❌ Specialized analysis failed"
+        echo "$specialized_response" | jq .
+        exit 1
+    fi
+    
+    # Step 4: Update document status
+    log_info "Step 4: Updating document status..."
+    sudo -u postgres psql -d review-platform -c "
+        UPDATE project_documents 
+        SET processing_status = 'completed'
+        WHERE id = $document_id;
+    " 2>/dev/null
+    
+    sudo -u postgres psql -d review-platform -c "
+        UPDATE processing_queue 
+        SET status = 'completed', completed_at = NOW(), progress_percentage = 100
+        WHERE document_id = $document_id AND status != 'completed';
+    " 2>/dev/null
+    
+    log_success "✅ Document status updated"
+    
+    # Step 5: Verify results
+    log_info "Step 5: Verifying results..."
+    echo ""
+    echo "📊 Results Summary:"
+    
+    # Check visual analysis
+    local visual_count=$(sudo -u postgres psql -d review-platform -t -c "
+        SELECT COUNT(*) FROM visual_analysis_cache WHERE document_id = $document_id;
+    " 2>/dev/null | xargs)
+    echo "  • Visual Analysis Cache: $visual_count entries"
+    
+    # Check extraction
+    local extraction_count=$(sudo -u postgres psql -d review-platform -t -c "
+        SELECT COUNT(*) FROM extraction_experiments WHERE document_ids LIKE '%$document_id%';
+    " 2>/dev/null | xargs)
+    echo "  • Extraction Experiments: $extraction_count entries"
+    
+    # Check template processing
+    local template_results=$(sudo -u postgres psql -d review-platform -t -c "
+        SELECT template_processing_results_json IS NOT NULL 
+        FROM extraction_experiments 
+        WHERE document_ids LIKE '%$document_id%' 
+        ORDER BY created_at DESC LIMIT 1;
+    " 2>/dev/null | xargs)
+    if [ "$template_results" = "t" ]; then
+        echo "  • Template Processing: ✅ Saved"
+    else
+        echo "  • Template Processing: ❌ Not saved"
+    fi
+    
+    # Check specialized analysis
+    local specialized_count=$(sudo -u postgres psql -d review-platform -t -c "
+        SELECT COUNT(*) FROM specialized_analysis_results WHERE document_id = $document_id;
+    " 2>/dev/null | xargs)
+    echo "  • Specialized Analysis: $specialized_count results"
+    
+    # Check slide feedback
+    local feedback_count=$(sudo -u postgres psql -d review-platform -t -c "
+        SELECT COUNT(*) FROM slide_feedback WHERE document_id = $document_id;
+    " 2>/dev/null | xargs)
+    echo "  • Slide Feedback: $feedback_count slides"
+    
+    echo ""
+    log_success "🎉 Document $document_id reprocessed successfully!"
+    echo ""
+    echo "View results at: https://halbzeit.ai/project/$project_id/results/$document_id"
+}
+
 case "${1:-help}" in
     "health")
         cmd_health
@@ -1123,6 +1382,12 @@ case "${1:-help}" in
         cmd_prompts "$2"
         ;;
     # Utility Commands
+    "reprocess")
+        cmd_reprocess "$2"
+        ;;
+    "clean-results")
+        cmd_clean_results "$2"
+        ;;
     "all")
         cmd_all
         ;;
@@ -1138,6 +1403,7 @@ case "${1:-help}" in
         echo "Projects: project, project-docs, user, invitations, deletion, orphans"
         echo "Dojo: dojo [stats|experiments|cache|projects|cleanup]"
         echo "Templates: templates [list|performance|sectors|customizations]"
+        echo "Reprocessing: reprocess <id>, clean-results <id>"
         echo "Utility: all, help"
         echo ""
         echo "Run '$0 help' for detailed usage information."
