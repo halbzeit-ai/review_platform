@@ -1056,7 +1056,25 @@ async def delete_deck(
             except Exception as e:
                 logger.warning(f"Could not delete analysis folder {analysis_folder}: {e}")
         
-        # Delete the database record from the appropriate table
+        # Delete dependent records first to avoid foreign key violations
+        logger.info(f"Cleaning up dependent records for document {deck_id}")
+        
+        # Delete slide feedback
+        db.execute(text("DELETE FROM slide_feedback WHERE document_id = :deck_id"), {"deck_id": deck_id})
+        
+        # Delete visual analysis cache
+        db.execute(text("DELETE FROM visual_analysis_cache WHERE document_id = :deck_id"), {"deck_id": deck_id})
+        
+        # Delete processing queue entries
+        db.execute(text("DELETE FROM processing_queue WHERE document_id = :deck_id"), {"deck_id": deck_id})
+        
+        # Delete specialized analysis results
+        db.execute(text("DELETE FROM specialized_analysis_results WHERE document_id = :deck_id"), {"deck_id": deck_id})
+        
+        # Delete extraction experiments (check if document is in the array)
+        db.execute(text("DELETE FROM extraction_experiments WHERE :deck_id = ANY(deck_ids)"), {"deck_id": deck_id})
+        
+        # Now delete the main document record
         if source_table == 'project_documents':
             delete_query = text("DELETE FROM project_documents WHERE id = :deck_id")
         else:
@@ -1064,6 +1082,8 @@ async def delete_deck(
             
         db.execute(delete_query, {"deck_id": deck_id})
         db.commit()
+        
+        logger.info(f"Successfully cleaned up all dependent records and deleted document {deck_id}")
         
         logger.info(f"Successfully deleted deck {deck_id} ({file_name}) from {source_table} for project {project_id}")
         
