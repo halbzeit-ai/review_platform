@@ -189,11 +189,11 @@ async def get_deck_analysis(
                 
                 cache_result = db.execute(cache_query, {"deck_id": deck_id}).fetchone()
             else:
-                # For legacy pitch_decks table, use deck_id directly
+                # For project_documents table, use document_id
                 cache_query = text("""
                 SELECT analysis_result_json, vision_model_used, created_at
                 FROM visual_analysis_cache 
-                WHERE pitch_deck_id = :deck_id
+                WHERE document_id = :deck_id
                 ORDER BY created_at DESC
                 LIMIT 1
                 """)
@@ -732,7 +732,7 @@ async def get_project_uploads(
                 # Check visual_analysis_cache table
                 cache_check = db.execute(text("""
                     SELECT 1 FROM visual_analysis_cache 
-                    WHERE pitch_deck_id = :deck_id 
+                    WHERE document_id = :deck_id 
                     LIMIT 1
                 """), {"deck_id": deck_id}).fetchone()
                 
@@ -1071,8 +1071,8 @@ async def delete_deck(
         # Delete specialized analysis results
         db.execute(text("DELETE FROM specialized_analysis_results WHERE document_id = :deck_id"), {"deck_id": deck_id})
         
-        # Delete extraction experiments (check if document is in the array)
-        db.execute(text("DELETE FROM extraction_experiments WHERE :deck_id = ANY(deck_ids)"), {"deck_id": deck_id})
+        # Delete extraction experiments (check if document is in the document_ids array)  
+        db.execute(text("DELETE FROM extraction_experiments WHERE document_ids LIKE '%' || :deck_id || '%'"), {"deck_id": str(deck_id)})
         
         # Now delete the main document record
         if source_table == 'project_documents':
