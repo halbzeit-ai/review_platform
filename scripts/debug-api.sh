@@ -1072,7 +1072,7 @@ cmd_clean_results() {
         exit 1
     fi
     
-    print_header "Cleaning Processing Results for Document $document_id"
+    log_section "Cleaning Processing Results for Document $document_id"
     
     log_info "⚠️  WARNING: This will delete all processing results for document $document_id"
     echo "This includes:"
@@ -1113,19 +1113,33 @@ cmd_clean_results() {
 
 cmd_reprocess() {
     local document_id=$1
+    local template_id=$2
     
     if [ -z "$document_id" ]; then
         log_error "Document ID required"
-        echo "Usage: $0 reprocess <document_id>"
+        echo "Usage: $0 reprocess <document_id> [template_id]"
+        echo ""
+        echo "Available templates:"
+        echo "  1 - Digital Therapeutics Standard Analysis"
+        echo "  2 - Healthcare Infrastructure Standard Analysis"
+        echo "  3 - Telemedicine Standard Analysis" 
+        echo "  4 - Diagnostics & Devices Standard Analysis"
+        echo "  5 - Biotech & Pharma Standard Analysis"
+        echo "  6 - Health Data & AI Standard Analysis"
+        echo "  7 - Consumer Health Standard Analysis"
+        echo "  8 - Healthcare Marketplaces Standard Analysis"
+        echo "  9 - Standard Seven-Chapter Review (default)"
+        echo ""
+        echo "If template_id is not provided, it will be selected based on classification results"
         exit 1
     fi
     
-    print_header "Reprocessing Document $document_id"
+    log_section "Reprocessing Document $document_id"
     
     # Step 1: Get document info
     log_info "Step 1: Retrieving document information..."
     local doc_info=$(sudo -u postgres psql -d review-platform -t -c "
-        SELECT pd.file_name, pd.file_path, pd.project_id, p.company_name
+        SELECT pd.file_name, pd.file_path, pd.project_id, p.company_id
         FROM project_documents pd
         JOIN projects p ON pd.project_id = p.id
         WHERE pd.id = $document_id;
@@ -1136,15 +1150,15 @@ cmd_reprocess() {
         exit 1
     fi
     
-    IFS='|' read -r file_name file_path project_id company_name <<< "$doc_info"
+    IFS='|' read -r file_name file_path project_id company_id <<< "$doc_info"
     file_name=$(echo "$file_name" | xargs)
     file_path=$(echo "$file_path" | xargs)
     project_id=$(echo "$project_id" | xargs)
-    company_name=$(echo "$company_name" | xargs)
+    company_id=$(echo "$company_id" | xargs)
     
     echo "📄 File: $file_name"
     echo "📁 Path: $file_path"
-    echo "🏢 Project: $project_id ($company_name)"
+    echo "🏢 Project: $project_id ($company_id)"
     echo ""
     
     # Step 2: Clean existing results
@@ -1212,13 +1226,50 @@ cmd_reprocess() {
         exit 1
     fi
     
-    # Phase 3: Template Processing
-    log_info "📊 Phase 3/4: Template Processing..."
+    # Determine template ID
+    local selected_template_id
+    if [ -n "$template_id" ]; then
+        selected_template_id=$template_id
+        log_info "Using provided template ID: $selected_template_id"
+    else
+        log_info "Selecting template based on classification..."
+        # Get classification from extraction results
+        local classification_sector=$(sudo -u postgres psql -d review-platform -t -c "
+            SELECT results_json::json->'$document_id'->>'classification'
+            FROM extraction_experiments 
+            WHERE document_ids LIKE '%$document_id%' 
+            ORDER BY created_at DESC 
+            LIMIT 1;
+        " 2>/dev/null | xargs)
+        
+        if [ -n "$classification_sector" ] && [ "$classification_sector" != "null" ]; then
+            # Map classification to template ID
+            case "$classification_sector" in
+                *"Digital Therapeutics"*|*"digital therapeutics"*) selected_template_id=1 ;;
+                *"Healthcare Infrastructure"*|*"infrastructure"*) selected_template_id=2 ;;
+                *"Telemedicine"*|*"telemedicine"*) selected_template_id=3 ;;
+                *"Diagnostics"*|*"Devices"*|*"diagnostics"*|*"devices"*) selected_template_id=4 ;;
+                *"Biotech"*|*"Pharma"*|*"biotech"*|*"pharma"*) selected_template_id=5 ;;
+                *"Health Data"*|*"AI"*|*"data"*|*"artificial intelligence"*) selected_template_id=6 ;;
+                *"Consumer Health"*|*"consumer"*) selected_template_id=7 ;;
+                *"Marketplace"*|*"marketplace"*) selected_template_id=8 ;;
+                *) selected_template_id=9 ;; # Default to Standard Seven-Chapter Review
+            esac
+            log_info "Classification: $classification_sector → Template ID: $selected_template_id"
+        else
+            selected_template_id=9  # Default to Standard Seven-Chapter Review
+            log_warning "No classification found, using Standard Seven-Chapter Review (template $selected_template_id)"
+        fi
+    fi
+    
+    # Phase 3: Template Processing  
+    log_info "📊 Phase 3/4: Template Processing (Template ID: $selected_template_id)..."
     local template_response=$(curl -s -X POST "$gpu_url/api/run-template-processing-only" \
         -H "Content-Type: application/json" \
+        --max-time 300 \
         -d "{
             \"deck_ids\": [$document_id],
-            \"template_id\": 5,
+            \"template_id\": $selected_template_id,
             \"processing_options\": {
                 \"generate_thumbnails\": true,
                 \"callback_url\": \"$backend_url/api/internal/update-deck-results\"
@@ -1237,6 +1288,7 @@ cmd_reprocess() {
     log_info "📊 Phase 4/4: Specialized Analysis..."
     local specialized_response=$(curl -s -X POST "$gpu_url/api/run-specialized-analysis-only" \
         -H "Content-Type: application/json" \
+        --max-time 300 \
         -d "{
             \"deck_ids\": [$document_id],
             \"processing_options\": {
