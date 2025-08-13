@@ -1183,6 +1183,16 @@ cmd_reprocess() {
     local backend_url="http://135.181.63.224:8000"
     local shared_path="/mnt/CPU-GPU"
     
+    # Get company_id for this document
+    log_info "🔍 Getting company_id for document $document_id..."
+    local company_id=$(sudo -u postgres psql -d review-platform -t -c "SELECT p.company_id FROM project_documents pd JOIN projects p ON pd.project_id = p.id WHERE pd.id = $document_id;" | xargs)
+    if [[ -z "$company_id" ]]; then
+        company_id="dojo"  # Fallback
+        log_warning "No company_id found for document $document_id, using fallback: dojo"
+    else
+        log_info "Using company_id: $company_id"
+    fi
+    
     # Phase 1: Visual Analysis
     log_info "📊 Phase 1/4: Visual Analysis..."
     local visual_response=$(curl -s -X POST "$gpu_url/api/run-visual-analysis-batch" \
@@ -1190,7 +1200,8 @@ cmd_reprocess() {
         -d "{
             \"deck_ids\": [$document_id],
             \"file_paths\": [\"$shared_path/$file_path\"],
-            \"vision_model\": \"gemma3:27b\"
+            \"vision_model\": \"gemma3:27b\",
+            \"company_ids\": [\"$company_id\"]
         }")
     
     if echo "$visual_response" | grep -q '"success":true'; then

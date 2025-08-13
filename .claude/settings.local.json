@@ -7,7 +7,8 @@
       "Bash(./scripts/build-frontend.sh:*)",
       "Bash(nginx:*)",
       "Bash(/opt/review-platform/venv/bin/python:*)",
-      "Bash(./scripts/verify-complete-analysis.sh:*)"
+      "Bash(./scripts/verify-complete-analysis.sh:*)",
+      "Bash(sudo:*)"
     ],
     "deny": []
   }

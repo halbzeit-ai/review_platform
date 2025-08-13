@@ -1951,19 +1951,11 @@ class HealthcareTemplateAnalyzer:
                 self.deck_date = extraction_data.get("deck_date", "")
                 self.classification_result = extraction_data.get("classification", {})
             
-            # Load a default template for specialized analysis configuration
-            # We need the template config to know which specialized analyses to run
-            self._load_template_config(5)  # Use default template ID 5
-            
-            if not self.template_config:
-                logger.error("Could not load template configuration for specialized analysis")
-                return {}
-            
             # Initialize specialized analysis results storage
             self.specialized_analysis = {}
             
-            # Run specialized analysis
-            self._generate_specialized_analysis()
+            # Run specialized analysis using database prompts (no template dependency)
+            self._generate_specialized_analysis_from_database()
             
             logger.info(f"✅ Completed specialized analysis: {list(self.specialized_analysis.keys())}")
             
@@ -1974,3 +1966,61 @@ class HealthcareTemplateAnalyzer:
             import traceback
             logger.error(traceback.format_exc())
             return {}
+    
+    def _generate_specialized_analysis_from_database(self):
+        """Generate specialized analysis using prompts from database (template-independent)"""
+        try:
+            # Standard specialized analysis types that should always be available
+            analysis_types = [
+                'scientific_hypothesis',
+                'clinical_validation', 
+                'regulatory_pathway',
+                'clinical_strategy',
+                'regulatory_timeline',
+                'ip_position',
+                'patient_outcomes',
+                'engagement_metrics'
+            ]
+            
+            # Extract descriptions from the structured data
+            descriptions = []
+            for page_data in self.visual_analysis_results:
+                if isinstance(page_data, dict):
+                    descriptions.append(page_data.get("description", ""))
+                else:
+                    descriptions.append(str(page_data))
+            
+            full_pitchdeck_text = " ".join(descriptions)
+            
+            # Generate each specialized analysis using database prompts
+            for analysis_type in analysis_types:
+                try:
+                    # Try to get prompt from database
+                    prompt = self._get_pipeline_prompt(analysis_type)
+                    if prompt:
+                        logger.info(f"🔬 Running {analysis_type} analysis")
+                        
+                        # Create analysis prompt with context
+                        full_prompt = f"{prompt}\n\nPitch deck content:\n{full_pitchdeck_text}"
+                        
+                        # Generate analysis using text model
+                        analysis_result = self._run_ollama_analysis(full_prompt, self.text_model)
+                        
+                        if analysis_result:
+                            self.specialized_analysis[analysis_type] = analysis_result
+                            logger.info(f"✅ Generated {analysis_type} analysis")
+                        else:
+                            logger.warning(f"❌ Failed to generate {analysis_type} analysis")
+                    else:
+                        logger.info(f"⏭️  Skipping {analysis_type} - no prompt found in database")
+                        
+                except Exception as e:
+                    logger.error(f"❌ Error generating {analysis_type}: {e}")
+                    continue
+            
+            logger.info(f"🎯 Completed specialized analysis generation: {len(self.specialized_analysis)} analyses")
+            
+        except Exception as e:
+            logger.error(f"❌ Error in specialized analysis generation: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
