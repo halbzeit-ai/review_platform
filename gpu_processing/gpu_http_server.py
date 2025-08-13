@@ -1125,6 +1125,87 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                     "timestamp": datetime.now().isoformat()
                 }), 500
         
+        @self.app.route('/analyze-images', methods=['POST'])
+        def analyze_images():
+            """Analyze single or multiple images with a prompt (for slide feedback generation)"""
+            try:
+                data = request.get_json()
+                if not data:
+                    return jsonify({
+                        "success": False,
+                        "error": "No JSON data provided",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                images = data.get('images', [])
+                prompt = data.get('prompt', '')
+                model = data.get('model', 'gemma3:27b')  # Default vision model
+                options = data.get('options', {})
+                
+                if not images or not prompt:
+                    return jsonify({
+                        "success": False,
+                        "error": "images and prompt are required",
+                        "timestamp": datetime.now().isoformat()
+                    }), 400
+                
+                results = []
+                
+                for image_path in images:
+                    try:
+                        # Ensure absolute path
+                        if not os.path.isabs(image_path):
+                            image_path = os.path.abspath(image_path)
+                        
+                        if not os.path.exists(image_path):
+                            results.append({
+                                "image_path": image_path,
+                                "success": False,
+                                "error": f"Image file not found: {image_path}"
+                            })
+                            continue
+                        
+                        # Use ollama vision model for image analysis
+                        response = ollama.generate(
+                            model=model,
+                            prompt=prompt,
+                            images=[image_path],
+                            options=options
+                        )
+                        
+                        analysis_text = response.get('response', '').strip()
+                        
+                        results.append({
+                            "image_path": image_path,
+                            "success": True,
+                            "analysis": analysis_text
+                        })
+                        
+                        logger.info(f"Generated analysis for image: {os.path.basename(image_path)}")
+                        
+                    except Exception as e:
+                        logger.error(f"Error analyzing image {image_path}: {e}")
+                        results.append({
+                            "image_path": image_path,
+                            "success": False,
+                            "error": str(e)
+                        })
+                
+                return jsonify({
+                    "success": True,
+                    "message": f"Analyzed {len([r for r in results if r['success']])} of {len(images)} images",
+                    "results": results,
+                    "timestamp": datetime.now().isoformat()
+                })
+                
+            except Exception as e:
+                logger.error(f"Error in analyze-images endpoint: {e}")
+                return jsonify({
+                    "success": False,
+                    "error": str(e),
+                    "timestamp": datetime.now().isoformat()
+                }), 500
+
         @self.app.route('/api/run-template-processing-batch', methods=['POST'])
         def run_template_processing_batch():
             """Run template processing for multiple decks with optional thumbnail generation"""
