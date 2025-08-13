@@ -672,6 +672,7 @@ class GPUHTTPServer:
                 vision_model = data.get('vision_model')
                 analysis_prompt = data.get('analysis_prompt')
                 file_paths = data.get('file_paths', [])
+                company_ids = data.get('company_ids', [])
                 
                 logger.info(f"📥 Received visual analysis request:")
                 logger.info(f"   deck_ids: {deck_ids}")
@@ -724,8 +725,16 @@ class GPUHTTPServer:
                         from pathlib import Path
                         full_pdf_path = str(Path(config.mount_path) / file_path)
                         
-                        # Run visual analysis only
-                        analyzer._analyze_visual_content(full_pdf_path, company_id="dojo", deck_id=deck_id)
+                        # Get company_id for this deck (use actual company or fallback to "dojo" for legacy)
+                        if i < len(company_ids) and company_ids[i]:
+                            company_id = company_ids[i]
+                        else:
+                            # Fallback for legacy/test data
+                            company_id = "dojo"
+                            logger.warning(f"No company_id provided for deck {deck_id}, using 'dojo' as fallback")
+                        
+                        # Run visual analysis with actual company_id
+                        analyzer._analyze_visual_content(full_pdf_path, company_id=company_id, deck_id=deck_id)
                         
                         # Generate slide feedback after visual analysis
                         logger.info(f"Generating slide feedback for deck {deck_id}")
@@ -1321,7 +1330,10 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                             cursor = conn.cursor()
                             
                             cursor.execute("""
-                                SELECT file_path FROM project_documents WHERE id = %s
+                                SELECT pd.file_path, p.company_id 
+                                FROM project_documents pd
+                                JOIN projects p ON pd.project_id = p.id
+                                WHERE pd.id = %s
                             """, (deck_id,))
                             
                             result = cursor.fetchone()
@@ -1330,6 +1342,7 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                             
                             if result and result[0]:
                                 pdf_path = result[0]
+                                company_id = result[1] if len(result) > 1 else "dojo"  # Use actual company_id or fallback
                                 full_pdf_path = str(Path(config.mount_path) / pdf_path)
                                 
                                 # Create analyzer and run full analysis
@@ -1383,7 +1396,7 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                                 # Run the analysis with progress callback and processing options
                                 analysis_results = analyzer.analyze_pdf(
                                     full_pdf_path, 
-                                    company_id="dojo",
+                                    company_id=company_id,
                                     progress_callback=progress_callback,
                                     deck_id=deck_id,
                                     processing_options=processing_options

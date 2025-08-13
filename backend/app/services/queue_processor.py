@@ -317,7 +317,8 @@ class QueueProcessor:
             request_data = {
                 "deck_ids": [task.document_id],
                 "file_paths": [full_file_path],
-                "vision_model": vision_model  # CRITICAL: Send database-configured model
+                "vision_model": vision_model,  # CRITICAL: Send database-configured model
+                "company_ids": [task.company_id]  # Pass actual company_id to avoid hardcoded "dojo"
                 # analysis_prompt will be loaded by GPU from database
             }
             
