@@ -438,7 +438,7 @@ class QueueProcessor:
                 logger.error("No slide image path provided for feedback generation")
                 return ""
                 
-            # Use shared filesystem path
+            # Use shared filesystem path for validation
             from ..core.config import settings
             full_image_path = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, slide_image_path.lstrip('/'))
             
@@ -447,8 +447,9 @@ class QueueProcessor:
                 return ""
             
             # Call GPU vision analysis endpoint for single image
+            # CRITICAL: Send relative path, not absolute - GPU will construct full path
             request_data = {
-                "images": [full_image_path],
+                "images": [slide_image_path],
                 "prompt": prompt,
                 "model": vision_model,
                 "options": {

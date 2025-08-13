@@ -30,7 +30,7 @@ def check_gpu_server_health():
     
     try:
         # Try to reach GPU server health endpoint
-        response = requests.get(f"{gpu_url}/health", timeout=30)
+        response = requests.get(f"{gpu_url}/api/health", timeout=30)
         
         if response.status_code == 200:
             logger.info("✅ GPU server is responsive")

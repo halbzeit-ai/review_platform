@@ -1153,9 +1153,11 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                 
                 for image_path in images:
                     try:
-                        # Ensure absolute path
+                        # Handle both absolute and relative paths correctly
                         if not os.path.isabs(image_path):
-                            image_path = os.path.abspath(image_path)
+                            # For relative paths, prepend the shared filesystem mount path
+                            # This matches how visual analysis stores paths (e.g., "analysis/deck_name/slide_1.jpg")
+                            image_path = os.path.join(shared_filesystem_path, image_path)
                         
                         if not os.path.exists(image_path):
                             results.append({
