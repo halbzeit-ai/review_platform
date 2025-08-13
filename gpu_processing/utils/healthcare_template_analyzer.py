@@ -121,8 +121,10 @@ class HealthcareTemplateAnalyzer:
         logger.info(f"📝 Loaded image_analysis_prompt: {self.image_analysis_prompt[:100]}...")
         logger.info(f"📝 Loaded startup_name_extraction_prompt: {self.startup_name_extraction_prompt[:100]}...")
         
-        # Project-based storage - read from environment
-        self.project_root = os.path.join(os.getenv('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/CPU-GPU'), 'projects')
+        # Storage root - use 'projects' for dojo/test data, direct mount for regular startups
+        shared_path = os.getenv('SHARED_FILESYSTEM_MOUNT_PATH', '/mnt/CPU-GPU')
+        # For now, always use direct mount path to match the database storage pattern
+        self.project_root = shared_path
     
     def _get_model_options(self) -> dict:
         """Get appropriate generation options based on database-stored model specifications"""
