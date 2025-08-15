@@ -1435,7 +1435,7 @@ class HealthcareTemplateAnalyzer:
                 f"{self.backend_base_url}/api/dojo/internal/cache-visual-analysis",
                 json={
                     "document_id": deck_id,
-                    "analysis_results": cache_data,
+                    "analysis_result_json": cache_data,
                     "vision_model": self.vision_model,
                     "prompt": "Healthcare visual analysis prompt"
                 },
@@ -1514,6 +1514,8 @@ class HealthcareTemplateAnalyzer:
                 json={
                     "document_id": document_id,
                     "extraction_results": extraction_results,
+                    "results_file_path": f"extraction_results_document_{document_id}.json",
+                    "processing_status": "extraction_complete"
                 },
                 timeout=30
             )
