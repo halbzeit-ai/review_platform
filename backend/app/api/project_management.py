@@ -657,6 +657,28 @@ async def get_my_projects(
         
         projects = []
         for row in results:
+            project_id = row[0]
+            
+            # Fetch documents for this project (same logic as all-projects endpoint)
+            docs_query = text("""
+                SELECT pd.id, pd.file_name, pd.document_type, pd.file_path, pd.upload_date
+                FROM project_documents pd
+                WHERE pd.project_id = :project_id AND pd.is_active = TRUE
+                  AND pd.document_type = 'pitch_deck'
+                ORDER BY pd.upload_date DESC
+            """)
+            
+            docs_results = db.execute(docs_query, {"project_id": project_id}).fetchall()
+            documents = []
+            for doc_row in docs_results:
+                documents.append(DocumentResponse(
+                    id=doc_row[0],
+                    file_name=doc_row[1],
+                    document_type=doc_row[2],
+                    file_path=doc_row[3],
+                    upload_date=doc_row[4]
+                ))
+            
             projects.append(ProjectResponse(
                 id=row[0],
                 company_id=row[1],
@@ -671,7 +693,8 @@ async def get_my_projects(
                 created_at=row[10],
                 updated_at=row[11],
                 document_count=row[12] or 0,
-                interaction_count=row[13] or 0
+                interaction_count=row[13] or 0,
+                documents=documents
             ))
         
         logger.info(f"Retrieved {len(projects)} projects for user {current_user.email}")
