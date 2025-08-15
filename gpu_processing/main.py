@@ -56,7 +56,7 @@ class PDFProcessor:
         
         try:
             # Use real AI processing instead of placeholder
-            results = self._ai_processing(full_path, company_id, deck_id)
+            results = self.process_extractions_and_template(full_path, company_id, deck_id)
             logger.info("PDF processing completed successfully")
             return results
             
@@ -64,7 +64,7 @@ class PDFProcessor:
             logger.error(f"Error processing PDF: {e}")
             raise
     
-    def _ai_processing(self, file_path: str, company_id: str = None, deck_id: int = None) -> Dict[str, Any]:
+    def process_extractions_and_template(self, file_path: str, company_id: str = None, deck_id: int = None) -> Dict[str, Any]:
         """
         Text Container AI processing using the HealthcareTemplateAnalyzer
         
