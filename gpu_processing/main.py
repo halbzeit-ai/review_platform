@@ -76,10 +76,17 @@ class PDFProcessor:
         5. Question-level scoring with healthcare criteria
         """
         logger.info(f"Running healthcare template-based AI processing... (deck_id: {deck_id})")
+        current_stage = "initialization"
         
         try:
+            current_stage = "visual_analysis_and_template_processing"
+            logger.info(f"🔍 Starting stage: {current_stage}")
+            
             # Use the healthcare template analyzer to process the PDF with deck_id for slide feedback
             results = self.analyzer.analyze_pdf(file_path, company_id, deck_id=deck_id)
+            
+            current_stage = "results_enhancement"
+            logger.info(f"🔍 Starting stage: {current_stage}")
             
             # Transform results to include additional fields for backward compatibility
             enhanced_results = self._enhance_healthcare_results_format(results)
@@ -88,11 +95,12 @@ class PDFProcessor:
             return enhanced_results
             
         except Exception as e:
-            logger.error(f"Healthcare template analysis failed: {e}")
-            # Fallback to basic error structure
+            logger.error(f"Healthcare template analysis failed at stage '{current_stage}': {e}")
+            # Enhanced error structure with stage information
             return {
                 "success": False,
-                "error": f"Healthcare template analysis failed: {str(e)}",
+                "error": f"Healthcare template analysis failed at stage '{current_stage}': {str(e)}",
+                "failed_stage": current_stage,
                 "company_offering": "Error during processing",
                 "classification": None,
                 "chapter_analysis": {},
@@ -101,7 +109,9 @@ class PDFProcessor:
                 "overall_score": 0.0,
                 "processing_metadata": {
                     "processing_time": 0.0,
-                    "error": True
+                    "error": True,
+                    "failed_stage": current_stage,
+                    "failure_reason": str(e)
                 }
             }
     

@@ -2297,8 +2297,15 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                 self.update_task_status(task_id, "completed", "Task completed successfully")
                 logger.info(f"✅ Completed queue task {task_id}")
             else:
-                self.update_task_status(task_id, "failed", "Task processing failed")
-                logger.error(f"❌ Failed queue task {task_id}")
+                # Enhanced failure reporting - check if we have detailed failure information
+                if hasattr(self, '_last_task_failure_details'):
+                    failure_message = self._last_task_failure_details
+                    self._last_task_failure_details = None  # Clear for next task
+                else:
+                    failure_message = f"Task processing failed for task type: {task_type}"
+                
+                self.update_task_status(task_id, "failed", failure_message)
+                logger.error(f"❌ Failed queue task {task_id}: {failure_message}")
                 
         except Exception as e:
             logger.error(f"❌ Error processing queue task {task_id}: {e}")
@@ -2371,6 +2378,15 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                     logger.info(f"✅ Successfully completed main task and created specialized analysis tasks for document {document_id}")
                 else:
                     logger.error(f"❌ Failed to complete task and create specialized analysis: {response.status_code}")
+            else:
+                # Enhanced failure reporting with stage information
+                failed_stage = result.get("failed_stage", "unknown_stage")
+                failure_reason = result.get("error", "Unknown processing error")
+                logger.error(f"❌ PDF analysis failed at stage '{failed_stage}': {failure_reason}")
+                
+                # Update task with detailed failure information
+                detailed_message = f"Failed at stage '{failed_stage}': {failure_reason}"
+                self.update_task_status(task_id, "failed", detailed_message)
             
             return success
             
