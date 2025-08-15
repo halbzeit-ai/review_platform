@@ -91,6 +91,7 @@ class PDFProcessor:
             logger.error(f"Healthcare template analysis failed: {e}")
             # Fallback to basic error structure
             return {
+                "success": False,
                 "error": f"Healthcare template analysis failed: {str(e)}",
                 "company_offering": "Error during processing",
                 "classification": None,
@@ -174,6 +175,9 @@ class PDFProcessor:
         
         # Enhanced results combining new healthcare analysis with backward compatibility
         enhanced_results = {
+            # CRITICAL: Success field for queue system completion
+            "success": True,
+            
             # Core healthcare template results (new structure)
             "company_offering": ai_results.get("company_offering", ""),
             "classification": classification,
