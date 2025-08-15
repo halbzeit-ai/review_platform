@@ -1102,12 +1102,21 @@ class HealthcareTemplateAnalyzer:
             # Step 1: Convert PDF to images and analyze each page (skip if already have results)
             if not self.visual_analysis_results:
                 self._analyze_visual_content(pdf_path, company_id, deck_id)
+                
+                # Save visual analysis for deck viewer availability
+                if self.visual_analysis_results and deck_id:
+                    self._save_visual_analysis(deck_id)
             else:
                 logger.info(f"Using cached visual analysis results ({len(self.visual_analysis_results)} pages)")
             
             # Step 1.5: Generate slide feedback based on visual analysis (skip in extraction_only mode)
             if not (processing_options and processing_options.get('extraction_only', False)):
                 self._generate_slide_feedback()
+                
+                # SAVE POINT 0: Save visual analysis results AFTER feedback generation for completeness
+                # (Visual analysis was already saved, but feedback is now also stored in database)
+                if self.visual_analysis_results and deck_id:
+                    logger.info(f"✅ Visual analysis and slide feedback both saved for deck {deck_id}")
             else:
                 logger.info("Skipping slide feedback generation (extraction_only mode)")
             
@@ -1130,6 +1139,17 @@ class HealthcareTemplateAnalyzer:
                 logger.info(f"Startup classified as: {self.classification_result.get('primary_sector')} "
                            f"({self.classification_result.get('confidence_score', 0):.2f} confidence)")
                 
+                # SAVE POINT 1: Save extraction results (company_offering, classification, funding, etc.)
+                if deck_id:
+                    extraction_data = {
+                        'company_offering': self.company_offering,
+                        'classification': self.classification_result,
+                        'funding_amount': getattr(self, 'funding_amount', ''),
+                        'deck_date': getattr(self, 'deck_date', ''),
+                        'company_name': getattr(self, 'company_name', '')
+                    }
+                    self._save_extraction_results(deck_id, extraction_data)
+                
                 # Step 4: Determine template selection method (classification vs GP override)
                 if processing_options and processing_options.get('use_single_template') and processing_options.get('selected_template_id'):
                     # Use GP-specified template override (but keep classification results)
@@ -1148,8 +1168,28 @@ class HealthcareTemplateAnalyzer:
             if not (processing_options and processing_options.get('extraction_only', False)):
                 self._execute_template_analysis()
                 
+                # SAVE POINT 2: Save template processing results
+                if deck_id and hasattr(self, 'chapter_analysis'):
+                    template_results = {
+                        'template_used': getattr(self, 'template_config', {}),
+                        'chapter_analysis': getattr(self, 'chapter_analysis', {}),
+                        'question_analysis': getattr(self, 'question_analysis', {}),
+                        'overall_score': getattr(self, 'overall_score', 0.0),
+                        'report_chapters': {},  # Will be filled by formatting
+                        'report_scores': {},    # Will be filled by formatting
+                        'processing_metadata': {
+                            'template_processing_completed': True,
+                            'template_id': getattr(self.template_config, 'get', lambda x, y: y)('id', 'unknown')
+                        }
+                    }
+                    self._save_template_processing_results(deck_id, template_results)
+                
                 # Step 6: Generate specialized analysis
                 self._generate_specialized_analysis()
+                
+                # SAVE POINT 3: Save specialized analysis results
+                if deck_id and hasattr(self, 'specialized_analysis'):
+                    self._save_specialized_analysis(deck_id, self.specialized_analysis)
             else:
                 logger.info("Skipping template and specialized analysis (extraction_only mode)")
             
@@ -1266,6 +1306,8 @@ class HealthcareTemplateAnalyzer:
             return
             
         processed_slides = 0
+        slide_feedback_data = []  # Accumulate all feedback data
+        
         for slide_data in self.visual_analysis_results:
             try:
                 slide_number = slide_data['page_number']
@@ -1319,14 +1361,14 @@ class HealthcareTemplateAnalyzer:
                 # Determine if slide has issues or is OK
                 has_issues = feedback_text.upper() != "SLIDE_OK" and len(feedback_text) > 10
                 
-                # Store feedback in database
-                self._store_slide_feedback(
-                    deck_id=deck_id,
-                    slide_number=slide_number,
-                    slide_filename=f"slide_{slide_number}.jpg",
-                    feedback_text=feedback_text if has_issues else None,
-                    has_issues=has_issues
-                )
+                # Accumulate feedback data instead of saving immediately
+                slide_feedback_data.append({
+                    'deck_id': deck_id,
+                    'slide_number': slide_number,
+                    'slide_filename': f"slide_{slide_number}.jpg",
+                    'feedback_text': feedback_text if has_issues else None,
+                    'has_issues': has_issues
+                })
                 
                 logger.info(f"✅ Slide {slide_number}: {'Issues identified' if has_issues else 'No issues found'}")
                 
@@ -1342,9 +1384,13 @@ class HealthcareTemplateAnalyzer:
             self._progress_reporter.report_phase_complete("Slide Feedback Generation", 35)
                 
         logger.info("🎯 Slide feedback generation completed using direct image analysis")
+        
+        # Save slide feedback results (after all slides are processed)
+        if slide_feedback_data and deck_id:
+            self._save_slide_feedback(deck_id, slide_feedback_data)
     
-    def _store_slide_feedback(self, deck_id: int, slide_number: int, slide_filename: str, feedback_text: str = None, has_issues: bool = False):
-        """Store slide feedback in the database"""
+    def _save_individual_slide_feedback(self, deck_id: int, slide_number: int, slide_filename: str, feedback_text: str = None, has_issues: bool = False):
+        """Store individual slide feedback in the database (called for each slide)"""
         try:
             import psycopg2
             from datetime import datetime
@@ -1371,6 +1417,203 @@ class HealthcareTemplateAnalyzer:
         except Exception as e:
             logger.error(f"Failed to store slide feedback for deck {deck_id}, slide {slide_number}: {e}")
             raise
+    
+    def _save_visual_analysis(self, deck_id: int):
+        """Save Function 1: Visual analysis results (for deck viewer availability)
+        This caches visual analysis results so the deck viewer can display slides immediately"""
+        try:
+            import requests
+            import json
+            
+            # Prepare visual analysis data for caching
+            cache_data = {
+                "visual_analysis_results": self.visual_analysis_results
+            }
+            
+            # Use the backend's internal caching endpoint
+            response = requests.post(
+                f"{self.backend_base_url}/api/dojo/internal/cache-visual-analysis",
+                json={
+                    "document_id": deck_id,
+                    "analysis_results": cache_data,
+                    "vision_model": self.vision_model,
+                    "prompt": "Healthcare visual analysis prompt"
+                },
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                logger.info(f"✅ Cached visual analysis results for deck {deck_id} ({len(self.visual_analysis_results)} slides)")
+            else:
+                logger.error(f"❌ Failed to cache visual analysis results: {response.status_code}")
+                
+        except Exception as e:
+            logger.error(f"❌ Error saving visual analysis results for deck {deck_id}: {e}")
+            
+        # Note: Individual slide feedback is stored via _save_individual_slide_feedback() during generation
+        # This function handles the overall visual analysis caching for deck viewer availability
+    
+    def _save_slide_feedback(self, deck_id: int, slide_feedback_data: list):
+        """Save Function 2: Slide feedback results (batch save after all feedback is generated)
+        This saves all slide feedback data at once, consistent with other save functions"""
+        try:
+            if not slide_feedback_data:
+                logger.info(f"No slide feedback to save for document {deck_id}")
+                return False
+            
+            logger.info(f"💾 [2/4] Saving slide feedback for document {deck_id} ({len(slide_feedback_data)} slides)")
+            
+            # Save all slide feedback in batch
+            for feedback_item in slide_feedback_data:
+                self._save_individual_slide_feedback(
+                    deck_id=feedback_item['deck_id'],
+                    slide_number=feedback_item['slide_number'], 
+                    slide_filename=feedback_item['slide_filename'],
+                    feedback_text=feedback_item['feedback_text'],
+                    has_issues=feedback_item['has_issues']
+                )
+            
+            logger.info(f"✅ Slide feedback saved for deck {deck_id} ({len(slide_feedback_data)} slides)")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Error saving slide feedback for deck {deck_id}: {e}")
+            return False
+    
+    def _save_extraction_results(self, document_id: int, extraction_data: dict):
+        """Save Function 2: Extraction experiment results
+        This includes: company_offering, classification, funding_sought, deck_date, company_name"""
+        try:
+            import requests
+            import json
+            
+            # Essential extraction fields
+            essential_fields = ['company_offering', 'classification', 'funding_amount', 'deck_date', 'company_name']
+            
+            # Check if we have any extraction data
+            has_data = any(extraction_data.get(field) for field in essential_fields)
+            
+            if not has_data:
+                logger.info(f"No extraction results to save for document {document_id}")
+                return False
+            
+            logger.info(f"💾 [2/4] Saving extraction results for document {document_id}")
+            
+            # Prepare extraction data - ensure all fields are present
+            extraction_results = {
+                "company_offering": extraction_data.get('company_offering', ''),
+                "classification": extraction_data.get('classification', {}),
+                "funding_amount": extraction_data.get('funding_amount', ''),
+                "deck_date": extraction_data.get('deck_date', ''),
+                "company_name": extraction_data.get('company_name', '')
+            }
+            
+            # Save to main project_documents table
+            response = requests.post(
+                f"{self.backend_base_url}/api/internal/update-deck-results",
+                json={
+                    "document_id": document_id,
+                    "extraction_results": extraction_results,
+                },
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                logger.info(f"✅ Saved extraction results for document {document_id}")
+                return True
+            else:
+                logger.error(f"❌ Failed to save extraction results: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Error saving extraction results for document {document_id}: {e}")
+            return False
+    
+    def _save_template_processing_results(self, document_id: int, template_results: dict):
+        """Save Function 3: Template processing results 
+        This includes: chapter_analysis, question_analysis, overall_score, template_used"""
+        try:
+            import requests
+            
+            # Check if we have template processing results
+            chapter_analysis = template_results.get("chapter_analysis", {})
+            
+            if not chapter_analysis:
+                logger.info(f"No template processing results to save for document {document_id}")
+                return False
+            
+            logger.info(f"💾 [3/4] Saving template processing results for document {document_id}")
+            
+            # Prepare template-specific data
+            template_data = {
+                "template_used": template_results.get("template_used", {}),
+                "chapter_analysis": chapter_analysis,
+                "question_analysis": template_results.get("question_analysis", {}),
+                "overall_score": template_results.get("overall_score", 0.0),
+                "report_chapters": template_results.get("report_chapters", {}),
+                "report_scores": template_results.get("report_scores", {}),
+                "processing_metadata": template_results.get("processing_metadata", {})
+            }
+            
+            # Save template processing to extraction_experiments
+            response = requests.post(
+                f"{self.backend_base_url}/api/internal/save-template-processing",
+                json={
+                    "experiment_name": f"template_deck_{document_id}",
+                    "document_id": document_id,
+                    "template_processing_results": template_data
+                },
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                logger.info(f"✅ Saved template processing results for document {document_id}")
+                return True
+            else:
+                logger.error(f"❌ Failed to save template processing results: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Error saving template processing results for document {document_id}: {e}")
+            return False
+    
+    def _save_specialized_analysis(self, document_id: int, specialized_analysis: dict):
+        """Save Function 4: Special analyses (regulatory, clinical, scientific)"""
+        try:
+            import requests
+            
+            # Filter out empty or None values
+            filtered_analysis = {
+                key: value for key, value in specialized_analysis.items() 
+                if value and str(value).strip()
+            }
+            
+            if not filtered_analysis:
+                logger.info(f"No specialized analysis to save for document {document_id}")
+                return False
+            
+            logger.info(f"💾 [4/4] Saving specialized analysis for document {document_id}: {list(filtered_analysis.keys())}")
+            
+            # Make HTTP request to save specialized analysis
+            response = requests.post(
+                f"{self.backend_base_url}/api/internal/save-specialized-analysis",
+                json={
+                    "document_id": document_id,
+                    "specialized_analysis": filtered_analysis
+                },
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                logger.info(f"✅ Saved specialized analysis for document {document_id}")
+                return True
+            else:
+                logger.error(f"❌ Failed to save specialized analysis: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Error saving specialized analysis for document {document_id}: {e}")
+            return False
     
     def _generate_company_offering(self):
         """Generate company offering summary"""
