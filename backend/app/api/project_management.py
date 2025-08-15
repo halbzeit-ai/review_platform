@@ -743,7 +743,7 @@ async def get_project_decks(
             JOIN projects p ON pd.project_id = p.id
             LEFT JOIN users u ON pd.uploaded_by = u.id
             WHERE pd.project_id = :project_id 
-            AND pd.document_type = 'document'
+            AND pd.document_type = 'pitch_deck'
             AND pd.is_active = TRUE
             ORDER BY pd.upload_date DESC
         """)
