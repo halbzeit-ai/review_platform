@@ -62,8 +62,12 @@ class QueueProcessor:
             db.close()
         
         # Start processing loop
+        logger.info(f"Starting processing loop with poll_interval={self.poll_interval}s")
+        loop_count = 0
         while self.running:
+            loop_count += 1
             try:
+                logger.info(f"Queue processor loop iteration {loop_count} - checking for tasks")
                 await self.process_next_task()
             except Exception as e:
                 logger.error(f"Error in queue processor loop: {e}")
@@ -77,11 +81,13 @@ class QueueProcessor:
     
     async def process_next_task(self):
         """Get and process the next task from queue"""
+        logger.info("Checking for processing tasks...")
         db = SessionLocal()
         try:
             # Get next task
             task = processing_queue_manager.get_next_task(db)
             if not task:
+                logger.info("No tasks found in queue")
                 db.commit()  # Commit the get_next_task transaction
                 return
             
