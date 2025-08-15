@@ -371,6 +371,84 @@ class ProcessingQueueManager:
             if should_close:
                 db.close()
     
+    def complete_task_and_create_specialized(
+        self,
+        task_id: int,
+        document_id: int,
+        success: bool,
+        results_path: Optional[str] = None,
+        error_message: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        db: Optional[Session] = None
+    ) -> bool:
+        """Complete main task and automatically create specialized analysis tasks"""
+        
+        if db is None:
+            db = SessionLocal()
+            should_close = True
+        else:
+            should_close = False
+            
+        try:
+            # First complete the main task
+            main_completed = self.complete_task(
+                task_id=task_id,
+                success=success,
+                results_path=results_path,
+                error_message=error_message,
+                metadata=metadata,
+                db=db
+            )
+            
+            if not main_completed or not success:
+                logger.info(f"Main task {task_id} not completed successfully, skipping specialized analysis")
+                return main_completed
+            
+            # Get task information to create specialized tasks
+            task_query = text("""
+                SELECT file_path, company_id, processing_options 
+                FROM processing_queue 
+                WHERE id = :task_id
+            """)
+            task_result = db.execute(task_query, {"task_id": task_id}).fetchone()
+            
+            if not task_result:
+                logger.error(f"Could not find task {task_id} to create specialized analysis")
+                return main_completed
+            
+            file_path, company_id, processing_options = task_result
+            
+            # Create specialized analysis tasks
+            specialized_types = ["specialized_clinical", "specialized_regulatory", "specialized_science"]
+            
+            logger.info(f"Creating {len(specialized_types)} specialized analysis tasks for document {document_id}")
+            
+            for task_type in specialized_types:
+                specialized_task_id = self.add_task(
+                    document_id=document_id,
+                    file_path=file_path,
+                    company_id=company_id,
+                    task_type=task_type,
+                    priority=TaskPriority.NORMAL,
+                    processing_options=json.loads(processing_options) if isinstance(processing_options, str) else processing_options,
+                    db=db
+                )
+                
+                if specialized_task_id:
+                    logger.info(f"✅ Created {task_type} task {specialized_task_id} for document {document_id}")
+                else:
+                    logger.error(f"❌ Failed to create {task_type} task for document {document_id}")
+            
+            return main_completed
+            
+        except Exception as e:
+            logger.error(f"Failed to complete task and create specialized analysis: {e}")
+            db.rollback()
+            return False
+        finally:
+            if should_close:
+                db.close()
+    
     def get_task_progress(self, document_id: int, db: Session) -> Optional[Dict[str, Any]]:
         """Get current progress for a document"""
         try:

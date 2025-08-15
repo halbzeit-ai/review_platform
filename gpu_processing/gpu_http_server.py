@@ -12,9 +12,12 @@ import os
 import json
 import asyncio
 import requests
+import threading
+import time
+import socket
 from flask import Flask, request, jsonify
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from pathlib import Path
 
 # Import PDF processing components
@@ -78,7 +81,15 @@ class GPUHTTPServer:
         else:
             self.backend_url = os.getenv('BACKEND_DEVELOPMENT', 'http://65.108.32.143:8000')
         
+        # Server registration variables
+        self.server_id = f"gpu-{socket.gethostname()}-{os.getpid()}"
+        self.is_registered = False
+        self.heartbeat_thread = None
+        self.queue_polling_thread = None
+        self.shutdown_flag = False
+        
         logger.info(f"Initialized GPUHTTPServer with backend URL: {self.backend_url}")
+        logger.info(f"Server ID: {self.server_id}")
         self.pdf_processor = PDFProcessor(mount_path=config.mount_path, backend_url=self.backend_url)
         self.setup_routes()
     
@@ -2155,6 +2166,274 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
         
         return "\n\n".join(analysis_parts)
 
+    def register_with_queue_system(self) -> bool:
+        """Register this GPU server with the processing queue system"""
+        try:
+            registration_data = {
+                "server_id": self.server_id,
+                "server_type": "gpu",
+                "capabilities": {
+                    "visual_processing": True,
+                    "text_processing": True,
+                    "template_analysis": True,
+                    "specialized_analysis": True
+                },
+                "max_concurrent_tasks": 3
+            }
+            
+            response = requests.post(
+                f"{self.backend_url}/api/internal/register-processing-server",
+                json=registration_data,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                self.is_registered = True
+                logger.info(f"✅ Successfully registered GPU server {self.server_id} with processing queue")
+                return True
+            else:
+                logger.error(f"❌ Failed to register GPU server: {response.status_code} - {response.text}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Error registering GPU server: {e}")
+            return False
+
+    def send_heartbeat(self):
+        """Send periodic heartbeat to backend to maintain server registration"""
+        while not self.shutdown_flag:
+            try:
+                if self.is_registered:
+                    response = requests.post(
+                        f"{self.backend_url}/api/internal/server-heartbeat",
+                        json={"server_id": self.server_id},
+                        timeout=10
+                    )
+                    
+                    if response.status_code == 200:
+                        logger.debug(f"💓 Heartbeat sent for server {self.server_id}")
+                    else:
+                        logger.warning(f"⚠️ Heartbeat failed: {response.status_code}")
+                        # Try to re-register if heartbeat fails
+                        self.is_registered = False
+                        self.register_with_queue_system()
+                
+                time.sleep(30)  # Send heartbeat every 30 seconds
+                
+            except Exception as e:
+                logger.error(f"❌ Heartbeat error: {e}")
+                time.sleep(30)
+
+    def poll_for_queue_tasks(self):
+        """Poll the backend for available processing queue tasks"""
+        logger.info(f"🔍 Starting queue task polling for server {self.server_id}")
+        
+        while not self.shutdown_flag:
+            try:
+                if self.is_registered:
+                    # Request next available task from processing queue
+                    response = requests.post(
+                        f"{self.backend_url}/api/internal/get-next-queue-task",
+                        json={
+                            "server_id": self.server_id,
+                            "capabilities": {
+                                "visual_processing": True,
+                                "text_processing": True,
+                                "template_analysis": True,
+                                "specialized_analysis": True
+                            }
+                        },
+                        timeout=10
+                    )
+                    
+                    if response.status_code == 200:
+                        task_data = response.json()
+                        if task_data and task_data.get("task_id"):
+                            logger.info(f"📋 Received queue task: {task_data['task_id']} - {task_data.get('task_type')}")
+                            self.process_queue_task(task_data)
+                        else:
+                            # No tasks available, sleep longer
+                            time.sleep(10)
+                    else:
+                        logger.warning(f"⚠️ Queue polling failed: {response.status_code}")
+                        time.sleep(10)
+                else:
+                    # Not registered, try to register
+                    if not self.register_with_queue_system():
+                        time.sleep(30)  # Wait before retrying registration
+                    else:
+                        time.sleep(5)   # Quick check after successful registration
+                        
+                time.sleep(5)  # Base polling interval
+                
+            except Exception as e:
+                logger.error(f"❌ Queue polling error: {e}")
+                time.sleep(10)
+
+    def process_queue_task(self, task_data: Dict[str, Any]):
+        """Process a task received from the processing queue"""
+        task_id = task_data.get("task_id")
+        task_type = task_data.get("task_type")
+        document_id = task_data.get("document_id")
+        
+        logger.info(f"🚀 Processing queue task {task_id}: {task_type} for document {document_id}")
+        
+        try:
+            # Update task status to processing
+            self.update_task_status(task_id, "processing", "Task picked up by GPU server")
+            
+            # Route task based on type
+            if task_type == "pdf_analysis":
+                # This is the main processing task - delegate to PDF processor
+                success = self.process_full_pdf_analysis(task_data)
+            elif task_type.startswith("specialized_"):
+                # Handle specialized analysis tasks
+                success = self.process_specialized_analysis(task_data)
+            else:
+                logger.warning(f"⚠️ Unknown task type: {task_type}")
+                success = False
+            
+            if success:
+                self.update_task_status(task_id, "completed", "Task completed successfully")
+                logger.info(f"✅ Completed queue task {task_id}")
+            else:
+                self.update_task_status(task_id, "failed", "Task processing failed")
+                logger.error(f"❌ Failed queue task {task_id}")
+                
+        except Exception as e:
+            logger.error(f"❌ Error processing queue task {task_id}: {e}")
+            self.update_task_status(task_id, "failed", f"Task error: {str(e)}")
+
+    def update_task_status(self, task_id: int, status: str, message: str):
+        """Update task status in the processing queue"""
+        try:
+            response = requests.post(
+                f"{self.backend_url}/api/internal/update-task-status",
+                json={
+                    "task_id": task_id,
+                    "status": status,
+                    "message": message,
+                    "server_id": self.server_id
+                },
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                logger.debug(f"✅ Updated task {task_id} status to {status}")
+            else:
+                logger.error(f"❌ Failed to update task status: {response.status_code}")
+                
+        except Exception as e:
+            logger.error(f"❌ Error updating task status: {e}")
+
+    def process_full_pdf_analysis(self, task_data: Dict[str, Any]) -> bool:
+        """Process full PDF analysis using the existing PDF processor"""
+        try:
+            file_path = task_data.get("file_path")
+            company_id = task_data.get("company_id") 
+            document_id = task_data.get("document_id")
+            task_id = task_data.get("task_id")
+            
+            if not all([file_path, company_id, document_id, task_id]):
+                logger.error(f"❌ Missing required task data: file_path={file_path}, company_id={company_id}, document_id={document_id}, task_id={task_id}")
+                return False
+            
+            # Use existing PDF processor
+            result = self.pdf_processor.process_pdf_complete(
+                file_path=file_path,
+                company_id=company_id,
+                deck_id=document_id  # PDF processor still uses deck_id parameter name
+            )
+            
+            success = result.get("success", False)
+            
+            if success:
+                # Notify backend that main task is complete AND create specialized analysis tasks
+                logger.info(f"🎯 Main PDF analysis completed for document {document_id}, creating specialized analysis tasks")
+                
+                response = requests.post(
+                    f"{self.backend_url}/api/internal/complete-task-and-create-specialized",
+                    json={
+                        "task_id": task_id,
+                        "document_id": document_id,
+                        "success": True,
+                        "results_path": result.get("results_path"),
+                        "metadata": result.get("metadata", {})
+                    },
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    logger.info(f"✅ Successfully completed main task and created specialized analysis tasks for document {document_id}")
+                else:
+                    logger.error(f"❌ Failed to complete task and create specialized analysis: {response.status_code}")
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"❌ Error in full PDF analysis: {e}")
+            return False
+
+    def process_specialized_analysis(self, task_data: Dict[str, Any]) -> bool:
+        """Process specialized analysis tasks (clinical, regulatory, science)"""
+        try:
+            document_id = task_data.get("document_id")
+            task_type = task_data.get("task_type")
+            
+            # Extract analysis type from task_type (e.g., "specialized_clinical" -> "clinical")
+            analysis_type = task_type.replace("specialized_", "")
+            
+            logger.info(f"🔬 Starting {analysis_type} specialized analysis for document {document_id}")
+            
+            # Use PDF processor's specialized analysis method
+            success = self.pdf_processor.process_specialized_analysis(document_id, analysis_type)
+            
+            if success:
+                logger.info(f"✅ Completed {analysis_type} specialized analysis for document {document_id}")
+            else:
+                logger.error(f"❌ Failed {analysis_type} specialized analysis for document {document_id}")
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"❌ Error in specialized analysis: {e}")
+            return False
+
+    def start_background_services(self):
+        """Start heartbeat and queue polling background threads"""
+        logger.info("🚀 Starting GPU server background services")
+        
+        # Register with the queue system first
+        if not self.register_with_queue_system():
+            logger.error("❌ Failed to register with queue system - will retry in background")
+        
+        # Start heartbeat thread
+        self.heartbeat_thread = threading.Thread(target=self.send_heartbeat, daemon=True)
+        self.heartbeat_thread.start()
+        logger.info("💓 Started heartbeat thread")
+        
+        # Start queue polling thread
+        self.queue_polling_thread = threading.Thread(target=self.poll_for_queue_tasks, daemon=True)
+        self.queue_polling_thread.start()
+        logger.info("🔍 Started queue polling thread")
+
+    def shutdown_background_services(self):
+        """Shutdown background services gracefully"""
+        logger.info("🛑 Shutting down GPU server background services")
+        self.shutdown_flag = True
+        
+        # Unregister from queue system
+        try:
+            if self.is_registered:
+                requests.post(
+                    f"{self.backend_url}/api/internal/unregister-processing-server",
+                    json={"server_id": self.server_id},
+                    timeout=10
+                )
+                logger.info(f"✅ Unregistered server {self.server_id} from queue system")
+        except Exception as e:
+            logger.error(f"❌ Error unregistering server: {e}")
+
     def run(self, host: str = None, port: int = None):
         """Run the HTTP server"""
         # Use environment variables or defaults
@@ -2165,7 +2444,14 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
         logger.info(f"Using mount path: {config.mount_path}")
         logger.info(f"Results will be saved to: {config.results_path}")
         
-        self.app.run(host=host, port=port, debug=False)
+        # Start background services (registration, heartbeat, queue polling)
+        self.start_background_services()
+        
+        try:
+            self.app.run(host=host, port=port, debug=False)
+        finally:
+            # Ensure cleanup on shutdown
+            self.shutdown_background_services()
 
 def main():
     """Main entry point"""

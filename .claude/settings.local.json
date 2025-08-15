@@ -9,7 +9,10 @@
       "Bash(/opt/review-platform/venv/bin/python:*)",
       "Bash(./scripts/verify-complete-analysis.sh:*)",
       "Bash(sudo:*)",
-      "Bash(./scripts/queue-manager.sh:*)"
+      "Bash(./scripts/queue-manager.sh:*)",
+      "Bash(./scripts/monitor-gpu-progress.sh:*)",
+      "Bash(./claude-helper.sh:*)",
+      "Bash(./claude-dev-helper.sh:*)"
     ],
     "deny": []
   }

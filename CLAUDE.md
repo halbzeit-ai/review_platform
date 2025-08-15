@@ -203,15 +203,20 @@ This is a startup review platform with a Python FastAPI backend and React fronte
 
 ### Database Operations (For Claude)
 ```bash
-# Run database migrations with elevated privileges
-./claude-dev-helper.sh migrate migrations/filename.sql
+# Run database migrations with elevated privileges (environment-aware)
+./claude-helper.sh migrate migrations/filename.sql
 
 # Check database status
-./claude-dev-helper.sh db-check              # Test connection and show info
-./claude-dev-helper.sh migrate-check         # Check if zip_filename column exists
+./claude-helper.sh db-check              # Test connection and show info
+./claude-helper.sh migrate-check         # Check database schema
+
+# Comprehensive data cleanup and verification
+./claude-helper.sh verify-cleanup        # Verify cleanup was successful
+./claude-helper.sh cleanup-extraction-data  # DANGER: Delete all extraction data
 
 # Manual database access (if needed)
-sudo -u postgres psql review-platform
+sudo -u postgres psql review-platform  # Production
+sudo -u postgres psql review_dev        # Development
 ```
 
 ### API Debugging Tools (For Claude) ⭐ MASSIVELY ENHANCED ⭐
@@ -336,67 +341,150 @@ testgp@halbzeit.ai:GPPassword456:gp
 - ✅ Testing project member access
 - ❌ **Still prefer debug-api.sh for system-level debugging** (no auth required)
 
-## Claude Development Helper Script: Comprehensive Toolkit ⭐
+## Claude Environment-Aware Helper Script: Comprehensive Toolkit ⭐
 
-**Location**: `./claude-dev-helper.sh`
+**Location**: `./claude-helper.sh` (Renamed from claude-dev-helper.sh)
 
-**Core Purpose**: Provides elevated-privilege database operations and comprehensive development diagnostics that Claude frequently needs.
+**Core Purpose**: Provides elevated-privilege database operations, comprehensive debugging, and data cleanup tools that work across all environments (development and production) with automatic environment detection.
+
+### Environment Detection & Awareness
+```bash
+# Show current environment details
+./claude-helper.sh env
+
+# Output examples:
+# Production: Red colors, review-platform database, /mnt/CPU-GPU filesystem
+# Development: Cyan colors, review_dev database, /mnt/dev-shared filesystem
+```
+
+**Environment Detection Features**:
+- **Automatic Detection**: Uses `./scripts/detect-claude-environment.sh` or hostname fallback
+- **Environment-Specific Configuration**: Database names, filesystem paths, service management
+- **Visual Indicators**: Color-coded output (Red=Production, Cyan=Development)
+- **Safety Warnings**: Extra confirmations for production environment operations
 
 ### Database Management Commands
 ```bash
-# Database migrations with elevated privileges
-./claude-dev-helper.sh migrate migrations/filename.sql
+# Database migrations with elevated privileges (environment-aware)
+./claude-helper.sh migrate migrations/filename.sql
 
 # Database connectivity and health checks
-./claude-dev-helper.sh db-check              # Test connection and show dojo files count
-./claude-dev-helper.sh migrate-check         # Check if specific columns exist
-./claude-dev-helper.sh db-connect            # Direct PostgreSQL connection
-./claude-dev-helper.sh query "SELECT * FROM table_name;"  # Execute custom SQL
+./claude-helper.sh db-check              # Test connection and show document counts
+./claude-helper.sh migrate-check         # Check database schema
+./claude-helper.sh db-connect            # Direct PostgreSQL connection
+./claude-helper.sh query "SELECT * FROM table_name;"  # Execute custom SQL
 ```
 
-### GPU Processing & Cache Debugging
+### GPU Processing & Cache Debugging (Distributed Architecture-Aware)
 ```bash
-# GPU log monitoring (shared filesystem access)
-./claude-dev-helper.sh gpu-logs              # Last 50 lines
-./claude-dev-helper.sh gpu-logs tail         # Follow in real-time
-./claude-dev-helper.sh gpu-logs errors       # Recent errors and warnings
-./claude-dev-helper.sh gpu-logs backend      # Backend URL configuration
-./claude-dev-helper.sh gpu-logs cache        # Caching operations
+# GPU health monitoring with proper distributed architecture handling
+./claude-helper.sh gpu-health            # Comprehensive GPU health check (architecture-aware)
+
+# GPU log monitoring (environment-aware shared filesystem access)
+./claude-helper.sh gpu-logs              # Last 50 lines
+./claude-helper.sh gpu-logs tail         # Follow in real-time
+./claude-helper.sh gpu-logs errors       # Recent errors and warnings
+./claude-helper.sh gpu-logs backend      # Backend URL configuration
+./claude-helper.sh gpu-logs cache        # Caching operations
 
 # Visual analysis cache debugging
-./claude-dev-helper.sh debug-cache           # Comprehensive cache analysis
-./claude-dev-helper.sh cache-check          # Database cache status
+./claude-helper.sh debug-cache           # Comprehensive cache analysis
+./claude-helper.sh cache-check          # Database cache status
 ```
+
+**⭐ CRITICAL: Distributed Architecture Awareness ⭐**
+
+The script now properly handles the distributed CPU-GPU architecture:
+
+- **From CPU servers** (dev_cpu/prod_cpu): Cannot check GPU systemd services remotely
+  - ✅ **Can check**: HTTP endpoints, shared filesystem logs, backend-GPU communication
+  - ❌ **Cannot check**: GPU systemd service status (different computer)
+  - **GPU Health**: Determined by HTTP connectivity and log analysis only
+
+- **From GPU servers** (dev_gpu/prod_gpu): Can check local GPU services
+  - ✅ **Can check**: Local systemd services, HTTP endpoints, logs
+  - ❌ **Cannot check**: Backend systemd services (different computer)
+
+**Example from CPU server:**
+```
+./claude-helper.sh gpu-health
+# Output: "Running from CPU server - GPU systemd service status cannot be checked remotely"
+# Focuses on HTTP endpoint connectivity and shared filesystem logs
+```
+
+**Service Restart Logic (Environment-Aware):**
+```bash
+# From prod_cpu (135.181.63.224): Can restart backend only
+./claude-helper.sh restart-services
+# Offers: review-platform.service restart
+# Notes: GPU service must be restarted from GPU server (135.181.63.133)
+
+# From prod_gpu (135.181.63.133): Can restart GPU only  
+./claude-helper.sh restart-services
+# Offers: gpu-http-server.service restart
+# Notes: Backend service must be restarted from CPU server (135.181.63.224)
+```
+
+### ⭐ NEW: Data Cleanup & Verification Commands ⭐
+```bash
+# Comprehensive cleanup verification (CRITICAL for reliable cleanup)
+./claude-helper.sh verify-cleanup
+
+# Comprehensive extraction data cleanup (DANGER: Permanent deletion)
+./claude-helper.sh cleanup-extraction-data
+
+# What cleanup-extraction-data removes:
+# • extraction_experiments (extraction results, classification, company names, funding, dates)
+# • specialized_analysis_results (clinical, regulatory, scientific analysis)
+# • visual_analysis_cache (cached visual analysis results)  
+# • question_analysis_results (template question analysis)
+# • chapter_analysis_results (template chapter analysis)
+```
+
+**Cleanup Process**:
+1. **Environment Detection**: Shows which environment (with extra warnings for production)
+2. **Data Inventory**: Shows current data counts before deletion
+3. **Confirmation**: Requires typing "yes" to proceed
+4. **Comprehensive Deletion**: Removes ALL extraction/analysis data from 5 tables
+5. **Verification**: Shows after-counts and runs comprehensive verification
+6. **Audit Trail**: Complete record of what was deleted
 
 ### Development & Service Management
 ```bash
-# Comprehensive development test
-./claude-dev-helper.sh quick-test           # Services + database + API endpoints
+# Comprehensive environment test
+./claude-helper.sh quick-test           # Services + database + endpoints (environment-aware)
 
-# Service management via delegation
-./claude-dev-helper.sh services start       # Start all development services
-./claude-dev-helper.sh services status      # Check service health
-./claude-dev-helper.sh services stop        # Stop all services
+# Service management (environment-aware)
+./claude-helper.sh services start       # Development: uses dev-services-improved.sh
+                                        # Production: shows systemctl commands
 
 # Git workflow assistance
-./claude-dev-helper.sh git-status          # Branch + changes + recent commits
+./claude-helper.sh git-status          # Branch + changes + recent commits
 ```
 
-**Key Advantages Over Other Scripts**:
+**Key Advantages Over Previous Scripts**:
+- **Environment Awareness**: Automatically adapts to development vs production
+- **Complete Data Cleanup**: Handles ALL extraction/analysis tables, not just one
+- **Verification Built-In**: Comprehensive verification after every cleanup
+- **Production Safety**: Extra warnings and confirmations for production operations
 - **Database Privileges**: Uses `sudo -u postgres` for direct database access
-- **GPU Access**: Reads GPU processing logs from shared filesystem (`/mnt/dev-shared/logs/`)
+- **GPU Access**: Reads GPU processing logs from environment-specific shared filesystem
 - **Cache Debugging**: Specialized tools for visual analysis caching issues
 - **Cross-Service**: Combines backend, database, and GPU debugging in one tool
-- **Claude-Optimized**: Designed specifically for Claude's debugging workflow
 
-**When to Use claude-dev-helper.sh**:
-- ✅ Database schema investigations and migrations
-- ✅ GPU processing pipeline debugging  
-- ✅ Visual analysis cache troubleshooting
-- ✅ Cross-system health checks
-- ✅ When you need elevated database privileges
+**When to Use claude-helper.sh**:
+- ✅ Database schema investigations and migrations (any environment)
+- ✅ GPU processing pipeline debugging (any environment)
+- ✅ Visual analysis cache troubleshooting (any environment)
+- ✅ **Data cleanup operations** (with comprehensive verification)
+- ✅ Cross-system health checks (any environment)
+- ✅ When you need elevated database privileges (any environment)
+- ✅ **When cleanup verification is required** (prevents false cleanup claims)
 
-**vs dev-services-improved.sh**: claude-dev-helper focuses on debugging and database operations with elevated privileges, while dev-services-improved.sh focuses on service lifecycle management with smart port detection.
+**vs Other Scripts**:
+- **vs dev-services-improved.sh**: claude-helper focuses on debugging and database operations with elevated privileges; dev-services-improved.sh focuses on service lifecycle management
+- **vs debug-api.sh**: claude-helper provides database-level access and cleanup; debug-api.sh provides API-level debugging without authentication
+- **vs auth-helper.sh**: claude-helper provides system-level operations; auth-helper.sh provides authenticated API testing
 
 ### Manual Commands (Fallback if scripts don't work)
 

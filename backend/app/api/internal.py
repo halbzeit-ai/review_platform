@@ -6,10 +6,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from pydantic import BaseModel
+from typing import Dict, Any, Optional
 import logging
 import json
+from datetime import datetime
 
 from ..db.database import get_db
+from ..services.processing_queue import processing_queue_manager
 
 logger = logging.getLogger(__name__)
 
@@ -497,4 +500,308 @@ async def save_template_processing(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to save template processing results: {str(e)}"
+        )
+
+# Queue System Integration Endpoints
+
+class ProcessingServerRegistration(BaseModel):
+    server_id: str
+    server_type: str  # 'gpu', 'cpu', etc.
+    capabilities: Dict[str, Any]
+    max_concurrent_tasks: int = 3
+
+class ServerHeartbeat(BaseModel):
+    server_id: str
+
+class GetNextTaskRequest(BaseModel):
+    server_id: str
+    capabilities: Dict[str, Any]
+
+class TaskStatusUpdate(BaseModel):
+    task_id: int
+    status: str  # 'queued', 'processing', 'completed', 'failed'
+    message: str
+    server_id: str
+
+class ServerUnregistration(BaseModel):
+    server_id: str
+
+@router.post("/register-processing-server")
+async def register_processing_server(
+    registration: ProcessingServerRegistration,
+    db: Session = Depends(get_db)
+):
+    """Register a processing server (GPU/CPU) with the queue system"""
+    try:
+        logger.info(f"🟢 Registering processing server: {registration.server_id} ({registration.server_type})")
+        
+        # Insert or update server registration
+        query = text("""
+            INSERT INTO processing_servers (
+                id, server_type, status, capabilities, max_concurrent_tasks, 
+                current_load, created_at, updated_at, last_heartbeat
+            ) VALUES (
+                :server_id, :server_type, 'active', :capabilities, :max_concurrent_tasks,
+                0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            )
+            ON CONFLICT (id) DO UPDATE SET
+                server_type = :server_type,
+                status = 'active',
+                capabilities = :capabilities,
+                max_concurrent_tasks = :max_concurrent_tasks,
+                updated_at = CURRENT_TIMESTAMP,
+                last_heartbeat = CURRENT_TIMESTAMP
+        """)
+        
+        db.execute(query, {
+            "server_id": registration.server_id,
+            "server_type": registration.server_type,
+            "capabilities": json.dumps(registration.capabilities),
+            "max_concurrent_tasks": registration.max_concurrent_tasks
+        })
+        
+        db.commit()
+        
+        logger.info(f"✅ Successfully registered processing server {registration.server_id}")
+        
+        return {
+            "success": True,
+            "message": f"Server {registration.server_id} registered successfully",
+            "server_id": registration.server_id
+        }
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Error registering processing server: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to register processing server: {str(e)}"
+        )
+
+@router.post("/server-heartbeat")
+async def server_heartbeat(
+    heartbeat: ServerHeartbeat,
+    db: Session = Depends(get_db)
+):
+    """Update server heartbeat to maintain registration"""
+    try:
+        query = text("""
+            UPDATE processing_servers 
+            SET last_heartbeat = CURRENT_TIMESTAMP, status = 'active'
+            WHERE id = :server_id
+        """)
+        
+        result = db.execute(query, {"server_id": heartbeat.server_id})
+        db.commit()
+        
+        if result.rowcount == 0:
+            logger.warning(f"⚠️ Heartbeat for unknown server: {heartbeat.server_id}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Server {heartbeat.server_id} not found - please re-register"
+            )
+        
+        logger.debug(f"💓 Heartbeat received from server {heartbeat.server_id}")
+        
+        return {
+            "success": True,
+            "message": "Heartbeat recorded",
+            "server_id": heartbeat.server_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Error processing heartbeat: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to process heartbeat: {str(e)}"
+        )
+
+@router.post("/get-next-queue-task")
+async def get_next_queue_task(
+    request: GetNextTaskRequest,
+    db: Session = Depends(get_db)
+):
+    """Get the next available task from the processing queue"""
+    try:
+        logger.debug(f"🔍 Server {request.server_id} polling for queue tasks")
+        
+        # Use the existing get_next_processing_task function from the queue system
+        query = text("""
+            SELECT * FROM get_next_processing_task(
+                :server_id, 
+                :capabilities
+            )
+        """)
+        
+        result = db.execute(query, {
+            "server_id": request.server_id,
+            "capabilities": json.dumps(request.capabilities)
+        })
+        
+        task = result.fetchone()
+        
+        if task:
+            logger.info(f"📋 Assigned task {task[0]} to server {request.server_id}")
+            
+            return {
+                "task_id": task[0],
+                "document_id": task[1], 
+                "task_type": task[2],
+                "file_path": task[3],
+                "company_id": task[4],
+                "processing_options": json.loads(task[5]) if task[5] else {}
+            }
+        else:
+            # No tasks available
+            return {}
+            
+    except Exception as e:
+        logger.error(f"❌ Error getting next queue task: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get next queue task: {str(e)}"
+        )
+
+@router.post("/update-task-status")
+async def update_task_status(
+    update: TaskStatusUpdate,
+    db: Session = Depends(get_db)
+):
+    """Update the status of a processing queue task"""
+    try:
+        logger.info(f"📊 Updating task {update.task_id} status to {update.status}")
+        
+        # Update main task status
+        update_query = text("""
+            UPDATE processing_queue 
+            SET status = :status,
+                progress_message = :message,
+                completed_at = CASE WHEN :status IN ('completed', 'failed') THEN CURRENT_TIMESTAMP ELSE completed_at END
+            WHERE id = :task_id
+        """)
+        
+        db.execute(update_query, {
+            "task_id": update.task_id,
+            "status": update.status,
+            "message": update.message
+        })
+        
+        # Add progress entry
+        progress_query = text("""
+            INSERT INTO processing_progress (processing_queue_id, step_name, step_status, message, created_at)
+            VALUES (:task_id, :step_name, :step_status, :message, CURRENT_TIMESTAMP)
+        """)
+        
+        db.execute(progress_query, {
+            "task_id": update.task_id,
+            "step_name": update.status.title() + " Status",
+            "step_status": "completed" if update.status in ['completed', 'failed'] else "started",
+            "message": update.message
+        })
+        
+        db.commit()
+        
+        logger.info(f"✅ Updated task {update.task_id} status to {update.status}")
+        
+        return {
+            "success": True,
+            "message": f"Task {update.task_id} status updated to {update.status}",
+            "task_id": update.task_id
+        }
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Error updating task status: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update task status: {str(e)}"
+        )
+
+@router.post("/unregister-processing-server")
+async def unregister_processing_server(
+    unregistration: ServerUnregistration,
+    db: Session = Depends(get_db)
+):
+    """Unregister a processing server from the queue system"""
+    try:
+        logger.info(f"🔴 Unregistering processing server: {unregistration.server_id}")
+        
+        # Update server status to inactive instead of deleting
+        query = text("""
+            UPDATE processing_servers 
+            SET status = 'inactive', updated_at = CURRENT_TIMESTAMP
+            WHERE id = :server_id
+        """)
+        
+        result = db.execute(query, {"server_id": unregistration.server_id})
+        db.commit()
+        
+        if result.rowcount > 0:
+            logger.info(f"✅ Successfully unregistered server {unregistration.server_id}")
+        else:
+            logger.warning(f"⚠️ Server {unregistration.server_id} was not found")
+        
+        return {
+            "success": True,
+            "message": f"Server {unregistration.server_id} unregistered successfully",
+            "server_id": unregistration.server_id
+        }
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Error unregistering processing server: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to unregister processing server: {str(e)}"
+        )
+
+class CompleteTaskAndCreateSpecialized(BaseModel):
+    task_id: int
+    document_id: int
+    success: bool
+    results_path: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+@router.post("/complete-task-and-create-specialized")
+async def complete_task_and_create_specialized(
+    completion: CompleteTaskAndCreateSpecialized,
+    db: Session = Depends(get_db)
+):
+    """Complete main task and automatically create specialized analysis tasks"""
+    try:
+        logger.info(f"🎯 Completing main task {completion.task_id} and creating specialized analysis for document {completion.document_id}")
+        
+        # Use the processing queue manager to complete task and create specialized tasks
+        success = processing_queue_manager.complete_task_and_create_specialized(
+            task_id=completion.task_id,
+            document_id=completion.document_id,
+            success=completion.success,
+            results_path=completion.results_path,
+            metadata=completion.metadata,
+            db=db
+        )
+        
+        if success:
+            logger.info(f"✅ Successfully completed main task and created specialized analysis tasks for document {completion.document_id}")
+            return {
+                "success": True,
+                "message": f"Main task completed and specialized analysis tasks created for document {completion.document_id}",
+                "task_id": completion.task_id,
+                "document_id": completion.document_id
+            }
+        else:
+            logger.error(f"❌ Failed to complete task and create specialized analysis for document {completion.document_id}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to complete task and create specialized analysis"
+            )
+        
+    except Exception as e:
+        logger.error(f"❌ Error in complete_task_and_create_specialized: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to complete task and create specialized analysis: {str(e)}"
         )
