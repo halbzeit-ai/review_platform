@@ -487,37 +487,102 @@ class ProcessingQueueManager:
     # OLD MONOLITHIC METHOD REMOVED - Now using add_document_processing_pipeline() 
     # which creates all 4 tasks with proper dependencies from the start
     def get_task_progress(self, document_id: int, db: Session) -> Optional[Dict[str, Any]]:
-        """Get current progress for a document"""
+        """Get current progress for a document (aggregated across 4-layer pipeline)"""
         try:
+            # Get all tasks for this document
             query = text("""
                 SELECT 
+                    pq.task_type,
                     pq.progress_percentage,
                     pq.current_step,
                     pq.progress_message,
                     pq.status,
                     pq.started_at,
-                    pq.retry_count
+                    pq.retry_count,
+                    pq.created_at
                 FROM processing_queue pq
                 WHERE pq.document_id = :document_id
-                AND pq.status IN ('queued', 'processing', 'retry')
-                ORDER BY pq.created_at DESC
-                LIMIT 1
+                ORDER BY pq.created_at ASC
             """)
             
-            result = db.execute(query, {"document_id": document_id}).fetchone()
+            results = db.execute(query, {"document_id": document_id}).fetchall()
             
-            if not result:
+            if not results:
                 return None
             
-            progress_percentage, current_step, progress_message, status, started_at, retry_count = result
+            # Calculate overall progress based on 4-layer pipeline
+            tasks = {}
+            for row in results:
+                task_type, progress, step, message, status, started_at, retry_count, created_at = row
+                tasks[task_type] = {
+                    "progress": progress or 0,
+                    "step": step,
+                    "message": message,
+                    "status": status,
+                    "started_at": started_at,
+                    "retry_count": retry_count
+                }
+            
+            # Calculate overall progress based on task completion
+            # Each task represents 25% of total progress
+            total_progress = 0
+            overall_status = "queued"
+            current_message = "Initializing processing pipeline"
+            current_step = "Queued"
+            
+            # Task order and weights
+            task_order = ["visual_analysis", "slide_feedback", "extractions_and_template", "specialized_clinical", "specialized_regulatory", "specialized_science"]
+            task_weights = {"visual_analysis": 20, "slide_feedback": 20, "extractions_and_template": 30, "specialized_clinical": 10, "specialized_regulatory": 10, "specialized_science": 10}
+            
+            for task_type in task_order:
+                if task_type in tasks:
+                    task = tasks[task_type]
+                    task_weight = task_weights.get(task_type, 10)
+                    
+                    if task["status"] == "completed":
+                        total_progress += task_weight
+                    elif task["status"] == "processing":
+                        # Add partial progress based on task's internal progress
+                        task_progress = task["progress"] or 0
+                        total_progress += (task_weight * task_progress / 100)
+                        overall_status = "processing"
+                        current_message = task["message"] or f"Processing {task_type}"
+                        current_step = task["step"] or f"Processing {task_type}"
+                        break  # Show current processing task
+                    elif task["status"] in ["queued", "retry"]:
+                        overall_status = "processing" if overall_status != "queued" else "queued"
+                        if overall_status == "queued":
+                            current_message = f"Queued: {task_type}"
+                            current_step = "Queued for processing"
+                        break
+                    elif task["status"] == "failed":
+                        overall_status = "failed"
+                        current_message = task["message"] or f"Failed: {task_type}"
+                        current_step = "Processing failed"
+                        break
+            
+            # Check if all tasks are completed
+            if total_progress >= 100:
+                overall_status = "completed"
+                current_message = "Document processing completed"
+                current_step = "Completed"
+            
+            # Get earliest started_at time from all tasks
+            earliest_start = None
+            max_retry_count = 0
+            for task in tasks.values():
+                if task["started_at"] and (not earliest_start or task["started_at"] < earliest_start):
+                    earliest_start = task["started_at"]
+                max_retry_count = max(max_retry_count, task["retry_count"] or 0)
             
             return {
-                "progress_percentage": progress_percentage or 0,
-                "current_step": current_step or "Queued for processing",
-                "message": progress_message or "Task queued",
-                "status": status,
-                "started_at": started_at.isoformat() if started_at else None,
-                "retry_count": retry_count or 0
+                "progress_percentage": min(int(total_progress), 100),
+                "current_step": current_step,
+                "message": current_message,
+                "status": overall_status,
+                "started_at": earliest_start.isoformat() if earliest_start else None,
+                "retry_count": max_retry_count,
+                "task_breakdown": tasks  # Debug info - shows individual task states
             }
             
         except Exception as e:

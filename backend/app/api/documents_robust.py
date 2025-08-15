@@ -109,16 +109,17 @@ async def upload_document_robust(
         }
         processing_options.update(template_config)  # Add template config if available
         
-        # Use project_document.id directly - clean architecture
-        task_id = processing_queue_manager.add_task(
+        # Use new 4-layer processing pipeline architecture
+        pipeline_created = processing_queue_manager.add_document_processing_pipeline(
             document_id=project_document.id,
             file_path=file_path,
             company_id=company_id,
-            task_type="pdf_analysis",
             priority=TaskPriority.NORMAL,
             processing_options=processing_options,
             db=db
         )
+        
+        task_id = project_document.id if pipeline_created else None
         
         if not task_id:
             # Fallback to direct processing if queue fails
