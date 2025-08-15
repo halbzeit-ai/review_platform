@@ -66,23 +66,29 @@ class PDFProcessor:
     
     def _ai_processing(self, file_path: str, company_id: str = None, deck_id: int = None) -> Dict[str, Any]:
         """
-        Real AI processing using the HealthcareTemplateAnalyzer
+        Text Container AI processing using the HealthcareTemplateAnalyzer
         
-        Performs comprehensive healthcare-focused analysis including:
-        1. Visual analysis of PDF pages using vision models
-        2. Company offering extraction and healthcare sector classification
-        3. Template-based analysis with healthcare-specific questions
-        4. Specialized analysis (clinical validation, regulatory, scientific)
-        5. Question-level scoring with healthcare criteria
+        Performs text-based healthcare analysis including:
+        1. Company offering extraction and healthcare sector classification (from vision cache)
+        2. Template-based analysis with healthcare-specific questions
+        3. Question-level scoring with healthcare criteria
+        
+        Vision Container tasks (handled separately):
+        - Visual analysis of PDF pages using vision models
+        - Slide feedback generation
+        
+        Specialized analysis tasks (handled separately):
+        - Clinical validation, regulatory, scientific analyses
         """
-        logger.info(f"Running healthcare template-based AI processing... (deck_id: {deck_id})")
+        logger.info(f"Running text container healthcare analysis... (deck_id: {deck_id})")
         current_stage = "initialization"
         
         try:
-            current_stage = "visual_analysis_and_template_processing"
+            current_stage = "text_processing_extractions_and_template"
             logger.info(f"🔍 Starting stage: {current_stage}")
             
-            # Use the healthcare template analyzer to process the PDF with deck_id for slide feedback
+            # Use the healthcare template analyzer for text processing only
+            # Visual analysis results will be retrieved from cache by the analyzer
             results = self.analyzer.analyze_pdf(file_path, company_id, deck_id=deck_id)
             
             current_stage = "results_enhancement"
@@ -358,6 +364,68 @@ class PDFProcessor:
         except Exception as e:
             logger.error(f"❌ Error retrieving cached visual analysis for document {document_id}: {e}")
             return []
+
+    def process_visual_analysis(self, pdf_path: str, document_id: int) -> bool:
+        """Process visual analysis for a PDF document (Vision Container task)"""
+        try:
+            logger.info(f"👁️ Processing visual analysis for document {document_id}: {pdf_path}")
+            
+            # Run visual analysis using the healthcare template analyzer's method
+            full_path = os.path.join(self.mount_path, pdf_path)
+            if not os.path.exists(full_path):
+                logger.error(f"❌ PDF file not found: {full_path}")
+                return False
+            
+            # Extract company_id from path for directory structure
+            path_parts = pdf_path.split('/')
+            company_id = path_parts[0] if len(path_parts) > 1 else 'unknown'
+            
+            # Initialize analyzer and run only visual analysis
+            self.analyzer.visual_analysis_results = []
+            self.analyzer._analyze_visual_content(full_path, company_id, document_id)
+            
+            if self.analyzer.visual_analysis_results:
+                logger.info(f"✅ Visual analysis completed: {len(self.analyzer.visual_analysis_results)} pages analyzed")
+                return True
+            else:
+                logger.error(f"❌ Visual analysis failed - no results generated")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Error in visual analysis for document {document_id}: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return False
+    
+    def process_slide_feedback(self, document_id: int) -> bool:
+        """Process slide feedback for a document (Vision Container task)"""
+        try:
+            logger.info(f"💬 Processing slide feedback for document {document_id}")
+            
+            # Get visual analysis results from cache
+            visual_analysis_results = self._get_cached_visual_analysis(document_id)
+            if not visual_analysis_results:
+                logger.error(f"❌ No cached visual analysis found for document {document_id}. Cannot generate slide feedback.")
+                return False
+            
+            # Set visual analysis results in analyzer and generate feedback
+            self.analyzer.visual_analysis_results = visual_analysis_results
+            self.analyzer._generate_slide_feedback()
+            
+            # Save visual analysis cache with feedback included (for deck viewer)
+            if hasattr(self.analyzer, 'visual_analysis_results') and self.analyzer.visual_analysis_results:
+                self.analyzer._save_visual_analysis(document_id)
+                logger.info(f"✅ Slide feedback completed and saved for document {document_id}")
+                return True
+            else:
+                logger.error(f"❌ Slide feedback generation failed for document {document_id}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Error in slide feedback for document {document_id}: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return False
 
 
 def main():

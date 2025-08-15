@@ -1099,26 +1099,37 @@ class HealthcareTemplateAnalyzer:
             logger.info("Cleared previous analysis state")
         
         try:
-            # Step 1: Convert PDF to images and analyze each page (skip if already have results)
-            if not self.visual_analysis_results:
-                self._analyze_visual_content(pdf_path, company_id, deck_id)
-            else:
-                logger.info(f"Using cached visual analysis results ({len(self.visual_analysis_results)} pages)")
+            # Vision Container Processing (moved to separate tasks)
+            # Visual analysis and slide feedback now run in vision container as separate tasks
+            logger.info("Visual analysis and slide feedback are handled by vision container tasks")
             
-            # Step 1.5: Generate slide feedback based on visual analysis (skip in extraction_only mode)
-            if not (processing_options and processing_options.get('extraction_only', False)):
-                self._generate_slide_feedback()
+            # Text Container Processing: Extractions + Template Processing Only
+            # Visual analysis results should be provided by vision container tasks
+            if not self.visual_analysis_results:
+                logger.info("No visual analysis results provided - attempting to retrieve from cache")
+                if deck_id:
+                    # Try to get cached visual analysis from database
+                    try:
+                        response = requests.post(
+                            f"{self.backend_base_url}/api/dojo/internal/get-cached-visual-analysis",
+                            json={"document_id": deck_id},
+                            timeout=30
+                        )
+                        if response.status_code == 200:
+                            result = response.json()
+                            if result.get("success") and result.get("analysis_results"):
+                                self.visual_analysis_results = result["analysis_results"]
+                                logger.info(f"📥 Retrieved cached visual analysis: {len(self.visual_analysis_results)} pages")
+                            else:
+                                logger.warning("No cached visual analysis found")
+                        else:
+                            logger.warning(f"Failed to retrieve cached visual analysis: HTTP {response.status_code}")
+                    except Exception as e:
+                        logger.warning(f"Error retrieving cached visual analysis: {e}")
                 
-                # SAVE POINT 1: Save visual analysis + slide feedback AFTER both are complete
-                # This ensures deck viewer has both slide images AND feedback when activated
-                if self.visual_analysis_results and deck_id:
-                    self._save_visual_analysis(deck_id)
-                    logger.info(f"✅ Visual analysis and slide feedback both completed - deck viewer now available for deck {deck_id}")
-            else:
-                logger.info("Skipping slide feedback generation (extraction_only mode)")
-                # Save visual analysis immediately if skipping feedback
-                if self.visual_analysis_results and deck_id:
-                    self._save_visual_analysis(deck_id)
+                if not self.visual_analysis_results:
+                    logger.error("No visual analysis results available for text processing. Vision container should provide these.")
+                    raise ValueError("Text container requires visual analysis results from vision container")
             
             # Step 2: Generate company offering summary
             if not self.company_offering:
