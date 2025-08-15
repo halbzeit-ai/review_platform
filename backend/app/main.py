@@ -1,14 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-import asyncio
 from .core.config import settings
 from .core.logging_config import setup_shared_logging
 from .api import auth, documents_robust, config, healthcare_templates, pipeline, projects, internal, dojo, project_management, project_stages, dojo_experiments, funding_stages, invitations, debug, feedback
 # CLEAN ARCHITECTURE: Removed legacy API modules (decks, reviews, questions, documents, feedback) - archived in /archive/legacy-api/
+# CLEAN ARCHITECTURE: Removed CPU queue processor - all queue processing now handled by GPU server
 from .db.models import Base
 from .db.database import engine
-from .services.queue_processor import queue_processor
 
 # Configure shared filesystem logging
 logger = setup_shared_logging("backend")
@@ -16,14 +15,10 @@ logger = setup_shared_logging("backend")
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
-# DISABLED: CPU-based queue processing to prevent conflicts with GPU queue processor
-# The GPU server now handles all queue-based processing directly
-# background_task = None
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    logger.info("Backend startup - CPU queue processor DISABLED (GPU handles queue processing)")
+    logger.info("Backend startup - All queue processing handled by GPU server")
     yield
     # Shutdown
     logger.info("Backend shutdown complete")
