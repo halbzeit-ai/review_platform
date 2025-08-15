@@ -1251,7 +1251,12 @@ class HealthcareTemplateAnalyzer:
             logger.warning("No visual analysis results available for slide feedback generation")
             return
             
-        logger.info(f"🔍 Generating slide feedback for {len(self.visual_analysis_results)} slides using direct image analysis")
+        total_slides = len(self.visual_analysis_results)
+        logger.info(f"🔍 Generating slide feedback for {total_slides} slides using direct image analysis")
+        
+        # Report slide feedback phase start
+        if hasattr(self, '_progress_reporter'):
+            self._progress_reporter.report_phase_start("Slide Feedback Generation", 25)
         
         # Get slide feedback prompt
         try:
@@ -1260,6 +1265,7 @@ class HealthcareTemplateAnalyzer:
             logger.error(f"Failed to get slide feedback prompt: {e}")
             return
             
+        processed_slides = 0
         for slide_data in self.visual_analysis_results:
             try:
                 slide_number = slide_data['page_number']
@@ -1282,6 +1288,15 @@ class HealthcareTemplateAnalyzer:
                     continue
                 
                 logger.info(f"📝 Generating feedback for slide {slide_number} using image: {full_image_path}")
+                
+                # Report progress for each slide
+                if hasattr(self, '_progress_reporter'):
+                    progress = 25 + int((processed_slides / total_slides) * 10)  # 25-35% range for slide feedback
+                    self._progress_reporter.report_phase_progress(
+                        "Slide Feedback Generation", 
+                        progress, 
+                        f"Analyzing slide {slide_number} of {total_slides}"
+                    )
                 
                 # Load and convert image to bytes for vision model
                 try:
@@ -1315,9 +1330,16 @@ class HealthcareTemplateAnalyzer:
                 
                 logger.info(f"✅ Slide {slide_number}: {'Issues identified' if has_issues else 'No issues found'}")
                 
+                # Increment processed slides counter
+                processed_slides += 1
+                
             except Exception as e:
                 logger.error(f"Error generating feedback for slide {slide_data.get('page_number', 'unknown')}: {e}")
                 continue
+        
+        # Report slide feedback completion
+        if hasattr(self, '_progress_reporter'):
+            self._progress_reporter.report_phase_complete("Slide Feedback Generation", 35)
                 
         logger.info("🎯 Slide feedback generation completed using direct image analysis")
     
