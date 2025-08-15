@@ -170,7 +170,7 @@ async def get_processing_progress_robust(
             if not project_member:
                 raise HTTPException(status_code=403, detail="Access denied")
         
-        # Get progress from queue system first
+        # Get progress from queue system - MUST work, no fallbacks
         queue_progress = processing_queue_manager.get_task_progress(document_id, db)
         
         if queue_progress:
@@ -184,52 +184,15 @@ async def get_processing_progress_robust(
                 "created_at": document.upload_date.isoformat() if document.upload_date else None
             }
         
-        # Fallback: check if completed or use legacy GPU progress
-        if document.processing_status == "completed":
-            return {
-                "document_id": document_id,
-                "file_name": document.file_name,
-                "processing_status": "completed",
-                "queue_progress": {
-                    "progress_percentage": 100,
-                    "current_step": "Analysis Complete",
-                    "message": "PDF analysis completed successfully",
-                    "status": "completed"
-                },
-                "source": "completed",
-                "created_at": document.upload_date.isoformat() if document.upload_date else None
-            }
+        # FAIL HARD: No fallbacks - queue system MUST work
+        logger.error(f"❌ QUEUE SYSTEM FAILURE: No progress found for document {document_id}")
+        logger.error(f"📊 Document status: {document.processing_status}")
+        logger.error(f"📅 Upload date: {document.upload_date}")
         
-        # Final fallback: try legacy GPU progress endpoint
-        try:
-            from ..services.gpu_http_client import gpu_http_client
-            gpu_progress = gpu_http_client.get_processing_progress(document_id)
-            
-            return {
-                "document_id": document_id,
-                "file_name": document.file_name,
-                "processing_status": document.processing_status,
-                "gpu_progress": gpu_progress,
-                "source": "legacy_gpu",
-                "created_at": document.upload_date.isoformat() if document.upload_date else None
-            }
-        except Exception as gpu_error:
-            logger.warning(f"GPU progress check failed for deck {document_id}: {gpu_error}")
-            
-            # Return basic status if all else fails
-            return {
-                "document_id": document_id,
-                "file_name": document.file_name,
-                "processing_status": document.processing_status,
-                "queue_progress": {
-                    "progress_percentage": 0 if document.processing_status == "processing" else 100,
-                    "current_step": "Processing" if document.processing_status == "processing" else "Unknown",
-                    "message": "Status unknown - please check back later",
-                    "status": document.processing_status
-                },
-                "source": "database_only",
-                "created_at": document.upload_date.isoformat() if document.upload_date else None
-            }
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Queue system failure: No progress tracking found for document {document_id}. Check processing queue."
+        )
         
     except HTTPException:
         raise

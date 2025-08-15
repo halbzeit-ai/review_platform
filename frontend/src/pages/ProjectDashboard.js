@@ -242,8 +242,8 @@ const ProjectDashboard = () => {
       const response = await getProcessingProgress(deckId);
       const data = response.data || response;
       
-      // Extract progress data from queue system or legacy GPU progress
-      const progressInfo = data.queue_progress || data.gpu_progress || data;
+      // Extract progress data from queue system ONLY - no fallbacks
+      const progressInfo = data.queue_progress;
       
       setProgressData(prev => ({
         ...prev,
