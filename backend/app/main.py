@@ -16,25 +16,17 @@ logger = setup_shared_logging("backend")
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
-# Background task for queue processing
-background_task = None
+# DISABLED: CPU-based queue processing to prevent conflicts with GPU queue processor
+# The GPU server now handles all queue-based processing directly
+# background_task = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    global background_task
-    logger.info("Starting queue processor background task")
-    background_task = asyncio.create_task(queue_processor.start())
+    logger.info("Backend startup - CPU queue processor DISABLED (GPU handles queue processing)")
     yield
     # Shutdown
-    logger.info("Stopping queue processor background task")
-    await queue_processor.stop()
-    if background_task:
-        background_task.cancel()
-        try:
-            await background_task
-        except asyncio.CancelledError:
-            pass
+    logger.info("Backend shutdown complete")
 
 app = FastAPI(title=settings.PROJECT_NAME, lifespan=lifespan)
 
