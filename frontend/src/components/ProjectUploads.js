@@ -30,7 +30,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { getProjectUploads, uploadPitchDeck, deleteDeck } from '../services/api';
 
-const ProjectUploads = ({ projectId, onUploadComplete }) => {
+const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
   const { t } = useTranslation();
   const [uploads, setUploads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -176,6 +176,11 @@ const ProjectUploads = ({ projectId, onUploadComplete }) => {
       
       // Refresh the uploads list
       loadUploads(projectId);
+      
+      // Trigger parent component refresh to update deck cards in all tabs
+      if (onDeleteComplete) {
+        onDeleteComplete();
+      }
       
     } catch (error) {
       let errorMessage = 'Delete failed. Please try again.';

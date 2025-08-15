@@ -855,7 +855,8 @@ const ProjectDashboard = () => {
           ) : (
             <ProjectUploads 
               projectId={actualProjectId} 
-              onUploadComplete={refreshProjectData} 
+              onUploadComplete={refreshProjectData}
+              onDeleteComplete={refreshProjectData}
             />
           )}
         </TabPanel>
