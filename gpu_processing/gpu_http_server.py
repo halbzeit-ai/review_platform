@@ -1840,10 +1840,24 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
             # Query the backend for extraction results
             logger.info(f"Retrieving extraction results for deck {deck_id} via HTTP from backend")
             
-            # Create a dedicated backend endpoint for getting extraction results
-            # For now, return empty dict to avoid the error - we'll need to implement this endpoint
-            logger.warning(f"Extraction results endpoint not yet implemented - proceeding without Step 3 data for deck {deck_id}")
-            return {}
+            # Call the new internal endpoint to get extraction results
+            response = requests.get(
+                f"{self.backend_url}/api/internal/get-extraction-results/{deck_id}",
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result_data = response.json()
+                if result_data.get("has_results", False):
+                    extraction_results = result_data.get("extraction_results", {})
+                    logger.info(f"✅ Retrieved extraction results for deck {deck_id}: {list(extraction_results.keys())}")
+                    return extraction_results
+                else:
+                    logger.warning(f"⚠️ No extraction results found for deck {deck_id} in database")
+                    return {}
+            else:
+                logger.error(f"❌ Failed to get extraction results for deck {deck_id}: {response.status_code}")
+                return {}
             
         except Exception as e:
             logger.error(f"Error getting extraction results for deck {deck_id}: {e}")
