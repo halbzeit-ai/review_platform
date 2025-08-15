@@ -646,13 +646,29 @@ async def get_next_queue_task(
         if task:
             logger.info(f"📋 Assigned task {task[0]} to server {request.server_id}")
             
+            # Handle processing_options - could be dict, string, or None
+            processing_options = task[5]
+            if processing_options is None:
+                processing_options = {}
+            elif isinstance(processing_options, str):
+                try:
+                    processing_options = json.loads(processing_options)
+                except json.JSONDecodeError:
+                    processing_options = {}
+            elif isinstance(processing_options, dict):
+                # Already a dict, use as-is
+                pass
+            else:
+                # Unknown type, default to empty dict
+                processing_options = {}
+            
             return {
                 "task_id": task[0],
                 "document_id": task[1], 
                 "task_type": task[2],
                 "file_path": task[3],
                 "company_id": task[4],
-                "processing_options": json.loads(task[5]) if task[5] else {}
+                "processing_options": processing_options
             }
         else:
             # No tasks available
@@ -764,6 +780,36 @@ class CompleteTaskAndCreateSpecialized(BaseModel):
     success: bool
     results_path: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
+
+@router.get("/check-document-exists/{document_id}")
+async def check_document_exists(
+    document_id: int,
+    db: Session = Depends(get_db)
+):
+    """Check if a document still exists (not deleted)"""
+    try:
+        query = text("""
+            SELECT COUNT(*) > 0 as exists
+            FROM project_documents
+            WHERE id = :document_id
+        """)
+        
+        result = db.execute(query, {"document_id": document_id}).fetchone()
+        exists = result[0] if result else False
+        
+        return {
+            "document_id": document_id,
+            "exists": exists
+        }
+        
+    except Exception as e:
+        logger.error(f"Error checking document existence: {e}")
+        # On error, return true to avoid false aborts
+        return {
+            "document_id": document_id,
+            "exists": True,
+            "error": str(e)
+        }
 
 @router.post("/complete-task-and-create-specialized")
 async def complete_task_and_create_specialized(

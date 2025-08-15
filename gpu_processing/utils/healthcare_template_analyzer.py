@@ -51,6 +51,10 @@ class HealthcareTemplateAnalyzer:
     
     def __init__(self, backend_base_url: str = "http://localhost:8000", text_model_override: str = None, scoring_model_override: str = None):
         self.backend_base_url = backend_base_url
+        
+        # Initialize task validator for deletion checks
+        from .task_validator import TaskValidator
+        self.task_validator = TaskValidator(backend_base_url)
         # Use PostgreSQL database connection
         # Build database URL from environment variables or use DATABASE_URL directly
         if os.getenv('DATABASE_URL'):
@@ -1175,6 +1179,12 @@ class HealthcareTemplateAnalyzer:
             logger.info(f"Processing {total_pages} pages for {company_id}/{deck_name}")
             
             for page_number, page_image in enumerate(pages_as_images):
+                # Check if document was deleted every 3 pages
+                if deck_id and page_number % 3 == 0:
+                    if not self.task_validator.check_and_abort_if_deleted(deck_id, f"visual analysis (page {page_number + 1}/{total_pages})"):
+                        logger.warning(f"🛑 Document {deck_id} was deleted - aborting visual analysis at page {page_number + 1}")
+                        return {"success": False, "error": "Document deleted during processing", "aborted": True}
+                
                 logger.info(f"Analyzing page {page_number + 1}/{total_pages}")
                 
                 # Save slide image to project structure
@@ -1318,6 +1328,12 @@ class HealthcareTemplateAnalyzer:
     
     def _generate_company_offering(self):
         """Generate company offering summary"""
+        # Check if document was deleted before this major phase
+        if self.current_deck_id:
+            if not self.task_validator.check_and_abort_if_deleted(self.current_deck_id, "company offering extraction"):
+                logger.warning(f"🛑 Document {self.current_deck_id} was deleted - aborting company offering extraction")
+                return None
+        
         logger.info("Generating company offering summary")
         
         # Extract descriptions from the structured data
@@ -1472,6 +1488,12 @@ class HealthcareTemplateAnalyzer:
     
     def _execute_template_analysis(self):
         """Execute analysis based on loaded template"""
+        # Check if document was deleted before this major phase
+        if self.current_deck_id:
+            if not self.task_validator.check_and_abort_if_deleted(self.current_deck_id, "template analysis"):
+                logger.warning(f"🛑 Document {self.current_deck_id} was deleted - aborting template analysis")
+                return None
+        
         logger.info("Executing template-based analysis")
         
         if not self.template_config or not self.template_config.get("chapters"):
