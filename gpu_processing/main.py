@@ -36,34 +36,9 @@ class PDFProcessor:
         logger.info(f"Healthcare template analyzer initialized with backend URL: {backend_url}")
         logger.info("AI analyzer initialized successfully")
     
-    def process_pdf(self, file_path: str, company_id: str = None, deck_id: int = None) -> Dict[str, Any]:
-        """
-        Process a PDF file and generate AI-powered review
-        
-        Args:
-            file_path: Path to the PDF file relative to mount_path
-            company_id: Company ID for creating project directories (optional)
-            deck_id: Document/Deck ID for tracking and slide feedback (optional)
-            
-        Returns:
-            Dictionary containing review results
-        """
-        full_path = os.path.join(self.mount_path, file_path)
-        logger.info(f"Processing PDF: {full_path} (deck_id: {deck_id})")
-        
-        if not os.path.exists(full_path):
-            raise FileNotFoundError(f"PDF file not found: {full_path}")
-        
-        try:
-            # Use real AI processing instead of placeholder
-            results = self.process_extractions_and_template(full_path, company_id, deck_id)
-            logger.info("PDF processing completed successfully")
-            return results
-            
-        except Exception as e:
-            logger.error(f"Error processing PDF: {e}")
-            raise
-    
+    # OLD MONOLITHIC METHOD REMOVED - Now using 4 separate methods:
+    # process_visual_analysis(), process_slide_feedback(), 
+    # process_extractions_and_template(), process_specialized_analysis()
     def process_extractions_and_template(self, file_path: str, company_id: str = None, deck_id: int = None) -> Dict[str, Any]:
         """
         Text Container AI processing using the HealthcareTemplateAnalyzer

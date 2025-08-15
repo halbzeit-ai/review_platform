@@ -2282,13 +2282,23 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
             # Update task status to processing
             self.update_task_status(task_id, "processing", "Task picked up by GPU server")
             
-            # Route task based on type
-            if task_type == "pdf_analysis":
-                # This is the main processing task - delegate to PDF processor
-                success = self.process_full_pdf_analysis(task_data)
+            # Route task based on type (4-layer container architecture)
+            if task_type == "visual_analysis":
+                # Vision Container: Visual analysis of PDF pages
+                success = self.process_visual_analysis_task(task_data)
+            elif task_type == "slide_feedback":
+                # Vision Container: Slide feedback generation
+                success = self.process_slide_feedback_task(task_data)
+            elif task_type == "extractions_and_template":
+                # Text Container: Main processing (extractions + template)
+                success = self.process_extractions_and_template_task(task_data)
             elif task_type.startswith("specialized_"):
-                # Handle specialized analysis tasks
+                # Text Container: Specialized analysis tasks
                 success = self.process_specialized_analysis(task_data)
+            elif task_type == "pdf_analysis":
+                # Legacy compatibility - this should not happen with new 4-layer pipeline
+                logger.error(f"❌ Legacy pdf_analysis task detected - use add_document_processing_pipeline() instead")
+                success = False
             else:
                 logger.warning(f"⚠️ Unknown task type: {task_type}")
                 success = False
@@ -2333,66 +2343,9 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
         except Exception as e:
             logger.error(f"❌ Error updating task status: {e}")
 
-    def process_full_pdf_analysis(self, task_data: Dict[str, Any]) -> bool:
-        """Process full PDF analysis using the existing PDF processor"""
-        try:
-            file_path = task_data.get("file_path")
-            company_id = task_data.get("company_id") 
-            document_id = task_data.get("document_id")
-            task_id = task_data.get("task_id")
-            
-            if not all([file_path, company_id, document_id, task_id]):
-                logger.error(f"❌ Missing required task data: file_path={file_path}, company_id={company_id}, document_id={document_id}, task_id={task_id}")
-                return False
-            
-            # Use existing PDF processor with deck_id for slide feedback
-            result = self.pdf_processor.process_pdf(
-                file_path=file_path,
-                company_id=company_id,
-                deck_id=document_id  # Pass document_id as deck_id for slide feedback generation
-            )
-            
-            # Add document_id to result for tracking
-            if result:
-                result['document_id'] = document_id
-            
-            success = result.get("success", False)
-            
-            if success:
-                # Notify backend that main task is complete AND create specialized analysis tasks
-                logger.info(f"🎯 Main PDF analysis completed for document {document_id}, creating specialized analysis tasks")
-                
-                response = requests.post(
-                    f"{self.backend_url}/api/internal/complete-task-and-create-specialized",
-                    json={
-                        "task_id": task_id,
-                        "document_id": document_id,
-                        "success": True,
-                        "results_path": result.get("results_path"),
-                        "metadata": result.get("metadata", {})
-                    },
-                    timeout=30
-                )
-                
-                if response.status_code == 200:
-                    logger.info(f"✅ Successfully completed main task and created specialized analysis tasks for document {document_id}")
-                else:
-                    logger.error(f"❌ Failed to complete task and create specialized analysis: {response.status_code}")
-            else:
-                # Enhanced failure reporting with stage information
-                failed_stage = result.get("failed_stage", "unknown_stage")
-                failure_reason = result.get("error", "Unknown processing error")
-                logger.error(f"❌ PDF analysis failed at stage '{failed_stage}': {failure_reason}")
-                
-                # Update task with detailed failure information
-                detailed_message = f"Failed at stage '{failed_stage}': {failure_reason}"
-                self.update_task_status(task_id, "failed", detailed_message)
-            
-            return success
-            
-        except Exception as e:
-            logger.error(f"❌ Error in full PDF analysis: {e}")
-            return False
+    # OLD MONOLITHIC METHOD REMOVED - Now using 4-layer architecture:
+    # process_visual_analysis_task(), process_slide_feedback_task(), 
+    # process_extractions_and_template_task(), process_specialized_analysis()
 
     def process_specialized_analysis(self, task_data: Dict[str, Any]) -> bool:
         """Process specialized analysis tasks (clinical, regulatory, science)"""
@@ -2417,6 +2370,96 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
             
         except Exception as e:
             logger.error(f"❌ Error in specialized analysis: {e}")
+            return False
+
+    def process_visual_analysis_task(self, task_data: Dict[str, Any]) -> bool:
+        """Process visual analysis task (Vision Container)"""
+        try:
+            file_path = task_data.get("file_path")
+            document_id = task_data.get("document_id")
+            task_id = task_data.get("task_id")
+            
+            if not all([file_path, document_id, task_id]):
+                logger.error(f"❌ Missing required task data for visual analysis")
+                return False
+            
+            logger.info(f"👁️ Processing visual analysis task {task_id} for document {document_id}")
+            
+            # Use the new visual analysis method from PDF processor
+            success = self.pdf_processor.process_visual_analysis(file_path, document_id)
+            
+            if success:
+                logger.info(f"✅ Visual analysis completed for document {document_id}")
+            else:
+                logger.error(f"❌ Visual analysis failed for document {document_id}")
+                
+            return success
+            
+        except Exception as e:
+            logger.error(f"❌ Error in visual analysis task: {e}")
+            return False
+
+    def process_slide_feedback_task(self, task_data: Dict[str, Any]) -> bool:
+        """Process slide feedback task (Vision Container)"""
+        try:
+            document_id = task_data.get("document_id")
+            task_id = task_data.get("task_id")
+            
+            if not all([document_id, task_id]):
+                logger.error(f"❌ Missing required task data for slide feedback")
+                return False
+            
+            logger.info(f"💬 Processing slide feedback task {task_id} for document {document_id}")
+            
+            # Use the new slide feedback method from PDF processor
+            success = self.pdf_processor.process_slide_feedback(document_id)
+            
+            if success:
+                logger.info(f"✅ Slide feedback completed for document {document_id}")
+            else:
+                logger.error(f"❌ Slide feedback failed for document {document_id}")
+                
+            return success
+            
+        except Exception as e:
+            logger.error(f"❌ Error in slide feedback task: {e}")
+            return False
+
+    def process_extractions_and_template_task(self, task_data: Dict[str, Any]) -> bool:
+        """Process extractions and template task (Text Container)"""
+        try:
+            file_path = task_data.get("file_path")
+            company_id = task_data.get("company_id")
+            document_id = task_data.get("document_id")
+            task_id = task_data.get("task_id")
+            
+            if not all([file_path, company_id, document_id, task_id]):
+                logger.error(f"❌ Missing required task data for extractions and template")
+                return False
+            
+            logger.info(f"📝 Processing extractions and template task {task_id} for document {document_id}")
+            
+            # Use the new text container processing method from PDF processor
+            result = self.pdf_processor.process_extractions_and_template(
+                file_path=file_path,
+                company_id=company_id,
+                deck_id=document_id
+            )
+            
+            success = result.get("success", False)
+            
+            if success:
+                # Save results to shared filesystem
+                results_file = self.pdf_processor.save_results(result, file_path)
+                self.pdf_processor.create_completion_marker(file_path)
+                logger.info(f"✅ Extractions and template completed for document {document_id}")
+            else:
+                logger.error(f"❌ Extractions and template failed for document {document_id}")
+                
+            return success
+            
+        except Exception as e:
+            logger.error(f"❌ Error in extractions and template task: {e}")
             return False
 
     def start_background_services(self):

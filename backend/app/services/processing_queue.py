@@ -202,11 +202,124 @@ class ProcessingQueueManager:
             if should_close:
                 db.close()
     
+    def add_document_processing_pipeline(
+        self, 
+        document_id: int,
+        file_path: str,
+        company_id: str,
+        priority: TaskPriority = TaskPriority.NORMAL,
+        processing_options: Optional[Dict[str, Any]] = None,
+        db: Optional[Session] = None
+    ) -> bool:
+        """Create complete 4-layer processing pipeline for a document with proper dependencies"""
+        
+        if db is None:
+            db = SessionLocal()
+            should_close = True
+        else:
+            should_close = False
+            
+        try:
+            logger.info(f"Creating 4-layer processing pipeline for document {document_id}")
+            
+            # Layer 1: Visual Analysis (Vision Container)
+            visual_task_id = self.add_task(
+                document_id=document_id,
+                file_path=file_path,
+                company_id=company_id,
+                task_type="visual_analysis",
+                priority=priority,
+                processing_options=processing_options,
+                db=db
+            )
+            
+            if not visual_task_id:
+                logger.error(f"Failed to create visual_analysis task for document {document_id}")
+                return False
+                
+            # Layer 2: Slide Feedback (Vision Container) - can run parallel to visual_analysis
+            feedback_task_id = self.add_task(
+                document_id=document_id,
+                file_path=file_path,
+                company_id=company_id,
+                task_type="slide_feedback",
+                priority=priority,
+                processing_options=processing_options,  # No dependency - can run parallel
+                db=db
+            )
+            
+            if not feedback_task_id:
+                logger.error(f"Failed to create slide_feedback task for document {document_id}")
+                return False
+                
+            # Layer 3: Extractions and Template (Text Container) - depends on visual_analysis
+            extraction_task_id = self.add_task(
+                document_id=document_id,
+                file_path=file_path,
+                company_id=company_id,
+                task_type="extractions_and_template",
+                priority=priority,
+                processing_options={**processing_options or {}, "depends_on": visual_task_id},
+                db=db
+            )
+            
+            if not extraction_task_id:
+                logger.error(f"Failed to create extractions_and_template task for document {document_id}")
+                return False
+                
+            # Layer 4: Specialized Analysis Tasks (Text Container) - depends on extractions_and_template
+            specialized_types = ["specialized_clinical", "specialized_regulatory", "specialized_science"]
+            specialized_task_ids = []
+            
+            for task_type in specialized_types:
+                specialized_task_id = self.add_task(
+                    document_id=document_id,
+                    file_path=file_path,
+                    company_id=company_id,
+                    task_type=task_type,
+                    priority=priority,
+                    processing_options={**processing_options or {}, "depends_on": extraction_task_id},
+                    db=db
+                )
+                
+                if specialized_task_id:
+                    specialized_task_ids.append(specialized_task_id)
+                    logger.info(f"✅ Created {task_type} task {specialized_task_id}")
+                else:
+                    logger.error(f"❌ Failed to create {task_type} task")
+            
+            db.commit()
+            
+            logger.info(f"🎉 Successfully created 4-layer pipeline for document {document_id}:")
+            logger.info(f"   Layer 1 (Vision): visual_analysis task {visual_task_id} (no dependencies)")
+            logger.info(f"   Layer 2 (Vision): slide_feedback task {feedback_task_id} (parallel to Layer 1)")
+            logger.info(f"   Layer 3 (Text): extractions_and_template task {extraction_task_id} (depends on visual_analysis)")
+            logger.info(f"   Layer 4 (Text): {len(specialized_task_ids)} specialized analysis tasks (depend on extractions_and_template)")
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to create processing pipeline for document {document_id}: {e}")
+            db.rollback()
+            return False
+        finally:
+            if should_close:
+                db.close()
+    
     def get_next_task(self, db: Session) -> Optional[ProcessingTask]:
         """Get the next available task for processing"""
         try:
             # Use the PostgreSQL function to atomically get and lock a task
-            capabilities_dict = {"pdf_analysis": True}
+            # Updated capabilities for 4-layer container architecture
+            capabilities_dict = {
+                "visual_analysis": True,           # Vision Container
+                "slide_feedback": True,            # Vision Container  
+                "extractions_and_template": True, # Text Container
+                "specialized_clinical": True,     # Text Container
+                "specialized_regulatory": True,   # Text Container
+                "specialized_science": True,      # Text Container
+                "pdf_analysis": True              # Legacy compatibility
+            }
             logger.debug("About to call get_next_processing_task function")
             result = db.execute(text("""
                 SELECT * FROM get_next_processing_task(:server_id, :capabilities)
@@ -371,84 +484,8 @@ class ProcessingQueueManager:
             if should_close:
                 db.close()
     
-    def complete_task_and_create_specialized(
-        self,
-        task_id: int,
-        document_id: int,
-        success: bool,
-        results_path: Optional[str] = None,
-        error_message: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        db: Optional[Session] = None
-    ) -> bool:
-        """Complete main task and automatically create specialized analysis tasks"""
-        
-        if db is None:
-            db = SessionLocal()
-            should_close = True
-        else:
-            should_close = False
-            
-        try:
-            # First complete the main task
-            main_completed = self.complete_task(
-                task_id=task_id,
-                success=success,
-                results_path=results_path,
-                error_message=error_message,
-                metadata=metadata,
-                db=db
-            )
-            
-            if not main_completed or not success:
-                logger.info(f"Main task {task_id} not completed successfully, skipping specialized analysis")
-                return main_completed
-            
-            # Get task information to create specialized tasks
-            task_query = text("""
-                SELECT file_path, company_id, processing_options 
-                FROM processing_queue 
-                WHERE id = :task_id
-            """)
-            task_result = db.execute(task_query, {"task_id": task_id}).fetchone()
-            
-            if not task_result:
-                logger.error(f"Could not find task {task_id} to create specialized analysis")
-                return main_completed
-            
-            file_path, company_id, processing_options = task_result
-            
-            # Create specialized analysis tasks
-            specialized_types = ["specialized_clinical", "specialized_regulatory", "specialized_science"]
-            
-            logger.info(f"Creating {len(specialized_types)} specialized analysis tasks for document {document_id}")
-            
-            for task_type in specialized_types:
-                specialized_task_id = self.add_task(
-                    document_id=document_id,
-                    file_path=file_path,
-                    company_id=company_id,
-                    task_type=task_type,
-                    priority=TaskPriority.NORMAL,
-                    processing_options=json.loads(processing_options) if isinstance(processing_options, str) else processing_options,
-                    db=db
-                )
-                
-                if specialized_task_id:
-                    logger.info(f"✅ Created {task_type} task {specialized_task_id} for document {document_id}")
-                else:
-                    logger.error(f"❌ Failed to create {task_type} task for document {document_id}")
-            
-            return main_completed
-            
-        except Exception as e:
-            logger.error(f"Failed to complete task and create specialized analysis: {e}")
-            db.rollback()
-            return False
-        finally:
-            if should_close:
-                db.close()
-    
+    # OLD MONOLITHIC METHOD REMOVED - Now using add_document_processing_pipeline() 
+    # which creates all 4 tasks with proper dependencies from the start
     def get_task_progress(self, document_id: int, db: Session) -> Optional[Dict[str, Any]]:
         """Get current progress for a document"""
         try:
