@@ -2339,7 +2339,7 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                 return False
             
             # Use existing PDF processor
-            result = self.pdf_processor.process_pdf_complete(
+            result = self.pdf_processor.process_pdf(
                 file_path=file_path,
                 company_id=company_id,
                 deck_id=document_id  # PDF processor still uses deck_id parameter name
