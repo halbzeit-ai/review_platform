@@ -167,9 +167,8 @@ const ProjectUploads = ({ projectId, onUploadComplete }) => {
     setUploadStatus(null);
 
     try {
-      // TODO: Update delete endpoint to use project ID
-      // await deleteDeck(projectId, upload.id);
-      throw new Error('Delete functionality temporarily disabled during project ID migration');
+      // Delete the deck using the backend API
+      await deleteDeck(projectId, upload.id);
       setUploadStatus({ 
         type: 'success', 
         message: `"${upload.filename}" deleted successfully!` 
