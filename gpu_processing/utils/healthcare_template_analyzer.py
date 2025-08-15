@@ -55,6 +55,9 @@ class HealthcareTemplateAnalyzer:
         # Initialize task validator for deletion checks
         from .task_validator import TaskValidator
         self.task_validator = TaskValidator(backend_base_url)
+        
+        # Initialize progress reporter for frontend updates
+        self._progress_reporter = None
         # Use PostgreSQL database connection
         # Build database URL from environment variables or use DATABASE_URL directly
         if os.getenv('DATABASE_URL'):
@@ -1063,6 +1066,12 @@ class HealthcareTemplateAnalyzer:
         self.progress_callback = progress_callback
         self.current_deck_id = deck_id
         
+        # Set up progress reporter for frontend updates
+        if deck_id:
+            from .progress_reporter import ProgressReporter
+            self._progress_reporter = ProgressReporter(self.backend_base_url, deck_id)
+            self._progress_reporter.report_phase_start("Analysis Started", 1)
+        
         # Log model configuration at start of analysis
         logger.info(f"🤖 AI Model Configuration:")
         logger.info(f"   📷 Vision Model (slide analysis): {self.vision_model}")
@@ -1146,6 +1155,8 @@ class HealthcareTemplateAnalyzer:
             
             processing_time = time.time() - start_time
             logger.info(f"Healthcare template analysis completed in {processing_time:.2f} seconds")
+            if self._progress_reporter:
+                self._progress_reporter.report_phase_complete("Analysis Complete", 100)
             
             return self._format_healthcare_results(processing_time)
             
@@ -1156,6 +1167,8 @@ class HealthcareTemplateAnalyzer:
     def _analyze_visual_content(self, pdf_path: str, company_id: str = None, deck_id: int = None):
         """Convert PDF to images and analyze each page with project-based storage"""
         logger.info("Converting PDF to images for visual analysis")
+        if self._progress_reporter:
+            self._progress_reporter.report_phase_start("Visual Analysis", 5)
         
         try:
             # Get company and deck information
@@ -1184,6 +1197,15 @@ class HealthcareTemplateAnalyzer:
                     if not self.task_validator.check_and_abort_if_deleted(deck_id, f"visual analysis (page {page_number + 1}/{total_pages})"):
                         logger.warning(f"🛑 Document {deck_id} was deleted - aborting visual analysis at page {page_number + 1}")
                         return {"success": False, "error": "Document deleted during processing", "aborted": True}
+                
+                # Update progress during visual analysis
+                if self._progress_reporter and page_number % 2 == 0:  # Update every 2 pages
+                    progress = 5 + int((page_number / total_pages) * 25)  # 5% to 30%
+                    self._progress_reporter.report_phase_progress(
+                        "Visual Analysis", 
+                        progress, 
+                        f"Analyzing slide {page_number + 1} of {total_pages}"
+                    )
                 
                 logger.info(f"Analyzing page {page_number + 1}/{total_pages}")
                 
@@ -1216,6 +1238,8 @@ class HealthcareTemplateAnalyzer:
                 self.visual_analysis_results.append(page_analysis_data)
             
             logger.info(f"Saved {total_pages} slide images to {analysis_path}")
+            if self._progress_reporter:
+                self._progress_reporter.report_phase_complete("Visual Analysis", 30)
                 
         except Exception as e:
             logger.error(f"Error in visual content analysis: {e}")
@@ -1335,6 +1359,8 @@ class HealthcareTemplateAnalyzer:
                 return None
         
         logger.info("Generating company offering summary")
+        if self._progress_reporter:
+            self._progress_reporter.report_phase_start("Data Extraction", 35)
         
         # Extract descriptions from the structured data
         descriptions = []
@@ -1495,6 +1521,8 @@ class HealthcareTemplateAnalyzer:
                 return None
         
         logger.info("Executing template-based analysis")
+        if self._progress_reporter:
+            self._progress_reporter.report_phase_start("Template Analysis", 60)
         
         if not self.template_config or not self.template_config.get("chapters"):
             logger.warning("No template configuration available, skipping template analysis")
@@ -1716,6 +1744,8 @@ class HealthcareTemplateAnalyzer:
             return
         
         logger.info(f"Generating specialized analysis: {', '.join(specialized_analyses)}")
+        if self._progress_reporter:
+            self._progress_reporter.report_phase_start("Specialized Analysis", 85)
         
         # Extract descriptions from the structured data
         descriptions = []
