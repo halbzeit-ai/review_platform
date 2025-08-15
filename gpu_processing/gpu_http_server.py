@@ -2338,11 +2338,11 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                 logger.error(f"❌ Missing required task data: file_path={file_path}, company_id={company_id}, document_id={document_id}, task_id={task_id}")
                 return False
             
-            # Use existing PDF processor
-            # Note: PDFProcessor.process_pdf() only takes file_path and company_id
+            # Use existing PDF processor with deck_id for slide feedback
             result = self.pdf_processor.process_pdf(
                 file_path=file_path,
-                company_id=company_id
+                company_id=company_id,
+                deck_id=document_id  # Pass document_id as deck_id for slide feedback generation
             )
             
             # Add document_id to result for tracking

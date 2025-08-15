@@ -36,26 +36,27 @@ class PDFProcessor:
         logger.info(f"Healthcare template analyzer initialized with backend URL: {backend_url}")
         logger.info("AI analyzer initialized successfully")
     
-    def process_pdf(self, file_path: str, company_id: str = None) -> Dict[str, Any]:
+    def process_pdf(self, file_path: str, company_id: str = None, deck_id: int = None) -> Dict[str, Any]:
         """
         Process a PDF file and generate AI-powered review
         
         Args:
             file_path: Path to the PDF file relative to mount_path
             company_id: Company ID for creating project directories (optional)
+            deck_id: Document/Deck ID for tracking and slide feedback (optional)
             
         Returns:
             Dictionary containing review results
         """
         full_path = os.path.join(self.mount_path, file_path)
-        logger.info(f"Processing PDF: {full_path}")
+        logger.info(f"Processing PDF: {full_path} (deck_id: {deck_id})")
         
         if not os.path.exists(full_path):
             raise FileNotFoundError(f"PDF file not found: {full_path}")
         
         try:
             # Use real AI processing instead of placeholder
-            results = self._ai_processing(full_path, company_id)
+            results = self._ai_processing(full_path, company_id, deck_id)
             logger.info("PDF processing completed successfully")
             return results
             
@@ -63,7 +64,7 @@ class PDFProcessor:
             logger.error(f"Error processing PDF: {e}")
             raise
     
-    def _ai_processing(self, file_path: str, company_id: str = None) -> Dict[str, Any]:
+    def _ai_processing(self, file_path: str, company_id: str = None, deck_id: int = None) -> Dict[str, Any]:
         """
         Real AI processing using the HealthcareTemplateAnalyzer
         
@@ -74,11 +75,11 @@ class PDFProcessor:
         4. Specialized analysis (clinical validation, regulatory, scientific)
         5. Question-level scoring with healthcare criteria
         """
-        logger.info("Running healthcare template-based AI processing...")
+        logger.info(f"Running healthcare template-based AI processing... (deck_id: {deck_id})")
         
         try:
-            # Use the healthcare template analyzer to process the PDF
-            results = self.analyzer.analyze_pdf(file_path, company_id)
+            # Use the healthcare template analyzer to process the PDF with deck_id for slide feedback
+            results = self.analyzer.analyze_pdf(file_path, company_id, deck_id=deck_id)
             
             # Transform results to include additional fields for backward compatibility
             enhanced_results = self._enhance_healthcare_results_format(results)
