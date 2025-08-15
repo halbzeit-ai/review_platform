@@ -1102,10 +1102,6 @@ class HealthcareTemplateAnalyzer:
             # Step 1: Convert PDF to images and analyze each page (skip if already have results)
             if not self.visual_analysis_results:
                 self._analyze_visual_content(pdf_path, company_id, deck_id)
-                
-                # Save visual analysis for deck viewer availability
-                if self.visual_analysis_results and deck_id:
-                    self._save_visual_analysis(deck_id)
             else:
                 logger.info(f"Using cached visual analysis results ({len(self.visual_analysis_results)} pages)")
             
@@ -1113,12 +1109,16 @@ class HealthcareTemplateAnalyzer:
             if not (processing_options and processing_options.get('extraction_only', False)):
                 self._generate_slide_feedback()
                 
-                # SAVE POINT 0: Save visual analysis results AFTER feedback generation for completeness
-                # (Visual analysis was already saved, but feedback is now also stored in database)
+                # SAVE POINT 1: Save visual analysis + slide feedback AFTER both are complete
+                # This ensures deck viewer has both slide images AND feedback when activated
                 if self.visual_analysis_results and deck_id:
-                    logger.info(f"✅ Visual analysis and slide feedback both saved for deck {deck_id}")
+                    self._save_visual_analysis(deck_id)
+                    logger.info(f"✅ Visual analysis and slide feedback both completed - deck viewer now available for deck {deck_id}")
             else:
                 logger.info("Skipping slide feedback generation (extraction_only mode)")
+                # Save visual analysis immediately if skipping feedback
+                if self.visual_analysis_results and deck_id:
+                    self._save_visual_analysis(deck_id)
             
             # Step 2: Generate company offering summary
             if not self.company_offering:
