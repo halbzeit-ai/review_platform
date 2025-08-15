@@ -259,7 +259,7 @@ class ProcessingQueueManager:
                 company_id=company_id,
                 task_type="extractions_and_template",
                 priority=priority,
-                processing_options={**processing_options or {}, "depends_on": visual_task_id},
+                processing_options={**(processing_options or {}), "depends_on": visual_task_id},
                 db=db
             )
             
@@ -278,7 +278,7 @@ class ProcessingQueueManager:
                     company_id=company_id,
                     task_type=task_type,
                     priority=priority,
-                    processing_options={**processing_options or {}, "depends_on": extraction_task_id},
+                    processing_options={**(processing_options or {}), "depends_on": extraction_task_id},
                     db=db
                 )
                 
