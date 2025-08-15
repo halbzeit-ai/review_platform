@@ -981,7 +981,7 @@ async def delete_deck(
                 detail="You don't have access to this project"
             )
         
-        # Get deck information - try project_documents first, then fall back to pitch_decks
+        # Get deck information from project_documents
         deck_query = text("""
         SELECT pd.id, pd.file_name, pd.file_path, pd.analysis_results_path, u.email, u.company_name, 'project_documents' as source_table
         FROM project_documents pd
@@ -989,13 +989,6 @@ async def delete_deck(
         JOIN projects p ON pd.project_id = p.id
         WHERE pd.id = :deck_id AND pd.project_id = :project_id 
         AND pd.document_type = 'pitch_deck' AND pd.is_active = TRUE
-        
-        UNION ALL
-        
-        SELECT pd.id, pd.file_name, pd.file_path, pd.results_file_path, u.email, u.company_name, 'pitch_decks' as source_table
-        FROM pitch_decks pd
-        JOIN users u ON pd.user_id = u.id
-        WHERE pd.id = :deck_id
         """)
         
         deck_result = db.execute(deck_query, {"deck_id": deck_id, "project_id": project_id}).fetchone()
@@ -1074,12 +1067,8 @@ async def delete_deck(
         # Delete extraction experiments (check if document is in the document_ids array)  
         db.execute(text("DELETE FROM extraction_experiments WHERE document_ids LIKE '%' || :deck_id || '%'"), {"deck_id": str(deck_id)})
         
-        # Now delete the main document record
-        if source_table == 'project_documents':
-            delete_query = text("DELETE FROM project_documents WHERE id = :deck_id")
-        else:
-            delete_query = text("DELETE FROM pitch_decks WHERE id = :deck_id")
-            
+        # Delete the main document record (only project_documents table exists)
+        delete_query = text("DELETE FROM project_documents WHERE id = :deck_id")
         db.execute(delete_query, {"deck_id": deck_id})
         db.commit()
         

@@ -104,7 +104,7 @@ async def get_slide_specific_feedback(
     
     # Get feedback for specific slide
     feedback = db.query(SlideFeedback).filter(
-        SlideFeedback.pitch_deck_id == deck_id,
+        SlideFeedback.document_id == deck_id,
         SlideFeedback.slide_number == slide_number
     ).first()
     
@@ -159,7 +159,7 @@ async def get_deck_feedback_summary(
         func.count(SlideFeedback.id).filter(SlideFeedback.has_issues == True).label('slides_with_issues'),
         func.count(SlideFeedback.id).filter(SlideFeedback.has_issues == False).label('slides_ok')
     ).filter(
-        SlideFeedback.pitch_deck_id == deck_id
+        SlideFeedback.document_id == deck_id
     ).first()
     
     return JSONResponse(
@@ -206,7 +206,7 @@ async def add_manual_feedback(
     # Create new manual feedback entry
     try:
         new_feedback = SlideFeedback(
-            pitch_deck_id=deck_id,
+            document_id=deck_id,
             slide_number=slide_number,
             slide_filename=f"slide_{slide_number:03d}.jpg",  # Standard filename format
             feedback_text=feedback_request.feedback_text,

@@ -7,7 +7,7 @@ from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
 from ..core.datacrunch import datacrunch_client
 from ..core.volume_storage import volume_storage
-from ..db.models import PitchDeck
+from ..db.models import ProjectDocument
 from ..db.database import get_db
 from ..core.config import settings
 
@@ -19,100 +19,100 @@ class GPUProcessingService:
         self.processing_timeout = 600  # 10 minutes timeout
         self.gpu_image = "ubuntu-22.04"  # Standard Ubuntu image for GPU instances
     
-    async def trigger_processing(self, pitch_deck_id: int, file_path: str) -> bool:
+    async def trigger_processing(self, document_id: int, file_path: str) -> bool:
         """
-        Trigger GPU processing for a pitch deck
+        Trigger GPU processing for a document
         1. Create GPU instance with shared volume
         2. Wait for instance to be ready
         3. Monitor processing completion
         4. Clean up instance
         """
-        print(f"DEBUG: trigger_processing called for pitch_deck_id={pitch_deck_id}, file_path={file_path}")
-        logger.info(f"ENTRY: trigger_processing called for pitch_deck_id={pitch_deck_id}, file_path={file_path}")
+        print(f"DEBUG: trigger_processing called for document_id={document_id}, file_path={file_path}")
+        logger.info(f"ENTRY: trigger_processing called for document_id={document_id}, file_path={file_path}")
         
         try:
-            print(f"DEBUG: Getting database session for pitch deck {pitch_deck_id}")
-            logger.info(f"Getting database session for pitch deck {pitch_deck_id}")
+            print(f"DEBUG: Getting database session for document {document_id}")
+            logger.info(f"Getting database session for document {document_id}")
             db = next(get_db())
-            print(f"DEBUG: Database session obtained for pitch deck {pitch_deck_id}")
-            logger.info(f"Database session obtained for pitch deck {pitch_deck_id}")
+            print(f"DEBUG: Database session obtained for document {document_id}")
+            logger.info(f"Database session obtained for document {document_id}")
         except Exception as e:
             print(f"DEBUG: Failed to get database session: {e}")
-            logger.error(f"Failed to get database session for pitch deck {pitch_deck_id}: {e}")
+            logger.error(f"Failed to get database session for document {document_id}: {e}")
             return False
         
         try:
             # Update processing status
-            print(f"DEBUG: Starting GPU processing for pitch deck {pitch_deck_id}")
-            logger.info(f"Starting GPU processing for pitch deck {pitch_deck_id}")
-            print(f"DEBUG: Querying database for pitch deck {pitch_deck_id}")
-            pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == pitch_deck_id).first()
-            print(f"DEBUG: Database query completed for pitch deck {pitch_deck_id}")
-            if not pitch_deck:
-                print(f"DEBUG: Pitch deck {pitch_deck_id} not found!")
-                logger.error(f"Pitch deck {pitch_deck_id} not found")
+            print(f"DEBUG: Starting GPU processing for document {document_id}")
+            logger.info(f"Starting GPU processing for document {document_id}")
+            print(f"DEBUG: Querying database for document {document_id}")
+            document = db.query(ProjectDocument).filter(ProjectDocument.id == document_id).first()
+            print(f"DEBUG: Database query completed for document {document_id}")
+            if not document:
+                print(f"DEBUG: Document {document_id} not found!")
+                logger.error(f"Document {document_id} not found")
                 return False
             
-            print(f"DEBUG: Setting processing status to 'processing' for pitch deck {pitch_deck_id}")
-            logger.info(f"Setting processing status to 'processing' for pitch deck {pitch_deck_id}")
-            pitch_deck.processing_status = "processing"
-            print(f"DEBUG: About to commit database changes for pitch deck {pitch_deck_id}")
+            print(f"DEBUG: Setting processing status to 'processing' for document {document_id}")
+            logger.info(f"Setting processing status to 'processing' for document {document_id}")
+            document.processing_status = "processing"
+            print(f"DEBUG: About to commit database changes for document {document_id}")
             db.commit()
-            print(f"DEBUG: Database commit completed for pitch deck {pitch_deck_id}")
-            logger.info(f"Database updated for pitch deck {pitch_deck_id}")
+            print(f"DEBUG: Database commit completed for document {document_id}")
+            logger.info(f"Database updated for document {document_id}")
             
-            print(f"DEBUG: Creating processing marker for pitch deck {pitch_deck_id}")
+            print(f"DEBUG: Creating processing marker for document {document_id}")
             # Create processing marker
             volume_storage.create_processing_marker(file_path)
-            print(f"DEBUG: Processing marker created for pitch deck {pitch_deck_id}")
+            print(f"DEBUG: Processing marker created for document {document_id}")
             
-            print(f"DEBUG: Checking for existing results file for pitch deck {pitch_deck_id}")
+            print(f"DEBUG: Checking for existing results file for document {document_id}")
             # Clean up any existing results file to prevent reading stale data
             results_path = file_path.replace('/', '_').replace('.pdf', '_results.json')
             if volume_storage.file_exists(f"results/{results_path}"):
-                print(f"DEBUG: Deleting existing results file for pitch deck {pitch_deck_id}")
+                print(f"DEBUG: Deleting existing results file for document {document_id}")
                 volume_storage.delete_file(f"results/{results_path}")
-                logger.info(f"Cleaned up existing results file for pitch deck {pitch_deck_id}")
-            print(f"DEBUG: Results cleanup completed for pitch deck {pitch_deck_id}")
+                logger.info(f"Cleaned up existing results file for document {document_id}")
+            print(f"DEBUG: Results cleanup completed for document {document_id}")
             
             # Create startup script for GPU instance
-            print(f"DEBUG: Creating startup script for pitch deck {pitch_deck_id}")
-            logger.info(f"Creating startup script for pitch deck {pitch_deck_id}")
-            startup_script_content = self._create_startup_script(file_path, pitch_deck_id)
-            print(f"DEBUG: Startup script content created for pitch deck {pitch_deck_id}")
+            print(f"DEBUG: Creating startup script for document {document_id}")
+            logger.info(f"Creating startup script for document {document_id}")
+            startup_script_content = self._create_startup_script(file_path, document_id)
+            print(f"DEBUG: Startup script content created for document {document_id}")
             
             # Step 1: Create startup script via API
-            script_name = f"gpu-processing-{pitch_deck_id}"
+            script_name = f"gpu-processing-{document_id}"
             startup_script_data = await datacrunch_client.create_startup_script(
                 name=script_name,
                 script=startup_script_content
             )
             startup_script_id = startup_script_data["id"]
             print(f"DEBUG: Startup script created with ID: {startup_script_id}")
-            logger.info(f"Created startup script {startup_script_id} for pitch deck {pitch_deck_id}")
+            logger.info(f"Created startup script {startup_script_id} for document {document_id}")
             
             # Step 2: Create GPU instance with startup script ID
-            instance_name = f"gpu-processor-{pitch_deck_id}"
+            instance_name = f"gpu-processor-{document_id}"
             filesystem_id = settings.DATACRUNCH_SHARED_FILESYSTEM_ID
             
-            print(f"DEBUG: Checking filesystem ID for pitch deck {pitch_deck_id}")
+            print(f"DEBUG: Checking filesystem ID for document {document_id}")
             if not filesystem_id:
                 print(f"DEBUG: No filesystem ID configured!")
                 raise Exception("DATACRUNCH_SHARED_FILESYSTEM_ID not configured")
             print(f"DEBUG: Filesystem ID OK: {filesystem_id}")
             
             # Get SSH key IDs for instance
-            print(f"DEBUG: Getting SSH keys for pitch deck {pitch_deck_id}")
+            print(f"DEBUG: Getting SSH keys for document {document_id}")
             ssh_key_ids = []
             if settings.DATACRUNCH_SSH_KEY_IDS:
                 ssh_key_ids = [key.strip() for key in settings.DATACRUNCH_SSH_KEY_IDS.split(",") if key.strip()]
             print(f"DEBUG: SSH keys obtained: {len(ssh_key_ids)} keys")
             
-            print(f"DEBUG: About to call datacrunch_client.deploy_instance for pitch deck {pitch_deck_id}")
+            print(f"DEBUG: About to call datacrunch_client.deploy_instance for document {document_id}")
             print(f"DEBUG: Instance config - hostname: {instance_name}, type: {self.gpu_instance_type}, image: {self.gpu_image}")
             print(f"DEBUG: SSH keys: {ssh_key_ids}, filesystem: {filesystem_id}")
             print(f"DEBUG: Startup script ID: {startup_script_id}")
-            logger.info(f"Creating GPU instance {instance_name} for pitch deck {pitch_deck_id}")
+            logger.info(f"Creating GPU instance {instance_name} for document {document_id}")
             instance_data = await datacrunch_client.deploy_instance(
                 hostname=instance_name,
                 instance_type=self.gpu_instance_type,
@@ -121,11 +121,11 @@ class GPUProcessingService:
                 existing_volume_ids=[filesystem_id],
                 startup_script_id=startup_script_id
             )
-            print(f"DEBUG: datacrunch_client.deploy_instance returned for pitch deck {pitch_deck_id}")
-            logger.info(f"GPU instance creation response received for pitch deck {pitch_deck_id}")
+            print(f"DEBUG: datacrunch_client.deploy_instance returned for document {document_id}")
+            logger.info(f"GPU instance creation response received for document {document_id}")
             
             instance_id = instance_data["id"]
-            logger.info(f"Created GPU instance {instance_id} for pitch deck {pitch_deck_id}")
+            logger.info(f"Created GPU instance {instance_id} for document {document_id}")
             
             # Wait for instance to be running
             logger.info(f"Waiting for GPU instance {instance_id} to start...")
@@ -142,13 +142,13 @@ class GPUProcessingService:
                 results_path = file_path.replace('/', '_').replace('.pdf', '_results.json')
                 if volume_storage.file_exists(f"results/{results_path}"):
                     pitch_deck.processing_status = "completed"
-                    logger.info(f"Processing completed for pitch deck {pitch_deck_id}")
+                    logger.info(f"Processing completed for document {document_id}")
                 else:
                     pitch_deck.processing_status = "failed"
-                    logger.error(f"Processing completed but results file missing for pitch deck {pitch_deck_id}")
+                    logger.error(f"Processing completed but results file missing for document {document_id}")
             else:
                 pitch_deck.processing_status = "failed"
-                logger.error(f"Processing failed for pitch deck {pitch_deck_id}")
+                logger.error(f"Processing failed for document {document_id}")
             
             # Clean up instance and volumes
             await self._cleanup_instance(instance_id)
@@ -162,7 +162,7 @@ class GPUProcessingService:
             print(f"DEBUG Exception type: {type(e)}")
             import traceback
             print(f"DEBUG Full traceback: {traceback.format_exc()}")
-            logger.error(f"GPU processing failed for pitch deck {pitch_deck_id}: {str(e)}")
+            logger.error(f"GPU processing failed for document {document_id}: {str(e)}")
             logger.error(f"Full error details: {traceback.format_exc()}")
             pitch_deck.processing_status = "failed"
             db.commit()
@@ -171,7 +171,7 @@ class GPUProcessingService:
         finally:
             db.close()
     
-    def _create_startup_script(self, file_path: str, pitch_deck_id: Optional[int] = None) -> str:
+    def _create_startup_script(self, file_path: str, document_id: Optional[int] = None) -> str:
         """Create bash startup script for GPU instance"""
         mount_path = settings.SHARED_FILESYSTEM_MOUNT_PATH
         

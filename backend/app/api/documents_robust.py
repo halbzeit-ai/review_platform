@@ -147,16 +147,16 @@ async def upload_document_robust(
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/processing-progress/{pitch_deck_id}")
+@router.get("/processing-progress/{document_id}")
 async def get_processing_progress_robust(
-    pitch_deck_id: int,
+    document_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get processing progress with robust queue system"""
     try:
         # Get document info from project_documents (clean architecture)
-        document = db.query(ProjectDocument).filter(ProjectDocument.id == pitch_deck_id).first()
+        document = db.query(ProjectDocument).filter(ProjectDocument.id == document_id).first()
         if not document:
             raise HTTPException(status_code=404, detail="Document not found")
         
@@ -171,12 +171,12 @@ async def get_processing_progress_robust(
                 raise HTTPException(status_code=403, detail="Access denied")
         
         # Get progress from queue system first
-        queue_progress = processing_queue_manager.get_task_progress(pitch_deck_id, db)
+        queue_progress = processing_queue_manager.get_task_progress(document_id, db)
         
         if queue_progress:
             # Task is actively managed by queue system
             return {
-                "pitch_deck_id": pitch_deck_id,
+                "document_id": document_id,
                 "file_name": document.file_name,
                 "processing_status": document.processing_status,
                 "queue_progress": queue_progress,
@@ -187,7 +187,7 @@ async def get_processing_progress_robust(
         # Fallback: check if completed or use legacy GPU progress
         if document.processing_status == "completed":
             return {
-                "pitch_deck_id": pitch_deck_id,
+                "document_id": document_id,
                 "file_name": document.file_name,
                 "processing_status": "completed",
                 "queue_progress": {
@@ -203,10 +203,10 @@ async def get_processing_progress_robust(
         # Final fallback: try legacy GPU progress endpoint
         try:
             from ..services.gpu_http_client import gpu_http_client
-            gpu_progress = gpu_http_client.get_processing_progress(pitch_deck_id)
+            gpu_progress = gpu_http_client.get_processing_progress(document_id)
             
             return {
-                "pitch_deck_id": pitch_deck_id,
+                "document_id": document_id,
                 "file_name": document.file_name,
                 "processing_status": document.processing_status,
                 "gpu_progress": gpu_progress,
@@ -214,11 +214,11 @@ async def get_processing_progress_robust(
                 "created_at": document.upload_date.isoformat() if document.upload_date else None
             }
         except Exception as gpu_error:
-            logger.warning(f"GPU progress check failed for deck {pitch_deck_id}: {gpu_error}")
+            logger.warning(f"GPU progress check failed for deck {document_id}: {gpu_error}")
             
             # Return basic status if all else fails
             return {
-                "pitch_deck_id": pitch_deck_id,
+                "document_id": document_id,
                 "file_name": document.file_name,
                 "processing_status": document.processing_status,
                 "queue_progress": {
@@ -234,7 +234,7 @@ async def get_processing_progress_robust(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting processing progress for pitch deck {pitch_deck_id}: {e}")
+        logger.error(f"Error getting processing progress for document {document_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to get processing progress")
 
 @router.get("/queue-stats")

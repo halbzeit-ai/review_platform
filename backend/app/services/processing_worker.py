@@ -114,8 +114,8 @@ class ProcessingWorker:
                     task_future = asyncio.create_task(task_coroutine)
                     self.current_tasks[task.id] = task_future
                     
-                    logger.info(f"Started processing task {task.id} for pitch deck {task.pitch_deck_id}")
-                    self.shared_logger.info(f"Started processing task {task.id} for pitch deck {task.pitch_deck_id}")
+                    logger.info(f"Started processing task {task.id} for document {task.document_id}")
+                    self.shared_logger.info(f"Started processing task {task.id} for document {task.document_id}")
                 else:
                     # No tasks available, wait before checking again
                     await asyncio.sleep(self.poll_interval)
@@ -143,8 +143,8 @@ class ProcessingWorker:
         """Process a single task"""
         db = SessionLocal()
         try:
-            logger.info(f"Processing task {task.id}: {task.task_type} for pitch deck {task.pitch_deck_id}")
-            self.shared_logger.info(f"Processing task {task.id}: {task.task_type} for pitch deck {task.pitch_deck_id}")
+            logger.info(f"Processing task {task.id}: {task.task_type} for document {task.document_id}")
+            self.shared_logger.info(f"Processing task {task.id}: {task.task_type} for document {task.document_id}")
             
             # Update progress to starting
             processing_queue_manager.update_task_progress(
@@ -187,7 +187,7 @@ class ProcessingWorker:
         
         # Call GPU processing
         results = await gpu_http_client.process_pdf(
-            task.pitch_deck_id,
+            task.document_id,
             task.file_path,
             task.company_id
         )

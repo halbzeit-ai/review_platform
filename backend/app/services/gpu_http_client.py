@@ -236,12 +236,12 @@ class GPUHTTPClient:
                 "error": str(e)
             }
     
-    async def process_pdf(self, pitch_deck_id: int, file_path: str, company_id: str) -> Dict[str, Any]:
+    async def process_pdf(self, document_id: int, file_path: str, company_id: str) -> Dict[str, Any]:
         """
         Process a PDF file using the GPU instance
         
         Args:
-            pitch_deck_id: Database ID of the pitch deck
+            document_id: Database ID of the document
             file_path: Path to PDF file relative to shared filesystem
             company_id: Company ID for creating project directories
             
@@ -256,10 +256,10 @@ class GPUHTTPClient:
                     "error": "GPU host not configured (GPU_DEVELOPMENT/GPU_PRODUCTION or GPU_INSTANCE_HOST)"
                 }
             
-            logger.info(f"Requesting PDF processing for pitch deck {pitch_deck_id}: {file_path} for company {company_id}")
+            logger.info(f"Requesting PDF processing for document {document_id}: {file_path} for company {company_id}")
             
             payload = {
-                "pitch_deck_id": pitch_deck_id,
+                "document_id": document_id,
                 "file_path": file_path,
                 "company_id": company_id
             }
@@ -549,12 +549,12 @@ class GPUHTTPClient:
                 "error": str(e)
             }
 
-    def get_processing_progress(self, pitch_deck_id: int) -> Dict[str, Any]:
+    def get_processing_progress(self, document_id: int) -> Dict[str, Any]:
         """
-        Get processing progress for a specific pitch deck
+        Get processing progress for a specific document
         
         Args:
-            pitch_deck_id: Database ID of the pitch deck
+            document_id: Database ID of the document
             
         Returns:
             Progress information or error
@@ -567,7 +567,7 @@ class GPUHTTPClient:
                 }
             
             response = requests.get(
-                f"{self.base_url}/processing-progress/{pitch_deck_id}",
+                f"{self.base_url}/processing-progress/{document_id}",
                 timeout=10,
                 headers={'Content-Type': 'application/json'}
             )
@@ -588,7 +588,7 @@ class GPUHTTPClient:
                 }
                 
         except Exception as e:
-            logger.error(f"Error getting processing progress for pitch deck {pitch_deck_id}: {e}")
+            logger.error(f"Error getting processing progress for document {document_id}: {e}")
             return {
                 "success": False,
                 "error": str(e)

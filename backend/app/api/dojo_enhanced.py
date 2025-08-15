@@ -22,7 +22,7 @@ class DojoUploadResult:
         self.new_files: List[str] = []
         self.duplicate_files: List[str] = []
         self.error_files: List[str] = []
-        self.new_pitch_deck_ids: List[int] = []
+        self.new_document_ids: List[int] = []
     
     @property
     def success_count(self) -> int:
@@ -48,7 +48,7 @@ class DojoUploadResult:
             "new_files": self.new_files,
             "duplicates": self.duplicate_files,
             "errors": self.error_files,
-            "new_pitch_deck_ids": self.new_pitch_deck_ids
+            "new_document_ids": self.new_document_ids
         }
 
 def calculate_file_hash(file_path: str) -> str:
@@ -60,7 +60,7 @@ def calculate_file_hash(file_path: str) -> str:
     return sha256_hash.hexdigest()
 
 def check_duplicate_file(db: Session, file_name: str, file_hash: str) -> Optional[int]:
-    """Check if file already exists by name or hash. Returns pitch_deck_id if found."""
+    """Check if file already exists by name or hash. Returns document_id if found."""
     existing = db.query(ProjectDocument).filter(
         ProjectDocument.data_source == "dojo",
         ((ProjectDocument.file_name == file_name) | (ProjectDocument.file_hash == file_hash))
@@ -141,7 +141,7 @@ async def extract_dojo_zip_enhanced(
                 shutil.move(pdf_path, final_path)
                 
                 # Create database record
-                pitch_deck = ProjectDocument(
+                document = ProjectDocument(
                     user_id=uploaded_by,
                     company_id="dojo",
                     file_name=original_name,
@@ -152,13 +152,13 @@ async def extract_dojo_zip_enhanced(
                     processing_status="pending"
                 )
                 
-                db.add(pitch_deck)
+                db.add(document)
                 db.flush()  # Get the ID
                 
                 result.new_files.append(original_name)
-                result.new_pitch_deck_ids.append(pitch_deck.id)
+                result.new_document_ids.append(document.id)
                 
-                logger.info(f"Added new file: {original_name} (ID: {pitch_deck.id})")
+                logger.info(f"Added new file: {original_name} (ID: {document.id})")
                 
             except Exception as e:
                 logger.error(f"Error processing PDF {os.path.basename(pdf_path)}: {e}")

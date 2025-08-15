@@ -226,16 +226,20 @@ async def process_dojo_zip(zip_file_path: str, uploaded_by: int, db: Session, or
                 shutil.move(pdf_path, final_path)
                 
                 # Create database record
-                pitch_deck = PitchDeck(
-                    user_id=uploaded_by,
-                    company_id="dojo",
+                document = ProjectDocument(
+                    project_id=dojo_project_id,
+                    document_type="pitch_deck",
                     file_name=original_name,
                     file_path=f"projects/dojo/uploads/{unique_name}",
-                    data_source="dojo",
-                    zip_filename=zip_filename,
-                    processing_status="pending"
+                    original_filename=original_name,
+                    uploaded_by=uploaded_by,
+                    processing_status="pending",
+                    extracted_data=json.dumps({
+                        "data_source": "dojo",
+                        "zip_filename": zip_filename
+                    })
                 )
-                db.add(pitch_deck)
+                db.add(document)
                 processed_count += 1
                 
             except Exception as e:
@@ -648,9 +652,9 @@ async def delete_all_dojo_files(
             project_docs_result = db.execute(text("""
                 DELETE FROM project_documents 
                 WHERE file_path IN (
-                    SELECT file_path FROM pitch_decks WHERE data_source = 'dojo'
+                    SELECT file_path FROM project_documents WHERE extracted_data::json->>'data_source' = 'dojo'
                 ) OR document_type = 'pitch_deck' AND file_name IN (
-                    SELECT file_name FROM pitch_decks WHERE data_source = 'dojo'  
+                    SELECT file_name FROM project_documents WHERE extracted_data::json->>'data_source' = 'dojo'  
                 )
             """))
             deleted_projects = project_docs_result.rowcount
@@ -820,7 +824,7 @@ async def create_extraction_sample(
                 # Only get decks that have cached visual analysis
                 # Use a subquery to get distinct deck IDs first, then join with main table
                 sample_deck_ids = db.execute(text("""
-                    SELECT DISTINCT pd.id FROM pitch_decks pd
+                    SELECT DISTINCT pd.id FROM project_documents pd
                     INNER JOIN visual_analysis_cache vac ON pd.id = vac.document_id
                     WHERE pd.data_source = 'dojo'
                 """)).fetchall()
@@ -896,7 +900,7 @@ async def get_cached_decks_count(
         
         # Count decks with cached visual analysis
         cached_count = db.execute(text("""
-            SELECT COUNT(DISTINCT pd.id) FROM pitch_decks pd
+            SELECT COUNT(DISTINCT pd.id) FROM project_documents pd
             INNER JOIN visual_analysis_cache vac ON pd.id = vac.document_id
             WHERE pd.data_source = 'dojo'
         """)).scalar()
@@ -1904,7 +1908,7 @@ async def enrich_experiment_with_company_names(
         # Get the experiment
         experiment = db.execute(text("""
             SELECT id, experiment_name, extraction_type, text_model_used, 
-                   extraction_prompt, created_at, results_json, pitch_deck_ids
+                   extraction_prompt, created_at, results_json, document_ids
             FROM extraction_experiments 
             WHERE id = :experiment_id
         """), {"experiment_id": request.experiment_id}).fetchone()
@@ -1995,9 +1999,9 @@ async def enrich_experiment_with_company_names(
                     "error": None
                 })
                 
-                # Update the PitchDeck record with extracted company name
+                # Update the ProjectDocument record with extracted company name
                 db.execute(text(
-                    "UPDATE pitch_decks SET ai_extracted_startup_name = :company_name WHERE id = :deck_id"
+                    "UPDATE project_documents SET ai_extracted_startup_name = :company_name WHERE id = :deck_id"
                 ), {
                     "company_name": company_name.strip(),
                     "deck_id": deck_id
@@ -2083,7 +2087,7 @@ async def enrich_experiment_with_funding_amounts(
         # Get the experiment
         experiment = db.execute(text("""
             SELECT id, experiment_name, extraction_type, text_model_used, 
-                   extraction_prompt, created_at, results_json, pitch_deck_ids
+                   extraction_prompt, created_at, results_json, document_ids
             FROM extraction_experiments 
             WHERE id = :experiment_id
         """), {"experiment_id": request.experiment_id}).fetchone()
@@ -2254,7 +2258,7 @@ async def enrich_experiment_with_deck_dates(
         # Get the experiment
         experiment = db.execute(text("""
             SELECT id, experiment_name, extraction_type, text_model_used, 
-                   extraction_prompt, created_at, results_json, pitch_deck_ids
+                   extraction_prompt, created_at, results_json, document_ids
             FROM extraction_experiments 
             WHERE id = :experiment_id
         """), {"experiment_id": request.experiment_id}).fetchone()
@@ -2617,7 +2621,7 @@ async def run_template_processing_batch(
                     # Store the full template analysis in the template_processing_results_json column
                     # Also set results_file_path to indicate results are available
                     db.execute(text("""
-                        UPDATE pitch_decks 
+                        UPDATE project_documents 
                         SET template_processing_results_json = :results_json,
                             results_file_path = :results_marker
                         WHERE id = :deck_id
@@ -2649,27 +2653,27 @@ async def run_template_processing_batch(
                 if project_doc_result:
                     # This is a project_document - find the corresponding pitch_deck by filename
                     pitch_deck_result = db.execute(text("""
-                        SELECT pd.id FROM pitch_decks pd
+                        SELECT pd.id FROM project_documents pd
                         WHERE pd.file_name = :filename AND pd.data_source = 'dojo'
                         ORDER BY pd.created_at DESC LIMIT 1
                     """), {"filename": result["filename"]}).fetchone()
                     
                     if pitch_deck_result:
-                        pitch_deck_id = pitch_deck_result[0]
+                        document_id = pitch_deck_result[0]
                         # Update pitch_deck to indicate dojo experiment results available
                         db.execute(text("""
-                            UPDATE pitch_decks 
+                            UPDATE project_documents 
                             SET results_file_path = :results_marker, processing_status = 'completed'
-                            WHERE id = :pitch_deck_id
+                            WHERE id = :document_id
                         """), {
                             "results_marker": template_results_marker,
-                            "pitch_deck_id": pitch_deck_id
+                            "document_id": document_id
                         })
-                        logger.info(f"Marked pitch_deck {pitch_deck_id} as having dojo experiment results")
+                        logger.info(f"Marked document {document_id} as having dojo experiment results")
                 else:
                     # This is already a pitch_deck ID, update directly
                     db.execute(text("""
-                        UPDATE pitch_decks 
+                        UPDATE project_documents 
                         SET results_file_path = :results_marker, processing_status = 'completed'
                         WHERE id = :deck_id
                     """), {
@@ -2724,7 +2728,7 @@ async def cache_visual_analysis_from_gpu(
 ):
     """Internal endpoint for GPU to cache visual analysis results immediately"""
     try:
-        document_id = request.get("document_id") or request.get("pitch_deck_id")  # Support both for compatibility
+        document_id = request.get("document_id")
         analysis_result_json = request.get("analysis_result_json")
         vision_model_used = request.get("vision_model_used")
         prompt_used = request.get("prompt_used")
@@ -2732,7 +2736,7 @@ async def cache_visual_analysis_from_gpu(
         if not document_id:
             return {
                 "success": False,
-                "error": "document_id or pitch_deck_id is required"
+                "error": "document_id is required"
             }
         
         if not analysis_result_json:
@@ -2963,7 +2967,7 @@ async def template_progress_callback(
             # Get deck filename for display
             try:
                 deck_info = db.execute(text(
-                    "SELECT file_name FROM pitch_decks WHERE id = :deck_id"
+                    "SELECT file_name FROM project_documents WHERE id = :deck_id"
                 ), {"deck_id": deck_id}).fetchone()
                 
                 deck_filename = deck_info[0] if deck_info else f"Deck {deck_id}"
@@ -3276,9 +3280,9 @@ async def add_template_results_to_deck(
         if not deck_id or not template_results:
             return {"error": "Missing deck_id or template_results"}
         
-        # Store template processing results directly in pitch_decks table
+        # Store template processing results directly in project_documents table
         db.execute(text("""
-            UPDATE pitch_decks 
+            UPDATE project_documents 
             SET template_processing_results_json = :results_json
             WHERE id = :deck_id
         """), {

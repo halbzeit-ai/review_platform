@@ -13,7 +13,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.db.models import PitchDeck
+from app.db.models import ProjectDocument
 from app.db.database import SessionLocal
 
 logger = logging.getLogger(__name__)
@@ -32,30 +32,30 @@ class FileBasedGPUProcessingService:
         os.makedirs(self.results_path, exist_ok=True)
         os.makedirs(self.uploads_path, exist_ok=True)
         
-    async def process_pdf_direct(self, pitch_deck_id: int, file_path: str) -> Dict[str, Any]:
+    async def process_pdf_direct(self, document_id: int, file_path: str) -> Dict[str, Any]:
         """
         Process PDF using file-based communication
         
         Args:
-            pitch_deck_id: Database ID of the pitch deck
+            document_id: Database ID of the document
             file_path: Path to PDF file in shared filesystem
             
         Returns:
             Processing results dictionary
         """
-        logger.info(f"Starting file-based GPU processing for pitch deck {pitch_deck_id}")
+        logger.info(f"Starting file-based GPU processing for document {document_id}")
         
         try:
             # Update database status
-            self._update_processing_status(pitch_deck_id, "processing")
+            self._update_processing_status(document_id, "processing")
             
             # Create processing job file
-            job_id = f"job_{pitch_deck_id}_{int(time.time())}"
+            job_id = f"job_{document_id}_{int(time.time())}"
             job_file = os.path.join(self.queue_path, f"{job_id}.json")
             
             job_data = {
                 "job_id": job_id,
-                "pitch_deck_id": pitch_deck_id,
+                "document_id": document_id,
                 "file_path": file_path,
                 "status": "queued",
                 "created_at": time.time()
@@ -68,20 +68,20 @@ class FileBasedGPUProcessingService:
             logger.info(f"Created job file: {job_file}")
             
             # Wait for processing completion
-            results = await self._wait_for_completion(job_id, pitch_deck_id)
+            results = await self._wait_for_completion(job_id, document_id)
             
             # Update database with results
-            self._update_processing_status(pitch_deck_id, "completed", results)
+            self._update_processing_status(document_id, "completed", results)
             
-            logger.info(f"File-based GPU processing completed for pitch deck {pitch_deck_id}")
+            logger.info(f"File-based GPU processing completed for pitch deck {document_id}")
             return results
             
         except Exception as e:
-            logger.error(f"File-based GPU processing failed for pitch deck {pitch_deck_id}: {e}")
-            self._update_processing_status(pitch_deck_id, "failed", {"error": str(e)})
+            logger.error(f"File-based GPU processing failed for pitch deck {document_id}: {e}")
+            self._update_processing_status(document_id, "failed", {"error": str(e)})
             raise
             
-    async def _wait_for_completion(self, job_id: str, pitch_deck_id: int, timeout: int = 900) -> Dict[str, Any]:
+    async def _wait_for_completion(self, job_id: str, document_id: int, timeout: int = 900) -> Dict[str, Any]:
         """Wait for GPU processing to complete by monitoring result files"""
         
         result_file = os.path.join(self.results_path, f"{job_id}_results.json")
@@ -138,43 +138,43 @@ class FileBasedGPUProcessingService:
             
         raise Exception(f"Processing timeout after {timeout} seconds")
         
-    def _update_processing_status(self, pitch_deck_id: int, status: str, results: Optional[Dict[str, Any]] = None):
+    def _update_processing_status(self, document_id: int, status: str, results: Optional[Dict[str, Any]] = None):
         """Update pitch deck processing status in database"""
         
         try:
             db = SessionLocal()
             
-            pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == pitch_deck_id).first()
-            if not pitch_deck:
-                logger.error(f"Pitch deck {pitch_deck_id} not found in database")
+            document = db.query(ProjectDocument).filter(ProjectDocument.id == document_id).first()
+            if not document:
+                logger.error(f"Document {document_id} not found in database")
                 db.close()
                 return
             
-            logger.info(f"Updating pitch deck {pitch_deck_id}: {pitch_deck.processing_status} -> {status}")
+            logger.info(f"Updating pitch deck {document_id}: {document.processing_status} -> {status}")
             
             # Update status
-            pitch_deck.processing_status = status
+            document.processing_status = status
             
             # Update results if provided
             if results:
                 results_json = json.dumps(results)
-                pitch_deck.ai_analysis_results = results_json
+                document.ai_analysis_results = results_json
                 
                 # Extract and store the startup name if available
                 startup_name = results.get("startup_name")
                 if startup_name:
-                    pitch_deck.ai_extracted_startup_name = startup_name
+                    document.ai_extracted_startup_name = startup_name
                     logger.info(f"Extracted startup name: {startup_name}")
                 
-                logger.info(f"Added results to pitch deck {pitch_deck_id} ({len(results_json)} chars)")
+                logger.info(f"Added results to pitch deck {document_id} ({len(results_json)} chars)")
             
             db.commit()
             db.close()
             
-            logger.info(f"✅ Successfully updated pitch deck {pitch_deck_id} status to: {status}")
+            logger.info(f"✅ Successfully updated pitch deck {document_id} status to: {status}")
             
         except Exception as e:
-            logger.error(f"❌ Failed to update database for pitch deck {pitch_deck_id}: {e}")
+            logger.error(f"❌ Failed to update database for pitch deck {document_id}: {e}")
             import traceback
             logger.error(f"Full traceback: {traceback.format_exc()}")
             try:
@@ -182,27 +182,27 @@ class FileBasedGPUProcessingService:
             except:
                 pass
             
-    async def get_processing_status(self, pitch_deck_id: int) -> Dict[str, Any]:
+    async def get_processing_status(self, document_id: int) -> Dict[str, Any]:
         """Get current processing status for a pitch deck"""
         
         try:
             db = SessionLocal()
             
-            pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == pitch_deck_id).first()
-            if not pitch_deck:
-                return {"error": "Pitch deck not found"}
+            document = db.query(ProjectDocument).filter(ProjectDocument.id == document_id).first()
+            if not document:
+                return {"error": "Document not found"}
             
             result = {
-                "id": pitch_deck.id,
-                "status": pitch_deck.processing_status,
-                "file_name": pitch_deck.file_name,
-                "created_at": pitch_deck.created_at.isoformat() if pitch_deck.created_at else None
+                "id": document.id,
+                "status": document.processing_status,
+                "file_name": document.file_name,
+                "created_at": document.created_at.isoformat() if document.created_at else None
             }
             
             # Include results if processing completed
-            if pitch_deck.processing_status == "completed" and pitch_deck.ai_analysis_results:
+            if document.processing_status == "completed" and document.ai_analysis_results:
                 try:
-                    result["results"] = json.loads(pitch_deck.ai_analysis_results)
+                    result["results"] = json.loads(document.ai_analysis_results)
                 except json.JSONDecodeError:
                     result["results"] = {"error": "Failed to parse results"}
             
@@ -210,7 +210,7 @@ class FileBasedGPUProcessingService:
             return result
             
         except Exception as e:
-            logger.error(f"Failed to get processing status for pitch deck {pitch_deck_id}: {e}")
+            logger.error(f"Failed to get processing status for pitch deck {document_id}: {e}")
             return {"error": str(e)}
 
 # Global instance

@@ -43,7 +43,7 @@ def process_pdf():
     data = request.json
     
     # Handle both old and new parameter formats
-    pitch_deck_id = data.get('pitch_deck_id')
+    document_id = data.get('document_id', data.get('pitch_deck_id'))  # Backwards compatibility
     file_path = data.get('file_path')
     company_id = data.get('company_id')
     
@@ -76,7 +76,7 @@ def process_pdf():
     # For development, create a mock result
     result = {
         "filename": pdf_filename,
-        "pitch_deck_id": pitch_deck_id,
+        "document_id": document_id,
         "company_id": company_id,
         "processed_at": datetime.now().isoformat(),
         "status": "success",
@@ -108,14 +108,14 @@ def process_pdf():
     with open(result_path, 'w') as f:
         json.dump(result, f, indent=2)
     
-    logger.info(f"Processed pitch deck {pitch_deck_id}: {pdf_filename}, result saved to {result_filename}")
+    logger.info(f"Processed document {document_id}: {pdf_filename}, result saved to {result_filename}")
     
     # Return response in the format expected by the backend
     return jsonify({
         "success": True,
         "results_file": result_filename,
         "results_path": result_path,
-        "message": f"PDF processed successfully for pitch deck {pitch_deck_id}"
+        "message": f"PDF processed successfully for document {document_id}"
     })
 
 @app.route('/api/models', methods=['GET'])

@@ -140,7 +140,7 @@ class QueueProcessor:
             
             request_data = {
                 "task_id": task.id,
-                "document_id": task.document_id,  # Renamed from pitch_deck_id
+                "document_id": task.document_id,
                 "file_path": full_file_path,
                 "company_id": task.company_id,
                 "callback_url": f"{self.backend_url}/api/internal/update-deck-results",

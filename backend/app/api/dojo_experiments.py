@@ -221,7 +221,7 @@ async def create_fake_companies(
                                 :upload_date, TRUE)
                         """)
                         
-                        doc_types = ["pitch_deck", "financial_report", "market_analysis"]
+                        doc_types = ["document", "financial_report", "market_analysis"]
                         doc_type = random.choice(doc_types)
                         file_name = f"{company_name}_{doc_type}_{k+1}.pdf"
                         file_path = f"fake_documents/{company_id}/{project_id}/{file_name}"
@@ -337,7 +337,7 @@ async def cleanup_dojo_projects(
             )
         
         # Delete project documents first (foreign key constraint)
-        # Only delete documents associated with dojo projects, not the original pitch_decks or extraction_experiments
+        # Only delete documents associated with dojo projects, not the original documents or extraction_experiments
         delete_project_docs_query = text("""
             DELETE FROM project_documents 
             WHERE project_id IN (
@@ -421,7 +421,7 @@ async def add_dojo_projects_from_experiment(
         # Get the experiment details
         experiment = db.execute(text("""
             SELECT id, experiment_name, extraction_type, text_model_used, 
-                   extraction_prompt, created_at, results_json, pitch_deck_ids,
+                   extraction_prompt, created_at, results_json, document_ids,
                    classification_enabled, classification_results_json,
                    company_name_results_json, funding_amount_results_json,
                    template_processing_results_json, template_processing_completed_at
@@ -646,14 +646,14 @@ async def add_dojo_projects_from_experiment(
                 })
             
             # Add pitch deck as project document
-            pitch_deck_query = text("""
+            document_query = text("""
                 SELECT id, file_name, file_path, results_file_path
-                FROM pitch_decks 
+                FROM documents 
                 WHERE id = :deck_id
             """)
-            pitch_deck_info = db.execute(pitch_deck_query, {"deck_id": deck_id}).fetchone()
+            document_info = db.execute(document_query, {"deck_id": deck_id}).fetchone()
             
-            if pitch_deck_info:
+            if document_info:
                 # Add pitch deck document
                 deck_doc_insert = text("""
                     INSERT INTO project_documents (
@@ -661,7 +661,7 @@ async def add_dojo_projects_from_experiment(
                         original_filename, processing_status, uploaded_by,
                         upload_date, is_active
                     )
-                    VALUES (:project_id, 'pitch_deck', :file_name, :file_path,
+                    VALUES (:project_id, 'document', :file_name, :file_path,
                             :original_filename, 'completed', :uploaded_by,
                             :upload_date, TRUE)
                     RETURNING id
@@ -669,9 +669,9 @@ async def add_dojo_projects_from_experiment(
                 
                 deck_doc_result = db.execute(deck_doc_insert, {
                     "project_id": project_id,
-                    "file_name": pitch_deck_info[1],  # file_name
-                    "file_path": pitch_deck_info[2],  # file_path
-                    "original_filename": pitch_deck_info[1],
+                    "file_name": document_info[1],  # file_name
+                    "file_path": document_info[2],  # file_path
+                    "original_filename": document_info[1],
                     "uploaded_by": current_user.id,
                     "upload_date": datetime.utcnow()
                 })
@@ -680,7 +680,7 @@ async def add_dojo_projects_from_experiment(
                 logger.info(f"Added pitch deck document {deck_document_id} to project {project_id}")
                 
                 # Add results file if it exists
-                if pitch_deck_info[3]:  # results_file_path
+                if document_info[3]:  # results_file_path
                     results_doc_insert = text("""
                         INSERT INTO project_documents (
                             project_id, document_type, file_name, file_path,
@@ -696,7 +696,7 @@ async def add_dojo_projects_from_experiment(
                     db.execute(results_doc_insert, {
                         "project_id": project_id,
                         "file_name": results_filename,
-                        "file_path": pitch_deck_info[3],  # results_file_path
+                        "file_path": document_info[3],  # results_file_path
                         "original_filename": results_filename,
                         "uploaded_by": current_user.id,
                         "upload_date": datetime.utcnow()

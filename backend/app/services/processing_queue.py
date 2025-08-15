@@ -126,7 +126,7 @@ class ProcessingQueueManager:
     
     def add_task(
         self, 
-        document_id: int,  # Renamed from pitch_deck_id for clean architecture
+        document_id: int,
         file_path: str,
         company_id: str,
         task_type: str = "pdf_analysis",

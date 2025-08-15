@@ -51,35 +51,35 @@ class DirectGPUProcessingService:
         
         return client
         
-    async def process_pdf_direct(self, pitch_deck_id: int, file_path: str) -> Dict[str, Any]:
+    async def process_pdf_direct(self, document_id: int, file_path: str) -> Dict[str, Any]:
         """
         Process PDF directly on GPU instance
         
         Args:
-            pitch_deck_id: Database ID of the pitch deck
+            document_id: Database ID of the document
             file_path: Path to PDF file in shared filesystem
             
         Returns:
             Processing results dictionary
         """
-        logger.info(f"Starting direct GPU processing for pitch deck {pitch_deck_id}")
+        logger.info(f"Starting direct GPU processing for document {document_id}")
         
         try:
             # Update database status
-            self._update_processing_status(pitch_deck_id, "processing")
+            self._update_processing_status(document_id, "processing")
             
             # Execute processing on GPU via SSH
             results = await self._execute_remote_processing(file_path)
             
             # Update database with results
-            self._update_processing_status(pitch_deck_id, "completed", results)
+            self._update_processing_status(document_id, "completed", results)
             
-            logger.info(f"Direct GPU processing completed for pitch deck {pitch_deck_id}")
+            logger.info(f"Direct GPU processing completed for document {document_id}")
             return results
             
         except Exception as e:
-            logger.error(f"Direct GPU processing failed for pitch deck {pitch_deck_id}: {e}")
-            self._update_processing_status(pitch_deck_id, "failed", {"error": str(e)})
+            logger.error(f"Direct GPU processing failed for document {document_id}: {e}")
+            self._update_processing_status(document_id, "failed", {"error": str(e)})
             raise
             
     async def _execute_remote_processing(self, file_path: str) -> Dict[str, Any]:
@@ -136,15 +136,15 @@ class DirectGPUProcessingService:
             logger.error(f"Failed to read results file {results_path}: {e}")
             raise
             
-    def _update_processing_status(self, pitch_deck_id: int, status: str, results: Optional[Dict[str, Any]] = None):
-        """Update pitch deck processing status in database"""
+    def _update_processing_status(self, document_id: int, status: str, results: Optional[Dict[str, Any]] = None):
+        """Update document processing status in database"""
         
         try:
             db = SessionLocal()
             
-            pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == pitch_deck_id).first()
+            pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == document_id).first()
             if not pitch_deck:
-                logger.error(f"Pitch deck {pitch_deck_id} not found in database")
+                logger.error(f"Pitch deck {document_id} not found in database")
                 return
             
             # Update status
@@ -163,18 +163,18 @@ class DirectGPUProcessingService:
             db.commit()
             db.close()
             
-            logger.info(f"Updated pitch deck {pitch_deck_id} status to: {status}")
+            logger.info(f"Updated document {document_id} status to: {status}")
             
         except Exception as e:
-            logger.error(f"Failed to update database for pitch deck {pitch_deck_id}: {e}")
+            logger.error(f"Failed to update database for document {document_id}: {e}")
             
-    async def get_processing_status(self, pitch_deck_id: int) -> Dict[str, Any]:
-        """Get current processing status for a pitch deck"""
+    async def get_processing_status(self, document_id: int) -> Dict[str, Any]:
+        """Get current processing status for a document"""
         
         try:
             db = SessionLocal()
             
-            pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == pitch_deck_id).first()
+            pitch_deck = db.query(PitchDeck).filter(PitchDeck.id == document_id).first()
             if not pitch_deck:
                 return {"error": "Pitch deck not found"}
             
@@ -196,7 +196,7 @@ class DirectGPUProcessingService:
             return result
             
         except Exception as e:
-            logger.error(f"Failed to get processing status for pitch deck {pitch_deck_id}: {e}")
+            logger.error(f"Failed to get processing status for document {document_id}: {e}")
             return {"error": str(e)}
 
 # Global instance

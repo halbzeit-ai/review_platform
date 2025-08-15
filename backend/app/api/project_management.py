@@ -717,7 +717,7 @@ async def get_project_decks(
             )
         
         # Get all project documents (pitch decks) for this project
-        # Use LEFT JOIN with pitch_decks to get the correct deck ID for deck viewer
+        # Use LEFT JOIN with documents to get the correct deck ID for deck viewer
         decks_query = text("""
             SELECT 
                 pd.id,
@@ -738,12 +738,12 @@ async def get_project_decks(
                 u.email as user_email,
                 u.first_name,
                 u.last_name,
-                NULL as original_pitch_deck_id
+                NULL as original_document_id
             FROM project_documents pd
             JOIN projects p ON pd.project_id = p.id
             LEFT JOIN users u ON pd.uploaded_by = u.id
             WHERE pd.project_id = :project_id 
-            AND pd.document_type = 'pitch_deck'
+            AND pd.document_type = 'document'
             AND pd.is_active = TRUE
             ORDER BY pd.upload_date DESC
         """)
@@ -757,18 +757,18 @@ async def get_project_decks(
             deck_id = row[0]
             company_id = row[2]
             file_name = row[3]
-            original_pitch_deck_id = row[14] if len(row) > 14 else None
+            original_document_id = row[14] if len(row) > 14 else None
             
             if company_id and file_name:
                 try:
                     deck_name = os.path.splitext(file_name)[0]
                     
                     # Method 1: Check for database-stored analysis results
-                    # Check using both the new ID and original pitch_deck_id if available
+                    # Check using both the new ID and original document_id if available
                     try:
                         check_ids = [str(deck_id)]
-                        if original_pitch_deck_id:
-                            check_ids.append(str(original_pitch_deck_id))
+                        if original_document_id:
+                            check_ids.append(str(original_document_id))
                         
                         for check_id in check_ids:
                             extraction_check = db.execute(text("""
@@ -1001,7 +1001,7 @@ async def delete_project(
             "users_deleted": 0,
             "reviews_deleted": 0,
             "questions_deleted": 0,
-            "pitch_decks_deleted": 0,
+            "documents_deleted": 0,
             "analysis_results_deleted": 0,
             "extraction_results_deleted": 0,
             "files_deleted": 0,
@@ -1169,8 +1169,8 @@ async def delete_project(
             reviews_cleanup_query, {"project_id": project_id}, "deleting reviews"
         )
         
-        # Note: pitch_decks table no longer exists - all data is in project_documents
-        deleted_counts["pitch_decks_deleted"] = 0
+        # Note: documents table no longer exists - all data is in project_documents
+        deleted_counts["documents_deleted"] = 0
         
         # Step 5: Delete project-specific data (in dependency order)
         
