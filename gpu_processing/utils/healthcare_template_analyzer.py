@@ -1184,12 +1184,9 @@ class HealthcareTemplateAnalyzer:
                     }
                     self._save_template_processing_results(deck_id, template_results)
                 
-                # Step 6: Generate specialized analysis
-                self._generate_specialized_analysis()
-                
-                # SAVE POINT 3: Save specialized analysis results
-                if deck_id and hasattr(self, 'specialized_analysis'):
-                    self._save_specialized_analysis(deck_id, self.specialized_analysis)
+                # Step 6: Specialized analysis moved to separate queue tasks
+                # This is now handled by the split processing architecture via process_specialized_analysis()
+                logger.info("Specialized analysis will be handled by separate queue tasks")
             else:
                 logger.info("Skipping template and specialized analysis (extraction_only mode)")
             
@@ -2232,7 +2229,7 @@ class HealthcareTemplateAnalyzer:
             "classification": self.classification_result,
             "template_used": self.template_config.get("template", {}) if self.template_config else None,
             "chapter_analysis": formatted_chapter_analysis,
-            "specialized_analysis": self.specialized_results,
+            "specialized_analysis": {},  # Populated by separate specialized analysis tasks
             "overall_score": overall_score,
             "report_chapters": report_chapters,
             "report_scores": report_scores,

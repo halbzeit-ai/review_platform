@@ -292,6 +292,73 @@ class PDFProcessor:
             logger.error(f"❌ Error saving specialized analysis for deck {document_id}: {e}")
             return False
 
+    def process_specialized_analysis(self, document_id: int, analysis_type: str) -> bool:
+        """Process specialized analysis for a specific document and analysis type as a separate task"""
+        try:
+            logger.info(f"🔬 Processing {analysis_type} specialized analysis for document {document_id}")
+            
+            # Get visual analysis results from cache to feed into specialized analysis
+            visual_analysis_results = self._get_cached_visual_analysis(document_id)
+            if not visual_analysis_results:
+                logger.error(f"❌ No cached visual analysis found for document {document_id}. Cannot run specialized analysis.")
+                return False
+            
+            # Run the specialized analysis using the existing healthcare template analyzer method
+            logger.info(f"🔍 Running specialized analysis with {len(visual_analysis_results)} pages of visual data")
+            specialized_results = self.analyzer.run_specialized_analysis_only(
+                visual_analysis_results=visual_analysis_results
+            )
+            
+            # Filter results to only include the requested analysis type
+            filtered_results = {}
+            if analysis_type in specialized_results:
+                filtered_results[analysis_type] = specialized_results[analysis_type]
+                logger.info(f"✅ Generated {analysis_type} specialized analysis")
+            else:
+                logger.warning(f"⚠️ Requested analysis type '{analysis_type}' not found in results: {list(specialized_results.keys())}")
+                # Still save what we got - the analyzer determines which analyses to run
+                filtered_results = specialized_results
+            
+            # Save the specialized analysis results to the backend
+            if filtered_results:
+                success = self.save_specialized_analysis(document_id, filtered_results)
+                if success:
+                    logger.info(f"✅ {analysis_type} specialized analysis completed and saved for document {document_id}")
+                    return True
+                else:
+                    logger.error(f"❌ Failed to save {analysis_type} specialized analysis for document {document_id}")
+                    return False
+            else:
+                logger.warning(f"⚠️ No {analysis_type} specialized analysis results to save for document {document_id}")
+                return True  # Not an error, just no results
+                
+        except Exception as e:
+            logger.error(f"❌ Error in {analysis_type} specialized analysis for document {document_id}: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return False
+    
+    def _get_cached_visual_analysis(self, document_id: int) -> List[Dict]:
+        """Get cached visual analysis results from the backend"""
+        try:
+            endpoint = f"{self.backend_url}/api/dojo/internal/get-cached-visual-analysis"
+            payload = {"document_id": document_id}
+            
+            response = requests.post(endpoint, json=payload, timeout=30)
+            response.raise_for_status()
+            
+            result = response.json()
+            if result.get("success") and result.get("analysis_results"):
+                logger.info(f"📥 Retrieved cached visual analysis for document {document_id}: {len(result['analysis_results'])} pages")
+                return result["analysis_results"]
+            else:
+                logger.warning(f"⚠️ No cached visual analysis found for document {document_id}")
+                return []
+                
+        except Exception as e:
+            logger.error(f"❌ Error retrieving cached visual analysis for document {document_id}: {e}")
+            return []
+
 
 def main():
     """Main entry point for GPU processing"""
