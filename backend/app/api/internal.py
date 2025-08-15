@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from pydantic import BaseModel
 import logging
+import json
 
 from ..db.database import get_db
 
@@ -311,6 +312,96 @@ async def save_extraction_results(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to save extraction results: {str(e)}"
+        )
+
+@router.get("/get-extraction-results/{document_id}")
+async def get_extraction_results(
+    document_id: int,
+    db: Session = Depends(get_db)
+):
+    """Internal endpoint for GPU to fetch extraction results for a specific document"""
+    try:
+        logger.info(f"🔍 Fetching extraction results for document {document_id}")
+        
+        # Query extraction_experiments table for this document
+        # document_ids is stored as text in format '{9}' so we use string matching
+        query = text("""
+            SELECT results_json, classification_results_json, company_name_results_json,
+                   funding_amount_results_json, deck_date_results_json, template_processing_results_json
+            FROM extraction_experiments 
+            WHERE document_ids LIKE '%' || :document_id || '%'
+            ORDER BY created_at DESC 
+            LIMIT 1
+        """)
+        
+        result = db.execute(query, {"document_id": str(document_id)}).fetchone()
+        
+        if not result:
+            logger.warning(f"⚠️ No extraction results found for document {document_id}")
+            return {
+                "document_id": document_id,
+                "has_results": False,
+                "extraction_results": None
+            }
+        
+        # Parse the JSON results
+        extraction_data = {}
+        
+        if result[0]:  # results_json (offering extraction)
+            try:
+                offering_data = json.loads(result[0])
+                extraction_data["offering_extraction"] = offering_data
+            except json.JSONDecodeError:
+                logger.warning(f"Failed to parse offering extraction results for document {document_id}")
+        
+        if result[1]:  # classification_results_json
+            try:
+                classification_data = json.loads(result[1])
+                extraction_data["classification"] = classification_data
+            except json.JSONDecodeError:
+                logger.warning(f"Failed to parse classification results for document {document_id}")
+        
+        if result[2]:  # company_name_results_json
+            try:
+                company_name_data = json.loads(result[2])
+                extraction_data["company_name"] = company_name_data
+            except json.JSONDecodeError:
+                logger.warning(f"Failed to parse company name results for document {document_id}")
+        
+        if result[3]:  # funding_amount_results_json
+            try:
+                funding_data = json.loads(result[3])
+                extraction_data["funding_amount"] = funding_data
+            except json.JSONDecodeError:
+                logger.warning(f"Failed to parse funding amount results for document {document_id}")
+        
+        if result[4]:  # deck_date_results_json
+            try:
+                date_data = json.loads(result[4])
+                extraction_data["deck_date"] = date_data
+            except json.JSONDecodeError:
+                logger.warning(f"Failed to parse deck date results for document {document_id}")
+        
+        if result[5]:  # template_processing_results_json
+            try:
+                template_data = json.loads(result[5])
+                extraction_data["template_processing"] = template_data
+            except json.JSONDecodeError:
+                logger.warning(f"Failed to parse template processing results for document {document_id}")
+        
+        logger.info(f"✅ Found extraction results for document {document_id} with {len(extraction_data)} data sections")
+        
+        return {
+            "document_id": document_id,
+            "has_results": True,
+            "extraction_results": extraction_data
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Error fetching extraction results for document {document_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch extraction results: {str(e)}"
         )
 
 class TemplateProcessingRequest(BaseModel):
