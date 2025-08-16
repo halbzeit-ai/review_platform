@@ -2439,6 +2439,47 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
             logger.error(f"❌ Error in slide feedback task: {e}")
             return False
 
+    def save_extraction_and_template_results(self, document_id: int, results: Dict[str, Any]) -> bool:
+        """Save extraction and template analysis results to the backend database"""
+        try:
+            logger.info(f"💾 Saving extraction and template results for document {document_id}")
+            
+            # Prepare the payload with all extraction and template results
+            payload = {
+                "document_id": document_id,
+                "company_offering": results.get("company_offering", ""),
+                "startup_name": results.get("startup_name", ""),
+                "funding_amount": results.get("funding_amount", ""),
+                "deck_date": results.get("deck_date", ""),
+                "classification": results.get("classification", {}),
+                "chapter_analysis": results.get("chapter_analysis", {}),
+                "question_analysis": results.get("question_analysis", {}),
+                "overall_score": results.get("overall_score", 0.0),
+                "template_used": results.get("template_used"),
+                "processing_metadata": results.get("processing_metadata", {})
+            }
+            
+            # Send to backend to save in appropriate tables
+            response = requests.post(
+                f"{self.backend_url}/api/internal/save-extraction-template-results",
+                json=payload,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                logger.info(f"✅ Successfully saved extraction and template results: {result.get('message', 'Saved')}")
+                return True
+            else:
+                logger.error(f"❌ Failed to save results: HTTP {response.status_code}")
+                if response.text:
+                    logger.error(f"Response: {response.text}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Error saving extraction and template results: {e}")
+            return False
+    
     def process_extractions_and_template_task(self, task_data: Dict[str, Any]) -> bool:
         """Process extractions and template task (Text Container)"""
         try:
@@ -2463,8 +2504,13 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
             success = result.get("success", False)
             
             if success:
-                # Results are now stored in database via queue completion callback
-                logger.info(f"✅ Extractions and template completed for document {document_id}")
+                # Save the extraction and template results to the database
+                save_success = self.save_extraction_and_template_results(document_id, result)
+                if save_success:
+                    logger.info(f"✅ Extractions and template completed and saved for document {document_id}")
+                else:
+                    logger.error(f"❌ Failed to save extraction and template results for document {document_id}")
+                    success = False
             else:
                 logger.error(f"❌ Extractions and template failed for document {document_id}")
                 

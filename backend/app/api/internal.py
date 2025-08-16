@@ -23,6 +23,19 @@ class DeckResultsUpdateRequest(BaseModel):
     results_file_path: str
     processing_status: str
 
+class ExtractionTemplateResultsRequest(BaseModel):
+    document_id: int
+    company_offering: str
+    startup_name: Optional[str]
+    funding_amount: Optional[str]
+    deck_date: Optional[str]
+    classification: Optional[Dict[str, Any]]
+    chapter_analysis: Optional[Dict[str, Any]]
+    question_analysis: Optional[Dict[str, Any]]
+    overall_score: Optional[float]
+    template_used: Optional[Dict[str, Any]]
+    processing_metadata: Optional[Dict[str, Any]]
+
 @router.post("/update-deck-results")
 async def update_deck_results(
     request: DeckResultsUpdateRequest,
@@ -850,4 +863,135 @@ async def complete_task_and_create_specialized(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to complete task and create specialized analysis: {str(e)}"
+        )
+
+@router.post("/save-extraction-template-results")
+async def save_extraction_template_results(
+    request: ExtractionTemplateResultsRequest,
+    db: Session = Depends(get_db)
+):
+    """Save extraction and template analysis results from GPU processing"""
+    try:
+        logger.info(f"💾 Saving extraction and template results for document {request.document_id}")
+        
+        # Save chapter analysis results if present
+        if request.chapter_analysis:
+            for chapter_id, chapter_data in request.chapter_analysis.items():
+                try:
+                    insert_query = text("""
+                        INSERT INTO chapter_analysis_results 
+                        (document_id, chapter_id, analysis_results_json, created_at)
+                        VALUES (:document_id, :chapter_id, :analysis_json, NOW())
+                        ON CONFLICT (document_id, chapter_id) 
+                        DO UPDATE SET 
+                            analysis_results_json = EXCLUDED.analysis_results_json,
+                            created_at = EXCLUDED.created_at
+                    """)
+                    
+                    db.execute(insert_query, {
+                        "document_id": request.document_id,
+                        "chapter_id": int(chapter_id) if chapter_id.isdigit() else 0,
+                        "analysis_json": json.dumps(chapter_data)
+                    })
+                except Exception as e:
+                    logger.warning(f"Failed to save chapter {chapter_id}: {e}")
+        
+        # Save question analysis results if present
+        if request.question_analysis:
+            for question_key, question_data in request.question_analysis.items():
+                try:
+                    # Extract question_id from the key (format: "chapterX_questionY")
+                    parts = question_key.split('_')
+                    if len(parts) >= 2 and parts[-1].startswith('question'):
+                        question_id = int(parts[-1].replace('question', ''))
+                    else:
+                        question_id = 0
+                    
+                    insert_query = text("""
+                        INSERT INTO question_analysis_results 
+                        (document_id, question_id, analysis_results_json, created_at)
+                        VALUES (:document_id, :question_id, :analysis_json, NOW())
+                        ON CONFLICT (document_id, question_id) 
+                        DO UPDATE SET 
+                            analysis_results_json = EXCLUDED.analysis_results_json,
+                            created_at = EXCLUDED.created_at
+                    """)
+                    
+                    db.execute(insert_query, {
+                        "document_id": request.document_id,
+                        "question_id": question_id,
+                        "analysis_json": json.dumps(question_data)
+                    })
+                except Exception as e:
+                    logger.warning(f"Failed to save question {question_key}: {e}")
+        
+        # Save extraction results (offering, classification, name, funding, date) to extraction_experiments
+        # This maintains compatibility with dojo's expected format
+        extraction_data = {
+            "experiment_name": f"document_{request.document_id}_extraction",
+            "document_ids": str([request.document_id]),
+            "extraction_type": "healthcare_template",
+            "text_model_used": request.processing_metadata.get("model_versions", {}).get("text_model", "unknown") if request.processing_metadata else "unknown",
+            "extraction_prompt": "Healthcare template extraction",
+            "results_json": json.dumps({
+                str(request.document_id): {
+                    "company_offering": request.company_offering,
+                    "extraction_timestamp": datetime.now().isoformat()
+                }
+            }),
+            "classification_results_json": json.dumps({
+                str(request.document_id): request.classification
+            }) if request.classification else None,
+            "company_name_results_json": json.dumps({
+                str(request.document_id): {"company_name": request.startup_name}
+            }) if request.startup_name else None,
+            "funding_amount_results_json": json.dumps({
+                str(request.document_id): {"funding_amount": request.funding_amount}
+            }) if request.funding_amount else None,
+            "deck_date_results_json": json.dumps({
+                str(request.document_id): {"deck_date": request.deck_date}
+            }) if request.deck_date else None,
+            "template_processing_results_json": json.dumps({
+                str(request.document_id): {
+                    "template_used": request.template_used,
+                    "overall_score": request.overall_score,
+                    "chapter_count": len(request.chapter_analysis) if request.chapter_analysis else 0,
+                    "question_count": len(request.question_analysis) if request.question_analysis else 0
+                }
+            })
+        }
+        
+        # Insert or update extraction_experiments
+        insert_extraction_query = text("""
+            INSERT INTO extraction_experiments 
+            (experiment_name, document_ids, extraction_type, text_model_used, extraction_prompt, 
+             results_json, classification_results_json, company_name_results_json,
+             funding_amount_results_json, deck_date_results_json, template_processing_results_json,
+             created_at, classification_enabled)
+            VALUES (:experiment_name, :document_ids, :extraction_type, :text_model_used, :extraction_prompt,
+                    :results_json, :classification_results_json, :company_name_results_json,
+                    :funding_amount_results_json, :deck_date_results_json, :template_processing_results_json,
+                    NOW(), true)
+        """)
+        
+        db.execute(insert_extraction_query, extraction_data)
+        
+        db.commit()
+        
+        logger.info(f"✅ Successfully saved extraction and template results for document {request.document_id}")
+        
+        return {
+            "success": True,
+            "message": f"Extraction and template results saved for document {request.document_id}",
+            "document_id": request.document_id,
+            "chapters_saved": len(request.chapter_analysis) if request.chapter_analysis else 0,
+            "questions_saved": len(request.question_analysis) if request.question_analysis else 0
+        }
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Error saving extraction and template results: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to save extraction and template results: {str(e)}"
         )
