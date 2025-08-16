@@ -97,8 +97,9 @@ const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
     setSelectedUpload(upload);
     setFailureDetails(null);
     
-    // If the upload failed, get failure details
-    if (upload.processing_status === 'failed' || upload.processing_status === 'error') {
+    // Get failure details for any document that might have failed tasks
+    // This includes 'failed', 'error', and 'extraction_complete' (partial failures)
+    if (upload.processing_status === 'failed' || upload.processing_status === 'error' || upload.processing_status === 'extraction_complete') {
       try {
         const response = await getDocumentFailureDetails(upload.id);
         setFailureDetails(response.data);
