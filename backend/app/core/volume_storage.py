@@ -1,5 +1,18 @@
 """
-Volume-based file storage service for Datacrunch.io shared volumes
+Volume-based file storage service for shared filesystem
+
+Handles file upload and management for the document processing pipeline.
+Primary purpose: Save uploaded PDFs to shared filesystem for GPU processing.
+
+ACTIVE FUNCTIONS:
+- File upload management (save_upload, get_file_path, file_exists, etc.)
+- Filesystem mount validation (is_filesystem_mounted, is_volume_mounted)
+- Basic file operations (delete_file, get_file_size)
+
+DEPRECATED FUNCTIONS (2025-08-16):
+- Processing coordination (removed - now uses database queue system)
+- Results management (removed - now stored in database tables)
+- Processing markers (removed - replaced by processing_queue.status)
 """
 import os
 import shutil
@@ -15,17 +28,20 @@ class VolumeStorageService:
     def __init__(self):
         self.mount_path = Path(settings.SHARED_FILESYSTEM_MOUNT_PATH)
         self.uploads_dir = self.mount_path / "uploads"
-        self.results_dir = self.mount_path / "results"
-        self.temp_dir = self.mount_path / "temp"
+        self.results_dir = self.mount_path / "results"  # Legacy - for deprecated methods only
         
         # Create directories if they don't exist
         self._ensure_directories()
     
     def _ensure_directories(self):
-        """Ensure all required directories exist"""
-        for directory in [self.uploads_dir, self.results_dir, self.temp_dir]:
-            directory.mkdir(parents=True, exist_ok=True)
-            logger.info(f"Ensured directory exists: {directory}")
+        """Ensure required directories exist"""
+        # Only create uploads directory - results stored in database now
+        self.uploads_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Ensured directory exists: {self.uploads_dir}")
+        
+        # Create results directory for backward compatibility with deprecated methods
+        self.results_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Ensured legacy results directory exists: {self.results_dir}")
     
     def is_filesystem_mounted(self) -> bool:
         """Check if the shared filesystem is mounted"""
@@ -91,22 +107,11 @@ class VolumeStorageService:
             return True
         return False
     
-    def create_processing_marker(self, relative_path: str) -> str:
-        """Create a marker file to indicate processing has started"""
-        marker_path = self.temp_dir / f"{relative_path.replace('/', '_')}.processing"
-        marker_path.touch()
-        return str(marker_path)
-    
-    def remove_processing_marker(self, relative_path: str):
-        """Remove processing marker"""
-        marker_path = self.temp_dir / f"{relative_path.replace('/', '_')}.processing"
-        if marker_path.exists():
-            marker_path.unlink()
-    
-    def is_processing(self, relative_path: str) -> bool:
-        """Check if file is currently being processed"""
-        marker_path = self.temp_dir / f"{relative_path.replace('/', '_')}.processing"
-        return marker_path.exists()
+    # REMOVED: Processing marker methods (2025-08-16)
+    # Processing coordination now handled entirely by database queue system:
+    # - processing_queue.status tracks task status
+    # - project_documents.processing_status tracks document status
+    # - No need for .processing marker files
     
     def save_results(self, relative_upload_path: str, results_data: dict) -> str:
         """
@@ -175,29 +180,20 @@ class VolumeStorageService:
             raise Exception(f"Invalid JSON in results file: {e}")
     
     def list_pending_uploads(self) -> list:
-        """List files that need processing (no corresponding results)"""
-        pending = []
+        """
+        DEPRECATED: List files that need processing
         
-        for company_dir in self.uploads_dir.iterdir():
-            if not company_dir.is_dir():
-                continue
-                
-            for file_dir in company_dir.iterdir():
-                if not file_dir.is_dir():
-                    continue
-                    
-                for file_path in file_dir.iterdir():
-                    if file_path.suffix.lower() == '.pdf':
-                        relative_path = str(file_path.relative_to(self.mount_path))
-                        
-                        # Check if results exist
-                        results_filename = relative_path.replace('/', '_').replace('.pdf', '_results.json')
-                        results_path = self.results_dir / results_filename
-                        
-                        if not results_path.exists() and not self.is_processing(relative_path):
-                            pending.append(relative_path)
+        This method is deprecated as of 2025-08-16. Processing status is now
+        tracked in the database queue system, not file-based markers.
         
-        return pending
+        Use database queries instead:
+        - Query project_documents for documents without processing_status='completed'
+        - Query processing_queue for pending/failed tasks
+        """
+        logger.warning("DEPRECATED: list_pending_uploads() called")
+        logger.warning("Use database queries on project_documents and processing_queue instead")
+        
+        return []  # Return empty list - all tracking is now database-based
 
 # Global storage service instance
 volume_storage = VolumeStorageService()
