@@ -36,7 +36,8 @@ import {
   uploadPitchDeck, 
   deleteDeck, 
   getDocumentFailureDetails, 
-  retryFailedDocument 
+  retryFailedDocument,
+  getProcessingProgress
 } from '../services/api';
 
 const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
@@ -51,9 +52,31 @@ const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
   const [deleting, setDeleting] = useState(null);
   const [failureDetails, setFailureDetails] = useState(null);
   const [retrying, setRetrying] = useState(null);
+  const [queueProgress, setQueueProgress] = useState({});
 
   // Track previous projectId to prevent unnecessary reloads
   const prevProjectIdRef = useRef();
+  
+  const loadQueueProgress = useCallback(async (uploads) => {
+    if (!uploads || uploads.length === 0) return;
+    
+    const progressData = {};
+    
+    // Fetch queue progress for all processing documents
+    const progressPromises = uploads
+      .filter(upload => upload.processing_status === 'processing' || upload.processing_status === 'queued')
+      .map(async (upload) => {
+        try {
+          const response = await getProcessingProgress(upload.id);
+          progressData[upload.id] = response.data;
+        } catch (error) {
+          console.error(`Error loading progress for document ${upload.id}:`, error);
+        }
+      });
+    
+    await Promise.all(progressPromises);
+    setQueueProgress(progressData);
+  }, []);
   
   const loadUploads = useCallback(async (currentProjectId) => {
     if (!currentProjectId) return;
@@ -69,7 +92,11 @@ const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
       const uploadsData = response.data || response;
       console.log('ProjectUploads - processed uploadsData:', uploadsData);
       
-      setUploads(uploadsData.uploads || []);
+      const uploads = uploadsData.uploads || [];
+      setUploads(uploads);
+      
+      // Load queue progress for processing documents
+      await loadQueueProgress(uploads);
     } catch (err) {
       console.error('Error loading uploads:', err);
       setError(err.response?.data?.detail || err.message || 'Failed to load uploads');
@@ -91,6 +118,23 @@ const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
       console.log('ProjectUploads - projectId unchanged, skipping reload');
     }
   }, [projectId, loadUploads]);
+
+  // Periodic refresh of queue progress for processing documents
+  useEffect(() => {
+    if (uploads.length === 0) return;
+    
+    const processingUploads = uploads.filter(upload => 
+      upload.processing_status === 'processing' || upload.processing_status === 'queued'
+    );
+    
+    if (processingUploads.length === 0) return;
+    
+    const interval = setInterval(() => {
+      loadQueueProgress(uploads);
+    }, 10000); // Update every 10 seconds
+    
+    return () => clearInterval(interval);
+  }, [uploads, loadQueueProgress]);
 
 
   const handleViewDetails = async (upload) => {
@@ -119,8 +163,8 @@ const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
         type: 'success',
         message: 'Document queued for retry processing'
       });
-      // Reload uploads to show updated status
-      loadUploads(projectId);
+      // Reload uploads to show updated status and queue progress
+      await loadUploads(projectId);
       setDetailsOpen(false);
     } catch (error) {
       setUploadStatus({
@@ -173,8 +217,8 @@ const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
         message: 'File uploaded successfully!' 
       });
       
-      // Refresh the uploads list
-      loadUploads(projectId);
+      // Refresh the uploads list and queue progress
+      await loadUploads(projectId);
       
       // Call callback if provided
       if (onUploadComplete) {
@@ -220,8 +264,8 @@ const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
         message: `"${upload.filename}" deleted successfully!` 
       });
       
-      // Refresh the uploads list
-      loadUploads(projectId);
+      // Refresh the uploads list and queue progress
+      await loadUploads(projectId);
       
       // Trigger parent component refresh to update deck cards in all tabs
       if (onDeleteComplete) {
@@ -256,12 +300,45 @@ const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const formatTimeAgo = (dateString) => {
+    if (!dateString) return null;
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffMs = now - date;
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMinutes / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffMinutes < 1) return 'just now';
+    if (diffMinutes < 60) return `${diffMinutes} min ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  };
+
   const getStatusDisplay = (upload) => {
+    const progress = queueProgress[upload.id];
+    
     switch (upload.processing_status) {
       case 'completed':
         return upload.pages ? `${upload.pages} pages` : 'Analyzed';
       case 'processing':
       case 'queued':
+        if (progress) {
+          const startedAgo = formatTimeAgo(progress.started_at);
+          const lastProgressAgo = formatTimeAgo(progress.last_progress_update);
+          
+          if (progress.status === 'processing') {
+            if (lastProgressAgo) {
+              const lastProgressMinutes = Math.floor((new Date() - new Date(progress.last_progress_update)) / (1000 * 60));
+              if (lastProgressMinutes > 8) {
+                return `Processing stalled (no progress for ${lastProgressAgo})`;
+              }
+            }
+            return startedAgo ? `Processing (started ${startedAgo})` : 'Processing...';
+          } else if (progress.status === 'queued') {
+            return 'Queued for processing';
+          }
+        }
         return 'Processing...';
       case 'failed':
       case 'error':
