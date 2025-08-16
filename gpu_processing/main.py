@@ -313,15 +313,17 @@ class PDFProcessor:
         """Get cached visual analysis results from the backend"""
         try:
             endpoint = f"{self.backend_url}/api/dojo/internal/get-cached-visual-analysis"
-            payload = {"document_id": document_id}
+            payload = {"deck_ids": [document_id]}  # Fixed: backend expects deck_ids array, not document_id
             
             response = requests.post(endpoint, json=payload, timeout=30)
             response.raise_for_status()
             
             result = response.json()
-            if result.get("success") and result.get("analysis_results"):
-                logger.info(f"📥 Retrieved cached visual analysis for document {document_id}: {len(result['analysis_results'])} pages")
-                return result["analysis_results"]
+            if result.get("success") and result.get("cached_analysis", {}).get(str(document_id)):
+                # Extract analysis from the deck_id-keyed result
+                analysis_data = result["cached_analysis"][str(document_id)]
+                logger.info(f"📥 Retrieved cached visual analysis for document {document_id}: {len(analysis_data)} pages")
+                return analysis_data
             else:
                 logger.warning(f"⚠️ No cached visual analysis found for document {document_id}")
                 return []
