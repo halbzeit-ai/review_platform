@@ -143,15 +143,16 @@ class ProcessingQueueManager:
             should_close = False
             
         try:
-            # Check if task already exists for this document
+            # Check if task already exists for this document AND task type (4-layer pipeline support)
             existing_check = text("""
                 SELECT id FROM processing_queue 
                 WHERE document_id = :document_id 
+                AND task_type = :task_type
                 AND status IN ('queued', 'processing', 'retry')
                 LIMIT 1
             """)
             
-            existing = db.execute(existing_check, {"document_id": document_id}).fetchone()
+            existing = db.execute(existing_check, {"document_id": document_id, "task_type": task_type}).fetchone()
             if existing:
                 logger.info(f"Task already exists for document {document_id}: {existing[0]}")
                 return existing[0]

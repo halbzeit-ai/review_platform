@@ -2173,10 +2173,17 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                 "server_id": self.server_id,
                 "server_type": "gpu",
                 "capabilities": {
-                    "visual_processing": True,
-                    "text_processing": True,
-                    "template_analysis": True,
-                    "specialized_analysis": True
+                    # Layer 1 & 2: Vision Container tasks
+                    "visual_analysis": True,
+                    "slide_feedback": True,
+                    # Layer 3: Text Container main task
+                    "extractions_and_template": True,
+                    # Layer 4: Text Container specialized tasks
+                    "specialized_clinical": True,
+                    "specialized_regulatory": True,
+                    "specialized_science": True,
+                    # Legacy compatibility
+                    "pdf_analysis": True
                 },
                 "max_concurrent_tasks": 3
             }
@@ -2237,10 +2244,17 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
                         json={
                             "server_id": self.server_id,
                             "capabilities": {
-                                "visual_processing": True,
-                                "text_processing": True,
-                                "template_analysis": True,
-                                "specialized_analysis": True
+                                # Layer 1 & 2: Vision Container tasks
+                                "visual_analysis": True,
+                                "slide_feedback": True,
+                                # Layer 3: Text Container main task
+                                "extractions_and_template": True,
+                                # Layer 4: Text Container specialized tasks
+                                "specialized_clinical": True,
+                                "specialized_regulatory": True,
+                                "specialized_science": True,
+                                # Legacy compatibility
+                                "pdf_analysis": True
                             }
                         },
                         timeout=10

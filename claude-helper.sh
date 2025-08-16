@@ -1087,6 +1087,131 @@ case "$1" in
         echo -e "${GREEN}✅ All extraction results should now be removed from UI${NC}"
         ;;
     
+    create-pipeline)
+        show_environment
+        
+        if [ -z "$2" ]; then
+            echo -e "${RED}❌ Document ID required${NC}"
+            echo "Usage: $0 create-pipeline <document_id>"
+            echo ""
+            echo "Example: $0 create-pipeline 21"
+            echo ""
+            echo "This will create a proper 4-layer processing pipeline for the specified document."
+            exit 1
+        fi
+        
+        DOCUMENT_ID="$2"
+        
+        echo -e "${YELLOW}🔧 Creating 4-Layer Processing Pipeline${NC}"
+        echo -e "${BLUE}Document ID: $DOCUMENT_ID${NC}"
+        echo ""
+        
+        # Get document details
+        echo -e "${BLUE}📄 Getting document details...${NC}"
+        DOCUMENT_INFO=$(sudo -u postgres psql "$DATABASE_NAME" -t -c "
+            SELECT id, file_path, project_id 
+            FROM project_documents 
+            WHERE id = $DOCUMENT_ID;
+        " | tr -d ' ' | head -1)
+        
+        if [ -z "$DOCUMENT_INFO" ]; then
+            echo -e "${RED}❌ Document $DOCUMENT_ID not found${NC}"
+            exit 1
+        fi
+        
+        # Parse document info (id|file_path|project_id)
+        FILE_PATH=$(echo "$DOCUMENT_INFO" | cut -d'|' -f2)
+        PROJECT_ID=$(echo "$DOCUMENT_INFO" | cut -d'|' -f3)
+        
+        # Extract company_id from file path
+        COMPANY_ID=$(echo "$FILE_PATH" | cut -d'/' -f2)
+        
+        echo -e "${GREEN}✅ Document found:${NC}"
+        echo -e "${BLUE}   File Path: $FILE_PATH${NC}"
+        echo -e "${BLUE}   Project ID: $PROJECT_ID${NC}"
+        echo -e "${BLUE}   Company ID: $COMPANY_ID${NC}"
+        echo ""
+        
+        # Clean up any existing tasks for this document
+        echo -e "${YELLOW}🧹 Cleaning up existing tasks for document $DOCUMENT_ID...${NC}"
+        EXISTING_COUNT=$(sudo -u postgres psql "$DATABASE_NAME" -t -c "
+            SELECT COUNT(*) FROM processing_queue WHERE document_id = $DOCUMENT_ID;
+        " | tr -d ' ')
+        
+        if [ "$EXISTING_COUNT" -gt 0 ]; then
+            echo -e "${BLUE}Found $EXISTING_COUNT existing tasks - removing them...${NC}"
+            sudo -u postgres psql "$DATABASE_NAME" -c "
+                DELETE FROM processing_queue WHERE document_id = $DOCUMENT_ID;
+            " >/dev/null
+        fi
+        
+        # Create the 4-layer pipeline
+        echo -e "${YELLOW}🚀 Creating 4-layer pipeline...${NC}"
+        
+        # Layer 1: Visual Analysis (Vision Container)
+        echo -e "${BLUE}   Creating Layer 1: visual_analysis (Vision Container)${NC}"
+        VISUAL_TASK_ID=$(sudo -u postgres psql "$DATABASE_NAME" -t -c "
+            INSERT INTO processing_queue (document_id, task_type, status, priority, file_path, company_id, processing_options, created_at) 
+            VALUES ($DOCUMENT_ID, 'visual_analysis', 'queued', 1, '$FILE_PATH', '$COMPANY_ID', '{\"project_id\": $PROJECT_ID, \"generate_thumbnails\": true, \"generate_feedback\": true}', NOW())
+            RETURNING id;
+        " | tr -d ' ' | head -1)
+        
+        # Layer 2: Slide Feedback (Vision Container) - parallel to Layer 1
+        echo -e "${BLUE}   Creating Layer 2: slide_feedback (Vision Container)${NC}"
+        FEEDBACK_TASK_ID=$(sudo -u postgres psql "$DATABASE_NAME" -t -c "
+            INSERT INTO processing_queue (document_id, task_type, status, priority, file_path, company_id, processing_options, created_at) 
+            VALUES ($DOCUMENT_ID, 'slide_feedback', 'queued', 1, '$FILE_PATH', '$COMPANY_ID', '{\"project_id\": $PROJECT_ID, \"generate_thumbnails\": true, \"generate_feedback\": true}', NOW())
+            RETURNING id;
+        " | tr -d ' ' | head -1)
+        
+        # Layer 3: Extractions and Template (Text Container) - depends on visual_analysis
+        echo -e "${BLUE}   Creating Layer 3: extractions_and_template (Text Container)${NC}"
+        EXTRACTION_TASK_ID=$(sudo -u postgres psql "$DATABASE_NAME" -t -c "
+            INSERT INTO processing_queue (document_id, task_type, status, priority, file_path, company_id, processing_options, created_at) 
+            VALUES ($DOCUMENT_ID, 'extractions_and_template', 'queued', 1, '$FILE_PATH', '$COMPANY_ID', '{\"project_id\": $PROJECT_ID, \"generate_thumbnails\": true, \"generate_feedback\": true, \"depends_on\": $VISUAL_TASK_ID}', NOW())
+            RETURNING id;
+        " | tr -d ' ' | head -1)
+        
+        # Layer 4: Specialized Analysis Tasks (Text Container) - depends on extractions_and_template
+        echo -e "${BLUE}   Creating Layer 4: specialized_* (Text Container)${NC}"
+        
+        CLINICAL_TASK_ID=$(sudo -u postgres psql "$DATABASE_NAME" -t -c "
+            INSERT INTO processing_queue (document_id, task_type, status, priority, file_path, company_id, processing_options, created_at) 
+            VALUES ($DOCUMENT_ID, 'specialized_clinical', 'queued', 1, '$FILE_PATH', '$COMPANY_ID', '{\"project_id\": $PROJECT_ID, \"generate_thumbnails\": true, \"generate_feedback\": true, \"depends_on\": $EXTRACTION_TASK_ID}', NOW())
+            RETURNING id;
+        " | tr -d ' ' | head -1)
+        
+        REGULATORY_TASK_ID=$(sudo -u postgres psql "$DATABASE_NAME" -t -c "
+            INSERT INTO processing_queue (document_id, task_type, status, priority, file_path, company_id, processing_options, created_at) 
+            VALUES ($DOCUMENT_ID, 'specialized_regulatory', 'queued', 1, '$FILE_PATH', '$COMPANY_ID', '{\"project_id\": $PROJECT_ID, \"generate_thumbnails\": true, \"generate_feedback\": true, \"depends_on\": $EXTRACTION_TASK_ID}', NOW())
+            RETURNING id;
+        " | tr -d ' ' | head -1)
+        
+        SCIENCE_TASK_ID=$(sudo -u postgres psql "$DATABASE_NAME" -t -c "
+            INSERT INTO processing_queue (document_id, task_type, status, priority, file_path, company_id, processing_options, created_at) 
+            VALUES ($DOCUMENT_ID, 'specialized_science', 'queued', 1, '$FILE_PATH', '$COMPANY_ID', '{\"project_id\": $PROJECT_ID, \"generate_thumbnails\": true, \"generate_feedback\": true, \"depends_on\": $EXTRACTION_TASK_ID}', NOW())
+            RETURNING id;
+        " | tr -d ' ' | head -1)
+        
+        echo ""
+        echo -e "${GREEN}🎉 4-Layer Pipeline Created Successfully!${NC}"
+        echo -e "${BLUE}Layer 1 (Vision): visual_analysis task $VISUAL_TASK_ID (no dependencies)${NC}"
+        echo -e "${BLUE}Layer 2 (Vision): slide_feedback task $FEEDBACK_TASK_ID (parallel to Layer 1)${NC}"
+        echo -e "${BLUE}Layer 3 (Text): extractions_and_template task $EXTRACTION_TASK_ID (depends on visual_analysis)${NC}"
+        echo -e "${BLUE}Layer 4 (Text): specialized tasks $CLINICAL_TASK_ID, $REGULATORY_TASK_ID, $SCIENCE_TASK_ID (depend on extractions_and_template)${NC}"
+        echo ""
+        
+        # Update project document status
+        sudo -u postgres psql "$DATABASE_NAME" -c "
+            UPDATE project_documents 
+            SET processing_status = 'processing' 
+            WHERE id = $DOCUMENT_ID;
+        " >/dev/null
+        
+        echo -e "${GREEN}✅ Document status updated to 'processing'${NC}"
+        echo -e "${YELLOW}📡 GPU server should now pick up the first available tasks (visual_analysis and slide_feedback)${NC}"
+        ;;
+    
     *)
         show_environment
         echo -e "${BLUE}Database Commands:${NC}"
@@ -1117,6 +1242,7 @@ case "$1" in
         echo "  queue-list [limit]     - List recent processing tasks (default: 10)"
         echo "  queue-errors           - Show failed processing tasks"
         echo "  queue-document <id>    - Show processing history for specific document"
+        echo "  create-pipeline <id>   - Create proper 4-layer processing pipeline for document"
         echo ""
         echo -e "${BLUE}Progress & Debugging:${NC}"
         echo "  progress-debug <id>    - Debug progress tracking for specific document"

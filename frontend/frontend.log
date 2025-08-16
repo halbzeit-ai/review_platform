@@ -472,3 +472,6 @@ webpack compiled with 1 warning
 Proxy error: Could not proxy request /wiki from 135.181.63.224:3000 to http://65.108.32.168:8000.
 See https://nodejs.org/api/errors.html#errors_common_system_errors for more information (ECONNREFUSED).
 
+Proxy error: Could not proxy request /sitemap.xml from 135.181.63.224:3000 to http://65.108.32.168:8000.
+See https://nodejs.org/api/errors.html#errors_common_system_errors for more information (ECONNREFUSED).
+
