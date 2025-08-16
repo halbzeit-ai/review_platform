@@ -369,7 +369,7 @@ async def retry_failed_document(
         
         created_tasks = []
         for task_type in failed_task_types:
-            task_id = processing_queue_manager.add_processing_task(
+            task_id = processing_queue_manager.add_task(
                 document_id=document_id,
                 task_type=task_type,
                 file_path=file_path,
