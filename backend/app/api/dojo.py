@@ -2747,12 +2747,15 @@ async def cache_visual_analysis_from_gpu(
         
         logger.info(f"GPU caching visual analysis for document {document_id}")
         
-        # Cache the visual analysis result
+        # Cache the visual analysis result - JSON encode the dictionary
+        import json as json_module
+        result_json_str = json_module.dumps(analysis_result_json) if isinstance(analysis_result_json, dict) else analysis_result_json
+        
         db.execute(text(
             "INSERT INTO visual_analysis_cache (document_id, analysis_result_json, vision_model_used, prompt_used) VALUES (:deck_id, :result, :model, :prompt) ON CONFLICT (document_id, vision_model_used, prompt_used) DO UPDATE SET analysis_result_json = :result, created_at = CURRENT_TIMESTAMP"
         ), {
             "deck_id": document_id,
-            "result": analysis_result_json,
+            "result": result_json_str,
             "model": vision_model_used,
             "prompt": prompt_used
         })

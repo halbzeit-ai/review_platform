@@ -212,34 +212,24 @@ class PDFProcessor:
         
         return enhanced_results
     
-    def save_results(self, results: Dict[str, Any], file_path: str) -> str:
-        """Save processing results to shared filesystem"""
-        # Create flat filename that matches backend expectation
-        flat_filename = file_path.replace('/', '_').replace('.pdf', '_results.json')
-        results_path = os.path.join(self.mount_path, 'results', flat_filename)
-        
-        # Ensure results directory exists
-        results_dir = os.path.dirname(results_path)
-        os.makedirs(results_dir, exist_ok=True)
-        
-        # Save results
-        with open(results_path, 'w') as f:
-            json.dump(results, f, indent=2)
-        
-        logger.info(f"Results saved to: {results_path}")
-        return f"results/{flat_filename}"
-    
-    def create_completion_marker(self, file_path: str) -> None:
-        """Create completion marker for backend monitoring"""
-        marker_name = f"processing_complete_{file_path.replace('/', '_')}"
-        marker_path = os.path.join(self.mount_path, "temp", marker_name)
-        
-        # Ensure temp directory exists
-        os.makedirs(os.path.dirname(marker_path), exist_ok=True)
-        
-        # Create marker file
-        Path(marker_path).touch()
-        logger.info(f"Created completion marker: {marker_path}")
+    # ========================================
+    # REMOVED: Physical File Saving (2025-08-16)
+    # ========================================
+    # Removed methods:
+    # - save_results() - Previously saved results to /mnt/shared/results/*.json
+    # - create_completion_marker() - Previously created temp marker files
+    # 
+    # Why removed:
+    # - All results now stored directly in database via queue completion
+    # - Physical JSON files were redundant and could get out of sync
+    # - Completion markers were legacy from file-based communication
+    # - Database-only approach is more reliable and consistent
+    # 
+    # New workflow:
+    # 1. GPU processes task via queue system
+    # 2. Results stored in database immediately via queue completion callback
+    # 3. Frontend/backend read from database, not files
+    # ========================================
     
     def save_specialized_analysis(self, document_id: int, specialized_analysis: Dict[str, Any]) -> bool:
         """Save specialized analysis results to backend database"""
@@ -412,14 +402,9 @@ def main():
         # Process PDF
         results = processor.process_pdf(file_path)
         
-        # Save results
-        results_file = processor.save_results(results, file_path)
-        
-        # Create completion marker
-        processor.create_completion_marker(file_path)
-        
+        # Results are now stored in database via queue system
         logger.info(f"Processing completed successfully for {file_path}")
-        logger.info(f"Results available at: {results_file}")
+        logger.info(f"Results stored in database via queue completion")
         
     except Exception as e:
         logger.error(f"Processing failed: {e}")

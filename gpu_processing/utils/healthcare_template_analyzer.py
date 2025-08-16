@@ -1444,8 +1444,8 @@ class HealthcareTemplateAnalyzer:
                 json={
                     "document_id": deck_id,
                     "analysis_result_json": cache_data,
-                    "vision_model": self.vision_model,
-                    "prompt": "Healthcare visual analysis prompt"
+                    "vision_model_used": self.vision_model,
+                    "prompt_used": "Healthcare visual analysis prompt"
                 },
                 timeout=30
             )

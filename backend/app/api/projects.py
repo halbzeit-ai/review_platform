@@ -154,8 +154,42 @@ async def get_deck_analysis(
         analysis_found = False
         results_data = None
         
-        # First try the database results_file_path if available
-        if results_file_path:
+        # First try extraction_experiments table for template processing results (new architecture)
+        template_query = text("""
+            SELECT template_processing_results_json 
+            FROM extraction_experiments 
+            WHERE :document_id = ANY(string_to_array(document_ids, ',')::int[])
+            AND template_processing_results_json IS NOT NULL
+            ORDER BY template_processing_completed_at DESC
+            LIMIT 1
+        """)
+        
+        template_result = db.execute(template_query, {"document_id": deck_id}).fetchone()
+        if template_result and template_result[0]:
+            try:
+                # Parse the template processing results JSON
+                template_data = json.loads(template_result[0])
+                
+                # Find results for this specific document
+                if isinstance(template_data, list):
+                    # Multiple documents in experiment - find ours
+                    for result in template_data:
+                        if result.get("deck_id") == deck_id or result.get("document_id") == deck_id:
+                            results_data = result
+                            analysis_found = True
+                            logger.info(f"Found template processing results for document {deck_id} in extraction_experiments")
+                            break
+                elif isinstance(template_data, dict):
+                    # Single document result
+                    results_data = template_data
+                    analysis_found = True
+                    logger.info(f"Found template processing results for document {deck_id} in extraction_experiments")
+            except Exception as e:
+                logger.warning(f"Could not parse template processing results: {e}")
+        
+        # Legacy fallback: try the database results_file_path if available (deprecated)
+        if not analysis_found and results_file_path:
+            logger.info(f"No database results found, checking legacy file path: {results_file_path}")
             if results_file_path.startswith('/'):
                 results_full_path = results_file_path
             else:
@@ -166,9 +200,9 @@ async def get_deck_analysis(
                     with open(results_full_path, 'r') as f:
                         results_data = json.load(f)
                         analysis_found = True
-                        logger.info(f"Found analysis results at database path: {results_full_path}")
+                        logger.info(f"Found legacy analysis results at database path: {results_full_path}")
                 except Exception as e:
-                    logger.warning(f"Could not load results from database path {results_full_path}: {e}")
+                    logger.warning(f"Could not load results from legacy database path {results_full_path}: {e}")
         
         # If not found via database path, check visual_analysis_cache table for dojo results
         if not analysis_found:
@@ -265,27 +299,10 @@ async def get_deck_analysis(
                 else:
                     logger.warning(f"No company offering data found for deck {deck_id}")
         
-        # If still not found, look in file-based results as final fallback
+        # DEPRECATED: File-based results fallback removed - all new processing uses database
         if not analysis_found:
-            logger.info(f"Final fallback: checking file-based results for deck ID {deck_id}")
-            
-            results_dir = os.path.join(settings.SHARED_FILESYSTEM_MOUNT_PATH, "results")
-            if os.path.exists(results_dir):
-                try:
-                    result_files = os.listdir(results_dir)
-                    job_pattern = f"job_{deck_id}_"
-                    matching_files = [f for f in result_files if f.startswith(job_pattern) and f.endswith('_results.json')]
-                    
-                    if matching_files:
-                        matching_files.sort(reverse=True)
-                        results_file_path = os.path.join(results_dir, matching_files[0])
-                        
-                        with open(results_file_path, 'r') as f:
-                            results_data = json.load(f)
-                            analysis_found = True
-                            logger.info(f"✅ Found file-based results at: {results_file_path}")
-                except Exception as e:
-                    logger.warning(f"Error checking file-based results: {e}")
+            logger.info(f"No database results found for deck {deck_id} - file-based fallback deprecated")
+            logger.info(f"New documents should have results in extraction_experiments or visual_analysis_cache tables")
         
         if not analysis_found:
             logger.warning(f"No analysis results found for deck {deck_id}")
@@ -591,23 +608,18 @@ async def get_project_results(
         has_visual = bool(visual_result)
         
         if not (has_template or has_extraction or has_specialized or has_visual):
-            # FALLBACK: Try file-based approach for legacy data
-            if file_path and os.path.exists(file_path):
-                logger.info(f"No database results found, falling back to file: {file_path}")
-                try:
-                    with open(file_path, 'r') as f:
-                        file_data = json.load(f)
-                    results_data.update(file_data)
-                    
-                    # Still add database specialized analysis even for file-based results
-                    if specialized_results:
-                        specialized_analysis = {}
-                        for analysis_type, analysis_result in specialized_results:
-                            specialized_analysis[analysis_type] = analysis_result
-                        results_data["specialized_analysis"] = specialized_analysis
-                        
-                except Exception as e:
-                    logger.warning(f"Failed to load file results: {e}")
+            # DEPRECATED: File-based approach removed for new processing system
+            logger.info(f"No database results found for document {deck_id}")
+            logger.info(f"All new processing results should be in database tables")
+            if file_path:
+                logger.info(f"Legacy file path was: {file_path} (not reading - deprecated)")
+            
+            # Still add database specialized analysis if available
+            if specialized_results:
+                specialized_analysis = {}
+                for analysis_type, analysis_result in specialized_results:
+                    specialized_analysis[analysis_type] = analysis_result
+                results_data["specialized_analysis"] = specialized_analysis
             
             if not results_data:
                 raise HTTPException(

@@ -2463,9 +2463,7 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
             success = result.get("success", False)
             
             if success:
-                # Save results to shared filesystem
-                results_file = self.pdf_processor.save_results(result, file_path)
-                self.pdf_processor.create_completion_marker(file_path)
+                # Results are now stored in database via queue completion callback
                 logger.info(f"✅ Extractions and template completed for document {document_id}")
             else:
                 logger.error(f"❌ Extractions and template failed for document {document_id}")

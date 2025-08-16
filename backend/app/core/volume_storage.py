@@ -109,7 +109,19 @@ class VolumeStorageService:
         return marker_path.exists()
     
     def save_results(self, relative_upload_path: str, results_data: dict) -> str:
-        """Save processing results"""
+        """
+        DEPRECATED: Save processing results to filesystem
+        
+        This method is deprecated as of 2025-08-16. All new processing results
+        should be stored directly in database tables via queue completion callbacks.
+        
+        Use database storage instead:
+        - Template processing: Store in extraction_experiments.template_processing_results_json
+        - Visual analysis: Store in visual_analysis_cache.analysis_result_json
+        """
+        logger.warning(f"DEPRECATED: save_results() called for {relative_upload_path}")
+        logger.warning("Use database storage via queue completion callbacks instead")
+        
         # Create results filename based on upload path
         results_filename = relative_upload_path.replace('/', '_').replace('.pdf', '_results.json')
         results_path = self.results_dir / results_filename
@@ -119,12 +131,25 @@ class VolumeStorageService:
             json.dump(results_data, f, indent=2)
         
         relative_results_path = f"results/{results_filename}"
-        logger.info(f"Saved results to: {relative_results_path}")
+        logger.info(f"Saved legacy results to: {relative_results_path}")
         
         return relative_results_path
     
     def get_results(self, relative_results_path: str) -> Optional[dict]:
-        """Get processing results"""
+        """
+        DEPRECATED: Get processing results from files
+        
+        This method is deprecated as of 2025-08-16. All new processing results
+        are stored in database tables (extraction_experiments, visual_analysis_cache)
+        instead of physical JSON files.
+        
+        Use database queries instead:
+        - Template processing results: extraction_experiments.template_processing_results_json
+        - Visual analysis results: visual_analysis_cache.analysis_result_json
+        """
+        logger.warning(f"DEPRECATED: get_results() called for {relative_results_path}")
+        logger.warning("Use database queries for extraction_experiments or visual_analysis_cache instead")
+        
         results_path = self.get_file_path(relative_results_path)
         if not results_path.exists():
             logger.info(f"Results file does not exist: {results_path}")
@@ -134,7 +159,7 @@ class VolumeStorageService:
         try:
             with open(results_path, 'r') as f:
                 content = f.read()
-                logger.info(f"Reading results file: {results_path}")
+                logger.info(f"Reading legacy results file: {results_path}")
                 logger.info(f"Results file content length: {len(content)} chars")
                 logger.debug(f"Results file content preview: {content[:200]}...")
                 return json.loads(content)
