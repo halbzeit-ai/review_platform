@@ -265,7 +265,7 @@ async def get_document_failure_details(
             "project_name": project_name,
             "overall_status": doc_status,
             "failed_tasks": [],
-            "can_retry": doc_status in ["failed", "error"],
+            "can_retry": doc_status in ["failed", "error"] or len(failed_tasks) > 0,
             "failure_summary": None
         }
         
@@ -325,25 +325,40 @@ async def retry_failed_document(
         
         doc_id, doc_status, file_path, project_id, company_id = result
         
-        if doc_status not in ["failed", "error"]:
-            raise HTTPException(status_code=400, detail=f"Document is not in failed state (current: {doc_status})")
+        # Get list of failed task types to retry only those
+        failed_tasks_query = text("""
+            SELECT task_type FROM processing_queue 
+            WHERE document_id = :document_id AND status = 'failed'
+        """)
+        failed_tasks_result = db.execute(failed_tasks_query, {"document_id": document_id}).fetchall()
+        failed_task_types = [row[0] for row in failed_tasks_result] if failed_tasks_result else []
         
-        # Delete all existing tasks for this document
+        # Allow retry if document is in failed state OR has failed tasks
+        if doc_status not in ["failed", "error"] and len(failed_task_types) == 0:
+            raise HTTPException(status_code=400, detail=f"Document has no failed tasks to retry (status: {doc_status})")
+        
+        logger.info(f"Retrying failed tasks for document {document_id}: {failed_task_types}")
+        
+        # Delete only failed tasks for this document (keep completed ones)
         delete_query = text("""
             DELETE FROM processing_queue 
-            WHERE document_id = :document_id
+            WHERE document_id = :document_id AND status = 'failed'
         """)
-        db.execute(delete_query, {"document_id": document_id})
+        deleted_result = db.execute(delete_query, {"document_id": document_id})
+        deleted_count = deleted_result.rowcount
+        logger.info(f"Deleted {deleted_count} failed tasks for document {document_id}")
         
-        # Reset document status
-        update_doc_query = text("""
-            UPDATE project_documents 
-            SET processing_status = 'queued'
-            WHERE id = :document_id
-        """)
-        db.execute(update_doc_query, {"document_id": document_id})
+        # Don't reset document status if only retrying failed tasks
+        if doc_status in ["failed", "error"]:
+            # Full retry - reset status
+            update_doc_query = text("""
+                UPDATE project_documents 
+                SET processing_status = 'queued'
+                WHERE id = :document_id
+            """)
+            db.execute(update_doc_query, {"document_id": document_id})
         
-        # Create new 4-layer processing pipeline
+        # Create tasks only for failed task types (selective retry)
         processing_options = {
             "generate_thumbnails": True,
             "generate_feedback": True,
@@ -352,25 +367,32 @@ async def retry_failed_document(
             "is_retry": True
         }
         
-        pipeline_created = processing_queue_manager.add_document_processing_pipeline(
-            document_id=document_id,
-            file_path=file_path,
-            company_id=company_id,
-            priority=TaskPriority.HIGH,  # Give retry higher priority
-            processing_options=processing_options,
-            db=db
-        )
+        created_tasks = []
+        for task_type in failed_task_types:
+            task_id = processing_queue_manager.add_processing_task(
+                document_id=document_id,
+                task_type=task_type,
+                file_path=file_path,
+                company_id=company_id,
+                priority=TaskPriority.HIGH,  # Give retry higher priority
+                processing_options=processing_options,
+                db=db
+            )
+            if task_id:
+                created_tasks.append(task_type)
+                logger.info(f"Created retry task {task_id} for {task_type}")
         
-        if not pipeline_created:
-            raise HTTPException(status_code=500, detail="Failed to create retry pipeline")
+        if not created_tasks:
+            raise HTTPException(status_code=500, detail="Failed to create any retry tasks")
         
         db.commit()
         
         return {
             "success": True,
-            "message": "Document queued for retry processing",
+            "message": f"Queued {len(created_tasks)} failed tasks for retry: {', '.join(created_tasks)}",
             "document_id": document_id,
-            "new_status": "queued"
+            "retried_tasks": created_tasks,
+            "new_status": doc_status  # Keep current status for partial retries
         }
         
     except HTTPException:
