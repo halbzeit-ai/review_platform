@@ -361,6 +361,9 @@ class PDFProcessor:
             
             if self.analyzer.visual_analysis_results:
                 logger.info(f"✅ Visual analysis completed: {len(self.analyzer.visual_analysis_results)} pages analyzed")
+                # Cache the visual analysis results for downstream tasks
+                self.analyzer._save_visual_analysis(document_id)
+                logger.info(f"💾 Cached visual analysis results for document {document_id}")
                 return True
             else:
                 logger.error(f"❌ Visual analysis failed - no results generated")

@@ -115,10 +115,10 @@ async def get_healthcare_sectors(
                 name=row[1],
                 display_name=row[2],
                 description=row[3],
-                keywords=json.loads(row[4]),
-                subcategories=json.loads(row[5]),
+                keywords=json.loads(row[4]) if row[4] else [],
+                subcategories=json.loads(row[5]) if row[5] else [],
                 confidence_threshold=row[6],
-                regulatory_requirements=json.loads(row[7]),
+                regulatory_requirements=json.loads(row[7]) if row[7] else {},
                 is_active=row[8]
             ))
         
