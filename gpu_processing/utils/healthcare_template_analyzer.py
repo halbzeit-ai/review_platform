@@ -55,6 +55,14 @@ def get_information_for_image(image_bytes, prompt, model):
 class HealthcareTemplateAnalyzer:
     """Template-based pitch deck analyzer for healthcare startups"""
     
+    # Core specialized analysis types - easy to modify
+    DEFAULT_SPECIALIZED_ANALYSES = [
+        'scientific_hypothesis',
+        'clinical_validation', 
+        'regulatory_pathway',
+        'ip_strategy'
+    ]
+    
     def __init__(self, backend_base_url: str = "http://localhost:8000", text_model_override: str = None, scoring_model_override: str = None):
         self.backend_base_url = backend_base_url
         
@@ -2283,8 +2291,14 @@ class HealthcareTemplateAnalyzer:
             }
         }
     
-    def run_specialized_analysis_only(self, visual_analysis_results, extraction_data=None):
-        """Run ONLY specialized analysis (regulatory, clinical, scientific) - separate from template processing"""
+    def run_specialized_analysis_only(self, visual_analysis_results, extraction_data=None, selected_analyses=None):
+        """Run ONLY specialized analysis (regulatory, clinical, scientific) - separate from template processing
+        
+        Args:
+            visual_analysis_results: Visual analysis data from previous processing
+            extraction_data: Company offering, name, classification data
+            selected_analyses: List of specific analyses to run (default: all 4 core analyses)
+        """
         try:
             logger.info("🔬 Starting specialized analysis only")
             
@@ -2303,7 +2317,7 @@ class HealthcareTemplateAnalyzer:
             self.specialized_analysis = {}
             
             # Run specialized analysis using database prompts (no template dependency)
-            self._generate_specialized_analysis_from_database()
+            self._generate_specialized_analysis_from_database(selected_analyses)
             
             logger.info(f"✅ Completed specialized analysis: {list(self.specialized_analysis.keys())}")
             
@@ -2315,20 +2329,15 @@ class HealthcareTemplateAnalyzer:
             logger.error(traceback.format_exc())
             return {}
     
-    def _generate_specialized_analysis_from_database(self):
-        """Generate specialized analysis using prompts from database (template-independent)"""
+    def _generate_specialized_analysis_from_database(self, selected_analyses: list = None):
+        """Generate specialized analysis using prompts from database (template-independent)
+        
+        Args:
+            selected_analyses: List of specific analyses to run. If None, runs all default analyses.
+        """
         try:
-            # Standard specialized analysis types that should always be available
-            analysis_types = [
-                'scientific_hypothesis',
-                'clinical_validation', 
-                'regulatory_pathway',
-                'clinical_strategy',
-                'regulatory_timeline',
-                'ip_position',
-                'patient_outcomes',
-                'engagement_metrics'
-            ]
+            # Use selected analyses or default to all configured types
+            analysis_types = selected_analyses if selected_analyses else self.DEFAULT_SPECIALIZED_ANALYSES
             
             # Extract descriptions from the structured data
             descriptions = []
@@ -2352,7 +2361,12 @@ class HealthcareTemplateAnalyzer:
                         full_prompt = f"{prompt}\n\nPitch deck content:\n{full_pitchdeck_text}"
                         
                         # Generate analysis using text model
-                        analysis_result = self._run_ollama_analysis(full_prompt, self.text_model)
+                        try:
+                            response = ollama.generate(model=self.text_model, prompt=full_prompt)
+                            analysis_result = response.get('response', '').strip() if response else None
+                        except Exception as e:
+                            logger.error(f"❌ Error generating {analysis_type} analysis: {e}")
+                            analysis_result = None
                         
                         if analysis_result:
                             self.specialized_analysis[analysis_type] = analysis_result

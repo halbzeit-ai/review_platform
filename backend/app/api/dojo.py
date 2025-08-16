@@ -2828,8 +2828,16 @@ async def get_cached_visual_analysis_for_gpu(
         }
         
         # If this was a single document request, also provide direct access
-        if document_id and str(document_id) in cached_analysis:
-            response["analysis_results"] = cached_analysis[str(document_id)]
+        if document_id and document_id in cached_analysis:
+            cached_data = cached_analysis[document_id]
+            # Extract visual_analysis_results array for GPU processing compatibility
+            if isinstance(cached_data, dict) and "visual_analysis_results" in cached_data:
+                response["analysis_results"] = cached_data["visual_analysis_results"]
+                logger.info(f"📥 Provided direct access to visual analysis for document {document_id}: {len(response['analysis_results'])} pages")
+            else:
+                # Fallback: assume cached_data is already the visual analysis array
+                response["analysis_results"] = cached_data
+                logger.info(f"📥 Provided fallback access to visual analysis for document {document_id}")
             
         return response
         
