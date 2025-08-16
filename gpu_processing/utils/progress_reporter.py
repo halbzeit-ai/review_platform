@@ -14,9 +14,10 @@ logger = logging.getLogger(__name__)
 class ProgressReporter:
     """Reports processing progress to backend for frontend display"""
     
-    def __init__(self, backend_url: str, document_id: int):
+    def __init__(self, backend_url: str, document_id: int, document_name: Optional[str] = None):
         self.backend_url = backend_url
         self.document_id = document_id
+        self.document_name = document_name or f"Document {document_id}"
         
     def update_progress(self, percentage: int, current_step: str, message: str, phase: str = "processing") -> bool:
         """
@@ -46,7 +47,7 @@ class ProgressReporter:
             )
             
             if response.status_code == 200:
-                logger.info(f"📊 Progress updated: {percentage}% - {current_step}")
+                logger.info(f"📊 Progress updated ({self.document_name}): {percentage}% - {current_step}")
                 return True
             else:
                 logger.warning(f"Failed to update progress: {response.status_code} - {response.text}")

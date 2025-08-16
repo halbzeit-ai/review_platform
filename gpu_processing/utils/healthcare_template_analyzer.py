@@ -20,6 +20,17 @@ import requests
 
 logger = logging.getLogger(__name__)
 
+def _truncate_llm_output(text: str, max_length: int = 300) -> str:
+    """Truncate LLM output for logging to specified length"""
+    if not text:
+        return text
+    
+    # If too long, truncate and add ellipsis
+    if len(text) > max_length:
+        return text[:max_length] + "..."
+    
+    return text
+
 def image_to_byte_array(image: Image) -> bytes:
     """Convert PIL Image to byte array"""
     imgByteArr = BytesIO()
@@ -1069,7 +1080,9 @@ class HealthcareTemplateAnalyzer:
         # Set up progress reporter for frontend updates
         if deck_id:
             from .progress_reporter import ProgressReporter
-            self._progress_reporter = ProgressReporter(self.backend_base_url, deck_id)
+            # Extract document name from path for better logging
+            document_name = os.path.basename(pdf_path) if pdf_path else f"Document {deck_id}"
+            self._progress_reporter = ProgressReporter(self.backend_base_url, deck_id, document_name)
             self._progress_reporter.report_phase_start("Analysis Started", 1)
         
         # Log model configuration at start of analysis
@@ -1668,7 +1681,7 @@ class HealthcareTemplateAnalyzer:
             )
             
             self.company_offering = response['response'].strip()
-            logger.info(f"Company offering: {self.company_offering}")
+            logger.info(f"Company offering: {_truncate_llm_output(self.company_offering)}")
             
         except Exception as e:
             logger.error(f"Error generating company offering: {e}")
@@ -1718,7 +1731,7 @@ class HealthcareTemplateAnalyzer:
             # Clean up any remaining punctuation
             self.startup_name = self.startup_name.strip('.,!?;:"\'')
             
-            logger.info(f"Extracted startup name: {self.startup_name}")
+            logger.info(f"Extracted startup name: {_truncate_llm_output(self.startup_name)}")
             
         except Exception as e:
             logger.error(f"Error extracting startup name: {e}")
