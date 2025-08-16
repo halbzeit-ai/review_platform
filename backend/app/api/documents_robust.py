@@ -201,6 +201,176 @@ async def get_processing_progress_robust(
         logger.error(f"Error getting processing progress for document {document_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to get processing progress")
 
+@router.get("/failure-details/{document_id}")
+async def get_document_failure_details(
+    document_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get detailed failure information for a document"""
+    try:
+        # Check if user has access to this document
+        access_query = text("""
+            SELECT pd.id, pd.processing_status, p.project_name
+            FROM project_documents pd
+            JOIN projects p ON pd.project_id = p.id
+            JOIN project_members pm ON p.id = pm.project_id
+            WHERE pd.id = :document_id 
+            AND (pm.user_id = :user_id OR :is_gp = true)
+        """)
+        result = db.execute(access_query, {
+            "document_id": document_id,
+            "user_id": current_user.id,
+            "is_gp": current_user.role == "gp"
+        }).fetchone()
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="Document not found or access denied")
+        
+        doc_id, doc_status, project_name = result
+        
+        # Get all failed tasks for this document
+        failed_tasks_query = text("""
+            SELECT 
+                pq.id as task_id,
+                pq.task_type,
+                pq.status,
+                pq.last_error,
+                pq.created_at,
+                pq.started_at,
+                pq.completed_at,
+                pq.retry_count,
+                pq.current_step,
+                pq.progress_message
+            FROM processing_queue pq
+            WHERE pq.document_id = :document_id
+            AND pq.status IN ('failed', 'retry')
+            ORDER BY pq.created_at
+        """)
+        
+        failed_tasks = db.execute(failed_tasks_query, {"document_id": document_id}).fetchall()
+        
+        # Format the failure information
+        failure_details = {
+            "document_id": document_id,
+            "project_name": project_name,
+            "overall_status": doc_status,
+            "failed_tasks": [],
+            "can_retry": doc_status in ["failed", "error"],
+            "failure_summary": None
+        }
+        
+        for task in failed_tasks:
+            task_info = {
+                "task_id": task.task_id,
+                "task_type": task.task_type,
+                "status": task.status,
+                "error_message": task.last_error or "No error message recorded",
+                "failed_at": task.completed_at.isoformat() if task.completed_at else None,
+                "retry_count": task.retry_count,
+                "last_step": task.current_step,
+                "progress_message": task.progress_message
+            }
+            failure_details["failed_tasks"].append(task_info)
+        
+        # Generate failure summary
+        if failure_details["failed_tasks"]:
+            first_failure = failure_details["failed_tasks"][0]
+            failure_details["failure_summary"] = f"Processing failed at {first_failure['task_type']} step: {first_failure['error_message']}"
+        elif doc_status == "failed":
+            failure_details["failure_summary"] = "Document processing failed but no specific error was recorded"
+        
+        return failure_details
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting failure details for document {document_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get failure details")
+
+@router.post("/retry-document/{document_id}")
+async def retry_failed_document(
+    document_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Retry processing for a failed document"""
+    try:
+        # Check if user has access to this document
+        access_query = text("""
+            SELECT pd.id, pd.processing_status, pd.file_path, pd.project_id, p.company_id
+            FROM project_documents pd
+            JOIN projects p ON pd.project_id = p.id
+            JOIN project_members pm ON p.id = pm.project_id
+            WHERE pd.id = :document_id 
+            AND (pm.user_id = :user_id OR :is_gp = true)
+        """)
+        result = db.execute(access_query, {
+            "document_id": document_id,
+            "user_id": current_user.id,
+            "is_gp": current_user.role == "gp"
+        }).fetchone()
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="Document not found or access denied")
+        
+        doc_id, doc_status, file_path, project_id, company_id = result
+        
+        if doc_status not in ["failed", "error"]:
+            raise HTTPException(status_code=400, detail=f"Document is not in failed state (current: {doc_status})")
+        
+        # Delete all existing tasks for this document
+        delete_query = text("""
+            DELETE FROM processing_queue 
+            WHERE document_id = :document_id
+        """)
+        db.execute(delete_query, {"document_id": document_id})
+        
+        # Reset document status
+        update_doc_query = text("""
+            UPDATE project_documents 
+            SET processing_status = 'queued'
+            WHERE id = :document_id
+        """)
+        db.execute(update_doc_query, {"document_id": document_id})
+        
+        # Create new 4-layer processing pipeline
+        processing_options = {
+            "generate_thumbnails": True,
+            "generate_feedback": True,
+            "user_id": current_user.id,
+            "project_id": project_id,
+            "is_retry": True
+        }
+        
+        pipeline_created = processing_queue_manager.add_document_processing_pipeline(
+            document_id=document_id,
+            file_path=file_path,
+            company_id=company_id,
+            priority=TaskPriority.HIGH,  # Give retry higher priority
+            processing_options=processing_options,
+            db=db
+        )
+        
+        if not pipeline_created:
+            raise HTTPException(status_code=500, detail="Failed to create retry pipeline")
+        
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": "Document queued for retry processing",
+            "document_id": document_id,
+            "new_status": "queued"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrying document {document_id}: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to retry document")
+
 @router.get("/queue-stats")
 async def get_queue_stats(
     current_user: User = Depends(get_current_user),

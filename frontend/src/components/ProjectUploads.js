@@ -25,10 +25,19 @@ import {
   PictureAsPdf as PdfIcon,
   Visibility as VisibilityIcon,
   Info as InfoIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Error as ErrorIcon,
+  Refresh as RefreshIcon,
+  Warning as WarningIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import { getProjectUploads, uploadPitchDeck, deleteDeck } from '../services/api';
+import { 
+  getProjectUploads, 
+  uploadPitchDeck, 
+  deleteDeck, 
+  getDocumentFailureDetails, 
+  retryFailedDocument 
+} from '../services/api';
 
 const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
   const { t } = useTranslation();
@@ -40,6 +49,8 @@ const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [failureDetails, setFailureDetails] = useState(null);
+  const [retrying, setRetrying] = useState(null);
 
   // Track previous projectId to prevent unnecessary reloads
   const prevProjectIdRef = useRef();
@@ -82,14 +93,48 @@ const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
   }, [projectId, loadUploads]);
 
 
-  const handleViewDetails = (upload) => {
+  const handleViewDetails = async (upload) => {
     setSelectedUpload(upload);
+    setFailureDetails(null);
+    
+    // If the upload failed, get failure details
+    if (upload.processing_status === 'failed' || upload.processing_status === 'error') {
+      try {
+        const response = await getDocumentFailureDetails(upload.id);
+        setFailureDetails(response.data);
+      } catch (error) {
+        console.error('Error loading failure details:', error);
+      }
+    }
+    
     setDetailsOpen(true);
+  };
+
+  const handleRetryUpload = async (uploadId) => {
+    setRetrying(uploadId);
+    try {
+      await retryFailedDocument(uploadId);
+      setUploadStatus({
+        type: 'success',
+        message: 'Document queued for retry processing'
+      });
+      // Reload uploads to show updated status
+      loadUploads(projectId);
+      setDetailsOpen(false);
+    } catch (error) {
+      setUploadStatus({
+        type: 'error',
+        message: error.response?.data?.detail || 'Failed to retry document'
+      });
+    } finally {
+      setRetrying(null);
+    }
   };
 
   const handleCloseDetails = () => {
     setDetailsOpen(false);
     setSelectedUpload(null);
+    setFailureDetails(null);
   };
 
   const handleFileUpload = async (event) => {
@@ -210,6 +255,21 @@ const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const getStatusDisplay = (upload) => {
+    switch (upload.processing_status) {
+      case 'completed':
+        return upload.pages ? `${upload.pages} pages` : 'Analyzed';
+      case 'processing':
+      case 'queued':
+        return 'Processing...';
+      case 'failed':
+      case 'error':
+        return 'Failed - Click for details';
+      default:
+        return upload.processing_status || 'Unknown status';
+    }
+  };
+
   const getFileIcon = (fileType) => {
     switch (fileType.toLowerCase()) {
       case 'pdf':
@@ -239,7 +299,7 @@ const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
               {upload.filename}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {formatFileSize(upload.file_size)} • {upload.pages ? `${upload.pages} pages` : (upload.processing_status === 'completed' ? 'Analyzed' : 'Processing...')} • {new Date(upload.upload_date).toLocaleString('en-US', { 
+              {formatFileSize(upload.file_size)} • {getStatusDisplay(upload)} • {new Date(upload.upload_date).toLocaleString('en-US', { 
                 year: 'numeric', 
                 month: 'short', 
                 day: 'numeric', 
@@ -254,6 +314,9 @@ const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {upload.processing_status === 'processing' && (
             <CircularProgress size={20} sx={{ mr: 1 }} />
+          )}
+          {(upload.processing_status === 'failed' || upload.processing_status === 'error') && (
+            <ErrorIcon color="error" sx={{ mr: 1 }} />
           )}
           <IconButton
             size="small"
@@ -350,11 +413,81 @@ const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
                   <InfoIcon />
                 </ListItemIcon>
                 <ListItemText
+                  primary="Processing Status"
+                  secondary={
+                    <Chip 
+                      label={getStatusDisplay(selectedUpload)} 
+                      color={
+                        selectedUpload.processing_status === 'completed' ? 'success' :
+                        selectedUpload.processing_status === 'processing' ? 'info' :
+                        (selectedUpload.processing_status === 'failed' || selectedUpload.processing_status === 'error') ? 'error' :
+                        'default'
+                      }
+                      size="small"
+                    />
+                  }
+                />
+              </ListItem>
+              
+              <ListItem>
+                <ListItemIcon>
+                  <InfoIcon />
+                </ListItemIcon>
+                <ListItemText
                   primary="File Path"
                   secondary={selectedUpload.file_path}
                 />
               </ListItem>
             </List>
+
+            {/* Failure Details Section */}
+            {failureDetails && (
+              <>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="h6" color="error" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+                  <ErrorIcon sx={{ mr: 1 }} />
+                  Processing Failure Details
+                </Typography>
+                
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                    {failureDetails.failure_summary || 'Processing failed'}
+                  </Typography>
+                </Alert>
+
+                {failureDetails.failed_tasks && failureDetails.failed_tasks.length > 0 && (
+                  <>
+                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                      Failed Processing Steps:
+                    </Typography>
+                    <List dense>
+                      {failureDetails.failed_tasks.map((task, index) => (
+                        <ListItem key={index} sx={{ pl: 0 }}>
+                          <ListItemIcon>
+                            <WarningIcon color="warning" />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={`Step: ${task.task_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`}
+                            secondary={
+                              <Box>
+                                <Typography variant="body2" color="error">
+                                  Error: {task.error_message}
+                                </Typography>
+                                {task.failed_at && (
+                                  <Typography variant="caption" color="text.secondary">
+                                    Failed at: {new Date(task.failed_at).toLocaleString()}
+                                  </Typography>
+                                )}
+                              </Box>
+                            }
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+                  </>
+                )}
+              </>
+            )}
           </Box>
         )}
       </DialogContent>
@@ -363,6 +496,21 @@ const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
         <Button onClick={handleCloseDetails}>
           Close
         </Button>
+        
+        {/* Retry Button for Failed Documents */}
+        {failureDetails && failureDetails.can_retry && (
+          <Button 
+            variant="contained" 
+            color="warning"
+            startIcon={retrying === selectedUpload?.id ? <CircularProgress size={20} /> : <RefreshIcon />}
+            onClick={() => handleRetryUpload(selectedUpload.id)}
+            disabled={retrying === selectedUpload?.id}
+            sx={{ mr: 1 }}
+          >
+            {retrying === selectedUpload?.id ? 'Retrying...' : 'Retry Processing'}
+          </Button>
+        )}
+        
         <Button 
           variant="contained" 
           color="error"

@@ -267,4 +267,11 @@ export const getOrphanedProjects = () =>
 export const deleteProject = (projectId) =>
   api.delete(`/project-management/projects/${projectId}`);
 
+// Document Failure and Retry API
+export const getDocumentFailureDetails = (documentId) =>
+  api.get(`/documents/failure-details/${documentId}`);
+
+export const retryFailedDocument = (documentId) =>
+  api.post(`/documents/retry-document/${documentId}`);
+
 export default api;

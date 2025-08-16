@@ -12,7 +12,8 @@
       "Bash(./scripts/queue-manager.sh:*)",
       "Bash(./scripts/monitor-gpu-progress.sh:*)",
       "Bash(./claude-helper.sh:*)",
-      "Bash(./claude-dev-helper.sh:*)"
+      "Bash(./claude-dev-helper.sh:*)",
+      "Bash(curl:*)"
     ],
     "deny": []
   }
