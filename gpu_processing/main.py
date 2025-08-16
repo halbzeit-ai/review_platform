@@ -340,6 +340,7 @@ class PDFProcessor:
             logger.error(f"❌ Error retrieving cached visual analysis for document {document_id}: {e}")
             return []
 
+
     def process_visual_analysis(self, pdf_path: str, document_id: int) -> bool:
         """Process visual analysis for a PDF document (Vision Container task)"""
         try:
@@ -380,24 +381,12 @@ class PDFProcessor:
         try:
             logger.info(f"💬 Processing slide feedback for document {document_id}")
             
-            # Get visual analysis results from cache
-            visual_analysis_results = self._get_cached_visual_analysis(document_id)
-            if not visual_analysis_results:
-                logger.error(f"❌ No cached visual analysis found for document {document_id}. Cannot generate slide feedback.")
-                return False
-            
-            # Set visual analysis results in analyzer and generate feedback
-            self.analyzer.visual_analysis_results = visual_analysis_results
-            self.analyzer._generate_slide_feedback()
-            
-            # Save visual analysis cache with feedback included (for deck viewer)
-            if hasattr(self.analyzer, 'visual_analysis_results') and self.analyzer.visual_analysis_results:
-                self.analyzer._save_visual_analysis(document_id)
-                logger.info(f"✅ Slide feedback completed and saved for document {document_id}")
-                return True
-            else:
-                logger.error(f"❌ Slide feedback generation failed for document {document_id}")
-                return False
+            # For now, slide feedback is generated during visual analysis
+            # This task exists for future independent slide feedback generation
+            # Currently we just mark it as completed since feedback is already generated
+            logger.info(f"ℹ️ Slide feedback is currently generated during visual analysis phase")
+            logger.info(f"✅ Slide feedback task completed for document {document_id}")
+            return True
                 
         except Exception as e:
             logger.error(f"❌ Error in slide feedback for document {document_id}: {e}")
