@@ -17,19 +17,14 @@ from io import BytesIO
 import ollama
 from pdf2image import convert_from_path
 import requests
+from .logging_utils import truncate_llm_output, log_llm_result, log_llm_extraction, log_prompt_preview
 
 logger = logging.getLogger(__name__)
 
+# Legacy alias for backward compatibility
 def _truncate_llm_output(text: str, max_length: int = 300) -> str:
-    """Truncate LLM output for logging to specified length"""
-    if not text:
-        return text
-    
-    # If too long, truncate and add ellipsis
-    if len(text) > max_length:
-        return text[:max_length] + "..."
-    
-    return text
+    """Legacy truncation function - use logging_utils.truncate_llm_output instead"""
+    return truncate_llm_output(text, max_length)
 
 def image_to_byte_array(image: Image) -> bytes:
     """Convert PIL Image to byte array"""
@@ -369,7 +364,7 @@ class HealthcareTemplateAnalyzer:
             
             if result:
                 logger.info(f"✅ Using configured {stage_name} prompt from PostgreSQL:")
-                logger.info(f"📝 Prompt: {result[0][:200]}{'...' if len(result[0]) > 200 else ''}")
+                log_prompt_preview(logger, f"{stage_name} prompt", result[0])
                 return result[0]
             else:
                 logger.error(f"❌ CRITICAL: No active {stage_name} prompt found in database")
@@ -1400,7 +1395,11 @@ class HealthcareTemplateAnalyzer:
                     'has_issues': has_issues
                 })
                 
-                logger.info(f"✅ Slide {slide_number}: {'Issues identified' if has_issues else 'No issues found'}")
+                # Log slide feedback with truncation if there are issues
+                if has_issues:
+                    logger.info(f"✅ Slide {slide_number}: Issues identified - {truncate_llm_output(feedback_text, 150)}")
+                else:
+                    logger.info(f"✅ Slide {slide_number}: No issues found")
                 
                 # Increment processed slides counter
                 processed_slides += 1
@@ -1767,7 +1766,7 @@ class HealthcareTemplateAnalyzer:
             # Clean up the response to extract just the funding amount
             self.funding_amount = response['response'].strip()
             
-            logger.info(f"Extracted funding amount: {self.funding_amount}")
+            log_llm_extraction(logger, "funding amount", self.funding_amount)
             
         except Exception as e:
             logger.error(f"Error extracting funding amount: {e}")
@@ -1803,7 +1802,7 @@ class HealthcareTemplateAnalyzer:
             # Clean up the response to extract just the date
             self.deck_date = response['response'].strip()
             
-            logger.info(f"Extracted deck date: {self.deck_date}")
+            log_llm_extraction(logger, "deck date", self.deck_date)
             
         except Exception as e:
             logger.error(f"Error extracting deck date: {e}")
@@ -1972,11 +1971,11 @@ class HealthcareTemplateAnalyzer:
         # Get the scoring prompt from the pipeline prompts system
         scoring_prompt_template = self._get_pipeline_prompt("scoring_analysis")
         
-        # Debug logging
-        logger.info(f"📋 Scoring prompt template loaded: {scoring_prompt_template[:200]}...")
-        logger.info(f"🔍 Formatting with question_text: {question_text[:100]}...")
-        logger.info(f"🔍 Formatting with scoring_criteria: {scoring_criteria[:100]}...")
-        logger.info(f"🔍 Formatting with response: {response[:100]}...")
+        # Debug logging with proper truncation
+        log_prompt_preview(logger, "📋 Scoring prompt template loaded", scoring_prompt_template)
+        logger.info(f"🔍 Formatting with question_text: {truncate_llm_output(question_text, 100)}")
+        logger.info(f"🔍 Formatting with scoring_criteria: {truncate_llm_output(scoring_criteria, 100)}")
+        logger.info(f"🔍 Formatting with response: {truncate_llm_output(response, 100)}")
         
         # Format the prompt with the specific question data
         scoring_prompt = scoring_prompt_template.format(
@@ -1986,8 +1985,8 @@ class HealthcareTemplateAnalyzer:
             pitch_deck_text=pitch_deck_text
         )
         
-        # Log the formatted prompt
-        logger.info(f"📝 Prompt: {scoring_prompt[:200]}...")
+        # Log the formatted prompt with proper truncation
+        log_prompt_preview(logger, "📝 Formatted scoring prompt", scoring_prompt)
         
         try:
             llm_response = ollama.generate(
