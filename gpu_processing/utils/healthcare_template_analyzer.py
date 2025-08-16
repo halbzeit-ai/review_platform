@@ -1120,10 +1120,15 @@ class HealthcareTemplateAnalyzer:
                         )
                         if response.status_code == 200:
                             result = response.json()
-                            if result.get("success") and result.get("analysis_results"):
-                                # Use direct analysis_results for single document requests
-                                self.visual_analysis_results = result["analysis_results"]
-                                logger.info(f"📥 Retrieved cached visual analysis: {len(self.visual_analysis_results)} pages")
+                            if result.get("success") and result.get("cached_analysis"):
+                                # Extract visual_analysis_results from cached_analysis response
+                                cached_analysis = result["cached_analysis"]
+                                deck_id_str = str(deck_id)
+                                if deck_id_str in cached_analysis and "visual_analysis_results" in cached_analysis[deck_id_str]:
+                                    self.visual_analysis_results = cached_analysis[deck_id_str]["visual_analysis_results"]
+                                    logger.info(f"📥 Retrieved cached visual analysis: {len(self.visual_analysis_results)} pages")
+                                else:
+                                    logger.warning(f"No cached visual analysis found for document {deck_id}")
                             else:
                                 logger.warning("No cached visual analysis found")
                         else:
