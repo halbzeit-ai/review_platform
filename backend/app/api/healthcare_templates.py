@@ -27,7 +27,7 @@ class HealthcareSectorResponse(BaseModel):
     description: str
     keywords: List[str]
     subcategories: List[str]
-    confidence_threshold: float
+    confidence_threshold: Optional[float] = None
     regulatory_requirements: Dict[str, Any]
     is_active: bool
 
@@ -117,7 +117,7 @@ async def get_healthcare_sectors(
                 description=row[3],
                 keywords=json.loads(row[4]) if row[4] else [],
                 subcategories=json.loads(row[5]) if row[5] else [],
-                confidence_threshold=row[6],
+                confidence_threshold=row[6] if row[6] is not None else None,
                 regulatory_requirements=json.loads(row[7]) if row[7] else {},
                 is_active=row[8]
             ))
