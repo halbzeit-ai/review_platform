@@ -80,24 +80,33 @@ async def upload_document_robust(
         db.commit()
         db.refresh(project_document)
         
-        # Get user's template configuration (for GPs)
+        # Get template configuration from ANY GP in this project (system-wide override)
         template_config = {}
-        if current_user.role == "gp":
-            try:
-                template_config_query = text("""
-                    SELECT use_single_template, selected_template_id 
-                    FROM template_configurations 
-                    WHERE user_id = :user_id
-                """)
-                config_result = db.execute(template_config_query, {"user_id": current_user.id}).fetchone()
-                if config_result:
-                    template_config = {
-                        "use_single_template": config_result[0],
-                        "selected_template_id": config_result[1]
-                    }
-                    logger.info(f"Using template config for user {current_user.email}: {template_config}")
-            except Exception as e:
-                logger.warning(f"Could not load template config for user {current_user.id}: {e}")
+        try:
+            # Find any GP in this project who has template override configured
+            gp_template_query = text("""
+                SELECT tc.use_single_template, tc.selected_template_id, u.email
+                FROM template_configurations tc
+                JOIN users u ON tc.user_id = u.id
+                JOIN project_members pm ON u.id = pm.user_id
+                WHERE pm.project_id = :project_id 
+                AND u.role = 'gp' 
+                AND tc.use_single_template = true
+                AND tc.selected_template_id IS NOT NULL
+                ORDER BY tc.created_at DESC
+                LIMIT 1
+            """)
+            config_result = db.execute(gp_template_query, {"project_id": project_id}).fetchone()
+            if config_result:
+                template_config = {
+                    "use_single_template": config_result[0],
+                    "selected_template_id": config_result[1]
+                }
+                logger.info(f"Using system-wide GP template override from {config_result[2]}: {template_config}")
+            else:
+                logger.info(f"No GP template override found for project {project_id} - will use classification-based selection")
+        except Exception as e:
+            logger.warning(f"Could not load GP template config for project {project_id}: {e}")
 
         # Add to robust processing queue
         processing_options = {
