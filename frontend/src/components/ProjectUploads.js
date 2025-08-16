@@ -266,6 +266,9 @@ const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
       case 'failed':
       case 'error':
         return 'Failed - Click for details';
+      case 'extraction_complete':
+        // extraction_complete might have partial failures - indicate this to user
+        return 'Partially completed - Click for details';
       default:
         return upload.processing_status || 'Unknown status';
     }
@@ -318,6 +321,9 @@ const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
           )}
           {(upload.processing_status === 'failed' || upload.processing_status === 'error') && (
             <ErrorIcon color="error" sx={{ mr: 1 }} />
+          )}
+          {upload.processing_status === 'extraction_complete' && (
+            <WarningIcon color="warning" sx={{ mr: 1 }} />
           )}
           <IconButton
             size="small"
@@ -422,6 +428,7 @@ const ProjectUploads = ({ projectId, onUploadComplete, onDeleteComplete }) => {
                         selectedUpload.processing_status === 'completed' ? 'success' :
                         selectedUpload.processing_status === 'processing' ? 'info' :
                         (selectedUpload.processing_status === 'failed' || selectedUpload.processing_status === 'error') ? 'error' :
+                        selectedUpload.processing_status === 'extraction_complete' ? 'warning' :
                         'default'
                       }
                       size="small"
