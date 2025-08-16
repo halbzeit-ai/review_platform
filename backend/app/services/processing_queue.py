@@ -490,7 +490,7 @@ class ProcessingQueueManager:
     def get_task_progress(self, document_id: int, db: Session) -> Optional[Dict[str, Any]]:
         """Get current progress for a document (aggregated across 4-layer pipeline)"""
         try:
-            # Get all tasks for this document
+            # Get all tasks for this document with timing information
             query = text("""
                 SELECT 
                     pq.task_type,
@@ -500,7 +500,10 @@ class ProcessingQueueManager:
                     pq.status,
                     pq.started_at,
                     pq.retry_count,
-                    pq.created_at
+                    pq.created_at,
+                    pq.last_progress_update,
+                    pq.processing_duration_seconds,
+                    pq.completed_at
                 FROM processing_queue pq
                 WHERE pq.document_id = :document_id
                 ORDER BY pq.created_at ASC
@@ -514,14 +517,17 @@ class ProcessingQueueManager:
             # Calculate overall progress based on 4-layer pipeline
             tasks = {}
             for row in results:
-                task_type, progress, step, message, status, started_at, retry_count, created_at = row
+                task_type, progress, step, message, status, started_at, retry_count, created_at, last_progress_update, processing_duration_seconds, completed_at = row
                 tasks[task_type] = {
                     "progress": progress or 0,
                     "step": step,
                     "message": message,
                     "status": status,
-                    "started_at": started_at,
-                    "retry_count": retry_count
+                    "started_at": started_at.isoformat() if started_at else None,
+                    "retry_count": retry_count,
+                    "last_progress_update": last_progress_update.isoformat() if last_progress_update else None,
+                    "processing_duration_seconds": processing_duration_seconds,
+                    "completed_at": completed_at.isoformat() if completed_at else None
                 }
             
             # Calculate overall progress based on task completion

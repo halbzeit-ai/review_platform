@@ -145,7 +145,8 @@ async def update_processing_progress(
             UPDATE processing_queue 
             SET progress_percentage = :progress_percentage,
                 current_step = :current_step,
-                progress_message = :progress_message
+                progress_message = :progress_message,
+                last_progress_update = CURRENT_TIMESTAMP
             WHERE document_id = :document_id 
             AND status = 'processing'
         """)
@@ -703,12 +704,18 @@ async def update_task_status(
     try:
         logger.info(f"📊 Updating task {update.task_id} status to {update.status}")
         
-        # Update main task status
+        # Update main task status with processing duration calculation
         update_query = text("""
             UPDATE processing_queue 
             SET status = :status,
                 progress_message = :message,
-                completed_at = CASE WHEN :status IN ('completed', 'failed') THEN CURRENT_TIMESTAMP ELSE completed_at END
+                completed_at = CASE WHEN :status IN ('completed', 'failed') THEN CURRENT_TIMESTAMP ELSE completed_at END,
+                processing_duration_seconds = CASE 
+                    WHEN :status IN ('completed', 'failed') AND started_at IS NOT NULL 
+                    THEN EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - started_at))::integer
+                    ELSE processing_duration_seconds 
+                END,
+                last_progress_update = CURRENT_TIMESTAMP
             WHERE id = :task_id
         """)
         
