@@ -2350,9 +2350,11 @@ IMPORTANT: Base your answer ONLY on the visual analysis above. If no meaningful 
             )
             
             if response.status_code == 200:
-                logger.debug(f"✅ Updated task {task_id} status to {status}")
+                logger.info(f"✅ Updated task {task_id} status to {status}")
             else:
                 logger.error(f"❌ Failed to update task status: {response.status_code}")
+                if response.text:
+                    logger.error(f"Response: {response.text}")
                 
         except Exception as e:
             logger.error(f"❌ Error updating task status: {e}")
