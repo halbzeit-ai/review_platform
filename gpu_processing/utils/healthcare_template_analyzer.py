@@ -1112,14 +1112,17 @@ class HealthcareTemplateAnalyzer:
                     try:
                         response = requests.post(
                             f"{self.backend_base_url}/api/dojo/internal/get-cached-visual-analysis",
-                            json={"deck_ids": [deck_id]},  # Fixed: backend expects deck_ids array, not document_id
+                            json={
+                                "document_id": deck_id,
+                                "document_type": "pitch_deck"  # Future: determine from database
+                            },
                             timeout=30
                         )
                         if response.status_code == 200:
                             result = response.json()
-                            if result.get("success") and result.get("cached_analysis", {}).get(str(deck_id)):
-                                # Extract analysis from the deck_id-keyed result
-                                self.visual_analysis_results = result["cached_analysis"][str(deck_id)]
+                            if result.get("success") and result.get("analysis_results"):
+                                # Use direct analysis_results for single document requests
+                                self.visual_analysis_results = result["analysis_results"]
                                 logger.info(f"📥 Retrieved cached visual analysis: {len(self.visual_analysis_results)} pages")
                             else:
                                 logger.warning("No cached visual analysis found")

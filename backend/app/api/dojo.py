@@ -2783,11 +2783,19 @@ async def get_cached_visual_analysis_for_gpu(
 ):
     """Internal endpoint for GPU to retrieve cached visual analysis"""
     try:
-        deck_ids = request.get("deck_ids", [])
+        # Support both new and legacy formats during transition
+        document_id = request.get("document_id")
+        document_type = request.get("document_type", "pitch_deck")  # Default for backwards compatibility
+        deck_ids = request.get("deck_ids", [])  # Legacy support
+        
+        # Convert single document_id to list for unified processing
+        if document_id:
+            deck_ids = [document_id]
+        
         if not deck_ids:
             return {
                 "success": False,
-                "error": "deck_ids is required"
+                "error": "document_id or deck_ids is required"
             }
         
         logger.info(f"GPU requesting cached visual analysis for {len(deck_ids)} decks: {deck_ids}")
@@ -2809,14 +2817,21 @@ async def get_cached_visual_analysis_for_gpu(
                 logger.error(f"Error retrieving cached visual analysis for deck {deck_id}: {e}")
                 continue
         
-        logger.info(f"Retrieved cached visual analysis for {len(cached_analysis)}/{len(deck_ids)} decks")
+        logger.info(f"Retrieved cached visual analysis for {len(cached_analysis)}/{len(deck_ids)} documents")
         
-        return {
+        # Support both single document and batch response formats
+        response = {
             "success": True,
             "cached_analysis": cached_analysis,
             "total_requested": len(deck_ids),
             "total_found": len(cached_analysis)
         }
+        
+        # If this was a single document request, also provide direct access
+        if document_id and str(document_id) in cached_analysis:
+            response["analysis_results"] = cached_analysis[str(document_id)]
+            
+        return response
         
     except Exception as e:
         logger.error(f"Error in get_cached_visual_analysis_for_gpu: {e}")
